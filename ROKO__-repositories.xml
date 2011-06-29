@@ -1,0 +1,12 @@
+  <repo priority="50" quality="experimental" status="official">
+    <name>ROKO__</name>
+    <description>Unofitial ebuilds supported for gentoo based distributions.</description>
+    <homepage>https://github.com/sandikata/ROKO__</homepage>
+    <owner>
+      <email>sandikata@yandex.ru</email>
+      <name>Rosen Alexandrow</name>
+    </owner>
+    <source type="git">git://github.com/sandikata/ROKO__.git</source>
+  </repo>
+</repositories>
+
