@@ -16,7 +16,3 @@
 # Кърпена версия на chromium-browser специално пригодена за ядра от серия linux-3.0
 =www-client/chromium-14.0.797.0
 
-# Автор: Calculate Linux Team - http://calculate-linux.org
-# Маскиран от: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org (29.06.2011)
-# В процес на изграждане
-=ROKO__-kernel-sources/calculate-sources-2.6.39.2
