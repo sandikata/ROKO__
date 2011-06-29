@@ -1,0 +1,10 @@
+--- chromium-12.0.742.77.orig/tools/gyp/pylib/gyp/__init__.py	2011-06-12 11:52:35.890878896 +0200
++++ chromium-12.0.742.77/tools/gyp/pylib/gyp/__init__.py	2011-06-12 11:56:24.834714739 +0200
+@@ -316,6 +316,7 @@
+                            'freebsd7': 'make',
+                            'freebsd8': 'make',
+                            'linux2':   'make',
++                           'linux3':   'make',
+                            'openbsd4': 'make',
+                            'sunos5':   'make',}[sys.platform] ]
+ 
