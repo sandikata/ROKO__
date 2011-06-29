@@ -19,4 +19,4 @@
 # Автор: Calculate Linux Team - http://calculate-linux.org
 # Маскиран от: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org (29.06.2011)
 # В процес на изграждане
-=sys-kernel/calculate-sources-2.6.39.2
+=ROKO__-kernel-sources/calculate-sources-2.6.39.2
