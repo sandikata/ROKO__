@@ -1,0 +1,200 @@
+# ChangeLog for sys-kernel/calculate-sources
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*calculate-sources-2.6.39.2 (24 Jun 2011)
+
+  24 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.39.2.ebuild:
+  Bump version
+
+*calculate-sources-2.6.38.8 (14 Jun 2011)
+
+  14 Jun 2011; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.38.6.ebuild, +calculate-sources-2.6.38.8.ebuild:
+  Version bump
+
+*calculate-sources-2.6.38.6 (10 May 2011)
+
+  10 May 2011; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.38.4.ebuild, -calculate-sources-2.6.38.5.ebuild,
+  +calculate-sources-2.6.38.6.ebuild:
+  Bump version
+
+*calculate-sources-2.6.38.5 (03 May 2011)
+
+  03 May 2011; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.38.5.ebuild:
+  Bump version
+
+*calculate-sources-2.6.38.4 (25 Apr 2011)
+
+  25 Apr 2011; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  calculate-sources-2.6.32.27.ebuild, calculate-sources-2.6.32.28.ebuild,
+  calculate-sources-2.6.36.2.ebuild, calculate-sources-2.6.36.3.ebuild,
+  calculate-sources-2.6.36.4.ebuild, calculate-sources-2.6.37.4.ebuild,
+  calculate-sources-2.6.38.2.ebuild, +calculate-sources-2.6.38.4.ebuild:
+  Bump version
+
+*calculate-sources-2.6.38.3 (19 Apr 2011)
+
+  19 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.38.3.ebuild:
+  Bump version.
+
+  22 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calculate-sources-2.6.32.33.ebuild, calculate-sources-2.6.36.4.ebuild,
+  calculate-sources-2.6.37.4.ebuild:
+  Unmask kernel.
+
+*calculate-sources-2.6.36.4 (17 Mar 2011)
+*calculate-sources-2.6.32.33 (17 Mar 2011)
+
+  17 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.32.33.ebuild, +calculate-sources-2.6.36.4.ebuild:
+  Bump version.
+
+*calculate-sources-2.6.36.3 (14 Feb 2011)
+
+  14 Feb 2011; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.36.3.ebuild:
+  Bump version.
+
+*calculate-sources-2.6.32.28 (31 Jan 2011)
+
+  31 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.32.28.ebuild:
+  New kernel version for server.
+
+*calculate-sources-2.6.36.2 (28 Dec 2010)
+
+  28 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.36.2.ebuild:
+  Bump version.
+
+*calculate-sources-2.6.35.8 (30 Oct 2010)
+
+  30 Oct 2010; Трацевский Александр <alex@gentoo.org>
+  -calculate-sources-2.6.35.7.ebuild, +calculate-sources-2.6.35.8.ebuild:
+  version bump
+
+*calculate-sources-2.6.35.7 (13 Oct 2010)
+
+  13 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +files/4600_sched-bfs_2.6.35.patch, -calculate-sources-2.6.35.6.ebuild,
+  +calculate-sources-2.6.35.7.ebuild, +files/4700_BFQ_2.6.35.patch,
+  metadata.xml:
+  New kernel version with patches BFQ and BFS.
+
+*calculate-sources-2.6.32.24 (10 Oct 2010)
+
+  10 Oct 2010; Трацевский Александр <alex@gentoo.org>
+  -calculate-sources-2.6.32.22-r1.ebuild,
+  -calculate-sources-2.6.32.23.ebuild, +calculate-sources-2.6.32.24.ebuild:
+  bump version
+
+*calculate-sources-2.6.35.6 (28 Sep 2010)
+*calculate-sources-2.6.32.23 (28 Sep 2010)
+
+  28 Sep 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.32.23.ebuild, calculate-sources-2.6.35.5.ebuild,
+  +calculate-sources-2.6.35.6.ebuild:
+  bump versions
+
+  23 Sep 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.32.22.ebuild,
+  calculate-sources-2.6.32.22-r1.ebuild, -calculate-sources-2.6.34.6.ebuild,
+  calculate-sources-2.6.34.7.ebuild:
+  removed old version
+
+*calculate-sources-2.6.35.5 (22 Sep 2010)
+
+  22 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.35.5.ebuild:
+  New version of kernel.
+
+*calculate-sources-2.6.32.22-r1 (22 Sep 2010)
+
+  22 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.32.22-r1.ebuild:
+  Change eclass to calculate-kernel-old for kernel building.
+
+*calculate-sources-2.6.34.6 (21 Sep 2010)
+
+  21 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.34.6.ebuild, calculate-sources-2.6.34.7.ebuild:
+  Restore calculate-sources 2.6.34.6.
+
+*calculate-sources-2.6.32.22 (21 Sep 2010)
+
+  21 Sep 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.32.20.ebuild, -calculate-sources-2.6.32.21.ebuild,
+  +calculate-sources-2.6.32.22.ebuild:
+  version bump
+
+  09 Sep 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.34.4.ebuild, calculate-sources-2.6.34.6.ebuild:
+  Remove old version.
+
+  30 Aug 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru> ChangeLog:
+  bump new versions
+
+*calculate-sources-2.6.34.5 (23 Aug 2010)
+*calculate-sources-2.6.32.20 (23 Aug 2010)
+
+  23 Aug 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.32.19.ebuild, +calculate-sources-2.6.32.20.ebuild,
+  +calculate-sources-2.6.34.5.ebuild:
+  bump new versions
+
+*calculate-sources-2.6.34.4 (16 Aug 2010)
+
+  16 Aug 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.34.1.ebuild, +calculate-sources-2.6.34.4.ebuild:
+  bump new version
+
+*calculate-sources-2.6.34.1 (06 Jul 2010)
+*calculate-sources-2.6.32.16 (06 Jul 2010)
+
+  06 Jul 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.32.16.ebuild, +calculate-sources-2.6.34.1.ebuild:
+  version bumps, removed old versions
+
+*calculate-sources-2.6.34 (10 Jun 2010)
+
+  10 Jun 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-sources-2.6.34.ebuild:
+  Bump version.
+
+*calculate-sources-2.6.32.15 (02 Jun 2010)
+
+  02 Jun 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  -calculate-sources-2.6.32.14.ebuild, +calculate-sources-2.6.32.15.ebuild:
+  version bump
+
+*calculate-sources-2.6.32.14 (27 May 2010)
+
+  27 May 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.32.14.ebuild:
+  version bump
+
+*calculate-sources-2.6.32.11 (02 Apr 2010)
+
+  02 Apr 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.32.11.ebuild:
+  Add calculate-sources-2.6.32.11.ebuild
+
+  29 Mar 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calculate-sources-2.6.32.7.ebuild, calculate-sources-2.6.32.8.ebuild,
+  calculate-sources-2.6.32.9.ebuild, calculate-sources-2.6.32.10.ebuild:
+  Fix lzma-utils xz-utils depend.
+
+*calculate-sources-2.6.32.10 (23 Mar 2010)
+
+  23 Mar 2010; Alexander Tratsevskiy (L'autre) <at@calculate.ru>
+  +calculate-sources-2.6.32.10.ebuild:
+  Added calculate-sources 2.6.32.10
+
+  24 Nov 2009; Mike Hirecky (mhiretskiy) <mh@calculate.ru> +metadata.xml:
+  Added metadata.
+
