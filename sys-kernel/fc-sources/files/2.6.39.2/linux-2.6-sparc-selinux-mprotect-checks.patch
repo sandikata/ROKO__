@@ -1,0 +1,35 @@
+diff -up linux-2.6.24.sparc64/security/selinux/hooks.c.BAD linux-2.6.24.sparc64/security/selinux/hooks.c
+--- linux-2.6.24.sparc64/security/selinux/hooks.c.BAD	2008-03-21 14:28:06.000000000 -0400
++++ linux-2.6.24.sparc64/security/selinux/hooks.c	2008-03-21 14:29:10.000000000 -0400
+@@ -3018,6 +3018,7 @@ static int file_map_prot_check(struct fi
+ 	const struct cred *cred = current_cred();
+ 	int rc = 0;
+ 
++#ifndef CONFIG_SPARC
+ 	if ((prot & PROT_EXEC) && (!file || (!shared && (prot & PROT_WRITE)))) {
+ 		/*
+ 		 * We are making executable an anonymous mapping or a
+@@ -3028,6 +3029,7 @@ static int file_map_prot_check(struct fi
+ 		if (rc)
+ 			goto error;
+ 	}
++#endif
+ 
+ 	if (file) {
+ 		/* read access is always possible with a mapping */
+@@ -3081,6 +3081,7 @@ static int selinux_file_mprotect(struct 
+ 	if (selinux_checkreqprot)
+ 		prot = reqprot;
+ 
++#ifndef CONFIG_SPARC
+ 	if ((prot & PROT_EXEC) && !(vma->vm_flags & VM_EXEC)) {
+ 		rc = 0;
+ 		if (vma->vm_start >= vma->vm_mm->start_brk &&
+@@ -3103,6 +3103,7 @@ static int selinux_file_mprotect(struct 
+ 		if (rc)
+ 			return rc;
+ 	}
++#endif
+ 
+ 	return file_map_prot_check(vma->vm_file, prot, vma->vm_flags&VM_SHARED);
+ }

@@ -1,0 +1,69 @@
+From bea96046b4245e9abd65ed7acfed9adfd5f6c639 Mon Sep 17 00:00:00 2001
+From: Chris Wilson <chris@chris-wilson.co.uk>
+Date: Thu, 3 Mar 2011 23:43:02 +0000
+Subject: [PATCH] drm/i915: Gen4+ has non-power-of-two strides
+
+In c2e0eb16707, we started checking that the buffer was the correct size
+for tiled access by ensuring that the size was a multiple of tiles.
+However, gen4+ complicates the issue by allowing any multiple of 4096
+bytes for the stride and so the simple check based on a power-of-two
+stride was failing for valid bo.
+
+Reported-by: Dan Williams <dcbw@redhat.com>
+Reported-by: Robert Hooker <sarvatt@gmail.com>
+Cc: Daniel Vetter <daniel.vetter@ffwll.ch>
+Signed-off-by: Chris Wilson <chris@chris-wilson.co.uk>
+---
+ drivers/gpu/drm/i915/i915_gem_tiling.c |   29 ++++++++++++++---------------
+ 1 files changed, 14 insertions(+), 15 deletions(-)
+
+diff --git a/drivers/gpu/drm/i915/i915_gem_tiling.c b/drivers/gpu/drm/i915/i915_gem_tiling.c
+index 79a04fd..654f350 100644
+--- a/drivers/gpu/drm/i915/i915_gem_tiling.c
++++ b/drivers/gpu/drm/i915/i915_gem_tiling.c
+@@ -215,6 +215,19 @@ i915_tiling_ok(struct drm_device *dev, int stride, int size, int tiling_mode)
+ 		}
+ 	}
+ 
++	if (INTEL_INFO(dev)->gen >= 4) {
++		/* 965+ just needs multiples of tile width */
++		if (stride & (tile_width - 1))
++			return false;
++	} else {
++		/* Pre-965 needs power of two tile widths */
++		if (stride < tile_width)
++			return false;
++
++		if (stride & (stride - 1))
++			return false;
++	}
++
+ 	if (IS_GEN2(dev) ||
+ 	    (tiling_mode == I915_TILING_Y && HAS_128_BYTE_Y_TILING(dev)))
+ 		tile_height = 32;
+@@ -226,21 +239,7 @@ i915_tiling_ok(struct drm_device *dev, int stride, int size, int tiling_mode)
+ 		tile_height *= 2;
+ 
+ 	/* Size needs to be aligned to a full tile row */
+-	if (size & (tile_height * stride - 1))
+-		return false;
+-
+-	/* 965+ just needs multiples of tile width */
+-	if (INTEL_INFO(dev)->gen >= 4) {
+-		if (stride & (tile_width - 1))
+-			return false;
+-		return true;
+-	}
+-
+-	/* Pre-965 needs power of two tile widths */
+-	if (stride < tile_width)
+-		return false;
+-
+-	if (stride & (stride - 1))
++	if (size % (tile_height * stride))
+ 		return false;
+ 
+ 	return true;
+-- 
+1.7.4.1
+

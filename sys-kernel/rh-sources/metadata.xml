@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+
+<pkgmetadata>
+	<herd>kernel</herd>
+	<maintainer>
+		<email>sudormrfhalt@gmail.com</email>
+ 	</maintainer>
+	<longdescription>
+		Full sources including the Red Hat Enterprise Linux sources patchset for the 2.6 kernel tree
+	</longdescription>
+</pkgmetadata>

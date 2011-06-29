@@ -1,0 +1,49 @@
+From kernel-bounces@lists.fedoraproject.org Thu Apr 28 08:09:23 2011
+From: Stanislaw Gruszka <sgruszka@redhat.com>
+To: stable@kernel.org, kernel@lists.fedoraproject.org
+Subject: [PATCH 2.6.38 2/4] iwl3945: do not deprecate software scan
+Date: Thu, 28 Apr 2011 14:08:13 +0200
+Message-Id: <1303992495-7337-3-git-send-email-sgruszka@redhat.com>
+
+commit 3bda50e3eaf58a4b9c4ce34204e5faa15c8b1b97 upstream.
+
+Software scanning can be used for workaround some performance problems,
+so do not deprecate it.
+
+Signed-off-by: Stanislaw Gruszka <sgruszka@redhat.com>
+---
+ drivers/net/wireless/iwlwifi/iwl3945-base.c |    6 ++----
+ 1 files changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/net/wireless/iwlwifi/iwl3945-base.c b/drivers/net/wireless/iwlwifi/iwl3945-base.c
+index 371abbf..cf0699a 100644
+--- a/drivers/net/wireless/iwlwifi/iwl3945-base.c
++++ b/drivers/net/wireless/iwlwifi/iwl3945-base.c
+@@ -3995,8 +3995,7 @@ static int iwl3945_pci_probe(struct pci_dev *pdev, const struct pci_device_id *e
+ 	 * "the hard way", rather than using device's scan.
+ 	 */
+ 	if (iwl3945_mod_params.disable_hw_scan) {
+-		dev_printk(KERN_DEBUG, &(pdev->dev),
+-			"sw scan support is deprecated\n");
++		IWL_DEBUG_INFO(priv, "Disabling hw_scan\n");
+ 		iwl3945_hw_ops.hw_scan = NULL;
+ 	}
+ 
+@@ -4318,8 +4317,7 @@ MODULE_PARM_DESC(debug, "debug output mask");
+ #endif
+ module_param_named(disable_hw_scan, iwl3945_mod_params.disable_hw_scan,
+ 		   int, S_IRUGO);
+-MODULE_PARM_DESC(disable_hw_scan,
+-		 "disable hardware scanning (default 0) (deprecated)");
++MODULE_PARM_DESC(disable_hw_scan, "disable hardware scanning (default 0)");
+ module_param_named(fw_restart3945, iwl3945_mod_params.restart_fw, int, S_IRUGO);
+ MODULE_PARM_DESC(fw_restart3945, "restart firmware in case of error");
+ 
+-- 
+1.7.1
+
+_______________________________________________
+kernel mailing list
+kernel@lists.fedoraproject.org
+https://admin.fedoraproject.org/mailman/listinfo/kernel
+
