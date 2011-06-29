@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-application
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-application/metadata.xml
+END
+indicator-application-0.0.19.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-application/indicator-application-0.0.19.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-application/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-application/ChangeLog
+END

@@ -1,0 +1,10 @@
+# ChangeLog for gnome-extra/indicator-application
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*indicator-application-0.0.19 (07 Apr 2010)
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com>
+  +indicator-application-0.0.19.ebuild, +metadata.xml:
+  initial commit
+

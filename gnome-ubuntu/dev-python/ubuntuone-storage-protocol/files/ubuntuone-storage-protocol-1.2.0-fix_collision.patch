@@ -1,0 +1,12 @@
+--- setup.py	2010-04-15 22:28:42.000000000 +0800
++++ setup.py.new	2010-05-05 18:56:47.159335192 +0800
+@@ -122,8 +122,7 @@
+ 
+ setup(name='ubuntuone-storage-protocol',
+       version='1.2.0',
+-      packages=['ubuntuone',
+-                'ubuntuone.storageprotocol'],
++      packages=['ubuntuone.storageprotocol'],
+      data_files=[(ssl_cert_location,
+                 ['data/UbuntuOne-Go_Daddy_CA.pem',
+                  'data/UbuntuOne-Go_Daddy_Class_2_CA.pem'])],

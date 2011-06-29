@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/61/trunk/app-i18n/ibus
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/2/trunk/app-i18n/ibus/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/61/trunk/app-i18n/ibus/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/!svn/ver/61/trunk/app-i18n/ibus/ChangeLog
+END
+ibus-1.3.8.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/61/trunk/app-i18n/ibus/ibus-1.3.8.ebuild
+END

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/45/trunk/gnome-base/gnome-panel
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/3/trunk/gnome-base/gnome-panel/metadata.xml
+END
+gnome-panel-2.30.0.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/!svn/ver/45/trunk/gnome-base/gnome-panel/gnome-panel-2.30.0.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/45/trunk/gnome-base/gnome-panel/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/45/trunk/gnome-base/gnome-panel/ChangeLog
+END

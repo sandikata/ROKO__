@@ -1,0 +1,53 @@
+# ChangeLog for dev-dotnet/gnome-desktop-sharp
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: /var/cvsroot/gentoo-x86/dev-dotnet/gnome-desktop-sharp/ChangeLog,v 1.8 2009/04/30 15:36:09 ranger Exp $
+
+  12 Apr 2010; Coderoar <coderoar@gmail.com>
+  +gnome-desktop-sharp-2.26.0.ebuild, +metadata.xml:
+  initial commit, fork from portage, Update dllmap for libgnome-desktop
+  SONAME
+
+  30 Apr 2009; Brent Baude <ranger@gentoo.org>
+  gnome-desktop-sharp-2.24.0-r10.ebuild:
+  Marking gnome-desktop-sharp-2.24.0-r10 ppc stable for bug 263984
+
+  04 Apr 2009; Markus Meier <maekke@gentoo.org>
+  gnome-desktop-sharp-2.24.0-r10.ebuild:
+  amd64/x86 stable, bug #234305
+
+  27 Mar 2009; Brent Baude <ranger@gentoo.org>
+  gnome-desktop-sharp-2.24.0-r10.ebuild:
+  Marking gnome-desktop-sharp-2.24.0-r10 ~ppc for bug 234305
+
+*gnome-desktop-sharp-2.26.0 (21 Mar 2009)
+
+  21 Mar 2009; Peter Alfredsen <loki_val@gentoo.org>
+  +gnome-desktop-sharp-2.26.0.ebuild:
+  Bump to 2.26.0 masked as a public service for the people on bug 262863.
+
+*gnome-desktop-sharp-2.24.0-r10 (29 Jan 2009)
+
+  29 Jan 2009; Peter Alfredsen <loki_val@gentoo.org>
+  -gnome-desktop-sharp-2.24.0-r5.ebuild,
+  +gnome-desktop-sharp-2.24.0-r10.ebuild:
+  Bump for new eclass
+
+*gnome-desktop-sharp-2.24.0-r5 (05 Jan 2009)
+
+  05 Jan 2009; Peter Alfredsen <loki_val@gentoo.org>
+  -gnome-desktop-sharp-2.24.0-r1.ebuild,
+  +gnome-desktop-sharp-2.24.0-r5.ebuild:
+  Bump for new gtk-sharp-module eclass
+
+*gnome-desktop-sharp-2.24.0-r1 (27 Nov 2008)
+
+  27 Nov 2008; Peter Alfredsen <loki_val@gentoo.org>
+  -gnome-desktop-sharp-2.24.0.ebuild, +gnome-desktop-sharp-2.24.0-r1.ebuild:
+  Bump to fix pkgconfig reporting erroneous --libs.
+
+*gnome-desktop-sharp-2.24.0 (26 Nov 2008)
+
+  26 Nov 2008; Peter Alfredsen <loki_val@gentoo.org>
+  +gnome-desktop-sharp-2.24.0.ebuild:
+  Bump to 2.24.0
+

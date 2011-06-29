@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/66/trunk/gnome-base/gnome-light-ubuntu
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/30/trunk/gnome-base/gnome-light-ubuntu/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/66/trunk/gnome-base/gnome-light-ubuntu/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/66/trunk/gnome-base/gnome-light-ubuntu/ChangeLog
+END
+gnome-light-ubuntu-2.30.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/!svn/ver/66/trunk/gnome-base/gnome-light-ubuntu/gnome-light-ubuntu-2.30.ebuild
+END
+gnome-light-ubuntu-2.30-r1.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/!svn/ver/66/trunk/gnome-base/gnome-light-ubuntu/gnome-light-ubuntu-2.30-r1.ebuild
+END

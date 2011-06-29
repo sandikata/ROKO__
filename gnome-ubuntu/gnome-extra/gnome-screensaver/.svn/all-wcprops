@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/46/trunk/gnome-extra/gnome-screensaver
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/40/trunk/gnome-extra/gnome-screensaver/metadata.xml
+END
+gnome-screensaver-2.30.0.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/!svn/ver/46/trunk/gnome-extra/gnome-screensaver/gnome-screensaver-2.30.0.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/46/trunk/gnome-extra/gnome-screensaver/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/46/trunk/gnome-extra/gnome-screensaver/ChangeLog
+END

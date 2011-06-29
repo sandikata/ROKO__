@@ -1,0 +1,20 @@
+# ChangeLog for gnome-extra/indicator-session
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*indicator-session-0.2.8 (07 May 2010)
+
+  07 May 2010; Coderoar <coderoar@gmail.com>
+  -indicator-session-0.2.7.ebuild, +indicator-session-0.2.8.ebuild:
+  version bump, restore text of 'Lock Screen' button; remove obsolete
+
+  09 Apr 2010; Coderoar <coderoar@gmail.com>
+  +indicator-session-0.2.7.ebuild, +metadata.xml:
+  update deps
+
+*indicator-session-0.2.7 (07 Apr 2010)
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com>
+  +indicator-session-0.2.7.ebuild, +metadata.xml:
+  initial commit
+

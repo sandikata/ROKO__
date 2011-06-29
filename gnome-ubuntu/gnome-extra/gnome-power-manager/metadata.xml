@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<herd>gnome</herd>
+	<longdescription lang="en">
+		Power Manager daemon for the GNOME desktop environment that makes it
+		easy to manage your laptop or desktop system.
+	</longdescription>
+	<use>
+		<flag name='indicator'>Add appindicator support</flag>
+		<flag name="policykit">Enable <pkg>sys-auth/policykit</pkg>
+			authentication support</flag>
+	</use>
+</pkgmetadata>
+

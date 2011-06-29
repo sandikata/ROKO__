@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-sound
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-sound/metadata.xml
+END
+indicator-sound-0.2.2.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-sound/indicator-sound-0.2.2.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-sound/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/4/trunk/gnome-extra/indicator-sound/ChangeLog
+END

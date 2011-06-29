@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/29/trunk/gnome-extra/gnome-exe-thumbnailer
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/29/trunk/gnome-extra/gnome-exe-thumbnailer/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/29/trunk/gnome-extra/gnome-exe-thumbnailer/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/29/trunk/gnome-extra/gnome-exe-thumbnailer/ChangeLog
+END
+gnome-exe-thumbnailer-0.2.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svn/!svn/ver/29/trunk/gnome-extra/gnome-exe-thumbnailer/gnome-exe-thumbnailer-0.2.ebuild
+END

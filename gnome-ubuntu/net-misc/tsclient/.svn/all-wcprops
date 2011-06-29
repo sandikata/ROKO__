@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 39
+/svn/!svn/ver/6/trunk/net-misc/tsclient
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/!svn/ver/6/trunk/net-misc/tsclient/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/6/trunk/net-misc/tsclient/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/!svn/ver/6/trunk/net-misc/tsclient/ChangeLog
+END
+tsclient-0.150.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/!svn/ver/6/trunk/net-misc/tsclient/tsclient-0.150.ebuild
+END

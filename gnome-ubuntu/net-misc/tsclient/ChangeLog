@@ -1,0 +1,10 @@
+# ChangeLog for net-misc/tsclient
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*tsclient-0.150 (07 Apr 2010)
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com> +tsclient-0.150.ebuild,
+  +metadata.xml:
+  initial commit, fork from portage
+

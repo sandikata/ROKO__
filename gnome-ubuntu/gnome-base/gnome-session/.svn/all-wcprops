@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/51/trunk/gnome-base/gnome-session
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/!svn/ver/3/trunk/gnome-base/gnome-session/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/51/trunk/gnome-base/gnome-session/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/51/trunk/gnome-base/gnome-session/ChangeLog
+END
+gnome-session-2.30.0-r1.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/!svn/ver/51/trunk/gnome-base/gnome-session/gnome-session-2.30.0-r1.ebuild
+END

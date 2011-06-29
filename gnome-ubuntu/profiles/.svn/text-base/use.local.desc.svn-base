@@ -1,0 +1,35 @@
+# Copyright 1999-2010 Gentoo Foundation.
+# Distributed under the terms of the GNU General Public License v2
+# $Header: $
+# This file contains descriptions of local USE flags, and the ebuilds which
+# contain them.
+# Keep it sorted (use "LC_ALL=C sort -t: -k1,1 -k2 | LC_ALL=C sort -s -t/ -k1,1")
+# Declaring the locale for the sort is critical to avoid flapping.
+###########
+## NOTICE!!
+###########
+# This file is deprecated as per GLEP 56 in favor of metadata.xml. Please add
+# your descriptions to your package's metadata.xml ONLY.
+# use.local.desc is now generated automatically, and manual editing of it is
+# disallowed.
+# Test for commit block
+
+gnome-base/gnome-control-center:compiz - Add compiz support
+gnome-base/gnome-control-center:indicator - Add appindicator support
+gnome-base/gnome-session:splash - Enable gnome splash screen
+gnome-extra/gnome-power-manager:indicator - Add appindicator support
+gnome-extra/gnome-power-manager:policykit - Enable sys-auth/policykit authentication support
+gnome-extra/polkit-gnome:indicator - Add appindicator support
+gnome-extra/sensors-applet:nvidia - Enables support for sensors on NVidia chips
+net-im/pidgin:bonjour - Enable bonjour (zeroconf) support
+net-im/pidgin:gadu - Enable Gadu Gadu protocol support
+net-im/pidgin:groupwise - Enable Novell Groupwise protocol support
+net-im/pidgin:indicator - Add appindicator support
+net-im/pidgin:meanwhile - Enable meanwhile support for Sametime protocol
+net-im/pidgin:prediction - Enable Contact Availability Prediction plugin
+net-im/pidgin:qq - Enable QQ protocol support
+net-im/pidgin:silc - Enable SILC protocol support
+net-im/pidgin:zephyr - Enable Zephyr protocol support
+net-misc/tsclient:vnc - add basic VNC support
+x11-plugins/pidgin-libnotify:indicate - Enable support for dev-libs/libindicate
+x11-plugins/pidgin-libnotify:ubuntu - Enable Ubuntu style popup notification

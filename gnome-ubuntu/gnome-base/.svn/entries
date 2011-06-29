@@ -1,0 +1,43 @@
+10
+
+dir
+66
+http://ubuntu-overlay.googlecode.com/svn/trunk/gnome-base
+http://ubuntu-overlay.googlecode.com/svn
+
+
+
+2011-01-23T05:41:28.604589Z
+66
+coderoar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+663825d1-6dad-2eee-5197-dd41b80126d1
+
+gnome-control-center
+dir
+
+gnome-panel
+dir
+
+gnome-settings-daemon
+dir
+
+gnome-session
+dir
+
+gnome-light-ubuntu
+dir
+

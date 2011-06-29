@@ -1,0 +1,19 @@
+# ChangeLog for gnome-base/gnome-control-center
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  05 May 2010; Coderoar <coderoar@gmail.com>
+  gnome-control-center-2.30.0.ebuild:
+  minor fix
+
+  03 May 2010; Coderoar <coderoar@gmail.com>
+  gnome-control-center-2.30.0.ebuild:
+  minor fix
+
+*gnome-control-center-2.30.0 (07 Apr 2010)
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com>
+  +files/gnome-control-center-2.28.1-gdm-default-bg.patch,
+  +gnome-control-center-2.30.0.ebuild, +metadata.xml:
+  initial commit, fork from gnome-overlay
+

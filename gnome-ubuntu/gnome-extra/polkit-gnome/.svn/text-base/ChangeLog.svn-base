@@ -1,0 +1,47 @@
+# ChangeLog for gnome-extra/polkit-gnome
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  11 Apr 2010; Coderoar <coderoar@gmail.com>
+  +files/polkit-gnome-0.95-fix-make-check.patch,
+  +files/polkit-gnome-0.95-parallel-build-failure.patch,
+  +polkit-gnome-0.96.ebuild, +metadata.xml:
+  initial commit, fork from portage, add appindicator support
+
+  10 Mar 2010; Joseph Jezak <josejx@gentoo.org> polkit-gnome-0.96.ebuild:
+  Marked ~ppc/~ppc64 for bug #296548.
+
+  28 Feb 2010; Raúl Porcel <armin76@gentoo.org> polkit-gnome-0.96.ebuild:
+  Add ~alpha/~arm/~ia64/~sparc
+
+*polkit-gnome-0.96 (23 Jan 2010)
+
+  23 Jan 2010; Nirbheek Chauhan <nirbheek@gentoo.org>
+  +polkit-gnome-0.96.ebuild:
+  Version bump to 0.96, couple of bugfixes; see NEWS
+
+  06 Jan 2010; Jeroen Roovers <jer@gentoo.org> polkit-gnome-0.95.ebuild:
+  Marked ~hppa (bug #296548).
+
+  02 Jan 2010; Gilles Dartiguelongue <eva@gentoo.org>
+  polkit-gnome-0.95.ebuild:
+  Fix dependencies for changes introduced by bug #293247 fix.
+
+  27 Dec 2009; Nirbheek Chauhan <nirbheek@gentoo.org>
+  polkit-gnome-0.95.ebuild,
+  +files/polkit-gnome-0.95-parallel-build-failure.patch:
+  Add patch for fixing parallel build failure with USE=doc, bug 293247 ;
+  patch by Ed Catmur
+
+*polkit-gnome-0.95 (14 Nov 2009)
+
+  14 Nov 2009; Nirbheek Chauhan <nirbheek@gentoo.org>
+  +polkit-gnome-0.95.ebuild:
+  Bump to 0.95, goes with polkit bump
+
+*polkit-gnome-0.94 (29 Oct 2009)
+
+  29 Oct 2009; Gilles Dartiguelongue <eva@gentoo.org>
+  +polkit-gnome-0.94.ebuild, +metadata.xml:
+  Initial ebuild for GNOME 2.28.
+

@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/31/trunk/dev-python/configglue
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/31/trunk/dev-python/configglue/metadata.xml
+END
+configglue-0.2.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/!svn/ver/31/trunk/dev-python/configglue/configglue-0.2.ebuild
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/31/trunk/dev-python/configglue/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/31/trunk/dev-python/configglue/ChangeLog
+END

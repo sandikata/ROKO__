@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/24/trunk/net-fs/samba
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/!svn/ver/24/trunk/net-fs/samba/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/!svn/ver/24/trunk/net-fs/samba/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/24/trunk/net-fs/samba/ChangeLog
+END
+samba-3.5.2.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/24/trunk/net-fs/samba/samba-3.5.2.ebuild
+END

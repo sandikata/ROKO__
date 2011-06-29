@@ -1,0 +1,35 @@
+# ChangeLog for gnome-base/gnome-session
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  10 May 2010; Coderoar <coderoar@gmail.com> gnome-session-2.30.0-r1.ebuild:
+  minor fix
+
+  07 May 2010; Coderoar <coderoar@gmail.com> gnome-session-2.30.0-r1.ebuild:
+  fix missing pkglibexecdir
+
+  06 May 2010; Coderoar <coderoar@gmail.com> gnome-session-2.30.0-r1.ebuild:
+  add dbus_request_shutdown patch
+
+*gnome-session-2.30.0-r1 (09 Apr 2010)
+
+  09 Apr 2010; Coderoar <coderoar@gmail.com>
+  +files/gnome-session-2.26.2-shutdown.patch,
+  +files/gnome-session-2.27.91-gentoo-branding.patch,
+  +files/gnome-session-2.28.0-do-not-keep-zombie-clients.patch,
+  +gnome-session-2.30.0-r1.ebuild,
+  +files/gnome-session-2.30.0-session-saving-button.patch, +files/Gnome,
+  +metadata.xml:
+  update deps, minor fix
+
+*gnome-session-2.30.0 (07 Apr 2010)
+
+  07 Apr 2010; Coderoar <coderoar@gmail.com>
+  +files/gnome-session-2.26.2-shutdown.patch,
+  +files/gnome-session-2.27.91-gentoo-branding.patch,
+  +files/gnome-session-2.28.0-do-not-keep-zombie-clients.patch,
+  +gnome-session-2.30.0.ebuild,
+  +files/gnome-session-2.30.0-session-saving-button.patch, +files/Gnome,
+  +metadata.xml:
+  initial commit, fork from gnome-overlay
+

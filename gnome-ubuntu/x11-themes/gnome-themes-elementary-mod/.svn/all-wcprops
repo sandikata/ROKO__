@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/!svn/ver/1211/trunk/x11-themes/gnome-themes-elementary-mod
+END
+metadata.xml
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/!svn/ver/1171/trunk/x11-themes/gnome-themes-elementary-mod/metadata.xml
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/!svn/ver/1211/trunk/x11-themes/gnome-themes-elementary-mod/Manifest
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/!svn/ver/1211/trunk/x11-themes/gnome-themes-elementary-mod/ChangeLog
+END
+gnome-themes-elementary-mod-9999.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/!svn/ver/1211/trunk/x11-themes/gnome-themes-elementary-mod/gnome-themes-elementary-mod-9999.ebuild
+END

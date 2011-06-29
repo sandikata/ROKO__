@@ -1,0 +1,10 @@
+# ChangeLog for gnome-extra/ubuntuone-client
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*ubuntuone-client-1.2.1 (06 May 2010)
+
+  06 May 2010; Coderoar <coderoar@gmail.com> +ubuntuone-client-1.2.1.ebuild,
+  +metadata.xml:
+  initial commit, fork from gentoo-ubuntu-one overlay
+

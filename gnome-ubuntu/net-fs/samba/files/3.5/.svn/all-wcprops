@@ -1,0 +1,65 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5
+END
+samba.pam
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/samba.pam
+END
+smbusers
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/smbusers
+END
+nsswitch.conf-wins
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/nsswitch.conf-wins
+END
+system-auth-winbind.pam
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/system-auth-winbind.pam
+END
+smb.conf.default
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/smb.conf.default
+END
+swat.xinetd
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/swat.xinetd
+END
+lmhosts
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/lmhosts
+END
+samba.initd
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/samba.initd
+END
+samba.confd
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/samba.confd
+END
+nsswitch.conf-winbind
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/!svn/ver/24/trunk/net-fs/samba/files/3.5/nsswitch.conf-winbind
+END
