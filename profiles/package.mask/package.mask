@@ -3,7 +3,7 @@
 # Неофициално ядро: Debian Experimental, приспособено за Gentoo базирани дистрибуции. Все още е в процес на изпитание, има редица бъгове които предстои да бъдат изчистени.
 # Не се поддържа от Gentoo Security и Calculate Security. При проблеми http://www.debian.org/Bugs/ !
 # След инсталация използвайте последните драйвери на производителите. За AMD - catalyst 11.6. За Nvidia - 275.09.05 .
->=ROKO__-kernel-sources/debian-sources-3.0_rc4
+>=sys-kernel/debian-sources-3.0_rc4
 
 # Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org
 # Маскиран от: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org (28.06.2011)
