@@ -18,5 +18,5 @@ src_unpack() {
 }
 
 src_install() {
-	dobin || die
+	dobin ${PN} || die
 }
