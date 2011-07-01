@@ -16,3 +16,6 @@
 # Кърпена версия на chromium-browser специално пригодена за ядра от серия linux-3.0
 =www-client/chromium-14.0.797.0
 
+# Тестова версия на winetricks
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org
+=app-emulation/winetricks-9999
