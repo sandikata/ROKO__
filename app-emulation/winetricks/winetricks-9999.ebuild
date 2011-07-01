@@ -14,7 +14,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 src_unpack() {
-	cp "${DISTDIR}"/winetricks /usr/bin/winetricks || die
+	cp "${DISTDIR}"/winetricks ${PN} || die
 }
 
 src_install() {
