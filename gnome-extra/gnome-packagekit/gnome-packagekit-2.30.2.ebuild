@@ -10,7 +10,7 @@ inherit eutils python gnome2
 
 DESCRIPTION="PackageKit client for the GNOME desktop"
 HOMEPAGE="http://www.packagekit.org/"
-SRC_URI="http://www.packagekit.org/releases/${P}.tar.gz"
+SRC_URI="http://ftp.gnome.org/mirror/gnome.org/sources/gnome-packagekit/2.30/${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
