@@ -17,5 +17,8 @@
 =www-client/chromium-14.0.797.0
 
 # Тестова версия на winetricks
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (01.07.2011)
 =app-emulation/winetricks-9999
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (02.07.2011)
+>=gnome-extra/gnome-packagekit-3.0.3
