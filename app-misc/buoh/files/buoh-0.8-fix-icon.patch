@@ -1,0 +1,11 @@
+--- data/buoh.desktop.in	2005-10-01 02:20:15.000000000 +0200
++++ data/buoh.desktop.in.2	2005-11-11 07:28:11.000000000 +0100
+@@ -2,7 +2,7 @@
+ _Name=Buoh Online Comics Reader
+ _Comment=Read your favourite comics
+ Exec=buoh
+-Icon=buoh64x64.png
++Icon=/usr/share/buoh/pixmaps/buoh64x64.png
+ Terminal=0
+ Type=Application
+ Categories=Application;Utility;

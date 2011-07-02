@@ -1,0 +1,11 @@
+--- data/buoh.desktop.original.in	2006-10-21 15:56:33.000000000 +0100
++++ data/buoh.desktop.in	2007-02-19 13:16:28.000000000 +0000
+@@ -2,7 +2,7 @@
+ _Name=Buoh Online Comics Reader
+ _Comment=Read your favourite comics
+ Exec=buoh
+-Icon=buoh
++Icon=/usr/share/icons/hicolor/64x64/apps/buoh.png
+ Terminal=false
+ Type=Application
+ Categories=GNOME;GTK;Application;Utility;
