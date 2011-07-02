@@ -1,0 +1,82 @@
+# ChangeLog for games-arcade/supertux
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+
+  06 May 2011; Piotr Szymaniak <szarpaj@grubelek.pl> supertux-0.3.3.ebuild,
+  supertux-9999.ebuild:
+  Updated deps.
+
+  19 Mar 2010; Piotr Szymaniak <lazy_bum@o2.pl> supertux-0.3.3.ebuild,
+  supertux-9999.ebuild:
+  Added missing boost depend.
+
+*supertux-0.3.3 (10 Mar 2010)
+
+  10 Mar 2010; Piotr Szymaniak <lazy_bum@o2.pl> -files/0.3.1-fixes.patch,
+  -files/0.3.1-fs-layout.patch, -files/0.3.1-gcc44.patch,
+  +files/0.3.3-fs-layout.patch, -files/9999-fs-layout.patch,
+  -supertux-0.3.0.ebuild, -supertux-0.3.1d.ebuild, +supertux-0.3.3.ebuild:
+  Updated ebuild, thanks to Constantin Baranov (bug #158582).
+
+  25 Dec 2009; Piotr Szymaniak <lazy_bum@o2.pl> +files/9999-fs-layout.patch,
+  +supertux-9999.ebuild:
+  Added WIP live ebuild.
+
+  02 Jun 2009; Michał Ziąbkowski <mziab@o2.pl> files/0.3.1-gcc44.patch:
+  Updated patch.
+
+  02 Jun 2009; Michał Ziąbkowski <mziab@o2.pl> +files/0.3.1-gcc44.patch,
+  supertux-0.3.1d.ebuild:
+  Added GCC 4.4 patch
+
+  02 Jun 2009; Michał Ziąbkowski <mziab@o2.pl> supertux-0.3.1d.ebuild:
+  Fixed by switching inherit order.
+
+  21 Jan 2009; Michał Ziąbkowski <mziab@o2.pl> supertux-0.3.0.ebuild,
+  supertux-0.3.1d.ebuild:
+  Fixed deps and header.
+
+  21 Jan 2009; Piotr Szymaniak <lazy_bum@o2.pl> supertux-0.3.0.ebuild,
+  supertux-0.3.1d.ebuild, -supertux-9999.ebuild:
+  Ported to EAPI 2, fixed repoman errors.
+
+  11 Dec 2008; Piotr Szymaniak <lazy_bum@o2.pl> supertux-0.3.0.ebuild:
+  Added slot 2.
+
+  11 Dec 2008; Piotr Szymaniak <lazy_bum@o2.pl> -supertux-0.3.1.ebuild,
+  +supertux-0.3.1d.ebuild, +files/0.3.1-fixes.patch,
+  +files/0.3.1-fs-layout.patch, +files/desktop.patch:
+  Updated ebuild by Constantin Baranov (bug #158582).
+
+  07 Dec 2008; Piotr Szymaniak <lazy_bum@o2.pl> supertux-9999.ebuild,
+  -files/supertux-9999-cmakelists.patch:
+  Patch no longer needed.
+
+  06 Dec 2008; Piotr Szymaniak <lazy_bum@o2.pl> +supertux-0.3.0.ebuild,
+  supertux-0.3.1.ebuild:
+  Readded 0.3.0. Masked 0.3.1 due to weird, random slowdowns in game.
+
+  06 Dec 2008; Piotr Szymaniak <lazy_bum@o2.pl> -supertux-0.3.0.ebuild,
+  supertux-0.3.1.ebuild:
+  Removed cruft, added nicer ebuild from voyageur overlay.
+
+  24 Nov 2008; Piotr Szymaniak <lazy_bum@o2.pl> supertux-0.3.0.ebuild,
+  supertux-0.3.1.ebuild, supertux-9999.ebuild:
+  Fixed depends, minor improvements.
+
+  13 Aug 2008; Piotr Szymaniak <lazy_bum@o2.pl> supertux-0.3.1.ebuild,
+  supertux-9999.ebuild:
+  Fixed repoman reported errors.
+
+  28 Mar 2008; Michał Ziąbkowski <mziab@o2.pl> supertux-0.3.0.ebuild:
+  Replaced jam with ftjam in deps.
+
+*supertux-9999 (09 Feb 2008)
+
+  09 Feb 2008; Piotr Szymaniak <lazy_bum@o2.pl> +supertux-9999.ebuild,
+  +supertux-9999-cmakelists.patch:
+  Initial live ebuild.
+
+*supertux-0.3.1 (07 Jan 2008)
+
+  07 Jan 2008; Piotr Szymaniak <lazy_bum@o2.pl> +supertux-0.3.1.ebuild:
+  Initial ebuild.
