@@ -1,0 +1,24 @@
+--- /tmp/ttb-0.9.4/setup.py	2005-11-27 20:22:53.000000000 +0100
++++ ttb-0.9.4/setup.py	2006-11-18 11:21:25.000000000 +0100
+@@ -10,6 +10,9 @@
+ import sys
+ import glob
+ import os.path
++import os
++
++del os.environ['DISPLAY']
+ 
+ try:
+     from distutils.core import setup
+@@ -61,8 +64,9 @@
+ 
+ try:
+     import gtk, gtk.glade
+-except:
+-        sys.exit ("""
++except RuntimeError, rte:
++	if (rte.args[0] != "could not open display"):
++        	sys.exit ("""
+     TTB Installation Failed
+     -----------------------
+     You don't seem to have the gtk and/or gtk.glade modules for

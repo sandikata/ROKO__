@@ -1,0 +1,13 @@
+diff -Naur Amaya-11.13.1/thotlib/base/AmayaApp.cpp Amaya-11.13.1-local/thotlib/base/AmayaApp.cpp
+--- Amaya-11.13.1/thotlib/base/AmayaApp.cpp	2009-10-29 01:58:59.000000000 -0700
++++ Amaya-11.13.1-local/thotlib/base/AmayaApp.cpp	2010-07-05 18:37:23.000000000 -0700
+@@ -325,7 +325,8 @@
+   m_AmayaIsInit = true;
+ 
+   // Log window.
+-//  new wxLogWindow(NULL, wxT("Amaya traces"));
++  // new wxLogWindow(NULL, wxT("Amaya traces"));
++  wxWakeUpIdle();
+ 
+   return true;
+ }

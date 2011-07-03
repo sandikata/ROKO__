@@ -1,0 +1,66 @@
+diff -uprN gnaughty-1.1.0/gnaughty.schemas gnaughty-1.1.0-mod/gnaughty.schemas
+--- gnaughty-1.1.0/gnaughty.schemas	2005-08-26 15:39:51.000000000 +0000
++++ gnaughty-1.1.0-mod/gnaughty.schemas	2005-08-26 15:43:26.000000000 +0000
+@@ -50,7 +50,7 @@
+       <applyto>/apps/gnaughty/play_command</applyto>
+       <owner>gnaughty</owner>
+       <type>string</type>
+-      <default>mplayer -fs</default>
++      <default>gmplayer</default>
+       <locale name="C">
+         <short>The command to play movies with</short>
+         <long>Tells gnaughty what command to use to play movies. The filename will be added to the end of the command.
+@@ -62,7 +62,7 @@
+       <applyto>/apps/gnaughty/play_picture_command</applyto>
+       <owner>gnaughty</owner>
+       <type>string</type>
+-      <default>animate -delay 500</default>
++      <default>gthumb --fullscreen</default>
+       <locale name="C">
+         <short>The command to do a slide show with</short>
+         <long>Tells gnaughty what command to use to do a slide show. The filename will be added to the end of the command.
+diff -uprN gnaughty-1.1.0/src/parselinks.c gnaughty-1.1.0-mod/src/parselinks.c
+--- gnaughty-1.1.0/src/parselinks.c	2004-06-13 03:45:29.000000000 +0000
++++ gnaughty-1.1.0-mod/src/parselinks.c	2005-08-25 20:40:36.000000000 +0000
+@@ -126,9 +126,9 @@ GList* get_links_from_page(GList* list, 
+ 	GString *exts_re;
+ 	
+ 	if(ismovie)
+-		exts_re = g_string_new( "<a\\s+href\\s*=\\s*\"([^\"\\s>]+\\.(?:" MOVIEEXTS "))\"\\s*" );
++		exts_re = g_string_new( "<a\\s+href\\s*=\\s*\"*([^\"\\s>]+\\.(?:" MOVIEEXTS "))\"*\\s*" );
+ 	else
+-		exts_re = g_string_new( "<a\\s+href\\s*=\\s*\"([^\"\\s>]+\\.(?:" PICTEXTS "))\"\\s*" );
++		exts_re = g_string_new( "<a\\s+href\\s*=\\s*\"*([^\"\\s>]+\\.(?:" PICTEXTS "))\"*\\s*" );
+         
+ 	reg = pcre_compile( exts_re->str, PCRE_CASELESS, &pcre_err, &pcre_erroroff, NULL );
+ 	while( ( re_result = pcre_exec( reg, NULL, page->str, strlen( page->str ), reg_offset, 0, re_vector, 6 ) ) != -1 )
+diff -uprN gnaughty-1.1.0/src/prefs.c gnaughty-1.1.0-mod/src/prefs.c
+--- gnaughty-1.1.0/src/prefs.c	2004-02-16 01:43:31.000000000 +0000
++++ gnaughty-1.1.0-mod/src/prefs.c	2005-08-26 15:56:28.000000000 +0000
+@@ -37,7 +37,7 @@ gchar *gnaughty_pref_get_string(gnaughty
+ }
+ GnaughtyPrefs defaultprefs = {"", FALSE, "", 0, TRUE, FALSE, FALSE, "\"C:\\Program Files\\Windows Media Player\\wmplayer.exe\"", "\"\""};
+ #else
+-GnaughtyPrefs defaultprefs = {"", FALSE, "", 0, TRUE, FALSE, FALSE, "mplayer -fs", "animate -delay 500", 3, TRUE};
++GnaughtyPrefs defaultprefs = {"", FALSE, "", 0, TRUE, FALSE, FALSE, "gmplayer", "gthumb --fullscreen", 3, TRUE};
+ #endif
+ 
+ GnaughtyPrefs DefaultPrefs()
+diff -uprN gnaughty-1.1.0/src/urls.c gnaughty-1.1.0-mod/src/urls.c
+--- gnaughty-1.1.0/src/urls.c	2004-06-13 03:45:39.000000000 +0000
++++ gnaughty-1.1.0-mod/src/urls.c	2005-08-26 15:33:07.000000000 +0000
+@@ -79,6 +79,14 @@ GString** gnaughty_urls_separate_link_fi
+ 		g_error("Invalid link");
+ 		return NULL;
+ 	} else {
++		// IF the divider '/' is not the last character 
++		// AND those characters till the end doesnt contain a dot '.' nor a '?'
++		if ((strlen (divider) > 1) && (strrchr(divider,'.')== NULL) && (strrchr(divider,'?')== NULL)) {
++			// THEN that last characters mean a directory, so we clarify it with a trailing '/'
++			parts[0]=g_string_append_c(g_string_new(urlstring),'/');
++			parts[1]=g_string_new(divider);
++			return parts;
++		}
+ 		divider += sizeof(gchar);
+ 	}
+ 	parts[0] = g_string_new(g_strndup(urlstring, (unsigned long)divider - (unsigned long)urlstring));

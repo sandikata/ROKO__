@@ -1,0 +1,10 @@
+--- gnaughty-1.1.1/Makefile.in.orig	2005-12-30 20:42:00.000000000 +0000
++++ gnaughty-1.1.1/Makefile.in	2005-12-30 20:42:07.000000000 +0000
+@@ -399,7 +399,6 @@
+ 
+ 
+ install-data-local: 
+-	GCONF_CONFIG_SOURCE=$(GCONF_SCHEMA_CONFIG_SOURCE) $(GCONFTOOL) --makefile-install-rule $(srcdir)/$(schema_DATA)
+ 
+ # Tell versions [3.59,3.63) of GNU make to not export all variables.
+ # Otherwise a system limit (for SysV at least) may be exceeded.

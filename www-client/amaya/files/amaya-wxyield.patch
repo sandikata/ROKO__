@@ -1,0 +1,21 @@
+diff -Naur Amaya-11.13.1/thotlib/dialogue/appdialogue_wx.c Amaya-11.13.1-local/thotlib/dialogue/appdialogue_wx.c
+--- Amaya-11.13.1/thotlib/dialogue/appdialogue_wx.c	2009-09-15 07:17:35.000000000 -0700
++++ Amaya-11.13.1-local/thotlib/dialogue/appdialogue_wx.c	2010-07-01 22:54:15.000000000 -0700
+@@ -993,7 +993,7 @@
+    * this function waits for complete widgets initialisation */
+   /* notice: no not use safe yield here because it use a
+      wxWindowDisabler and it makes menus blinking */
+-  wxYield();
++  wxTheApp->Yield(TRUE);
+   return TRUE;
+ }
+ 
+@@ -1824,7 +1824,7 @@
+   TtaHandlePendingEvents();
+   /* wait for frame initialisation (needed by opengl) 
+    * this function waits for complete widgets initialisation */
+-  wxYield();
++  wxTheApp->Yield(TRUE);
+   /* fix accessibility problem : force the created frame to get the focus */
+   TtaRedirectFocus();
+ 
