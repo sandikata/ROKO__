@@ -16,7 +16,7 @@ KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND="!<app-crypt/pyrit-0.3-r1
-	>=dev-util/nvidia-cuda-sdk-3.0[pentoo]
+	>=dev-util/nvidia-cuda-sdk-3.0
 	x11-drivers/nvidia-drivers"
 RDEPEND="${DEPEND}"
 
