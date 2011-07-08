@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/!svn/ver/2244/portage/trunk/dev-util/calpp
+END
+Manifest
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/!svn/ver/2244/portage/trunk/dev-util/calpp/Manifest
+END
+calpp-0.90.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/!svn/ver/2244/portage/trunk/dev-util/calpp/calpp-0.90.ebuild
+END
+calpp-0.87-r1.ebuild
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/!svn/ver/1998/portage/trunk/dev-util/calpp/calpp-0.87-r1.ebuild
+END
