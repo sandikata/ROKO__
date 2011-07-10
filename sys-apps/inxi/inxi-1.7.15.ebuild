@@ -1,4 +1,5 @@
 # Copyleft Calculate Linux 2007 - 2011
+# Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org - Freenode - ROKO__
 # $Header: $
 EAPI=3
 
@@ -20,9 +21,9 @@ src_install() {
 
 pkg_postinst() {
 	distutils_pkg_postinst
-	elog "За да видите кратка или пълна информация за системата"
-	elog "inxi -b за кратка и inxi -F за пълна"
-	elog "inxi -h за да видите помощта и допълнителните опции"
+	elog "За да видите кратка или пълна информация за системата."
+	elog "inxi -b за кратка и inxi -F за пълна информация."
+	elog "inxi -h за да видите допълнителните опции."
 	echo
 	bash-completion_pkg_postinst
 }
