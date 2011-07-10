@@ -2,10 +2,11 @@
 # Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org - Freenode - ROKO__
 # $Header: $
 EAPI=3
-
+IUSE="+zsh-completion"
 DESCRIPTION="Програма за извличане на подробна информация за системата."
 HOMEPAGE="http://code.google.com/p/inxi/"
 SRC_URI="http://smxi.org/inxi"
+DEPEND="app-shells/zsh"
 
 LICENSE="GPL-3"
 SLOT="0"
