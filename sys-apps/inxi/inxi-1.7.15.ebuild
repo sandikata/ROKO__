@@ -7,7 +7,7 @@ DESCRIPTION="Програма за извличане на подробна ин
 HOMEPAGE="http://code.google.com/p/inxi/"
 SRC_URI="http://smxi.org/inxi"
 DEPEND="app-shells/zsh"
-
+RDEPEND="app-shells/zsh"
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 x86"
