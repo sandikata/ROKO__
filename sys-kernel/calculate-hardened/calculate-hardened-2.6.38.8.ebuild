@@ -15,7 +15,8 @@ KEYWORDS="amd64 x86"
 CKV=2.6.38
 KERNEL_ARCHIVE="linux-${CKV}.tar.bz2"
 SRC_URI="${KERNEL_URI}"
-UNIPATCH_LIST="${DISTDIR}/calculate-sources-2.6.38.tar.bz2 ${DISTDIR}/hardened-patches-2.6.38.8.extras.tar.bz2"
+UNIPATCH="${FILESDIR}/calculate-sources-2.6.38.tar.bz2" 
+#UNIPATCH="${FILESDIR}/hardened-patches-2.6.38.8.extras.tar.bz2"
 
 DEPEND="vmlinuz? ( >=sys-kernel/calckernel-3.4.15-r5
 	>=sys-apps/calculate-builder-2.2.14
@@ -31,7 +32,19 @@ unpack ${KERNEL_ARCHIVE}
 
 	if use hardened
 	then
-		unipatch ${DISTDIR}/hardened-patches-2.6.38.8.extras.tar.bz2 || die
+#		unipatch ${DISTDIR}/hardened-patches-2.6.38.8.extras.tar.bz2 || die
+
+		epatch "${FILESDIR}/2.6.38/4420_grsecurity-2.2.2-2.6.38.7-201105222331.patch"
+		epatch "${FILESDIR}/2.6.38/4421_grsec-remove-localversion-grsec.patch"
+		epatch "${FILESDIR}/2.6.38/4422_grsec-mute-warnings.patch"
+		epatch "${FILESDIR}/2.6.38/4423_grsec-remove-protected-paths.patch"
+		epatch "${FILESDIR}/2.6.38/4425_grsec-pax-without-grsec.patch"
+		epatch "${FILESDIR}/2.6.38/4430_grsec-kconfig-default-gids.patch"
+		epatch "${FILESDIR}/2.6.38/4435_grsec-kconfig-gentoo.patch"
+		epatch "${FILESDIR}/2.6.38/4440_selinux-avc_audit-log-curr_ip.patch"
+		epatch "${FILESDIR}/2.6.38/4445_disable-compat_vdso.patch"
+		
+
 	fi
 }
 
