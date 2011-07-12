@@ -22,6 +22,8 @@ DEPEND="vmlinuz? ( >=sys-kernel/calckernel-3.4.15-r5
 	|| ( app-arch/xz-utils app-arch/lzma-utils )
 	sys-apps/v86d )"
 
+RDEPEND="=sys-apps/gradm-2.2.2*"
+
 CL_KERNEL_OPTS="--lvm --mdadm --dmraid"
 
 src_unpack() {
