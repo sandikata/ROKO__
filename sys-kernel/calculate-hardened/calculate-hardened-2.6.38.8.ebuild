@@ -12,9 +12,9 @@ IUSE="hardened vmlinuz +symlink"
 DESCRIPTION="Calculate Linux Ядро с допълнителна поддръжка за Hardened ${KV_MAJOR}.${KV_MINOR}"
 HOMEPAGE="http://calculate-linux.ru/"
 KEYWORDS="amd64 x86"
-CKV=2.6.38
+CKV=2.6.38.8
 KERNEL_ARCHIVE="linux-${CKV}.tar.bz2"
-SRC_URI="${KERNEL_URI}"
+SRC_URI="http://www.kernel.org/pub/linux/kernel/v2.6/linux-2.6.38.8.tar.bz2"
 UNIPATCH="${FILESDIR}/calculate-sources-2.6.38.tar.bz2" 
 #UNIPATCH="${FILESDIR}/hardened-patches-2.6.38.8.extras.tar.bz2"
 
