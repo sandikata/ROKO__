@@ -8,7 +8,7 @@ detect_version
 EAPI=3
 LICENSE="GPL-2"
 SLOT="0"
-IUSE="hardened vmlinuz"
+IUSE="hardened vmlinuz +symlink"
 DESCRIPTION="Calculate Linux Ядро с допълнителна поддръжка за Hardened ${KV_MAJOR}.${KV_MINOR}"
 HOMEPAGE="http://calculate-linux.ru/"
 KEYWORDS="amd64 x86"
