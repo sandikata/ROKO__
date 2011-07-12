@@ -40,21 +40,15 @@ pkg_postinst() {
 
 	local GRADM_COMPAT="sys-apps/gradm-2.2.2*"
 
-	ewarn
-	ewarn "Hardened Gentoo provides three different predefined grsecurity level:"
+	ewarn "Hardened Calculate предлага три профила за сигурност:"
 	ewarn "[server], [workstation], and [virtualization]."
-	ewarn
-	ewarn "Those who intend to use one of these predefined grsecurity levels"
-	ewarn "should read the help associated with the level.  Users importing a"
-	ewarn "kernel configuration from a kernel prior to ${PN}-2.6.32,"
-	ewarn "should review their selected grsecurity/PaX options carefully."
-	ewarn
-	ewarn "Users of grsecurity's RBAC system must ensure they are using"
-	ewarn "${GRADM_COMPAT}, which is compatible with ${PF}."
-	ewarn "It is strongly recommended that the following command is issued"
-	ewarn "prior to booting a ${PF} kernel for the first time:"
-	ewarn
-	ewarn "emerge -na =${GRADM_COMPAT}"
-	ewarn
+	ewarn "За тези които искат да направят собствена настройка на профила, е нужно да се направи справка с документацията."
+	ewarn "Потребителите които ползват RBAC, трябва да съобразят какви програми използват, и да позволят достъп да за изпълнение."	
+	ewarn "За използване като десктоп система трябва да се избере профил [workstation]."
+	ewarn "За премахване на MPROTECT от бинарния файл на някоя програма -> paxctl -C /path/to/binary ; paxctl -m /path/to/binary ."
+
+	elog "Ако желаете ядрото да се компилира и инсталира автоматично, добавете флаг "vmlinuz"."
+	elog "Ако желаете ядрото да поддържа Hardened, добавете флаг "hardened"."
+
 }
 
