@@ -1,0 +1,458 @@
+# ChangeLog for sys-apps/calculate-builder
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*calculate-builder-2.2.18 (29 Jun 2011)
+
+  29 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.15.ebuild, -calculate-builder-2.2.16.ebuild,
+  -calculate-builder-2.2.16-r4.ebuild,
+  -files/calculate-builder-2.2.16-fix_dev.patch,
+  -calculate-builder-2.2.17.ebuild, +calculate-builder-2.2.18.ebuild:
+  Bump version
+
+*calculate-builder-2.2.17 (22 Jun 2011)
+
+  22 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.17.ebuild:
+  Bump version
+
+*calculate-builder-2.2.16-r3 (17 Jun 2011)
+
+  17 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.16-r2.ebuild, +calculate-builder-2.2.16-r3.ebuild,
+  files/calculate-builder-2.2.16-fix_dev.patch:
+  Update for fix mode of created nodes.
+
+*calculate-builder-2.2.16-r2 (17 Jun 2011)
+
+  17 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.16-r1.ebuild, +calculate-builder-2.2.16-r2.ebuild,
+  files/calculate-builder-2.2.16-fix_dev.patch:
+  Fix creating dev nodes.
+
+*calculate-builder-2.2.16-r1 (17 Jun 2011)
+
+  17 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.16-r1.ebuild,
+  +files/calculate-builder-2.2.16-fix_dev.patch:
+  Update for bugfix.
+
+  09 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.13.ebuild, -calculate-builder-2.2.14.ebuild,
+  -calculate-builder-2.2.14-r1.ebuild, -calculate-builder-2.2.14-r2.ebuild,
+  -calculate-builder-2.2.14-r3.ebuild,
+  -files/calculate-builder-2.2.14-backport.patch,
+  -files/calculate-builder-2.2.14-fix_convert.patch,
+  -files/calculate-builder-2.2.14-fix_create_iso.patch,
+  +calculate-builder-2.2.16.ebuild:
+  Remove old
+
+*calculate-builder-2.2.16 (09 Jun 2011)
+
+  09 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.16.ebuild:
+  Bump version
+
+*calculate-builder-2.2.15 (18 May 2011)
+
+  18 May 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.15.ebuild:
+  Bump version
+
+*calculate-builder-2.2.14-r3 (22 Apr 2011)
+
+  22 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.14-r3.ebuild,
+  +files/calculate-builder-2.2.14-fix_create_iso.patch:
+  Update for fix create iso.
+
+*calculate-builder-2.2.14-r1 (21 Apr 2011)
+
+  21 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.14-r1.ebuild,
+  +files/calculate-builder-2.2.14-fix_convert.patch:
+  Update for bugfix.
+
+*calculate-builder-2.2.14 (20 Apr 2011)
+
+  20 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.14.ebuild:
+  Bump version
+
+  13 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.11-r1.ebuild, -calculate-builder-2.2.11-r2.ebuild,
+  -files/calculate-builder-2.2.11-console_fix.patch,
+  -files/calculate-builder-2.2.11-isohybrid.patch,
+  -calculate-builder-2.2.12.ebuild, -calculate-builder-2.2.12-r1.ebuild,
+  -calculate-builder-2.2.12-r2.ebuild,
+  -files/calculate-builder-2.2.12-fix_get_builderpath.patch,
+  -files/calculate-builder-2.2.12-fix_use_own_config.patch,
+  -files/calculate-builder-2.2.12-show_vars_fix.patch,
+  calculate-builder-2.2.13.ebuild, calculate-builder-2.2.9999.ebuild:
+  Remove old. Fix EAPI.
+
+*calculate-builder-2.2.13 (12 Apr 2011)
+
+  12 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.13.ebuild:
+  Version bump
+
+  04 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calculate-builder-2.2.9999.ebuild:
+  Fix live deps.
+
+
+*calculate-builder-2.2.12-r2 (28 Mar 2011)
+
+  28 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.12-r2.ebuild,
+  +files/calculate-builder-2.2.12-fix_get_builderpath.patch,
+  +files/calculate-builder-2.2.12-fix_use_own_config.patch:
+  Update for bugfix.
+
+*calculate-builder-2.2.12-r1 (26 Mar 2011)
+
+  26 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.12-r1.ebuild,
+  +files/calculate-builder-2.2.12-show_vars_fix.patch:
+  Fix show variables.
+
+*calculate-builder-2.2.12 (22 Mar 2011)
+
+  22 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.12.ebuild:
+  Bump version
+
+*calculate-builder-2.2.11-r2 (21 Mar 2011)
+
+  21 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.11-r2.ebuild,
+  +files/calculate-builder-2.2.11-console_fix.patch:
+  Update for fix CONSOLE=/dev/tty1
+
+  18 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.8.ebuild, -calculate-builder-2.2.9.ebuild,
+  -calculate-builder-2.2.10.ebuild, -calculate-builder-2.2.11.ebuild:
+  Remove old.
+
+*calculate-builder-2.2.11-r1 (15 Mar 2011)
+
+  15 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.11-r1.ebuild,
+  +files/calculate-builder-2.2.11-isohybrid.patch:
+  Update for add feature.
+
+*calculate-builder-2.2.11 (11 Mar 2011)
+
+  11 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.11.ebuild:
+  Bump version
+
+*calculate-builder-2.2.10 (09 Mar 2011)
+
+  09 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.10.ebuild:
+  Bump version
+
+*calculate-builder-2.2.9 (09 Feb 2011)
+
+  09 Feb 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.9.ebuild:
+  Bump version
+
+  24 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.3.ebuild, -calculate-builder-2.2.4.ebuild,
+  -calculate-builder-2.2.4-r1.ebuild, -calculate-builder-2.2.4-r2.ebuild,
+  -files/calculate-builder-2.2.4-disable_splash.patch,
+  -calculate-builder-2.2.5.ebuild, -calculate-builder-2.2.6.ebuild,
+  -calculate-builder-2.2.7.ebuild:
+  Clean old ebuild.
+
+*calculate-builder-2.2.8 (20 Jan 2011)
+
+  20 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.8_rc1.ebuild, +calculate-builder-2.2.8.ebuild:
+  Version bump
+
+*calculate-builder-2.2.8_rc1 (20 Jan 2011)
+
+  20 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.8_rc1.ebuild:
+  Bump version
+
+*calculate-builder-2.2.7 (19 Jan 2011)
+
+  19 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.7.ebuild:
+  Bump version
+
+*calculate-builder-2.2.6 (14 Jan 2011)
+
+  14 Jan 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.6.ebuild:
+  Bump version
+
+*calculate-builder-2.2.5 (30 Dec 2010)
+
+  30 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.5.ebuild:
+  Bump version.
+
+*calculate-builder-2.2.4 (23 Dec 2010)
+
+  23 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1-r1.ebuild,
+  -files/calculate-builder-2.2.1-fix_binarywork.patch,
+  -files/calculate-builder-2.2.1-fix_getdigest.patch,
+  -calculate-builder-2.2.4_rc2.ebuild, +calculate-builder-2.2.4.ebuild:
+  Bump version. Remove old.
+
+*calculate-builder-2.2.4_rc2 (22 Dec 2010)
+
+  22 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.4_rc1.ebuild, +calculate-builder-2.2.4_rc2.ebuild:
+  Bump version.
+
+*calculate-builder-2.2.4_rc1 (22 Dec 2010)
+
+  22 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.4_rc1.ebuild:
+  Version bump.
+
+*calculate-builder-2.2.3 (17 Dec 2010)
+
+  17 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0.ebuild, -calculate-builder-2.2.1_rc17.ebuild,
+  -calculate-builder-2.2.2.ebuild, +calculate-builder-2.2.3.ebuild:
+  Bump version. Remove needless version.
+
+*calculate-builder-2.2.2 (15 Dec 2010)
+
+  15 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.2.ebuild:
+  Bump version.
+
+*calculate-builder-2.2.1 (09 Dec 2010)
+
+  09 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.1.ebuild:
+  Bump version.
+
+*calculate-builder-2.2.1_rc17 (09 Dec 2010)
+
+  09 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc16.ebuild,
+  +calculate-builder-2.2.1_rc17.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc16 (08 Dec 2010)
+
+  08 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc15.ebuild,
+  +calculate-builder-2.2.1_rc16.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc15 (03 Dec 2010)
+
+  03 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc14.ebuild,
+  +calculate-builder-2.2.1_rc15.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc14 (03 Dec 2010)
+
+  03 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc13.ebuild,
+  +calculate-builder-2.2.1_rc14.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc13 (01 Dec 2010)
+
+  01 Dec 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc12.ebuild,
+  +calculate-builder-2.2.1_rc13.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc12 (29 Nov 2010)
+
+  29 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc11-r1.ebuild,
+  +calculate-builder-2.2.1_rc12.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc11 (26 Nov 2010)
+
+  26 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc10.ebuild,
+  +calculate-builder-2.2.1_rc11.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc10 (23 Nov 2010)
+
+  23 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc9.ebuild, +calculate-builder-2.2.1_rc10.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc9 (22 Nov 2010)
+
+  22 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc8-r2.ebuild,
+  +calculate-builder-2.2.1_rc9.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc8 (18 Nov 2010)
+
+  18 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc7-r6.ebuild,
+  +calculate-builder-2.2.1_rc8.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc7-r5 (15 Nov 2010)
+
+  15 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc7-r4.ebuild,
+  +calculate-builder-2.2.1_rc7-r5.ebuild:
+  Add depends cdrkit and squashfs-tools.
+
+*calculate-builder-2.2.1_rc7-r1 (15 Nov 2010)
+
+  15 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc7.ebuild,
+  +calculate-builder-2.2.1_rc7-r1.ebuild:
+  Update for fix fail by unsuccessfully unmount.
+
+*calculate-builder-2.2.1_rc7 (13 Nov 2010)
+
+  13 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc6-r1.ebuild,
+  +calculate-builder-2.2.1_rc7.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc6 (10 Nov 2010)
+
+  10 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc5.ebuild, +calculate-builder-2.2.1_rc6.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc5 (03 Nov 2010)
+
+  03 Nov 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc4-r1.ebuild,
+  +calculate-builder-2.2.1_rc5.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc4 (29 Oct 2010)
+
+  29 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc3-r1.ebuild,
+  +calculate-builder-2.2.1_rc4.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc3-r1 (29 Oct 2010)
+
+  29 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc3.ebuild,
+  +calculate-builder-2.2.1_rc3-r1.ebuild:
+  Bugfix --set option.
+
+*calculate-builder-2.2.1_rc3 (28 Oct 2010)
+
+  28 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc2.ebuild, +calculate-builder-2.2.1_rc3.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc2 (28 Oct 2010)
+
+  28 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.1_rc1-r1.ebuild,
+  +calculate-builder-2.2.1_rc2.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.1_rc1 (22 Oct 2010)
+
+  22 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.1_rc1-r1.ebuild,
+  +calculate-builder-2.2.1_rc1.ebuild:
+  First release candidat of 2.2.1.
+
+*calculate-builder-2.2.0.1_rc1-r1 (15 Oct 2010)
+
+  15 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.1_rc1.ebuild,
+  +calculate-builder-2.2.0.1_rc1-r1.ebuild:
+  Update for change depends.
+
+*calculate-builder-2.2.0.1_rc1 (15 Oct 2010)
+
+  15 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.0.1_rc1.ebuild:
+  First release candidat of 2.2.0.1.
+
+*calculate-builder-2.2.0.0 (07 Oct 2010)
+
+  07 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.0.0.ebuild:
+  Bump version.
+
+*calculate-builder-2.2.0.0_p20100930-r3 (07 Oct 2010)
+
+  07 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100930-r2.ebuild,
+  +calculate-builder-2.2.0.0_p20100930-r3.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.0.0_p20100930-r2 (05 Oct 2010)
+
+  05 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100930-r1.ebuild,
+  +calculate-builder-2.2.0.0_p20100930-r2.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.0.0_p20100930-r1 (01 Oct 2010)
+
+  01 Oct 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100930.ebuild,
+  +calculate-builder-2.2.0.0_p20100930-r1.ebuild:
+  Update version.
+
+*calculate-builder-2.2.0.0_p20100930 (30 Sep 2010)
+
+  30 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100921-r2.ebuild,
+  -calculate-builder-2.2.0.0_p20100929.ebuild,
+  +calculate-builder-2.2.0.0_p20100930.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.0.0_p20100921-r2 (30 Sep 2010)
+
+  30 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100921-r1.ebuild,
+  +calculate-builder-2.2.0.0_p20100921-r2.ebuild:
+  Update commit reference.
+
+*calculate-builder-2.2.0.0_p20100928 (29 Sep 2010)
+
+  29 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.0.0_p20100929.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.0.0_p20100921-r1 (23 Sep 2010)
+
+  23 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calculate-builder-2.2.0.0_p20100921.ebuild,
+  +calculate-builder-2.2.0.0_p20100921-r1.ebuild:
+  Update builder.
+
+*calculate-builder-2.2.0.0_p20100921 (21 Sep 2010)
+
+  21 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.0.0_p20100921.ebuild:
+  Daily update.
+
+*calculate-builder-2.2.9999 (15 Sep 2010)
+
+  15 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calculate-builder-2.2.9999.ebuild, +metadata.xml:
+  Add live ebuild.
+

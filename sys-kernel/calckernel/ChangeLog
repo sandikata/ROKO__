@@ -1,0 +1,80 @@
+# ChangeLog for sys-kernel/calckernel
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*calckernel-3.4.15-r9 (22 Jun 2011)
+
+  22 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calckernel-3.4.10.903-r22.ebuild, -calckernel-3.4.10.903-r23.ebuild,
+  -files/calckernel-3.4.10.903-r22.patch,
+  -files/calckernel-3.4.10.903-r23.patch, -calckernel-3.4.14.ebuild,
+  -files/calckernel-3.4.14.patch, -calckernel-3.4.15.ebuild,
+  -calckernel-3.4.15-r1.ebuild, -calckernel-3.4.15-r2.ebuild,
+  -calckernel-3.4.15-r3.ebuild, -calckernel-3.4.15-r5.ebuild,
+  -calckernel-3.4.15-r6.ebuild, -calckernel-3.4.15-r7.ebuild,
+  -calckernel-3.4.15-r8.ebuild, +calckernel-3.4.15-r9.ebuild,
+  -files/calckernel-3.4.15-r1.patch, -files/calckernel-3.4.15-r2.patch,
+  -files/calckernel-3.4.15-r3.patch, -files/calckernel-3.4.15-r4.patch,
+  -files/calckernel-3.4.15-r5.patch, -files/calckernel-3.4.15-r6.patch,
+  -files/calckernel-3.4.15-r7.patch, -files/calckernel-3.4.15-r8.patch,
+  +files/calckernel-3.4.15-r9.patch, -files/calckernel-3.4.15.patch:
+  Update deps. Remove old.
+
+*calckernel-3.4.15-r8 (13 May 2011)
+
+  13 May 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r8.ebuild, +files/calckernel-3.4.15-r8.patch:
+  Update for bugfix docache.
+
+*calckernel-3.4.15-r7 (12 May 2011)
+
+  12 May 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r7.ebuild, +files/calckernel-3.4.15-r7.patch:
+  Fix ati detect.
+
+  25 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.15-r5.ebuild:
+  Place dep radeon-ucode for VIDEO_DRIVER="radeon"
+
+*calckernel-3.4.15-r3 (13 Apr 2011)
+
+  13 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r3.ebuild, +files/calckernel-3.4.15-r3.patch:
+  Fix boot from livecd on intel.
+
+*calckernel-3.4.15 (11 Apr 2011)
+
+  11 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15.ebuild, +files/calckernel-3.4.15.patch:
+  Bump version.
+
+  22 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.14.ebuild:
+  Unmask by keywords.
+
+*calckernel-3.4.14 (17 Mar 2011)
+
+  17 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.14.ebuild, +files/calckernel-3.4.14.patch:
+  Bump version.
+
+*calckernel-3.4.10.903-r23 (16 Sep 2010)
+
+  16 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.10.903-r23.ebuild, +files/calckernel-3.4.10.903-r23.patch:
+  Added hide busybox compilation.
+
+  01 Jun 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.10.903-r22.ebuild:
+  Changed home page.
+
+  10 Dec 2009; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.10.903-r16.ebuild, +files/calckernel-3.4.10.903-r16.patch:
+  Remove lzma compression for initramfs.
+
+*calckernel-3.4.10.903-r16 (24 Nov 2009)
+
+  24 Nov 2009; Mike Hirecky (mhiretskiy) <mh@calculate.ru>
+  +metadata.xml:
+  Fix package
+
