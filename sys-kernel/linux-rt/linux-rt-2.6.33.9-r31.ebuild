@@ -7,7 +7,7 @@ UNIPATCH_STRICTORDER="yes"
 
 ETYPE="sources"
 K_KERNEL_SOURCES_PKG="sys-kernel/rt-sources-${PVR}"
-inherit sabayon-kernel
+inherit kernel-2
 
 K_LONGTERM="1"
 
