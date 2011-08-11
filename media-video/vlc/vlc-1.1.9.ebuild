@@ -333,6 +333,8 @@ src_configure() {
 		--disable-growl \
 		--disable-optimizations \
 		--enable-fast-install \
+		--enable-fake
+		--enable-faac
 		$(vlc_use_enable_force vlm sout) \
 		$(vlc_use_enable_force skins qt4) \
 		$(vlc_use_enable_force skins freetype) \
