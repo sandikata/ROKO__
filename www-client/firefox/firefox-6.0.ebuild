@@ -21,7 +21,7 @@ HOMEPAGE="http://www.mozilla.com/firefox"
 KEYWORDS="~amd64 ~amd64-linux"
 SLOT="0"
 LICENSE="|| ( MPL-1.1 GPL-2 LGPL-2.1 )"
-IUSE="bindist +methodjit +ipc pgo system-sqlite +webm debug"
+IUSE="bindist +methodjit +ipc pgo system-sqlite +webm debug dbus custom-optimization libnotify startup-notification wifi alsa pulseaudio"
 
 REL_URI="http://releases.mozilla.org/pub/mozilla.org/firefox/releases"
 FTP_URI="ftp://ftp.mozilla.org/pub/firefox/releases/"
