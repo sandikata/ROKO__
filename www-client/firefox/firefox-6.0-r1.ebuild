@@ -27,7 +27,7 @@ DEPEND="
 		dev-libs/libffi
 		>=media-sound/pulseaudio-0.9.22
 		=dev-lang/python-2*[sqlite]
-		>=sys-devel/gcc-4.5
+		>=sys-devel/gcc-4.4.5
 		"
 RDEPEND="${DEPEND}"
 
