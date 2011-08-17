@@ -69,7 +69,7 @@ fi
 # No language packs for alphas
 if ! [[ ${PV} =~ alpha|beta ]]; then
 	# This list can be updated with scripts/get_langs.sh from mozilla overlay
-	LANGS=(bg ru)
+	LANGS=()
 
 	for X in "${LANGS[@]}" ; do
 		# en and en_US are handled internally
