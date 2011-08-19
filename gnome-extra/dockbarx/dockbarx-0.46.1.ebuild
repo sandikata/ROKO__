@@ -3,7 +3,7 @@
 # $Header: $
 
 inherit distutils eutils gnome2-utils
-EAPI=4
+EAPI=3
 DESCRIPTION="Gnome taskbar applet with groupping and group manipulation"
 HOMEPAGE="http://launchpad.net/dockbar"
 SRC_URI="http://launchpad.net/dockbar/dockbarx/x.${PV}/+download/${P/-/_}.tar.gz"
