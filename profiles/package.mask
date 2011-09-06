@@ -15,3 +15,7 @@
 
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (02.07.2011)
 >=gnome-extra/gnome-packagekit-3.0.3
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (06.09.2011)
+# Счупен пакет, търси се решение.
+app-emulation/wine-etersoft
