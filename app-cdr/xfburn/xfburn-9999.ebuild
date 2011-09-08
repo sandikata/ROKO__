@@ -7,7 +7,8 @@ inherit xfconf
 
 DESCRIPTION="GTK+ based CD and DVD burning application"
 HOMEPAGE="http://goodies.xfce.org/projects/applications/xfburn"
-SRC_URI="mirror://xfce/src/apps/${PN}/0.4/${P}.tar.bz2"
+#SRC_URI="mirror://xfce/src/apps/${PN}/0.4/${P}.tar.bz2"
+EGIT_REPO_URI="git://git.xfce.org/apps/xfburn"
 
 LICENSE="GPL-2"
 SLOT="0"
