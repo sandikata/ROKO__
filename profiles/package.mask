@@ -19,3 +19,6 @@
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (06.09.2011)
 # Счупен пакет, търси се решение.
 app-emulation/wine-etersoft
+
+# git версия
+=app-cdr/xfburn-9999
