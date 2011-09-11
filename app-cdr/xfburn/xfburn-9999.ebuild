@@ -33,7 +33,6 @@ DEPEND="${RDEPEND}
 pkg_setup() {
 	XFCONF=(
 		$(use_enable dbus)
-		$(xfconf_use_debug)
 		$(use_enable gstreamer)
 		--disable-hal
 		$(use_enable thunar thunar-vfs)
