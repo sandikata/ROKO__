@@ -22,3 +22,11 @@ app-emulation/wine-etersoft
 
 # git версия
 =app-cdr/xfburn-9999
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
+# Използвайте media-sound/peyote-0.9.6-r1 (emerge --autounmask-write =peyote-0.9.6-r1)
+=media-sound/peyote-0.9.6
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
+# В процес на тестване за поправяне на новооткрити бъгове.
+=media-sound/peyote-0.9.6-r1
