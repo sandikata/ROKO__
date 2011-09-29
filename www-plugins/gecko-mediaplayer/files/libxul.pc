@@ -1,0 +1,5 @@
+Name: libxul
+Description: The Mozilla Runtime and Embedding Engine
+Requires: nspr
+Version: 6.0
+Cflags: -I/usr/include/firefox -fshort-wchar
