@@ -30,3 +30,10 @@ app-emulation/wine-etersoft
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
 # В процес на тестване за поправяне на новооткрити бъгове.
 =media-sound/peyote-0.9.6-r1
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (23.10.2011)
+# Бета! 
+=x11-drivers/nvidia-drivers-290.03
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (23.10.2011)
+# Бета! 
+=media-video/nvidia-settings-290.03
