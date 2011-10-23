@@ -1,6 +1,6 @@
 # Copyright 1999-2011 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/x11-drivers/nvidia-drivers/nvidia-drivers-270.41.03.ebuild,v 1.3 2011/04/24 18:48:24 ulm Exp $
+# $Header: /var/cvsroot/gentoo-x86/x11-drivers/nvidia-drivers/nvidia-drivers-270.41.19.ebuild,v 1.5 2011/07/31 13:06:28 maekke Exp $
 
 EAPI="2"
 
@@ -12,14 +12,14 @@ X86_FBSD_NV_PACKAGE="NVIDIA-FreeBSD-x86-${PV}"
 
 DESCRIPTION="NVIDIA X11 driver and GLX libraries"
 HOMEPAGE="http://www.nvidia.com/"
-SRC_URI="x86? ( http://us.download.nvidia.com/XFree86/Linux-x86/${PV}/${X86_NV_PACKAGE}.run )
-	 amd64? ( http://us.download.nvidia.com/XFree86/Linux-x86_64/${PV}/${AMD64_NV_PACKAGE}.run )
-	 x86-fbsd? ( http://us.download.nvidia.com/XFree86/FreeBSD-x86/${PV}/${X86_FBSD_NV_PACKAGE}.tar.gz )"
+SRC_URI="x86? ( ftp://download.nvidia.com/XFree86/Linux-x86/${PV}/${X86_NV_PACKAGE}.run )
+	 amd64? ( ftp://download.nvidia.com/XFree86/Linux-x86_64/${PV}/${AMD64_NV_PACKAGE}.run )
+	 x86-fbsd? ( ftp://download.nvidia.com/XFree86/FreeBSD-x86/${PV}/${X86_FBSD_NV_PACKAGE}.tar.gz )"
 
 LICENSE="NVIDIA"
 SLOT="0"
-KEYWORDS="-* ~amd64 ~x86 ~x86-fbsd"
-IUSE="acpi custom-cflags gtk multilib kernel_linux rt"
+KEYWORDS="-* amd64 x86 ~x86-fbsd"
+IUSE="acpi custom-cflags gtk multilib kernel_linux"
 RESTRICT="strip"
 EMULTILIB_PKG="true"
 
@@ -209,7 +209,7 @@ pkg_setup() {
 		linux-mod_pkg_setup
 		MODULE_NAMES="nvidia(video:${S}/kernel)"
 		BUILD_PARAMS="IGNORE_CC_MISMATCH=yes V=1 SYSSRC=${KV_DIR} \
-		SYSOUT=${KV_OUT_DIR} HOST_CC=$(tc-getBUILD_CC)"
+		SYSOUT=${KV_OUT_DIR} CC=$(tc-getBUILD_CC)"
 		mtrr_check
 		lockdep_check
 	fi
@@ -280,17 +280,14 @@ src_prepare() {
 			-e 's:-Wsign-compare::g' \
 			"${NV_SRC}"/Makefile.kbuild
 
-		# Add support for the 'x86' unified kernel arch in conftest.sh
 		epatch "${FILESDIR}"/256.35-unified-arch.patch
+		epatch "${FILESDIR}"/nvidia_kernel-3.0-rc1.patch
 
 		# If you set this then it's your own fault when stuff breaks :)
 		use custom-cflags && sed -i "s:-O:${CFLAGS}:" "${NV_SRC}"/Makefile.*
 
 		# If greater than 2.6.5 use M= instead of SUBDIR=
 		convert_to_m "${NV_SRC}"/Makefile.kbuild
-	fi
-	if use rt;then 
-	epatch "${FILESDIR}"/nvidiart.patch
 	fi
 }
 
