@@ -25,7 +25,6 @@ pkg_postinst() {
 	elog "inxi -b за кратка и inxi -F за пълна информация."
 	elog "inxi -h за да видите допълнителните опции."
 	echo
-	bash-completion_pkg_postinst
 }
 
 
