@@ -37,3 +37,8 @@ app-emulation/wine-etersoft
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (23.10.2011)
 # Бета! 
 =media-video/nvidia-settings-290.03
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (24.10.2011)
+# Изчакване на deblob скриптове за тази версия.
+=sys-kernel/vanilla-sources-3.1
+
