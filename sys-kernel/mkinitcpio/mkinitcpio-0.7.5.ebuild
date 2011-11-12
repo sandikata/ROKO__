@@ -10,7 +10,7 @@ SRC_URI="ftp://ftp.archlinux.org/other/${PN}/${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="x86 amd64"
+KEYWORDS="~x86 ~amd64"
 IUSE="dmraid crypt lvm2 mdadm v86d lzma bzip2 nfs"
 
 RDEPEND="
