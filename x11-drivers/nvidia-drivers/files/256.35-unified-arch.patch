@@ -1,7 +1,6 @@
-Add support for the 'x86' unified kernel arch in conftest.sh
-
---- NVIDIA-Linux-x86-256.25/kernel/conftest.sh
-+++ NVIDIA-Linux-x86-256.25/kernel/conftest.sh
+diff -NuarpbB NVIDIA-Linux-x86-256.25-ori/kernel/conftest.sh NVIDIA-Linux-x86-256.25/kernel/conftest.sh
+--- NVIDIA-Linux-x86-256.25-ori/kernel/conftest.sh	2010-05-19 05:38:57.000000000 +0200
++++ NVIDIA-Linux-x86-256.25/kernel/conftest.sh	2010-05-22 02:13:56.000000000 +0200
 @@ -101,7 +101,7 @@ build_cflags() {
  
      if [ "$OUTPUT" != "$SOURCES" ]; then

@@ -1,6 +1,6 @@
 # Copyright 1999-2011 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/x11-drivers/nvidia-drivers/nvidia-drivers-270.41.19.ebuild,v 1.5 2011/07/31 13:06:28 maekke Exp $
+# $Header: $
 
 EAPI="2"
 
@@ -18,12 +18,15 @@ SRC_URI="x86? ( ftp://download.nvidia.com/XFree86/Linux-x86/${PV}/${X86_NV_PACKA
 
 LICENSE="NVIDIA"
 SLOT="0"
-KEYWORDS="**"
+KEYWORDS="-* ~amd64 ~x86 ~x86-fbsd"
 IUSE="acpi custom-cflags gtk multilib kernel_linux"
 RESTRICT="strip"
 EMULTILIB_PKG="true"
 
-COMMON="<x11-base/xorg-server-1.10.99
+# While this release does officially support xorg-server 1.11, it has poor
+# performance characteristics for many users. see bug #275612 & bug #385669
+# as well as http://lists.x.org/archives/xorg-devel/2011-October/026050.html
+COMMON=">=x11-base/xorg-server-1.10.99
 	kernel_linux? ( >=sys-libs/glibc-2.6.1 )
 	multilib? ( app-emulation/emul-linux-x86-xlibs )
 	>=app-admin/eselect-opengl-1.0.9
@@ -281,7 +284,6 @@ src_prepare() {
 			"${NV_SRC}"/Makefile.kbuild
 
 		epatch "${FILESDIR}"/256.35-unified-arch.patch
-		epatch "${FILESDIR}"/nvidia_kernel-3.0-rc1.patch
 
 		# If you set this then it's your own fault when stuff breaks :)
 		use custom-cflags && sed -i "s:-O:${CFLAGS}:" "${NV_SRC}"/Makefile.*

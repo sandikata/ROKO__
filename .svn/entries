@@ -1,49 +1,0 @@
-10
-
-dir
-1469
-http://gentoo-china-overlay.googlecode.com/svn/trunk/media-plugins
-http://gentoo-china-overlay.googlecode.com/svn
-
-
-
-2011-06-07T15:51:10.585839Z
-1465
-microcaicai
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-56a51851-6f1b-0410-94cf-eb22446afc7d
-
-totem-sopcast
-dir
-
-gst-plugins-sopcast
-dir
-
-totem-pps
-dir
-
-osd-lyrics
-dir
-
-audacious-mac
-dir
-
-gst-plugins-pps
-dir
-
-xlyrics
-dir
-
