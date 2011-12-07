@@ -4,8 +4,8 @@
 
 EAPI=3
 
-DESCRIPTION="inhatch plugin for vlc player
-HOMEPAGE="http://inhatch.com/
+DESCRIPTION="inhatch plugin for vlc player"
+HOMEPAGE="http://inhatch.com/"
 SRC_URI="http://download721.mediafire.com/c6uim5mlorvg/h53m0qn63a030wa/inhatch-0.8-amd64.tar.bz2"
 
 LICENSE=""
@@ -17,17 +17,17 @@ DEPEND=">=media-video/vlc-1.1.10"
 RDEPEND="${DEPEND}"
 
 src_unpack() {
-	unpack $A || die
+unpack $A || die
 }
 
 pkg_postinst() {
-	cd ${WORKDIR}
-	cp -r * / || die
-	ldconfig
+cd ${WORKDIR}
+cp -r * / || die
+ldconfig
 
-	elog "За да можете да използвате приставката трябва да добавите адрес с
-	плейлистата в секцията Add URL на vlc player -> Линк
-	http://inhatch.com/channel/playlist.xspf"
+elog "За да можете да използвате приставката трябва да добавите адрес с
+плейлистата в секцията Add URL на vlc player -> Линк
+http://inhatch.com/channel/playlist.xspf"
+
+echo
 }
-
-
