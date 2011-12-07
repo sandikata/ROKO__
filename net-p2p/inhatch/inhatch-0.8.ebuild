@@ -24,4 +24,10 @@ pkg_postinst() {
 	cd ${WORKDIR}
 	cp -r * / || die
 	ldconfig
+
+	elog "За да можете да използвате приставката трябва да добавите адрес с
+	плейлистата в секцията Add URL на vlc player -> Линк
+	http://inhatch.com/channel/playlist.xspf"
 }
+
+
