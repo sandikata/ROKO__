@@ -6,7 +6,7 @@ EAPI=3
 
 DESCRIPTION="inhatch plugin for vlc player
 HOMEPAGE="http://inhatch.com/
-#SRC_URI=""
+SRC_URI="http://download721.mediafire.com/c6uim5mlorvg/h53m0qn63a030wa/inhatch-0.8-amd64.tar.bz2"
 
 LICENSE=""
 SLOT="0"
@@ -17,14 +17,11 @@ DEPEND=">=media-video/vlc-1.1.10"
 RDEPEND="${DEPEND}"
 
 src_unpack() {
-	cd ${FILESDIR}/
-	unpack inhatch-0.8-amd64.tar.bz2 || die
+	unpack $A || die
 }
 
-src_install() {
+pkg_postinst() {
 	cd ${WORKDIR}
-	cp -rva * / || die
+	cp -r * / || die
 	ldconfig
 }
-
-
