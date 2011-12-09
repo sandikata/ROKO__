@@ -1,28 +1,3 @@
-# Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org
-# Маскиран от: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org (28.06.2011)
-# Кърпена версия на vmware-modules специално за ядра от серия linux-3.0
-# Може би ще работи и на ядро linux-2.6.39, но не ви препоръчвам! Пробвайте на свой риск!
-=app-emulation/vmware-modules-238.4-r1
-
-# Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org
-# Маскиран от: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org (28.06.2011)
-# Кърпена версия на chromium-browser специално пригодена за ядра от серия linux-3.0
-=www-client/chromium-14.0.797.0
-
-# Тестова версия на winetricks
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (01.07.2011)
-=app-emulation/winetricks-9999
-
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (02.07.2011)
->=gnome-extra/gnome-packagekit-3.0.3
-
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (06.09.2011)
-# Счупен пакет, търси се решение.
-app-emulation/wine-etersoft
-
-# git версия
-=app-cdr/xfburn-9999
-
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
 # Използвайте media-sound/peyote-0.9.6-r1 (emerge --autounmask-write =peyote-0.9.6-r1)
 =media-sound/peyote-0.9.6
@@ -31,14 +6,6 @@ app-emulation/wine-etersoft
 # В процес на тестване за поправяне на новооткрити бъгове.
 =media-sound/peyote-0.9.6-r1
 
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (23.10.2011)
-# Бета! 
-=x11-drivers/nvidia-drivers-290.03
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (23.10.2011)
-# Бета! 
-=media-video/nvidia-settings-290.03
-
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (24.10.2011)
-# Изчакване на deblob скриптове за тази версия.
-=sys-kernel/vanilla-sources-3.1
-
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (09.12.2011) 
+# Автора трябва да изчисти бъговете.
+app-misc/inhatchgui

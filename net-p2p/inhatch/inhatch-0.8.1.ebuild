@@ -21,7 +21,8 @@ unpack $A || die
 }
 
 src_install() {
-cp -R "${WORKDIR}" "${D}/" || die "install failed"
+cd "${WORKDIR}"
+cp -R * "${D}/" || die "install failed"
 eldconfig
 
 elog "За да можете да използвате приставката трябва да добавите адрес с плейлистата в секцията Add URL на vlc player -> Линк http://inhatch.com/channel/playlist.xspf"
