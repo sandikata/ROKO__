@@ -1,0 +1,151 @@
+#!/bin/bash
+ans=$(zenity  --title="Inhatch 0.8 Телевизия" --list  --width=415 --height=495 --text "Изберете Канал" --radiolist  --column "Избор" --column "Канали" FALSE "БНТ1" FALSE "БТВ" FALSE "НОВА ТВ" FALSE "ТВ 7" FALSE "БТВ Екшън" FALSE "БТВ Комеди" FALSE "БТВ Синема" FALSE "Диема" FALSE "Fox Life" FALSE "Fox Crime" FALSE "AXN" FALSE "Cartoon Network" FALSE "National Geographic" FALSE "Discovery" FALSE "Eurosport" FALSE "Изключи Телевизора" --separator=":")
+
+arr=$(echo $ans | tr "\:" "\n")
+clear
+for x in $arr
+do
+
+   if [ $x = "БНТ_Канал1" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "БНТ Канал1"
+      killall vlc
+                vlc intp://bnt_hq ; inhatchgui
+   fi
+   if [ $x = "БТВ" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "БТВ"
+      killall vlc
+                vlc intp://btv_lo ; inhatchgui
+   fi
+   if [ $x = "НОВА_ТВ" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "НОВА ТВ"
+      killall vlc           
+                vlc intp://nova_lo ; inhatchgui
+   fi
+
+   if [ $x = "ТВ_7" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "ТВ 7"
+      killall vlc               
+                vlc intp://tv7_lo ; inhatchgui
+        fi
+
+   if [ $x = "БТВ–Екшън" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "БТВ Екшън"
+      killall vlc               
+                vlc intp://tv2_lo ; inhatchgui
+        fi
+
+   if [ $x = "БТВ–Комеди" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "БТВ Комеди"
+      killall vlc                 
+                vlc intp://btvcomedy_lo ; inhatchgui
+        fi
+
+   if [ $x = "БТВ–Синема" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "БТВ Синема"
+      killall vlc               
+                vlc intp://btvcinema_lo ; inhatchgui
+        fi
+
+   if [ $x = "Диема" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Диема"
+      killall vlc                 
+                vlc intp://bbt_lo ; inhatchgui
+        fi
+
+   if [ $x = "Fox_Life" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Fox Life"
+      killall vlc                 
+                vlc intp://foxlife_lo ; inhatchgui
+        fi
+
+   if [ $x = "Fox_Crime" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Fox Crime"
+      killall vlc               
+                vlc intp://foxcrime_lo ; inhatchgui
+        fi
+
+   if [ $x = "AXN" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "AXN"
+      killall vlc               
+                vlc intp://axn_lo ; inhatchgui
+        fi
+
+   if [ $x = "Cartoon_Network" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Cartoon Network"
+      killall vlc               
+                vlc intp://diva_lo ; inhatchgui
+        fi
+
+   if [ $x = "National_Geographic" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "National Geographic"
+      killall vlc               
+                vlc intp://tv1000_lo ; inhatchgui
+
+        fi
+
+   if [ $x = "Discovery" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Discovery"
+      killall vlc
+                vlc intp://discovery_lo ; inhatchgui
+   fi
+
+        if [ $x = "Eurosport" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Eurosport"
+      killall vlc
+                vlc intp://eurosport_lo ; inhatchgui
+   fi
+
+        if [ $x = "Изключи_ТВ" ]
+   then
+      echo "=================================================="
+      echo -e $RED"Inhatch TV"$ENDCOLOR
+      /usr/bin/notify-send "Изключване ТВ"
+      killall vlc
+
+   fi
+done
