@@ -6,14 +6,15 @@ EAPI=3
 
 DESCRIPTION="inhatch plugin for vlc player"
 HOMEPAGE="http://inhatch.com/"
-SRC_URI="http://199.91.153.209/lcfltm089v1g/3oxkqy78kioeayv/inhatch-0.8-1-amd64.tar.bz2"
+SRC_URI="http://199.91.153.198/ur7ikdc19ggg/awtpi5dgxyf6994/inhatch-0.8.1-amd64.tar.bz2"
 
 LICENSE=""
 SLOT="0"
 KEYWORDS="amd64"
 IUSE=""
 
-DEPEND=">=media-video/vlc-1.1.10"
+DEPEND=">=media-video/vlc-1.1.10
+		>=app-misc/inhatchgui-0.1"
 RDEPEND="${DEPEND}"
 
 src_unpack() {
