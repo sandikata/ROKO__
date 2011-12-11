@@ -10,7 +10,7 @@ SRC_URI="http://199.91.153.198/ur7ikdc19ggg/awtpi5dgxyf6994/inhatch-0.8.1-amd64.
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="amd64 x86"
+KEYWORDS="amd64"
 IUSE=""
 
 DEPEND=">=media-video/vlc-1.1.10
