@@ -10,7 +10,7 @@ SRC_URI=""
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="**"
 IUSE=""
 
 DEPEND=">=net-p2p/inhatch-0.8

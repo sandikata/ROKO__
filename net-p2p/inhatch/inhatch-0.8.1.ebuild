@@ -9,8 +9,8 @@ HOMEPAGE="http://inhatch.com/"
 SRC_URI="http://199.91.153.198/ur7ikdc19ggg/awtpi5dgxyf6994/inhatch-0.8.1-amd64.tar.bz2"
 
 LICENSE=""
-SLOT="0"
-KEYWORDS="amd64"
+SLOT="testing"
+KEYWORDS="**"
 IUSE=""
 
 DEPEND=">=media-video/vlc-1.1.10
