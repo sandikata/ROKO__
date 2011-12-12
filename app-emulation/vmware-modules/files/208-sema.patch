@@ -1,6 +1,7 @@
-diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmci-only/include/compat_semaphore.h vmware-modules-1.0.0.25-r2/work/vmci-only/include/compat_semaphore.h
---- vmware-modules-1.0.0.25-r2.orig/work/vmci-only/include/compat_semaphore.h	2011-01-11 21:55:57.016999997 +0100
-+++ vmware-modules-1.0.0.25-r2/work/vmci-only/include/compat_semaphore.h	2011-01-11 21:57:39.719999997 +0100
+diff --git a/vmci-only/include/compat_semaphore.h b/vmci-only/include/compat_semaphore.h
+index f5527b9..bc37afd 100644
+--- a/vmci-only/include/compat_semaphore.h
++++ b/vmci-only/include/compat_semaphore.h
 @@ -45,5 +45,13 @@
     #endif
  #endif
@@ -15,9 +16,10 @@ diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmci-only/include/compat_semaphore
 +#endif
  
  #endif /* __COMPAT_SEMAPHORE_H__ */
-diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmmon-only/include/compat_semaphore.h vmware-modules-1.0.0.25-r2/work/vmmon-only/include/compat_semaphore.h
---- vmware-modules-1.0.0.25-r2.orig/work/vmmon-only/include/compat_semaphore.h	2011-01-11 21:55:57.028999997 +0100
-+++ vmware-modules-1.0.0.25-r2/work/vmmon-only/include/compat_semaphore.h	2011-01-11 21:58:57.529999998 +0100
+diff --git a/vmmon-only/include/compat_semaphore.h b/vmmon-only/include/compat_semaphore.h
+index f5527b9..bc37afd 100644
+--- a/vmmon-only/include/compat_semaphore.h
++++ b/vmmon-only/include/compat_semaphore.h
 @@ -45,5 +45,13 @@
     #endif
  #endif
@@ -32,9 +34,10 @@ diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmmon-only/include/compat_semaphor
 +#endif
  
  #endif /* __COMPAT_SEMAPHORE_H__ */
-diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/compat_semaphore.h vmware-modules-1.0.0.25-r2/work/vmnet-only/compat_semaphore.h
---- vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/compat_semaphore.h	2011-01-11 21:55:57.022999997 +0100
-+++ vmware-modules-1.0.0.25-r2/work/vmnet-only/compat_semaphore.h	2011-01-11 21:58:23.678999996 +0100
+diff --git a/vmnet-only/compat_semaphore.h b/vmnet-only/compat_semaphore.h
+index f5527b9..548782d 100644
+--- a/vmnet-only/compat_semaphore.h
++++ b/vmnet-only/compat_semaphore.h
 @@ -45,5 +45,14 @@
     #endif
  #endif
@@ -50,10 +53,11 @@ diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/compat_semaphore.h vmwa
 +
  
  #endif /* __COMPAT_SEMAPHORE_H__ */
-diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/vnetFilter.h vmware-modules-1.0.0.25-r2/work/vmnet-only/vnetFilter.h
---- vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/vnetFilter.h	2011-01-11 21:55:57.020999997 +0100
-+++ vmware-modules-1.0.0.25-r2/work/vmnet-only/vnetFilter.h	2011-01-11 22:02:29.522999997 +0100
-@@ -203,5 +203,13 @@
+diff --git a/vmnet-only/vnetFilter.h b/vmnet-only/vnetFilter.h
+index fe5c71f..303009f 100644
+--- a/vmnet-only/vnetFilter.h
++++ b/vmnet-only/vnetFilter.h
+@@ -203,5 +203,13 @@ struct VNet_SetLogLevel {
  } 
  #include "vmware_pack_end.h"
  VNet_SetLogLevel;
@@ -67,10 +71,11 @@ diff -ru vmware-modules-1.0.0.25-r2.orig/work/vmnet-only/vnetFilter.h vmware-mod
 +#endif
  
  #endif // ifndef _VNETFILTER_H_
-diff -ru vmware-modules-1.0.0.25-r2.orig/work/vsock-only/linux/af_vsock.h vmware-modules-1.0.0.25-r2/work/vsock-only/linux/af_vsock.h
---- vmware-modules-1.0.0.25-r2.orig/work/vsock-only/linux/af_vsock.h	2011-01-11 21:55:57.040999997 +0100
-+++ vmware-modules-1.0.0.25-r2/work/vsock-only/linux/af_vsock.h	2011-01-11 22:03:59.066999997 +0100
-@@ -88,4 +88,14 @@
+diff --git a/vsock-only/linux/af_vsock.h b/vsock-only/linux/af_vsock.h
+index 3a8a0ce..d36b2ae 100644
+--- a/vsock-only/linux/af_vsock.h
++++ b/vsock-only/linux/af_vsock.h
+@@ -88,4 +88,14 @@ typedef struct VSockVmciSock {
  #endif
  } VSockVmciSock;
  

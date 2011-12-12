@@ -1,8 +1,8 @@
 diff --git a/vmmon-only/linux/driver.c b/vmmon-only/linux/driver.c
-index 3cd4923..0d4f6df 100644
+index bf93446..022e856 100644
 --- a/vmmon-only/linux/driver.c
 +++ b/vmmon-only/linux/driver.c
-@@ -170,6 +170,7 @@ static int LinuxDriver_Open(struct inode *inode, struct file *filp);
+@@ -169,6 +169,7 @@ static int LinuxDriver_Open(struct inode *inode, struct file *filp);
  static int LinuxDriver_Ioctl(struct inode *inode, struct file *filp,
                             u_int iocmd, unsigned long ioarg);
  #if defined(HAVE_UNLOCKED_IOCTL) || defined(HAVE_COMPAT_IOCTL)
@@ -11,10 +11,10 @@ index 3cd4923..0d4f6df 100644
                             u_int iocmd, unsigned long ioarg);
  #endif
 diff --git a/vmmon-only/linux/hostif.c b/vmmon-only/linux/hostif.c
-index c83628d..eb4a707 100644
+index 8104878..02bb71c 100644
 --- a/vmmon-only/linux/hostif.c
 +++ b/vmmon-only/linux/hostif.c
-@@ -3411,7 +3413,7 @@ HostIFDoIoctl(struct file *filp,
+@@ -3411,7 +3411,7 @@ HostIFDoIoctl(struct file *filp,
     if (filp->f_op->unlocked_ioctl) {
        return filp->f_op->unlocked_ioctl(filp, iocmd, ioarg);
     }
@@ -23,7 +23,7 @@ index c83628d..eb4a707 100644
     if (filp->f_op->ioctl) {
        long err;
  
-@@ -3420,6 +3422,7 @@ HostIFDoIoctl(struct file *filp,
+@@ -3420,6 +3420,7 @@ HostIFDoIoctl(struct file *filp,
        unlock_kernel();
        return err;
     }
