@@ -1,0 +1,35 @@
+    #!/bin/bash
+    # Автор: Росен Александров (и благодарности към gat3way)
+    # За мен: roko@jabber.calculate-linux.org , sandikata@yandex.ru, Скайп ROKO__2
+    # Важно за да работи правилно скрипта трябва да го поставите в /usr/local/bin както и да имате инсталиран пакет "pv", поне в AltLinux се казва така.
+     
+    if [ `id -u` -ne 0 ] ;
+    then
+    exec notify-send -t 10000 "Нямате администраторски права! Стартирайте скрипта като администратор или със sudo dd-flash" ; exit 1
+    fi
+     
+    echo "За да можете да създадете Жив флаш диск трябва да го поставите в USB порта на компютъра, като флаш диска не трябва да е монтиран!"
+    echo
+    echo "Пълен път до ISO (Пример /home/user/Загрузки/iso.iso)"
+    read iso
+     
+    while ! [ -s $iso ]; do
+    printf "Избрания файл не съществува. Моля изберете съществуващ.  ->  "
+    read iso
+    done
+    echo
+    while ! fdisk -s $flash &>/dev/null; do
+       printf "Въведете съществуващ флаш диск. Пример /dev/sdc  ->  "
+    read flash
+    done
+    echo
+    echo "Операцията ще унищожи информацията на вашия флаш диск!"
+    echo "Сигурни ли сте че искате да продължите?"
+    select yn in "Да" "Не"; do
+    case $yn in
+    # Разкоменирайте този ред ако искате по-кратка информация за трансфера Да ) dd if=$iso | pv -ptr -N $iso | dd of=$flash ;;
+    Да ) dd if=$iso | pv -ptrs `du -csh $iso 2>/dev/null|tail -n1|awk '{print $1}'` | dd of=$flash ; exit 1 ;;
+    Не ) exit;;
+    esac
+    done
+     
