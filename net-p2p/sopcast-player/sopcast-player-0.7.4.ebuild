@@ -23,7 +23,7 @@ RDEPEND="${DEPEND}"
 
 src_install() {
 	cd "${WORKDIR}"
-	cp -R "${D}/"
+	cp -R * "${D}/"
 	elog "При проблеми с плейъра се обръщайте към sopcast@support!"
 	echo
 }
