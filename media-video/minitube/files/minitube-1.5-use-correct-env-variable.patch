@@ -1,0 +1,11 @@
+--- src/MediaView.cpp	2011-08-06 14:34:20.613150591 +0200
++++ src/MediaView.cpp	2011-08-06 14:34:32.549001370 +0200
+@@ -347,7 +347,7 @@
+ 
+     QString tempDir = QDesktopServices::storageLocation(QDesktopServices::TempLocation);
+ #ifdef Q_WS_X11
+-    QString tempFile = tempDir + "/minitube-" + getenv("USERNAME") + ".mp4";
++    QString tempFile = tempDir + "/minitube-" + getenv("USER") + ".mp4";
+ #else
+     QString tempFile = tempDir + "/minitube.mp4";
+ #endif
