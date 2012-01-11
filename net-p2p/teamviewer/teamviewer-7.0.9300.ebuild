@@ -6,11 +6,11 @@ EAPI=3
 
 DESCRIPTION="Remote Desktop Viewer"
 HOMEPAGE="http://teamviewer.com/"
-SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/teamviewer-6.0.9258-1-x86_64.pkg.tar.xz"
+SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/teamviewer-7.0.9300.tar.bz2"
 
 LICENSE=""
-SLOT="stable"
-KEYWORDS="amd64"
+SLOT="unstable"
+KEYWORDS="~amd64"
 IUSE=""
 
 DEPEND=">=x11-base/xorg-server-1.10"
