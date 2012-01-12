@@ -13,7 +13,7 @@ SLOT="0"
 KEYWORDS="~amd64"
 IUSE=""
 
-DEPEND=">=net-p2p/skype-2.2"
+DEPEND=">=net-im/skype-2.2.0.25"
 RDEPEND="${DEPEND}"
 
 src_install(){
