@@ -62,7 +62,7 @@ src_unpack() {
 ### BRANCH APPLY ###
 
 	epatch "${FILESDIR}"/"${PVR}"/linux-2.6-makefile-after_link.patch
-
+	epatch "${FILESDIR}/4200_fbcondecor-0.9.6.patch"
 	epatch "${FILESDIR}"/"${PVR}"/taint-vbox.patch
 
 # Architecture patches
