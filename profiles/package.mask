@@ -9,3 +9,5 @@
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (11.12.2011) 
 # Скоро ще бъде премахнат. Използвайте net-p2p/inhatch в него е вграден графичния интерфейс.
 app-misc/inhatchgui
+
+=app-emulation/vmware-modules-264.1-r99

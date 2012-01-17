@@ -1,0 +1,12 @@
+diff -up compat-wireless-2011-12-01/Makefile.orig compat-wireless-2011-12-01/Makefile
+--- compat-wireless-2011-12-01/Makefile.orig	2011-12-14 09:10:01.377297637 -0500
++++ compat-wireless-2011-12-01/Makefile	2011-12-14 09:47:36.834100534 -0500
+@@ -68,7 +68,7 @@ all: modules
+ 
+ modules: $(CREL_CHECK)
+ 	@./scripts/check_config.sh
+-	$(MAKE) -C $(KLIB_BUILD) M=$(PWD) modules
++	$(MAKE) -C $(KLIB_BUILD) M=$(PWD) INTEGRATED_BUILD=1 modules
+ 	@touch $@
+ 
+ bt: $(CREL_CHECK)
