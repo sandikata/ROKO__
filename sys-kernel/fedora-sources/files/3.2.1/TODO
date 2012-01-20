@@ -1,0 +1,14 @@
+Config TODOs:
+* At some point disable CONFIG_ISA everywhere. F17 ?
+
+
+Spec file TODOs:
+
+* modules-extra: Do a few more things to make it a bit more robust.
+  - Allow for comments in the mod-extra.list file.
+  - Don't fail the build if a module is listed but not built (maybe).
+  - See if it can be tied into Kconfig instead of module names.
+
+* investigate gzip modules. Everything should support this now?
+  Looks like about 70M savings per kernel installed.
+

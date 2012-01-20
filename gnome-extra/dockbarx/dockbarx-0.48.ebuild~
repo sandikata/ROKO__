@@ -22,8 +22,7 @@ RDEPEND="
 	dev-python/gnome-applets-python
 	dev-python/gnome-vfs-python
 	dev-python/libwnck-python
-	dev-libs/keybinder
-	dev-python/pyxdg"
+	dev-libs/keybinder"
 DEPEND="awn? ( gnome-extra/avant-window-navigator )"
 
 S="${WORKDIR}/${P/-/_}"

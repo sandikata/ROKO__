@@ -1,0 +1,226 @@
+#!/bin/bash
+
+FC=($(fedpkg verrel | awk -F. '{print $NF}'))
+
+SRC=($(ls config-* 2>/dev/null))
+
+TGT=($(ls kernel-*.$FC/linux-*.noarch/configs/kernel-*-*.config \
+          kernel-*.$FC/linux-*.noarch/configs/kernel-*-*-debug.config 2>/dev/null))
+TGT1=(${TGT[*]#kernel-*.$FC/linux-*.noarch/configs/kernel-*-})
+
+ALL_OPTS="cdfimn"
+
+if [ $# -lt 2 ] ; then
+   echo -e "Usage:\n   $(basename $0) [-$ALL_OPTS] input target\n"
+   echo -e " Sort input config file into the same order as the target\n"
+   echo -e "      -c: insert comments about non-matching/impossible items"
+   echo -e "      -d: show raw unsorted output with extra debug text"
+   echo -e "      -f: force output to match what is in the target config,"
+   echo -e "          and/or remove impossible config items"
+   echo -e "      -i: find impossible config items"
+   echo -e "      -m: find changed config items"
+   echo -e "      -n: do not sort output\n"
+   echo -e "   input: source config file" ' [' "${SRC[*]#config-}" ']\n'
+   echo -e "  target: output arch name" ' [' "${TGT1[*]%.config}" ']\n'
+   exit 1
+fi
+
+while getopts "$ALL_OPTS" OPTION ; do
+case $OPTION in
+c)
+   ADDCOMMENT=1 ;;
+d)
+   DEBUG=1 ;;
+f)
+   FORCE=1 ;;
+i)
+   FIND_IMPOSS=1 ;;
+m)
+   FIND_CHANGED=1 ;;
+n)
+   NOSORT=1 ;;
+\?)
+   exit 2 ;;
+esac
+done
+
+if [ "$FORCE" -a "$ADDCOMMENT" ] ; then
+	echo "-f and -c options cannot be used together"
+	exit 2
+fi
+
+shift $((OPTIND-1))
+
+TEMPFILES="xx00 xx01 xx98 xx99"
+TEMPLEFT=
+for FILE in $TEMPFILES ; do
+   [ -f "$FILE" ] && TEMPLEFT="Y"
+done
+if [ "$TEMPLEFT" ] ; then
+   echo "WARNING! Output files named xx?? already exist." >&2
+   read -p "Press <Enter> to erase files, or Ctrl-C to exit..."
+   echo >&2
+fi
+rm -f $TEMPFILES
+
+SRCFILE=config-$1
+[ ! -f $SRCFILE ] && echo "Input file" $SRCFILE "missing" && exit 2
+
+TGTFILE=kernel-*.$FC/linux-*.noarch/configs/kernel-*-$2.config
+[ ! -f $TGTFILE ] && echo "No target file matching" $TGTFILE "exists" && exit 2
+
+[ "$FIND_IMPOSS" ] && \
+   find kernel-*.$FC/*.noarch -name Kconfig\* -type f \
+   | xargs egrep -s -h '^[[:space:]]*(menu)?config[[:space:]]+' \
+   | sed -r 's/^[[:space:]]*(menu)?config[[:space:]]+/CONFIG_/' \
+   | sort | uniq >xx98
+
+extract_optname() {
+         # extract the option name from $TEXT, setting $OPTNAME
+         OPTNAME=
+         if [ "${TEXT:0:7}" = "CONFIG_" ] ; then
+            OPTNAME=${TEXT%%=*}
+         elif [ "${TEXT:0:9}" = "# CONFIG_" ] ; then
+            OPTNAME=${TEXT%" is not set"}
+            OPTNAME=${OPTNAME#\# }
+         fi
+}
+
+print_saved_comments() {
+      if [ $IX -gt 0 ] ; then
+         [ "$DEBUG" ] && echo "            ->" $IX "comments were saved"
+         (( IX-- ))
+         for IX in $(seq 0 $IX) ; do
+            echo "$LINE":"${SAVECOMMENT[$IX]}"
+         done
+         unset SAVECOMMENT
+         IX=0
+      fi
+}
+
+assign_line_number() {
+      # use input line numbers if not sorting
+      [ "$NOSORT" ] && LINE=$IN
+      # make sure it has a line number
+      [ -z "$LINE" ] && LINE=999999
+}
+
+IX=0
+IN=0
+declare -a SAVECOMMENT
+
+cat ${SRCFILE} | {
+while read TEXT ; do
+
+   LINE=
+   COMMENT=
+
+   # replace empty lines
+   [ -z "$TEXT" ] && TEXT='//'
+
+   if [ "${TEXT:0:7}" = "CONFIG_" -o "${TEXT:0:9}" = "# CONFIG_" ] ; then
+
+      LINE=$(grep -n "^$TEXT" $TGTFILE | head -1 | cut -f 1 -d ':')
+      if [ -z "$LINE" ] ; then
+         [ "$DEBUG" ] && echo "nofind      ->" "$TEXT"
+
+         extract_optname
+         if [ "$OPTNAME" ] ; then
+
+            if [ "$FIND_CHANGED" ] ; then
+               for FINDTEXT in "^${OPTNAME}=" "^# ${OPTNAME} is not set" ; do
+                  if [ -z "$LINE" ] ; then
+                     [ "$DEBUG" ] && echo "looking for ->" "$FINDTEXT"
+                     LINE=$(grep -n "$FINDTEXT" $TGTFILE | head -1 | cut -f 1 -d ':')
+                     if [ "$LINE" ] ; then
+                        CHANGED=$(grep "$FINDTEXT" $TGTFILE | head -1)
+                        if [ "$FORCE" ] ; then
+                           TEXT=$CHANGED
+                           [ "$DEBUG" ] && echo 'forced      ->' "$TEXT"
+                        else
+                           if [ "$ADDCOMMENT" ] ; then
+                              if [ ${CHANGED:0:1} = '#' ] ; then
+                                 NEWOPT="not set"
+                              else
+                                 NEWOPT=${CHANGED#$OPTNAME}
+                              fi
+                              COMMENT="# -- Next option changed to \"${NEWOPT}\" at target line $LINE --"
+                           fi
+                        fi
+                     fi
+                  fi
+               done
+            fi
+
+            if [ "$FIND_IMPOSS" -a -z "$LINE" -a -z "$COMMENT" ] ; then
+               POSSIBLE=$(grep -n "^$OPTNAME" xx98)
+               if [ -z "$POSSIBLE" ] ; then
+                  if [ "$ADDCOMMENT" ] ; then
+                     COMMENT="# -- Next option is impossible --"
+                  elif [ "$FORCE" ] ; then
+                     [ "$DEBUG" ] && echo 'impossible  ->' "$TEXT"
+                     TEXT=""
+                  fi
+               fi
+            fi
+
+         fi
+
+      fi
+
+   else
+      # not a config variable
+      COMMENT="$TEXT"
+      TEXT=
+   fi
+
+   [ "$DEBUG" -a "$COMMENT" ] && echo "comment     ->" "$LINE" "$COMMENT"
+   [ "$DEBUG" -a "$TEXT" ]    && echo "text        ->" "$LINE" "$TEXT"
+
+   if [ "$TEXT" ] ; then
+
+      assign_line_number
+
+      # print the saved comments first
+      print_saved_comments
+      # now print the latest comment and text
+      [ "$COMMENT" ] && echo "$LINE":"$COMMENT"
+      echo "$LINE":"$TEXT"
+
+   elif [ "$COMMENT" ] ; then
+
+      # no output yet, save the comment
+      SAVECOMMENT[$IX]="$COMMENT"
+      let IX++
+      [ "$DEBUG" ] && echo 'savecomment (#'${IX}')'
+
+   fi
+
+   let IN++
+
+done
+# flush the buffers
+assign_line_number
+print_saved_comments
+[ "$DEBUG" ] && echo "$IN lines read from input"
+} >xx99
+
+if [ "$DEBUG" ] ; then
+   # just show the raw output with debug info, then exit
+   cat xx99
+else
+
+   # split output into two files, for matched and unmatched items
+   cat xx99 | sort -s -t ":" -k 1g | csplit -k -s - /^999999/ 2>/dev/null
+
+   cat xx00 | cut -f 2- -d ':' | sed 's/^\/\/$//'
+   if [ -s xx01 ] ; then
+      echo
+      echo '# ------------  UNMATCHED OPTIONS  ------------'
+      echo
+      cat xx01 | cut -f 2- -d ':' | sed 's/^\/\/$//'
+   fi
+
+fi
+
+rm -f $TEMPFILES
