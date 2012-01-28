@@ -9,7 +9,7 @@ inherit kde4-base
 CONTENT_NUMBER="144808"
 
 
-DESCRIPTION="Yes, Yet another systemmonitor plasmoid. But still different from the others"
+DESCRIPTION="Жалко копие на dockbarx."
 HOMEPAGE="http://www.kde-look.org/content/show.php?content=${CONTENT_NUMBER}"
 LICENSE="GPL"
 
