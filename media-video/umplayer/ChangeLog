@@ -1,0 +1,15 @@
+# ChangeLog for media-video/umplayer
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  24 Sep 2011; Michał Ziąbkowski <mziab@o2.pl> umplayer-9999.ebuild,
+  +files/umplayer-unbundle-quazip.patch:
+  Unbundled quazip like in smplayer's portage bump. Built fine without it,
+  though.
+
+*umplayer-9999 (16 Jul 2011)
+
+  16 Jul 2011; Michał Ziąbkowski <mziab@o2.pl> +umplayer-9999.ebuild,
+  +metadata.xml:
+  New ebuild.
+

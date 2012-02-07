@@ -1,0 +1,90 @@
+Index: src/umplayer.pro
+===================================================================
+--- src/umplayer.pro	(wersja 180)
++++ src/umplayer.pro	(kopia robocza)
+@@ -340,30 +340,14 @@
+     translations/umplayer_vi_VN.ts \
+     translations/umplayer_et.ts
+ contains( DEFINES, DOWNLOAD_SUBS ) { 
+-    INCLUDEPATH += findsubtitles/filedownloader \
+-        findsubtitles/quazip
+-    DEPENDPATH += findsubtitles/filedownloader \
+-        findsubtitles/quazip
++    INCLUDEPATH += findsubtitles/filedownloader
++    DEPENDPATH += findsubtitles/filedownloader
+     HEADERS += filedownloader.h \
+         subchooserdialog.h
+     SOURCES += filedownloader.cpp \
+         subchooserdialog.cpp
+     FORMS += subchooserdialog.ui
+-    HEADERS += crypt.h \
+-        ioapi.h \
+-        quazip.h \
+-        quazipfile.h \
+-        quazipfileinfo.h \
+-        quazipnewinfo.h \
+-        unzip.h \
+-        zip.h
+-    SOURCES += ioapi.c \
+-        quazip.cpp \
+-        quazipfile.cpp \
+-        quazipnewinfo.cpp \
+-        unzip.c \
+-        zip.c
+-    LIBS += -lz
++    LIBS += -lz -lquazip
+     win32 { 
+         INCLUDEPATH += c:\\development\\zlib-1.2.3
+         LIBS += -Lc:\\development\\zlib-1.2.3
+Index: src/findsubtitles/findsubtitleswindow.cpp
+===================================================================
+--- src/findsubtitles/findsubtitleswindow.cpp	(wersja 180)
++++ src/findsubtitles/findsubtitleswindow.cpp	(kopia robocza)
+@@ -36,8 +36,8 @@
+ #ifdef DOWNLOAD_SUBS
+ #include "filedownloader.h"
+ #include "subchooserdialog.h"
+-#include "quazip.h"
+-#include "quazipfile.h"
++#include <quazip/quazip.h>
++#include <quazip/quazipfile.h>
+ #include <QTemporaryFile>
+ #include <QBuffer>
+ #endif
+Index: src/findsubtitles/findsubtitles.pro
+===================================================================
+--- src/findsubtitles/findsubtitles.pro	(wersja 180)
++++ src/findsubtitles/findsubtitles.pro	(kopia robocza)
+@@ -28,30 +28,14 @@
+ DEFINES += NO_SMPLAYER_SUPPORT DOWNLOAD_SUBS
+ 
+ contains( DEFINES, DOWNLOAD_SUBS ) {
+-	INCLUDEPATH += filedownloader quazip
+-	DEPENDPATH += filedownloader quazip
++	INCLUDEPATH += filedownloader
++	DEPENDPATH += filedownloader
+ 
+ 	HEADERS += filedownloader.h subchooserdialog.h
+ 	SOURCES += filedownloader.cpp subchooserdialog.cpp
+ 
+ 	FORMS += subchooserdialog.ui
+ 
+-	HEADERS += crypt.h \
+-	           ioapi.h \
+-	           quazip.h \
+-	           quazipfile.h \
+-	           quazipfileinfo.h \
+-	           quazipnewinfo.h \
+-	           unzip.h \
+-	           zip.h
+-
+-	SOURCES += ioapi.c \
+-	           quazip.cpp \
+-	           quazipfile.cpp \
+-	           quazipnewinfo.cpp \
+-	           unzip.c \
+-	           zip.c
+-
+ 	LIBS += -lz
+ 	
+ 	win32 {
