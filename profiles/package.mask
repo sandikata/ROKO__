@@ -11,3 +11,7 @@
 app-misc/inhatchgui
 
 =app-emulation/vmware-modules-264.1-r99
+
+# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (11.12.2011)
+# Работи, но маскиран като тестов пакет от git live build
+=media-sound/pnmixer-9999
