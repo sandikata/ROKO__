@@ -12,7 +12,7 @@ EGIT_REPO_URI="git://github.com/nicklan/pnmixer.git"
 
 LICENSE=""
 SLOT="unstable"
-KEYWORDS="**"
+KEYWORDS="~amd64 ~x86"
 IUSE="alsa pulseaudio"
 
 DEPEND=">=x11-libs/gtk+-2.24
