@@ -11,7 +11,7 @@ SRC_URI=""
 EGIT_REPO_URI="git://github.com/nicklan/pnmixer.git"
 
 LICENSE=""
-SLOT="unstable"
+SLOT="testing"
 KEYWORDS="**"
 IUSE="alsa pulseaudio"
 
@@ -20,15 +20,11 @@ alsa? ( >=media-libs/alsa-lib-1.0.24 >=media-plugins/alsa-plugins-1.0.24 >=media
 pulseaudio? ( >=media-sound/pulseaudio-0.9.22 >=media-plugins/alsa-plugins-1.0.24[pulseaudio] )"
 RDEPEND="${DEPEND}"
 
-src_configure() {
-	./autogen.sh
-	econf || die "configure failed"
-}
-
-src_compile() {
-	emake || die "make failed"
+src_prepare() {
+	eautoreconf
 }
 
 src_install() {
-	einstall || die
+        emake DESTDIR="${D}/" install
 }
+
