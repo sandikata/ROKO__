@@ -1,0 +1,108 @@
+# ChangeLog for app-emulation/aqemu
+# Copyright 1999-2012 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  27 Oct 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru>
+  -aqemu-0.8.2-r1.ebuild, -files/aqemu-0.8.2_sigsev_propertis.patch:
+  drop old, in tree
+
+*aqemu-0.8.2-r1 (11 Sep 2011)
+
+  11 Sep 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru> -aqemu-0.8.2.ebuild,
+  +aqemu-0.8.2-r1.ebuild, +files/aqemu-0.8.2_sigsev_propertis.patch:
+  add patch from git - fix segfault
+
+  23 Aug 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru> aqemu-9999.ebuild:
+  fix depends in 9999
+
+  23 Aug 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru>
+  -aqemu-0.8.1-r2.ebuild:
+  drop old ebuild
+
+*aqemu-0.8.1-r2 (27 Jun 2011)
+
+  27 Jun 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru>
+  -aqemu-0.8.1-r1.ebuild, +aqemu-0.8.1-r2.ebuild:
+  fix depend on virtual/qemu
+
+  24 Jun 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru> -aqemu-0.8.1.ebuild:
+  proxy in main tree
+
+  23 Jun 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru> aqemu-0.8.1.ebuild:
+  stable on amd64 and x86
+
+  23 Jun 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru>
+  aqemu-0.8.1-r1.ebuild:
+  add confuitils block and bunp to EAPI4
+
+*aqemu-0.8.1-r1 (23 Jun 2011)
+
+  23 Jun 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru>
+  +aqemu-0.8.1-r1.ebuild:
+  spiced kvm in tree add spice use flag
+
+  10 May 2011; Andreis Vinogradovs <spamslepnoga@inbox.ru> aqemu-9999.ebuild:
+  migrate to git-2
+
+  24 Jan 2011; A. Vinogradov <spamslepnoga@inbox.ru> -aqemu-0.8.0.ebuild,
+  -aqemu-0.8.0-r1.ebuild:
+  drop old
+
+*aqemu-0.8.1 (24 Jan 2011)
+
+  24 Jan 2011; A. Vinogradov <spamslepnoga@inbox.ru> -aqemu-0.8.1_beta2.ebuild,
+  +aqemu-0.8.1.ebuild:
+  bump
+
+  05 Nov 2010; A. Vinogradov <spamslepnoga@inbox.ru> aqemu-0.8.0.ebuild,
+  +aqemu-0.8.1_beta2.ebuild, aqemu-9999.ebuild, metadata.xml:
+  drop USE linguas_ru
+
+  05 Nov 2010; A. Vinogradov <spamslepnoga@inbox.ru>
+  +aqemu-0.8.1_beta2.ebuild:
+  bump
+
+  13 Aug 2010; A. Vinogradov <spamslepnoga@inbox.ru> +aqemu-0.8.0-r1.ebuild:
+  add spice flag
+
+  13 Aug 2010; A. Vinogradov <spamslepnoga@inbox.ru> aqemu-9999.ebuild,
+  metadata.xml:
+  add spice USE in aqemu-9999 and depend it to app-emulation/qemu-kvm-spice
+
+  31 Jul 2010; A. Vinogradov <spamslepnoga@inbox.ru> -aqemu-0.7.3-r2.ebuild:
+  remove outdated ebuild
+
+*aqemu-0.8.0 ( 14 Jul 2010 )
+
+ 14 Jul 2010; A. Vinogradov <spamslepnoga@inbox.ru>
+  -aqemu-0.8_beta2.ebuild, +aqemu-0.8.0.ebuild:
+  nev reliase
+
+  14 Jul 2010; A. Vinogradov <spamslepnoga@inbox.ru>
+  -aqemu-0.8_beta2.ebuild:
+  delete beta ebuild
+
+  04 Jul 2010; <slep@gentoo.org> +aqemu-0.8_beta2.ebuild:
+  add new beta2 ebuild for testing
+
+  05 Apr 2010; A. Vinogradov <spamslepnoga@inbox.ru> aqemu-0.7.3-r2.ebuild,
+  aqemu-9999.ebuild:
+  fix ebuild code - add vnc use
+
+  05 Apr 2010; A. Vinogradov <spamslepnoga@inbox.ru> aqemu-0.7.3-r2.ebuild:
+  code clean
+
+  18 Jan 2010; A. Vinogradov <spamslepnoga@inbox.ru> -aqemu-0.7.3-r1.ebuild,
+  +aqemu-0.7.3-r2.ebuild:
+  fix .desktop file
+
+  19 Dec 2009; A. Vinogradov <spamslepnoga@inbox.ru> +aqemu-9999.ebuild:
+  add live ebuild
+
+  06 Dec 2009; A. Vinogradov <spamslepnoga@inbox.ru> -aqemu-0.7.3.ebuild,
+  +aqemu-0.7.3-r1.ebuild:
+  fix bad depend on app-emulation/kvm - replace to app-emulation/qemu-kvm
+
+  13 Oct 2009; A. Vinogradov <spamslepnoga@inbox.ru> +aqemu-0.7.3.ebuild:
+  recommit in my personal overlay
+
