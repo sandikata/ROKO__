@@ -12,7 +12,8 @@ SRC_URI="ftp://ftp.snt.utwente.nl/pub/games/${PN}/iourbanterror/source/complete/
 	ftp://ftp.snt.utwente.nl/pub/games/${PN}/UrbanTerror_${PV/./}_FULL.zip
 	http://files.uaaportal.com/gamefiles/current-version/UrbanTerror_${PV/./}_FULL.zip
 	http://upload.wikimedia.org/wikipedia/en/5/56/Urbanterror.svg
-	http://au1cdn.ausgamers.com:88/downloads/1315462884/UrbanTerror_41_FULL.zip"
+	http://au1cdn.ausgamers.com:88/downloads/1315462884/UrbanTerror_41_FULL.zip
+	http://au1cdn.ausgamers.com/downloads/1330355543/UrbanTerror_41_FULL.zip"
 LICENSE="freedist"
 SLOT="0"
 KEYWORDS="amd64 x86"
