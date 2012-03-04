@@ -1,0 +1,39 @@
+http://bugs.winehq.org/show_bug.cgi?id=14896
+
+diff --git a/dlls/dsound/sound3d.c b/dlls/dsound/sound3d.c
+index 2397f52..c18bc42 100644
+--- a/dlls/dsound/sound3d.c
++++ b/dlls/dsound/sound3d.c
+@@ -172,26 +172,27 @@ void DSOUND_Calc3DBuffer(IDirectSoundBufferImpl *dsb)
+ 	/* initial buffer volume */
+ 	lVolume = dsb->ds3db_lVolume;
+ 	
+-	switch (dsb->ds3db_ds3db.dwMode)
++/*switch (dsb->ds3db_ds3db.dwMode)
+ 	{
+ 		case DS3DMODE_DISABLE:
++*/
+ 			TRACE("3D processing disabled\n");
+ 			/* this one is here only to eliminate annoying warning message */
+ 			DSOUND_RecalcVolPan (&dsb->volpan);
+-			break;
++/*			break;
+ 		case DS3DMODE_NORMAL:
+ 			TRACE("Normal 3D processing mode\n");
+ 			/* we need to calculate distance between buffer and listener*/
+-			vDistance = VectorBetweenTwoPoints(&dsb->ds3db_ds3db.vPosition, &dsb->device->ds3dl.vPosition);
++/*			vDistance = VectorBetweenTwoPoints(&dsb->ds3db_ds3db.vPosition, &dsb->device->ds3dl.vPosition);
+ 			flDistance = VectorMagnitude (&vDistance);
+ 			break;
+ 		case DS3DMODE_HEADRELATIVE:
+ 			TRACE("Head-relative 3D processing mode\n");
+ 			/* distance between buffer and listener is same as buffer's position */
+-			flDistance = VectorMagnitude (&dsb->ds3db_ds3db.vPosition);
++/*			flDistance = VectorMagnitude (&dsb->ds3db_ds3db.vPosition);
+ 			break;
+ 	}
+-	
++*/	
+ 	if (flDistance > dsb->ds3db_ds3db.flMaxDistance)
+ 	{
+ 		/* some apps don't want you to hear too distant sounds... */
