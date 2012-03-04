@@ -39,6 +39,8 @@ src_unpack() {
 
 src_install() {
 	cd src
+	mv winetricks ${PN}
+	mv winetricks.1 ${PN}.1
 	dobin ${PN}
 	doman ${PN}.1
 }
