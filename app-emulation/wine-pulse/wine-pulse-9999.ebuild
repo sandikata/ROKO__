@@ -101,7 +101,8 @@ DEPEND="${RDEPEND}
 	!hardened? ( sys-devel/prelink )
 	dev-util/pkgconfig
 	virtual/yacc
-	sys-devel/flex"
+	sys-devel/flex
+	>=media-sound/pulseaudio-1.0"
 
 src_unpack() {
 	if use win64 ; then
