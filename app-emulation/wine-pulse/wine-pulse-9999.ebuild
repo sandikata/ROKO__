@@ -102,7 +102,8 @@ DEPEND="${RDEPEND}
 	dev-util/pkgconfig
 	virtual/yacc
 	sys-devel/flex
-	>=media-sound/pulseaudio-1.0"
+	>=media-sound/pulseaudio-1.0
+	!app-emulation/wine"
 
 src_unpack() {
 	if use win64 ; then
