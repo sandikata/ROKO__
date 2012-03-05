@@ -30,6 +30,10 @@ then notify-send -t 10000 "Вы не согласились, чтобы прод
 exit 0
 fi
 
+# USB/ISO детектор 
+# Автор: Joern Lindau
+# e-mail: joern.lindau@t-online.de
+# Лиценз: GPL - 2
 $DIALOG --title "Calculate USB Creator 0.1" --msgbox "Пожалуйста, отключите все USB устройства!" 0 0
 dmesg -c 1> /dev/null
 $DIALOG --title "Calculate USB Creator 0.1" --msgbox "Теперь подключите USB устройство, которое будет признано, это займет некоторое время." 0 0
@@ -45,10 +49,12 @@ usb=`$DIALOG --title "Выберите устройство." --radiolist "Calcu
 	:$5 "" off \
 	:$6 "Не трогайте здесь!" off 3>&1 1>&2 2>&3 | cut -c2-11`
 [ -z "$usb" ] ; 
+# USB/ISO Детектор
 
 # Образ
 iso=`$DIALOG --title "Calculate USB Creator 0.1 Выберите образ (ISO)" --fselect "/" 40 100 3>&1 1>&2 2>&3`
 [ -z "$iso" ] ; 
+
 
 # Продолжать
 $DIALOG --title "Calculate USB Creator 0.1" --msgbox "Вы выбрали устройство $usb" 0 0 0
