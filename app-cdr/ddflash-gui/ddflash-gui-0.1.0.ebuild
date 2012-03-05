@@ -2,22 +2,23 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=4
+EAPI=3
 
-DESCRIPTION="Графичен интерфейс към програмата ddflash"
+DESCRIPTION="Графический интерфейс программы ddflash"
 HOMEPAGE="https://github.com/sandikata/"
-SRC_URI=""
+SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/ddflash-gui-0.1.tar.xz"
 
 LICENSE=""
 SLOT="testing"
 KEYWORDS="~amd64 ~x86"
-IUSE="dialog xdialog"
+IUSE="dialog +xdialog"
 
 DEPEND="dialog? ( >=dev-util/dialog-1.1.20110707-r1 )
 	xdialog? ( >=x11-misc/xdialog-2.3.1 )"
 RDEPEND="${DEPEND}"
 
-pkg_postinst() {
-	cd "${FILESDIR}"
-	dobin ddflash-gui"
+src_install() {
+	cd "${WORKDIR}"
+	cp -R * "${D}/"
+	elog "Скоро будет стартером в меню."
 }
