@@ -3,6 +3,7 @@
 #jabber - roko@jabber.calculate-linux.org
 #e-mail - sandikata@yandex.ru
 #irc - irc.freenode.net/ROKO__
+#Лиценз: Эта программа защищена лицензией GPLv3!
 
 # Переменные
 XDIALOG=`find /bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -name Xdialog`
