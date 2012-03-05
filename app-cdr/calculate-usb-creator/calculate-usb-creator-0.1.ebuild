@@ -5,7 +5,7 @@
 EAPI=3
 inherit eutils
 
-DESCRIPTION=""
+DESCRIPTION="Инструмент для создания загрузочных USB FLASH."
 HOMEPAGE="https://github.com/sandikata/"
 SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/calculate-usb-creator-0.1.tar.xz"
 
