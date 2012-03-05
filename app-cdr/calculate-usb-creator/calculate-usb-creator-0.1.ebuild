@@ -12,10 +12,9 @@ SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/calculate-usb-creator-0.1
 LICENSE=""
 SLOT="stable"
 KEYWORDS="amd64 x86"
-IUSE="dialog +xdialog"
+IUSE=""
 
-DEPEND="dialog? ( >=dev-util/dialog-1.1.20110707-r1 )
-	xdialog? ( >=x11-misc/xdialog-2.3.1 )"
+DEPEND=">=x11-misc/xdialog-2.3.1"
 RDEPEND="${DEPEND}"
 
 src_install() {

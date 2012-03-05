@@ -6,24 +6,17 @@
 #Лиценз: Эта программа защищена лицензией GPLv3!
 
 # Переменные
-#XDIALOG=`find /bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -name Xdialog`
-#if [ -z "$XDIALOG" ]
-#then
-#  DIALOG="dialog"
-#else
 DIALOG="Xdialog"
-#fi
 pn="calculate-usb-creator"
 
 # Суперпользователь
 if [ `id -u` -ne 0 ];
 then
 gksu "${pn}" ;
-# $DIALOG --title "Ошибка!" --msgbox "Вы должны иметь привилегии суперпользователя!" 0 0
 exit 1
 fi
 
-# DDFLASH 0.1
+# Calculate USB Creator 0.1
 $DIALOG --title "Calculate USB Creator 0.1" --yesno "Добро пожаловать.\n
 Это тест версия!\n
 Используйте на свой страх и риск!\n
