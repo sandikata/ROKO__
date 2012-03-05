@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Calculate USB Creator
+Type=Application
+Comment=
+Exec=gksu calculate-usb-creator
+TryExec=gksu calculate-usb-creator
+Icon=/usr/share/pixmaps/calculate-usb-creator.png
+Categories=System;FileTransfer;
+
