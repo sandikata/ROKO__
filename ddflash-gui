@@ -51,7 +51,7 @@ usb=`$DIALOG --title "Выберите устройство." --radiolist "DDFLA
 [ -z "$usb" ] ; 
 
 # Образ
-iso=`$DIALOG --title "DDFLASH 0.1 Выберите образ? (ISO)" --fselect "/" 40 100 3>&1 1>&2 2>&3`
+iso=`$DIALOG --title "DDFLASH 0.1 Выберите образ (ISO)" --fselect "/" 40 100 3>&1 1>&2 2>&3`
 [ -z "$iso" ] ; 
 
 # Продолжать
