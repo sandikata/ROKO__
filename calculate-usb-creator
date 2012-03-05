@@ -7,12 +7,19 @@
 
 # Переменные
 DIALOG="Xdialog"
+SUDO=`find /bin /sbin /usr/bin /usr/sbin /usr/local/bin /usr/local/sbin -name gksu`
 pn="calculate-usb-creator"
+if [ -z "$SUDO" ];
+then
+SUDO="kdesu"
+else
+SUDO="gksu"
+fi
 
 # Суперпользователь
 if [ `id -u` -ne 0 ];
 then
-gksu "${pn}" ;
+${SUDO} "${pn}" ;
 exit 1
 fi
 
