@@ -3,7 +3,7 @@
 #jabber - roko@jabber.calculate-linux.org
 #e-mail - sandikata@yandex.ru
 #irc - irc.freenode.net/ROKO__
-#Лиценз: Эта программа защищена лицензией GPLv3!
+#Лиценз: GPL - 2
 
 # Переменные
 DIALOG="Xdialog"
