@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Calculate USB Creator
+Type=Application
+Comment=Инструмент для создания загрузочных USB FLASH
+Exec=calculate-usb-creator-bg
+TryExec=calculate-usb-creator-bg
+Icon=/usr/share/pixmaps/calculate-usb-creator.png
+Categories=System;FileTransfer;
+
