@@ -1,0 +1,85 @@
+#!/bin/bash
+#Автор: Росен Александров
+#jabber - roko@jabber.calculate-linux.org
+#e-mail - sandikata@yandex.ru
+#irc - irc.freenode.net/ROKO__
+#Превод на Български: Евгений Симеонов
+#e-mail - simeonov.evgeny@yandex.ru
+#Лиценз: GPL - 2
+
+# Променливи
+DIALOG="Xdialog"
+pn="calculate-usb-creator"
+
+# Администратор
+if [ `id -u` -ne 0 ];
+then
+gksu "${pn}" ;
+exit 1
+fi
+
+# Calculate USB Creator 0.1
+$DIALOG --title "Calculate USB Creator 0.1" --yesno "Добре дошли.\n
+Добре дошли!\n
+Ние не поемаме отговорност за загуба на данни!\n
+Автор: Росен Александров\n
+Превод на Български: Евгени Симеонов\n
+Готови ли сте да продължите?" 0 0
+
+otwet=$?
+if [ $otwet -ne 0 ]
+then notify-send -t 10000 "Не сте съгласни да продължите. Програмата се затваря!"
+exit 0
+fi
+
+# USB/ISO детектор
+# Автор: Joern Lindau
+# e-mail: joern.lindau@t-online.de
+# Лиценз: GPL - 2
+$DIALOG --title "Calculate USB Creator 0.1" --msgbox "Моля, изключете всички USB устройства!" 0 0
+dmesg -c 1> /dev/null
+$DIALOG --title "Calculate USB Creator 0.1" --msgbox "Поставете USB устройството което ще използвате." 0 0
+sleep 10
+USB=`dmesg | grep removable | cut -d '[' -f 3 | cut -d ']' -f 1`
+DEVICE=`for var in $USB; do echo "/dev/$var"; done`
+set $DEVICE
+usb=`$DIALOG --title "Изберете устройство." --radiolist "Calculate USB Creator 0.1" 0 0 0 \
+:$1 "" off \
+:$2 "" off \
+:$3 "" off \
+:$4 "" off \
+:$5 "" off \
+:$6 "Не пипайте тук!" off 3>&1 1>&2 2>&3 | cut -c2-11`
+[ -z "$usb" ] ;
+# USB/ISO Детектор
+
+# Образ
+iso=`$DIALOG --title "Calculate USB Creator 0.1 Изберете образ (ISO)" --fselect "/" 40 100 3>&1 1>&2 2>&3`
+[ -z "$iso" ] ;
+
+
+# Продължение
+$DIALOG --title "Calculate USB Creator 0.1" --msgbox "Вие избрахте устройство $usb" 0 0 0
+$DIALOG --title "Calculate USB Creator 0.1" --msgbox "Вие избрахте образ $iso" 0 0 0
+
+$DIALOG --title "Calculate USB Creator 0.1" --clear \
+--yesno "Сигурни ли сте че искате да продължите?" 0 0 0
+
+value=$?
+
+case $value in
+0) $DIALOG --no-buttons --infobox "Копиране ... Моля, Почакайте ..." 0 0 ;
+   umount "$usb" ; dd if="$iso" of="$usb"
+;;
+
+1) notify-send -t 10000 "Прекъсване на действието." ;
+   exit 0
+;;
+
+255) notify-send -t 10000 "Действието беше прекратено." ;
+exit 0
+;;
+
+esac
+$DIALOG --title "Calculate USB Creator 0.1" --msgbox "Копирането завършено, или прекратено." 0 0
+exit 0
