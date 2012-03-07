@@ -7,7 +7,7 @@ inherit eutils
 
 DESCRIPTION="Инструмент для создания загрузочных USB FLASH."
 HOMEPAGE="https://github.com/sandikata/"
-SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/calculate-usb-creator-0.1.tar.xz"
+SRC_URI=""
 
 LICENSE=""
 SLOT="stable"
@@ -18,8 +18,8 @@ DEPEND=">=x11-misc/xdialog-2.3.1"
 RDEPEND="${DEPEND}"
 
 src_install() {
-	cd "${WORKDIR}"
-	cp -R * "${D}/"
+	cd "${FILESDIR}"
+	dobin calculate-usb-creator
 	doicon "${FILESDIR}"/calculate-usb-creator.png
 	domenu "${FILESDIR}"/calculate-usb-creator.desktop
 }
