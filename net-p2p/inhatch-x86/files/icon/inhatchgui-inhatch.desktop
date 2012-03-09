@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=inhatch
-Type=Application
-Comment=inhatch plugin for vlc player
-Exec=inhatchgui
-TryExec=inhatchgui
-Icon=/usr/share/pixmaps/inhatch_PLUGIN_LOGO.png
-Categories=Network;FileTransfer;
