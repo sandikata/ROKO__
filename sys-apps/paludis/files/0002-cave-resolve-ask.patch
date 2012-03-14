@@ -1,0 +1,171 @@
+From e579288be34f2effad95c854c6e5cd2d2cf4b7ab Mon Sep 17 00:00:00 2001
+From: Marc-Antoine Perennou <Marc-Antoine@Perennou.com>
+Date: Mon, 26 Jul 2010 18:38:14 +0200
+Subject: [PATCH 2/2] cave resolve ask
+
+---
+ doc/faq/misfunctionality.html.part         |    9 ---------
+ src/clients/cave/cmd_execute_resolution.cc |   28 +++++++++++++++++++++++++++-
+ src/clients/cave/cmd_resolve.cc            |    6 +++---
+ src/clients/cave/resolve_cmdline.cc        |    1 +
+ src/clients/cave/resolve_cmdline.hh        |    1 +
+ src/clients/cave/resolve_common.cc         |    2 ++
+ zsh-completion/_cave                       |    1 +
+ 7 files changed, 35 insertions(+), 13 deletions(-)
+
+diff --git a/doc/faq/misfunctionality.html.part b/doc/faq/misfunctionality.html.part
+index a43287f..ef6ba64 100644
+--- a/doc/faq/misfunctionality.html.part
++++ b/doc/faq/misfunctionality.html.part
+@@ -6,7 +6,6 @@
+     <li><a href="misfunctionality.html#wgetresume">wget Resume Support</a></li>
+     <li><a href="misfunctionality.html#skipfirst">Build Resume / Skip First Support</a></li>
+     <li><a href="misfunctionality.html#nice">No Automatic Niceness Support</a></li>
+-    <li><a href="misfunctionality.html#ask">No Ask Support</a></li>
+     <li><a href="misfunctionality.html#xtermtitles">Restoring XTerm Titles</a></li>
+     <li><a href="misfunctionality.html#ecompress">No Automatic Manpage / Documentation Compression</a></li>
+ </ul>
+@@ -63,14 +62,6 @@ elegant.</p>
+ <p>Rationale: Learn how to use <code>nice</code>. There's no
+ <code>GCC_NICENESS</code> or <code>VIM_NICENESS</code> either.</p>
+ 
+-<h2 id="ask">No Ask Support</h2>
+-
+-<p>Non-Problem: There's nothing like <code>emerge --ask</code>.</p>
+-
+-<p>Rationale: the <code>paludis</code> client is non-interactive. If someone is
+-making an interactive client, there are much better ways of doing it than
+-the limited functionality that <code>emerge --ask</code> provides.</p>
+-
+ <h2 id="xtermtitles">Restoring XTerm Titles</h2>
+ 
+ <p>Non-Problem: Paludis doesn't restore the xterm title on exit.</p>
+diff --git a/src/clients/cave/cmd_execute_resolution.cc b/src/clients/cave/cmd_execute_resolution.cc
+index b9b71c1..568af40 100644
+--- a/src/clients/cave/cmd_execute_resolution.cc
++++ b/src/clients/cave/cmd_execute_resolution.cc
+@@ -104,7 +104,8 @@ namespace
+         CaveCommandCommandLine
+     {
+         args::ArgsGroup g_general_options;
+-        args::SwitchArg a_pretend;
++        mutable args::SwitchArg a_pretend;
++        args::SwitchArg a_ask;
+         args::SwitchArg a_set;
+         args::StringSetArg a_world_specs;
+         args::StringSetArg a_removed_if_dependent_names;
+@@ -116,6 +117,7 @@ namespace
+         ExecuteResolutionCommandLine() :
+             g_general_options(main_options_section(), "General Options", "General options."),
+             a_pretend(&g_general_options, "pretend", '\0', "Only carry out the pretend action", false),
++            a_ask(&g_general_options, "ask", '\0', "Ask before executing", false),
+             a_set(&g_general_options, "set", '\0', "Our target is a set rather than package specs", false),
+             a_world_specs(&g_general_options, "world-specs", '\0', "Use the specified spec or set name for updating world"),
+             a_removed_if_dependent_names(&g_general_options, "removed-if-dependent-names", '\0',
+@@ -304,6 +306,26 @@ namespace
+         return 0 == retcode;
+     }
+ 
++    bool do_ask()
++    {
++        Context context("When asking to execute :");
++        std::string answer;
++        cout << std::endl;
++        cout << "Do you really want to do this ? [Y/n] ... ";
++        while (true)
++        {
++            getline(std::cin, answer);
++            for (unsigned i(0) ; i < answer.length() ; ++i)
++                answer[i] = tolower(answer[i]);
++            if (answer == "no" || answer == "n")
++                return false;
++            else if (answer == "yes" || answer == "ye" || answer == "y" || answer == "")
++                return true;
++            cout << endl;
++            cout << "Unknown answer : " + answer + " [Y/n] ... ";
++        }
++    }
++
+     std::string maybe_replacing(
+             const std::shared_ptr<Environment> & env,
+             const std::shared_ptr<const Sequence<PackageDepSpec> > & id_specs,
+@@ -1586,6 +1608,10 @@ namespace
+         int retcode(0);
+ 
+         retcode |= execute_pretends(env, lists, cmdline);
++
++        if ((! cmdline.a_pretend.specified()) && cmdline.a_ask.specified() && lists->execute_job_list()->length() != 0 && (! do_ask()))
++               cmdline.a_pretend.set_specified(args::aos_specified);
++
+         if (0 != retcode || cmdline.a_pretend.specified())
+             return retcode;
+ 
+diff --git a/src/clients/cave/cmd_resolve.cc b/src/clients/cave/cmd_resolve.cc
+index e0a7f2a..9985df5 100644
+--- a/src/clients/cave/cmd_resolve.cc
++++ b/src/clients/cave/cmd_resolve.cc
+@@ -49,9 +49,9 @@ namespace
+             graph_jobs_options(this),
+             program_options(this)
+         {
+-            add_usage_line("[ -x|--execute ] [ -z|--lazy or -c|--complete or -e|--everything ] spec ...");
+-            add_usage_line("[ -x|--execute ] [ -z|--lazy or -c|--complete or -e|--everything ] set");
+-            add_usage_line("[ -x|--execute ] !spec ...");
++            add_usage_line("[ -x|--execute ] [ -?|--ask ] [ -z|--lazy or -c|--complete or -e|--everything ] spec ...");
++            add_usage_line("[ -x|--execute ] [ -?|--ask ] [ -z|--lazy or -c|--complete or -e|--everything ] set");
++            add_usage_line("[ -x|--execute ] [ -?|--ask ] !spec ...");
+         }
+ 
+         std::string app_name() const
+diff --git a/src/clients/cave/resolve_cmdline.cc b/src/clients/cave/resolve_cmdline.cc
+index 82abf30..7033c28 100644
+--- a/src/clients/cave/resolve_cmdline.cc
++++ b/src/clients/cave/resolve_cmdline.cc
+@@ -46,6 +46,7 @@ ResolveCommandLineResolutionOptions::ResolveCommandLineResolutionOptions(args::A
+     ArgsSection(h, "Resolution Options"),
+     g_execution_options(this, "Execution Options", "Control execution."),
+     a_execute(&g_execution_options, "execute", 'x', "Execute the suggested actions", true),
++    a_ask(&g_execution_options, "ask", '?', "Ask before executing", true),
+ 
+     g_convenience_options(this, "Convenience Options", "Broad behaviour options. These options are simply "
+             "a convenient way of selecting common groups of other options; see individual option descriptions "
+diff --git a/src/clients/cave/resolve_cmdline.hh b/src/clients/cave/resolve_cmdline.hh
+index 8bdd0b4..589230c 100644
+--- a/src/clients/cave/resolve_cmdline.hh
++++ b/src/clients/cave/resolve_cmdline.hh
+@@ -36,6 +36,7 @@ namespace paludis
+ 
+             args::ArgsGroup g_execution_options;
+             args::SwitchArg a_execute;
++            args::SwitchArg a_ask;
+ 
+             args::ArgsGroup g_convenience_options;
+             args::SwitchArg a_lazy;
+diff --git a/src/clients/cave/resolve_common.cc b/src/clients/cave/resolve_common.cc
+index 3ddbddb..2770932 100644
+--- a/src/clients/cave/resolve_common.cc
++++ b/src/clients/cave/resolve_common.cc
+@@ -427,6 +427,8 @@ namespace
+ 
+         if (pretend_only || ! resolution_options.a_execute.specified())
+             args->push_back("--pretend");
++        else if (resolution_options.a_ask.specified())
++            args->push_back("--ask");
+ 
+         for (Sequence<std::string>::ConstIterator p(world_specs->begin()), p_end(world_specs->end()) ;
+                 p != p_end ; ++p)
+diff --git a/zsh-completion/_cave b/zsh-completion/_cave
+index 2ca9fce..f70f669 100644
+--- a/zsh-completion/_cave
++++ b/zsh-completion/_cave
+@@ -664,6 +664,7 @@ _cave_cmd_report()
+ _cave_resolve_arguments=(
+     '(--help -h)'{--help,-h}'[Display help messsage]' \
+     '(--execute -x --no-execute +x)'{--execute,-x,--no-execute,+x}'[Execute the suggested actions]' \
++    '(--ask -? --no-ask +?)'{--ask,-?,--no-ask,+?}'[Ask before executing]' \
+     '(--lazy -z --complete -c --everything -e --no-lazy +z --no-complete +c --no-everything +e)'{--lazy,-z,--no-lazy,+z}'[Do as little work as possible]' \
+     '(--lazy -z --complete -c --everything -e --no-lazy +z --no-complete +c --no-everything +e)'{--complete,-c,--no-complete,+c}'[Do all optional work]' \
+     '(--lazy -z --complete -c --everything -e --no-lazy +z --no-complete +c --no-everything +e)'{--everything,-e,--no-everything,+e}'[Do all optional work, and also reinstall]' \
+-- 
+1.7.7.419.g87009.dirty
+

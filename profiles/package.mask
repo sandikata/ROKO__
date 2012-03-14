@@ -1,14 +1,1 @@
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
-# Използвайте media-sound/peyote-0.9.6-r1 (emerge --autounmask-write =peyote-0.9.6-r1)
-=media-sound/peyote-0.9.6
-
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (18.09.2011)
-# В процес на тестване за поправяне на новооткрити бъгове.
-=media-sound/peyote-0.9.6-r1
-
-# Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (11.12.2011) 
-# Скоро ще бъде премахнат. Използвайте net-p2p/inhatch в него е вграден графичния интерфейс.
-app-misc/inhatchgui
-
-=app-emulation/vmware-modules-264.1-r99
 

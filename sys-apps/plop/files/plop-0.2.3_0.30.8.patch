@@ -1,0 +1,312 @@
+--- genlop-0.30.8/genlop	2007-10-04 10:15:07.000000000 +0200
++++ plop-0.2.3/plop	2008-07-15 20:57:14.000000000 +0200
+@@ -17,16 +17,17 @@
+ #    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ #
+ 
+-use strict;
+-use warnings;
++#use strict;
++#use warnings;
++#use diagnostics;
+ use POSIX;
+ use Term::ANSIColor;
+ use Date::Manip;
+ use LWP::Simple;
+ use File::Basename;
+ 
+-my $version  = "0.30.7";
+-my @logfiles = ("/var/log/emerge.log");
++my $version  = "0.2.3";
++my @logfiles = ("/var/log/paludis.log");
+ my %COLORS   = (
+     'blue'  => 'bold blue',
+     'green' => 'bold green',
+@@ -109,9 +110,9 @@
+ sub open_file
+ {
+     my ($file, $fh) = @_;
+-    if ($file eq "/var/log/emerge.log" && !-r $file)
++    if ($file eq "/var/log/paludis.log" && !-r $file)
+     {
+-        print "$progname: cannot open " . $file . " for reading\n" . "maybe you are not a member of the portage group ?\n" . "try genlop -h for help\n";
++        print "$progname: cannot open " . $file . " for reading\n" . "maybe you are not a member of the portage group ?\n" . "try plop -h for help\n";
+         exit 1;
+     }
+     if (-T $file)
+@@ -334,24 +335,24 @@
+ # provides help information
+ sub help ()
+ {
+-    print "Usage: ", colored("genlop ", $COLORS{'blue'}), "[", colored("options", $COLORS{'green'}), "] [", colored("-f ", $COLORS{'green'}), "logfile] [",
++    print "Usage: ", colored(basename($0)." ", $COLORS{'blue'}), "[", colored("options", $COLORS{'green'}), "] [", colored("-f ", $COLORS{'green'}), "logfile] [",
+       colored("category/package", $COLORS{'green'}), "]\n\n", colored("Options:\n", $COLORS{'green'}), colored("  -c   ", $COLORS{'green'}),
+       "display the currently compiling packages (if any)\n", colored("  -e   ", $COLORS{'green'}) . "display package history; default if any option is used.\n",
+-      colored("  -f   ", $COLORS{'green'}), "read emerge log information from \"logfile\" instead of ", $logfiles[0], "\n",
++      colored("  -f   ", $COLORS{'green'}), "read paludis log information from \"logfile\" instead of ", $logfiles[0], "\n",
+       colored("  -h   ", $COLORS{'green'}), "print this help\n", colored("  -i   ", $COLORS{'green'}),
+       "extra infos for the selected package (build specific USE ", "and CFLAGS\n       variables, average build time, etc)\n",
+       colored("  -g   ", $COLORS{'green'}), "display GMT/UTC, not localized time.\n", colored("  -l   ", $COLORS{'green'}), "show full merge history.\n",
+       colored("  -n   ", $COLORS{'green'}), "no color in output\n", colored("  -p   ", $COLORS{'green'}),
+-      "estimate build time from a piped \"emerge -p\" output\n",              colored("  -q   ", $COLORS{'green'}),
++      "estimate build time from a piped \"paludis -p\" output\n",              colored("  -q   ", $COLORS{'green'}),
+       "query gentoo.linuxhowtos.org database if no local emerge was found\n", colored("  -r   ", $COLORS{'green'}),
+       "search for portage tree sync/rsync history.\n",                        colored("  -s   ", $COLORS{'green'}),
+       "use (case insensitive) regular expressions to match package names\n",  colored("  -S   ", $COLORS{'green'}),
+       "use case sensitive regular expressions to match package names\n",      colored("  -t   ", $COLORS{'green'}),
+       "calculate merge time for the specific package(s).\n",                  colored("  -u   ", $COLORS{'green'}), "show when packages have been unmerged.\n",
+-      colored("  -v   ", $COLORS{'green'}), "display genlop version and exit.\n\n", colored("  --date datestring1", $COLORS{'green'}), " [",
++      colored("  -v   ", $COLORS{'green'}), "display plop version and exit.\n\n", colored("  --date datestring1", $COLORS{'green'}), " [",
+       colored(" --date datestring2", $COLORS{'green'}), "]  only shows results between datestring1\n",
+-      "       and datestring2. datestring2 dafaults to \"now\" if not", " explicitly set.\n", "       (e.g. genlop --list --date 3 days ago)\n",
+-      "\nThis program is licensed under the GPL v2. See COPYING.\n", "For further info about genlop please read the man page.\n";
++      "       and datestring2. datestring2 dafaults to \"now\" if not", " explicitly set.\n", "       (e.g. plop --list --date 3 days ago)\n",
++      "\nThis program is licensed under the GPL v2. See COPYING.\n", "For further info about plop please read the man page.\n";
+     exit 0;
+ }
+ 
+@@ -432,7 +433,7 @@
+         }
+         else
+         {
+-            $regexp = qr/(.*)(-[0-9]{1,7}.*?)/i;
++            $regexp = qr/(.*)(-(?:[0-9]{1,7}|scm).*?)/i;
+         }
+         return "$regexp";
+     }
+@@ -452,8 +453,8 @@
+         {
+             $regexp =
+               $ssearch_found
+-              ? qr/(.*$arg.*?)(-[0-9]{1,7}.*?)/
+-              : qr/(.*$arg.*?)(-[0-9]{1,7}.*?)/i;
++              ? qr/(.*$arg.*?)(-(?:[0-9]{1,7}|scm).*?)/
++              : qr/(.*$arg.*?)(-(?:[0-9]{1,7}|scm).*?)/i;
+         }
+         return "$regexp";
+     }
+@@ -464,8 +465,8 @@
+         $category = $arg;
+         $regexp =
+           $ssearch_found
+-          ? qr/($category.*?)(-[0-9]{1,7}.*?)/
+-          : qr/($category.*?)(-[0-9]{1,7}.*?)/i;
++          ? qr/($category.*?)(-(?:[0-9]{1,7}|scm).*?)/
++          : qr/($category.*?)(-(?:[0-9]{1,7}|scm).*?)/i;
+         return "$regexp";
+     }
+     @list = split(/\//, $arg);
+@@ -475,7 +476,7 @@
+         $category = $list[0];
+         $ebuild   = $list[1];
+         @list     = ();
+-        @list     = split(/(-[0-9]{1,7})/, $ebuild);
++        @list     = split(/(-(?:[0-9]{1,7}|scm))/, $ebuild);
+         if ($list[1])
+         {
+             $ebuild = $list[0];
+@@ -489,14 +490,14 @@
+         }
+         $regexp =
+           $ssearch_found
+-          ? qr!($category\/$ebuild)(-[0-9]{1,7}.*?)!
+-          : qr!($category\/$ebuild)(-[0-9]{1,7}.*?)!i;
++          ? qr!($category\/$ebuild)(-(?:[0-9]{1,7}|scm).*?)!
++          : qr!($category\/$ebuild)(-(?:[0-9]{1,7}|scm).*?)!i;
+         return "$regexp";
+     }
+     $regexp =
+       $ssearch_found
+-      ? qr!(.*?/$ebuild)(-[0-9]{1,7}.*?)!
+-      : qr!(.*?/$ebuild)(-[0-9]{1,7}.*?)!i;
++      ? qr!(.*?/$ebuild)(-(?:[0-9]{1,7}|scm).*?)!
++      : qr!(.*?/$ebuild)(-(?:[0-9]{1,7}|scm).*?)!i;
+     return "$regexp";
+ }
+ 
+@@ -558,10 +559,10 @@
+         print "These are the pretended packages:";
+         print " (this may take a while; wait...)\n\n";
+ 
+-        # open STDIN; that's why emerge -p foo is piped to a genlop -p
++        # open STDIN; that's why emerge -p foo is piped to a plop -p
+         while (<STDIN>)
+         {
+-            if ($_ =~ m/^\[e.*\] (.*?)\/(.*?)(\-[0-9])/)
++            if ($_ =~ m/^\* (.*?)\/(.*?)(\-(?:[0-9]|scm))/)
+             {
+                 push @targets, $2;
+                 print;
+@@ -580,11 +581,11 @@
+                 open_file($logfile, \$handle);
+                 foreach (<$handle>)
+                 {
+-                    if (m/^(.*?)\:  \>\>\> emerge.*?\/$ebuild_arg-[0-9].*/)
++                    if (m/^(.*?)\: starting install of package .*?\/$ebuild_arg-(?:[0-9]|scm).*?::/)
+                     {
+                         $e_start = $1;
+                     }
+-                    if (m/^(.*?)\:  ::: completed .*?\) .*\/$ebuild_arg-[0-9].* to \//)
++                    if (m/^(.*?)\: finished install of package .*?\/$ebuild_arg-(?:[0-9]|scm).*?::/)
+                     {
+                         $e_end = $1;
+                         $tm_secondi += ($e_end - $e_start);
+@@ -666,11 +667,12 @@
+     # not check for sanity and have users check their FEATURES instead.
+     my @targets      = ();
+     my @sandbox_pids = ();
+-    my @sandbox_procs = qx{ps ax -o pid,args | tail -n +2 | sed -e's/^ *//' | grep ' sandbox ' | grep -v ' grep '};
+-    my ($e_curmerge, $e_lastmerge);
++    my @sandbox_procs = qx{ps ax -w -o pid,args|grep '[s]andbox'}; # [s] so you don't need this ugly grep -v grep, also the use of tail and such are foobar
++    my $r_start = 0;
++    my ($r_curmerge, $r_lastmerge, $r_current);
+     foreach (@sandbox_procs)
+     {
+-        if (m/^(.*?) \[(.*?)\-[0-9].*?\]/)
++        if (m/^(.*?) sandbox .*? .*\/(.*?)\-(?:[0-9]|scm).*?\.(ebuild|kdebuild-1) .*/)
+         {
+             push @sandbox_pids, $1;
+             push @targets, $2;
+@@ -692,7 +694,6 @@
+     }
+     foreach my $ebuild_arg (@targets)
+     {
+-		my $e_current;
+         $ebuild_arg =~ s/(\+)/\\$1/g;
+         foreach my $logfile (@logfiles)
+         {
+@@ -700,14 +701,17 @@
+             open_file($logfile, \$handle);
+             foreach (<$handle>)
+             {
+-                if (m/^(.*?)\:  \>\>\> emerge \((.*?) of (.*?)\)(.*?\/$ebuild_arg-[0-9].*?)to \//)
++                if (m/^(.*?)\: starting install of package (.*?\/$ebuild_arg-(?:[0-9]|scm).*?::.*?) \((.*?) of (.*?)\)/)
+                 {
++                  if ($1 > $r_start) {
++                    $r_start = $1;
++                    $r_curmerge  = $3;
++                    $r_lastmerge = $4;
++                    $r_current   = $2;
++                  }
+                     $e_start     = $1;
+-                    $e_curmerge  = $2;
+-                    $e_lastmerge = $3;
+-                    $e_current   = $4;
+                 }
+-                if (m/^(.*?)\:  ::: completed .*?\) .*\/$ebuild_arg-[0-9].* to \//)
++                if (m/^(.*?)\: finished install of package .*\/$ebuild_arg-(?:[0-9]|scm).*::.* \(.*\)/)
+                 {
+                     $e_end = $1;
+                     $e_count++;
+@@ -717,9 +721,9 @@
+             }
+         }
+         $e_end = CORE::time();
+-        &gtime($e_end - $e_start);
+-        print "\n Currently merging $e_curmerge out of $e_lastmerge\n";
+-        print colored("\n \*$e_current\n\n", $COLORS{'blue'});
++        &gtime($e_end - $r_start);
++        print "\n Currently merging $r_curmerge out of $r_lastmerge\n";
++        print colored("\n \*$r_current\n\n", $COLORS{'blue'});
+         print "       current merge time: ";
+         $current_found = undef;
+         &print_gtime();
+@@ -735,10 +739,10 @@
+             $e_count = 1;
+         }
+ 
+-        if ($e_count && $e_start)
++        if ($e_count && $r_start)
+         {
+-            &gtime(($tm_secondi / $e_count) - ($e_end - $e_start));
+-            if (($e_end - $e_start) >= ($tm_secondi / $e_count))
++            &gtime(($tm_secondi / $e_count) - ($e_end - $r_start));
++            if (($e_end - $r_start) >= ($tm_secondi / $e_count))
+             {
+                 print colored("any time now.\n", $COLORS{'green'});
+             }
+@@ -808,7 +812,7 @@
+                 #$package =~ s/(\+)/\\$1/g;
+                 my $tmp_package = $package;
+                 $tmp_package =~ s/\+/\\+/g;
+-                if ("$categoria/$package_dir" =~ m/$tmp_package\-[0-9].*/)
++                if ("$categoria/$package_dir" =~ m/$tmp_package\-(?:[0-9]|scm).*/)
+                 {
+                     $info_ok = 1;
+                     print colored("\n   * $categoria/$package_dir\n", $COLORS{'blue'});
+@@ -821,8 +825,8 @@
+                         open_file($logfile, \$handle);
+                         foreach (<$handle>)
+                         {
+-                            my $pattern = gen_regexp("$categoria/$package_dir");
+-                            if (m/^([0-9]{10})\:  ::: completed .*?\) $pattern to \//)
++													my $pattern = gen_regexp("$categoria/$package_dir");
++                            if (m/^([0-9]{10})\: finished install of package ${pattern}:.*::/)
+                             {
+                                 if ($gmt_found)
+                                 {
+@@ -851,13 +855,10 @@
+ 
+                         # we search into the installed ebuild for USE flags available
+                         # and store them in @potential_use.
+-                        open(pkg_ebuild, "$db_pkg_dir/$1.ebuild") || return;
++                        open(pkg_ebuild, "$db_pkg_dir/IUSE") || return;
+                         while (<pkg_ebuild>)
+                         {
+-                            if ($_ =~ m/^IUSE=\"(\$\{IUSE\} )?(.*)"/g)
+-                            {
+-                                @potential_use = split(/\ /, $2);
+-                            }
++                                @potential_use = split(/\ /, $_);
+                         }
+                     }
+ 
+@@ -917,7 +918,7 @@
+ 		my $handle;
+ 		open_file($_, \$handle);
+ 		while(<$handle>) {
+-			if ($_ =~ m/^(.*?)\: \=\=\= Sync completed with/) {
++			if ($_ =~ m/^(.*?)\: finished sync of repository gentoo/) {
+ 				if ($date_found) {
+ 					if (datecompare($1) <= 0) {
+ 						next;
+@@ -952,7 +953,10 @@
+ help() if ($help_found);
+ if ($version_found)
+ {
+-    print "genlop $version, maintained by Michael Cummings <mcummings\@gentoo.org>\n"
++    print "plop $version, patched genlop 0.30.8 for use with paludis\n"
++		. "patched by Tobias Hommel <software\@genoetigt.de>\n"
++		. "original genlop info:\n"
++		. "genlop, maintained by Michael Cummings <mcummings\@gentoo.org>\n"
+ 	  . "original code by Giorgio Mandolfo and Antonio Dolcetta\n"
+ 	  . "Please file any bugs found online at:\n"
+ 	  . "https://bugs.gentoo.org\n"
+@@ -1015,15 +1019,15 @@
+             if ($current_found) { &current; }
+             if ($time_found or $info_found)
+             {
+-                if ($_ =~ m/^([0-9]{10})\:  \>\>\> emerge .*?\) $pattern/)
++                if ($_ =~ m/^([0-9]{10})\: starting install of package ${pattern}::/)
+                 {
+                     $e_start     = $1;
+                     $info_target = $2;
+                 }
+             }
+-            if ($_ =~ m/^([0-9]{10})\:  ::: completed .*?\) $pattern to \//)
++            if ($_ =~ m/^([0-9]{10})\: finished install of package ${pattern}::/)
+             {
+-				my $e_date;
++                my $e_date;
+                 if ($gmt_found)
+                 {
+                     $e_date = scalar gmtime "$1";
+@@ -1093,7 +1097,7 @@
+             if ($unmerge_found or $info_found)
+             {
+                 $pattern = gen_regexp($ebuild_arg);
+-                if (m/^([0-9]{10})\:  \>\>\> unmerge success: ($pattern.*)/g)
++                if (m/^([0-9]{10})\: finished uninstall of package ($pattern)::/g)
+                 {
+                     my $u_date = scalar localtime "$1";
+                     if ($unmerge_found)
