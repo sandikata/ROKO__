@@ -12,13 +12,17 @@ SRC_URI=""
 LICENSE=""
 SLOT="stable"
 KEYWORDS="amd64 x86"
-IUSE=""
+IUSE="bulgarian"
 
 DEPEND=">=x11-misc/xdialog-2.3.1"
 RDEPEND="${DEPEND}"
 
 src_install() {
 	cd "${FILESDIR}"
+
+	if use bulgarian; then
+	epatch calculate-usb-creator-bg.patch
+	fi
 	dobin calculate-usb-creator
 	doicon "${FILESDIR}"/calculate-usb-creator.png
 	domenu "${FILESDIR}"/calculate-usb-creator.desktop
