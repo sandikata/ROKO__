@@ -23,7 +23,7 @@ RDEPEND="
 	dev-python/gnome-applets-python
 	dev-python/gnome-vfs-python
 	dev-python/libwnck-python
-	dev-libs/keybinder
+	dev-libs/keybinder[python]
 	dev-python/pyxdg
 	dev-python/python-xlib"
 DEPEND="awn? ( gnome-extra/avant-window-navigator )"
