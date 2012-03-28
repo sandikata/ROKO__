@@ -23,7 +23,7 @@ SRC_URI="${KERNEL_URI}"
 LICENSE=""
 SLOT="3.3"
 KEYWORDS="~amd64"
-IUSE="deblob vmlinuz"
+IUSE="deblob +vmlinuz"
 
 DEPEND="vmlinuz? ( >=sys-kernel/calckernel-3.4.18
 	>=sys-apps/calculate-builder-2.2.22-r2
