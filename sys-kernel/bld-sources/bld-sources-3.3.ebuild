@@ -3,19 +3,16 @@
 # $Header: $
 
 EAPI="2"
-K_NOUSENAME="yes"
 K_SECURITY_UNSUPPORTED="1"
 K_DEBLOB_AVAILABLE="1"
 CKV=3.3.0
 EXTRAVERSION=-bld
 ETYPE="sources"
-#inherit kernel-2
 inherit calculate-kernel-old
 detect_version
 detect_arch
 
-DESCRIPTION="This is an alternate CPU load distribution technique for Linux
-kernel scheduler. "
+DESCRIPTION="This is an alternate CPU load distribution technique for Linux kernel scheduler. "
 HOMEPAGE="http://code.google.com/p/bld/"
 SRC_URI="${KERNEL_URI}"
 
