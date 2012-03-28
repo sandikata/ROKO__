@@ -1,0 +1,50 @@
+diff --git pym/cl_builder.py pym/cl_builder.py
+index 7a72d81..4406fe9 100644
+--- pym/cl_builder.py
++++ pym/cl_builder.py
+@@ -25,7 +25,8 @@ import traceback
+ from os import path
+ from cl_utils import process,pathJoin,getRunCommands,getTupleVersion,\
+                         childMounts,_toUNICODE,isMount,typeFile, \
+-                        removeDir, pathJoin,listDirectory, getSquashList
++                        removeDir, pathJoin,listDirectory, getSquashList, \
++                        readFile
+ from subprocess import STDOUT,PIPE
+ from cl_print import color_print
+ from cl_datavars import DataVars
+@@ -262,9 +263,23 @@ class cl_builder(color_print):
+             updateLayman = self.runChroot(distrPath,"layman -s calculate")
+             self.printByResult(updateLayman.success())
+ 
++        self.printByResult(True)
++
++        builderPath = self.clVars.Get('cl_builder_path')
++        for gitName,gitDir in (('portage','/usr/portage'),
++                       ('overlay','/var/lib/layman/calculate')):
++            gitHead = pathJoin(builderPath,gitDir,".git/HEAD")
++            if "heads/develop" in readFile(gitHead):
++                self.printMessageForTest(
++                    _("Changing {repname} repository branch to '{branch}'").
++                        format(repname=gitName,
++                               branch='master'))
++                changeBranch = self.runChroot(distrPath,
++                    "cd %s;git fetch;git checkout master"%gitDir)
++                self.printByResult(changeBranch.success())
++
+         self.applyTemplatesForSquash(distrPath)
+         # change make.profile
+-        builderPath = self.clVars.Get('cl_builder_path')
+         curProfileFile = pathJoin(builderPath,"etc/make.profile")
+         self.curProfile = os.readlink(curProfileFile)
+         profile = self.clVars.Get('os_builder_profile')
+@@ -666,9 +681,7 @@ class cl_builder(color_print):
+             return False
+         self.printSUCCESS(_("System built successfully"))
+         if self.assembleIso:
+-            self.printWARNING(_("If you want to emerge packages manually "
+-                        "on the system you are assembling, please execute:"))
+-            self.printWARNING("  cl-make -p %s -T"%
++            os.system("cl-make -p %s -fT &>/dev/null"%
+                               self.clVars.Get('os_builder_profile'))
+         return True
+ 

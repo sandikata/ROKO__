@@ -1,0 +1,13 @@
+diff --git data/calculate-builder data/calculate-builder
+index 944ecb7..b05fb1f 100644
+--- data/calculate-builder
++++ data/calculate-builder
+@@ -7,7 +7,7 @@ depend() {
+ 
+ KERNEL_VERSION=`uname -r`
+ KERNEL_VERSION_CONF=${KERNEL_VERSION//./_}
+-KERNEL_VERSION_CONF="modules_${KERNEL_VERSION_CONF//-/_}"
++KERNEL_VERSION_CONF="modules_3"
+ MODULES_PATH="/lib/modules/${KERNEL_VERSION}"
+ CONF_FILE="/etc/conf.d/modules"
+ 

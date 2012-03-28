@@ -1,0 +1,11 @@
+--- Makefile.orig	2012-03-28 11:13:58.935000029 +0300
++++ Makefile	2012-03-28 11:14:27.876000029 +0300
+@@ -1,7 +1,7 @@
+ VERSION = 3
+ PATCHLEVEL = 3
+ SUBLEVEL = 0
+-EXTRAVERSION =
++EXTRAVERSION = -bld
+ NAME = Saber-toothed Squirrel
+ 
+ # *DOCUMENTATION*

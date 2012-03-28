@@ -17,15 +17,15 @@ detect_arch
 
 CKV=$(get_version_component_range 1-3)
 SLOT=$(get_version_component_range 1-4)
-KV_FULL="${PV}-calculate"
+KV_FULL="${PV}-bld"
 
 S="${WORKDIR}/linux-${KV_FULL}"
-EXTRAVERSION="-calculate"
+EXTRAVERSION="-bld"
 
 CALC_K_SUBV=.$(get_version_component_range 4)
 [[ ${CALC_K_SUBV} == "." ]] && CALC_K_SUBV=
 
-EXTRAVERSION="${CALC_K_SUBV}-calculate"
+EXTRAVERSION="${CALC_K_SUBV}-bld"
 
 UNIPATCH_STRICTORDER=1
 
@@ -34,10 +34,10 @@ CALC_URI="ftp://ftp.calculate.ru/pub/calculate/${PN}/${PN}-${CKV}.tar.bz2
 		http://mirror.yandex.ru/calculate/${PN}/${PN}-${CKV}.tar.bz2
 		ftp://ftp.linux.kiev.ua/pub/Linux/Calculate/${PN}/${PN}-${CKV}.tar.bz2"
 
-NEW_CALCULATE_OVERLAY="/var/lib/layman/calculate"
+NEW_CALCULATE_OVERLAY="/var/lib/layman/ROKO__"
 [[ -d ${ROOT}/${NEW_CALCULATE_OVERLAY} ]] &&
 	CALCULATE_OVERLAY=${NEW_CALCULATE_OVERLAY} ||
-	CALCULATE_OVERLAY="/usr/local/portage/layman/calculate"
+	CALCULATE_OVERLAY="/usr/local/portage/layman/ROKO__"
 
 MODULESDBFILE=${ROOT}/var/lib/module-rebuild/moduledb
 

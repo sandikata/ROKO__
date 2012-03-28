@@ -1,0 +1,66 @@
+diff --git pym/cl_builder.py pym/cl_builder.py
+index 8070896..a14c8ff 100644
+--- pym/cl_builder.py
++++ pym/cl_builder.py
+@@ -140,7 +140,7 @@ class cl_builder(color_print):
+         #self.clVars.Set("cl_root_path","/", True)
+         self.clVars.Set("cl_action","iso", True)
+         chrootPath=pathJoin(directory,
+-                            self.clVars.Get('cl_builder_squash_path'))
++            self.clVars.Get('cl_builder_squash_path'))
+         self.clVars.Set("cl_chroot_path",chrootPath, True)
+         self.clVars.Set("cl_root_path","..", True)
+         self.clTempl = template(self.clVars)
+@@ -254,35 +254,28 @@ class cl_builder(color_print):
+                 raise BuilderError(_("Failed to unmount %s")%target)
+             self.printByResult(True)
+         distrPath = distr.convertToDirectory().getDirectory()
++        self.clVars.Set('cl_builder_squash_path',
++                        os.path.basename(os.path.normpath(distrPath)))
+         self.cleanNeedlessKernelData(distrPath)
+         self.dispatchConf(distrPath)
+ 
++        builderPath = self.clVars.Get('cl_builder_path')
+         if self.assembleIso and \
+             self.clVars.Get('os_builder_profile').endswith('binary'):
+-            self.printMessageForTest(_("Updating calculate overlay"))
+-            updateLayman = self.runChroot(distrPath,"layman -s calculate")
+-            self.printByResult(updateLayman.success())
+-
+-        self.printByResult(True)
+-
+-        builderPath = self.clVars.Get('cl_builder_path')
+-        updateMeta = False
+-        for gitName,gitDir in (('portage','/usr/portage'),
+-                       ('overlay','/var/lib/layman/calculate')):
+-            gitHead = pathJoin(builderPath,gitDir,".git/HEAD")
+-            if "heads/develop" in readFile(gitHead):
+-                self.printMessageForTest(
+-                    _("Changing {repname} repository branch to '{branch}'").
+-                        format(repname=gitName,
+-                               branch='master'))
+-                changeBranch = self.runChroot(distrPath,
+-                    "cd %s;git fetch;git checkout master;git pull"%gitDir)
+-                self.printByResult(changeBranch.success())
+-                updateMeta = True
+-
+-        if updateMeta:
+-            self.printMessageForTest(_("Updating portage metadata"))
+-            updateMeta = self.runChroot(distrPath,"emerge --metadata")
++            for gitName,gitDir in (('portage','/usr/portage'),
++                           ('overlay','/var/lib/layman/calculate')):
++                gitHead = pathJoin(builderPath,gitDir,".git/HEAD")
++                if "heads/develop" in readFile(gitHead):
++                    self.printMessageForTest(
++                        _("Changing {repname} repository branch to '{branch}'").
++                            format(repname=gitName,
++                                   branch='master'))
++                    changeBranch = self.runChroot(distrPath,
++                        "cd %s;git fetch;git checkout master"%gitDir)
++                    self.printByResult(changeBranch.success())
++
++            self.printMessageForTest(_("Updating portage"))
++            updateMeta = self.runChroot(distrPath,"emerge --sync")
+             self.printByResult(updateMeta.success())
+ 
+         self.applyTemplatesForSquash(distrPath)

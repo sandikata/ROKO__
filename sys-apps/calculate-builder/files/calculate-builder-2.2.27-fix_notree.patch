@@ -1,0 +1,20 @@
+commit 8b036a688338a0d1420b0b2bd74ce7fdce2fb4ca
+Author: Mike Hiretsky <mh@calculate.ru>
+Date:   Tue Jan 31 08:46:41 2012 +0400
+
+    Fix remove notree.
+
+diff --git pym/cl_image_cmd.py pym/cl_image_cmd.py
+index 2029c03..f05ac27 100644
+--- pym/cl_image_cmd.py
++++ pym/cl_image_cmd.py
+@@ -167,9 +167,6 @@ class image_cmd(share_cmd):
+             if not self.isRoot() or not self.isScratch(True):
+                 sys.exit(1)
+ 
+-        if values.notree:
+-            self.logicObj.clVars.Set('cl_builder_tree','off',True)
+-
+         if values.noisohybrid:
+             self.logicObj.clVars.Set('cl_builder_isohybrid_set','off',True)
+ 
