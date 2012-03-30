@@ -33,5 +33,6 @@ CL_KERNEL_OPTS="--lvm --mdadm --dmraid"
 
 src_prepare() {
 	epatch "${FILESDIR}"/BLD_3.3-rc3-feb12.patch
+	epatch "${FILESDIR}"/4200_fbcondecor-0.9.6.patch
 	epatch "${FILESDIR}"/Makefile-bld.patch
 }
