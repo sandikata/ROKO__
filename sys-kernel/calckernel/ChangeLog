@@ -1,0 +1,158 @@
+# ChangeLog for sys-kernel/calckernel
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*calckernel-3.4.18-r3 (15 Dec 2011)
+
+  15 Dec 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.18-r3.ebuild, +files/calckernel-3.4.18-r3.patch:
+  Update for fix detect loaded video driver.
+
+  05 Dec 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.18-r2.ebuild:
+  Unmask calckernel
+
+*calckernel-3.4.18-r2 (30 Nov 2011)
+
+  30 Nov 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.18-r2.ebuild, +files/calckernel-3.4.18-r2.patch:
+  Fix nfs support
+
+*calckernel-3.4.18-r1 (01 Sep 2011)
+
+  01 Sep 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.18-r1.ebuild, +files/calckernel-3.4.18-r1.patch:
+  Update for bugfix
+
+  30 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.18.ebuild:
+  Change keywords
+
+  29 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calckernel-3.4.15-r10.ebuild, -calckernel-3.4.15-r11.ebuild,
+  -calckernel-3.4.15-r12.ebuild, -calckernel-3.4.15-r13.ebuild,
+  -calckernel-3.4.15-r14.ebuild, -calckernel-3.4.15-r15.ebuild,
+  -calckernel-3.4.15-r16.ebuild, -files/calckernel-3.4.15-r10.patch,
+  -files/calckernel-3.4.15-r11.patch, -files/calckernel-3.4.15-r12.patch,
+  -files/calckernel-3.4.15-r13.patch, -files/calckernel-3.4.15-r14.patch,
+  -files/calckernel-3.4.15-r15.patch, -files/calckernel-3.4.15-r16.patch:
+  Remove old
+
+*calckernel-3.4.18 (29 Aug 2011)
+
+  29 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.18.ebuild, +files/calckernel-3.4.18.patch:
+  Version bump.
+
+*calckernel-3.4.15-r17 (29 Aug 2011)
+
+  29 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r17.ebuild, +files/calckernel-3.4.15-r17.patch:
+  Update for bugfix install udev
+
+*calckernel-3.4.15-r16 (23 Aug 2011)
+
+  23 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r16.ebuild, +files/calckernel-3.4.15-r16.patch:
+  Update for bugfix
+
+*calckernel-3.4.15-r15 (18 Aug 2011)
+
+  18 Aug 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r15.ebuild, +files/calckernel-3.4.15-r15.patch:
+  Update for bugfix
+
+*calckernel-3.4.15-r13 (29 Jul 2011)
+
+  29 Jul 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r13.ebuild, +files/calckernel-3.4.15-r13.patch:
+  Update for fix loading fireware for radeon in ramfs.
+
+*calckernel-3.4.15-r12 (25 Jul 2011)
+
+  25 Jul 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r12.ebuild, +files/calckernel-3.4.15-r12.patch:
+  Update for calckernel.
+
+*calckernel-3.4.15-r11 (21 Jul 2011)
+
+  21 Jul 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r11.ebuild, +files/calckernel-3.4.15-r11.patch:
+  Update for fix boot from lvm
+
+*calckernel-3.4.15-r9 (22 Jun 2011)
+
+  22 Jun 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  -calckernel-3.4.10.903-r22.ebuild, -calckernel-3.4.10.903-r23.ebuild,
+  -files/calckernel-3.4.10.903-r22.patch,
+  -files/calckernel-3.4.10.903-r23.patch, -calckernel-3.4.14.ebuild,
+  -files/calckernel-3.4.14.patch, -calckernel-3.4.15.ebuild,
+  -calckernel-3.4.15-r1.ebuild, -calckernel-3.4.15-r2.ebuild,
+  -calckernel-3.4.15-r3.ebuild, -calckernel-3.4.15-r5.ebuild,
+  -calckernel-3.4.15-r6.ebuild, -calckernel-3.4.15-r7.ebuild,
+  -calckernel-3.4.15-r8.ebuild, +calckernel-3.4.15-r9.ebuild,
+  -files/calckernel-3.4.15-r1.patch, -files/calckernel-3.4.15-r2.patch,
+  -files/calckernel-3.4.15-r3.patch, -files/calckernel-3.4.15-r4.patch,
+  -files/calckernel-3.4.15-r5.patch, -files/calckernel-3.4.15-r6.patch,
+  -files/calckernel-3.4.15-r7.patch, -files/calckernel-3.4.15-r8.patch,
+  +files/calckernel-3.4.15-r9.patch, -files/calckernel-3.4.15.patch:
+  Update deps. Remove old.
+
+*calckernel-3.4.15-r8 (13 May 2011)
+
+  13 May 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r8.ebuild, +files/calckernel-3.4.15-r8.patch:
+  Update for bugfix docache.
+
+*calckernel-3.4.15-r7 (12 May 2011)
+
+  12 May 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r7.ebuild, +files/calckernel-3.4.15-r7.patch:
+  Fix ati detect.
+
+  25 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.15-r5.ebuild:
+  Place dep radeon-ucode for VIDEO_DRIVER="radeon"
+
+*calckernel-3.4.15-r3 (13 Apr 2011)
+
+  13 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15-r3.ebuild, +files/calckernel-3.4.15-r3.patch:
+  Fix boot from livecd on intel.
+
+*calckernel-3.4.15 (11 Apr 2011)
+
+  11 Apr 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.15.ebuild, +files/calckernel-3.4.15.patch:
+  Bump version.
+
+  22 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.14.ebuild:
+  Unmask by keywords.
+
+*calckernel-3.4.14 (17 Mar 2011)
+
+  17 Mar 2011; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.14.ebuild, +files/calckernel-3.4.14.patch:
+  Bump version.
+
+*calckernel-3.4.10.903-r23 (16 Sep 2010)
+
+  16 Sep 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.10.903-r23.ebuild, +files/calckernel-3.4.10.903-r23.patch:
+  Added hide busybox compilation.
+
+  01 Jun 2010; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  calckernel-3.4.10.903-r22.ebuild:
+  Changed home page.
+
+  10 Dec 2009; Mike Hiretsky (mhiretskiy) <mh@calculate.ru>
+  +calckernel-3.4.10.903-r16.ebuild, +files/calckernel-3.4.10.903-r16.patch:
+  Remove lzma compression for initramfs.
+
+*calckernel-3.4.10.903-r16 (24 Nov 2009)
+
+  24 Nov 2009; Mike Hirecky (mhiretskiy) <mh@calculate.ru>
+  +metadata.xml:
+  Fix package
+
