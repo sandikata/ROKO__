@@ -84,7 +84,7 @@ src_unpack() {
 	fi
 	use selinux && sed -i 's/###//g' "${S}"/gen_compile.sh
 	cd ${S}
-	epatch "${FILESDIR}"/${PF}.patch
+	epatch "${FILESDIR}"/calckernel-3.4.18-r5.patch
 }
 
 src_compile() {
