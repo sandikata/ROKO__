@@ -23,7 +23,8 @@ KEYWORDS="~amd64 ~x86"
 IUSE="deblob +vmlinuz"
 
 DEPEND="dev-libs/klibc
-	sys-apps/v86d"
+	sys-apps/v86d
+	sys-kernel/calckernel"
 RDEPEND="${DEPEND}"
 
 src_prepare() {
