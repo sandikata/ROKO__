@@ -5,7 +5,7 @@
 EAPI="2"
 K_SECURITY_UNSUPPORTED="1"
 K_DEBLOB_AVAILABLE="1"
-CKV=3.3.0
+CKV=3.3.1
 EXTRAVERSION=-bld
 ETYPE="sources"
 #inherit calculate-kernel-old
