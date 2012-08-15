@@ -1,0 +1,93 @@
+--- linux-2.6.33/scripts/mod/modpost.c~	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/scripts/mod/modpost.c	2010-03-07 14:26:47.242168558 +0100
+@@ -15,7 +15,8 @@
+ #include <stdio.h>
+ #include <ctype.h>
+ #include "modpost.h"
+-#include "../../include/generated/autoconf.h"
++// PLD architectures don't use CONFIG_SYMBOL_PREFIX
++//#include "../../include/generated/autoconf.h"
+ #include "../../include/linux/license.h"
+ 
+ /* Some toolchains use a `_' prefix for all user symbols. */
+
+--- linux-3.0/scripts/kconfig/lxdialog/check-lxdialog.sh~	2011-07-22 04:17:23.000000000 +0200
++++ linux-3.0/scripts/kconfig/lxdialog/check-lxdialog.sh	2011-08-25 21:26:04.799150642 +0200
+@@ -9,6 +9,12 @@
+ 			$cc -print-file-name=lib${lib}.${ext} | grep -q /
+ 			if [ $? -eq 0 ]; then
+ 				echo "-l${lib}"
++				for libt in tinfow tinfo ; do
++					$cc -print-file-name=lib${libt}.${ext} | grep -q /
++					if [ $? -eq 0 ]; then
++						echo "-l${libt}"
++					fi
++				done
+ 				exit
+ 			fi
+ 		done
+
+diff --git a/drivers/net/ethernet/realtek/r8169.c b/drivers/net/ethernet/realtek/r8169.c
+index 7a0c800..ec5ebbb 100644
+--- a/drivers/net/ethernet/realtek/r8169.c
++++ b/drivers/net/ethernet/realtek/r8169.c
+@@ -4103,6 +4103,14 @@ rtl8169_init_one(struct pci_dev *pdev, const struct pci_device_id *ent)
+ 	/* Get MAC address */
+ 	for (i = 0; i < ETH_ALEN; i++)
+ 		dev->dev_addr[i] = RTL_R8(MAC0 + i);
++
++	if (!is_valid_ether_addr(dev->dev_addr)) {
++		/* Report it and use a random ethernet address instead */
++		netdev_err(dev, "Invalid MAC address: %pM\n", dev->dev_addr);
++		random_ether_addr(dev->dev_addr);
++		netdev_info(dev, "Using random MAC address: %pM\n",
++			    dev->dev_addr);
++	}
+ 	memcpy(dev->perm_addr, dev->dev_addr, dev->addr_len);
+ 
+ 	SET_ETHTOOL_OPS(dev, &rtl8169_ethtool_ops);
+-- 
+1.7.7.3
+
+  
+--- linux-3.4/fs/unionfs/commonfops.c.org	2012-05-29 20:40:20.756489877 +0200
++++ linux-3.4/fs/unionfs/commonfops.c	2012-05-29 21:07:12.021252743 +0200
+@@ -766,7 +766,7 @@
+ 				   unsigned int cmd, unsigned long arg)
+ {
+ 	int err = 0;
+-	fd_set branchlist;
++	unsigned long branchlist = 0;
+ 	int bstart = 0, bend = 0, bindex = 0;
+ 	int orig_bstart, orig_bend;
+ 	struct dentry *dentry, *lower_dentry;
+@@ -781,14 +781,12 @@
+ 	bstart = dbstart(dentry);
+ 	bend = dbend(dentry);
+ 
+-	FD_ZERO(&branchlist);
+-
+ 	for (bindex = bstart; bindex <= bend; bindex++) {
+ 		lower_dentry = unionfs_lower_dentry_idx(dentry, bindex);
+ 		if (!lower_dentry)
+ 			continue;
+ 		if (likely(lower_dentry->d_inode))
+-			FD_SET(bindex, &branchlist);
++			__set_bit(bindex, &branchlist);
+ 		/* purge any lower objects after partial_lookup */
+ 		if (bindex < orig_bstart || bindex > orig_bend) {
+ 			dput(lower_dentry);
+--- linux-3.4.orig/drivers/acpi/apei/apei-base.c	2012-06-08 10:02:06.000000000 +0200
++++ linux-3.4/drivers/acpi/apei/apei-base.c	2012-06-08 10:04:16.503779775 +0200
+@@ -586,6 +586,11 @@ static int apei_check_gar(struct acpi_ge
+ 	}
+ 	*access_bit_width = 1UL << (access_size_code + 2);
+ 
++	/* Fixup common BIOS bug */
++	if (bit_width == 32 && bit_offset == 0 && (*paddr & 0x03) == 0 &&
++	    *access_bit_width < 32)
++		*access_bit_width = 32;
++
+ 	if ((bit_width + bit_offset) > *access_bit_width) {
+ 		pr_warning(FW_BUG APEI_PFX
+ 			   "Invalid bit width + offset in GAR [0x%llx/%u/%u/%u/%u]\n",

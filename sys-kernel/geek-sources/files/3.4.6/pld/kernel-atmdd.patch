@@ -1,0 +1,954 @@
+diff -urN linux-2.4.25/drivers/atm/Makefile linux-2.4.25-atmdd/drivers/atm/Makefile
+--- linux-2.4.25/drivers/atm/Makefile	2004-02-23 15:18:29.000000000 +0100
++++ linux-2.4.25-atmdd/drivers/atm/Makefile	2004-02-29 22:51:26.000000000 +0100
+@@ -31,6 +31,7 @@
+ endif
+ 
+ obj-$(CONFIG_ATM_DUMMY)		+= adummy.o
++obj-$(CONFIG_ATM_DD)		+= atmdd.o
+ obj-$(CONFIG_ATM_TCP)		+= atmtcp.o
+ obj-$(CONFIG_ATM_FIRESTREAM)	+= firestream.o
+ obj-$(CONFIG_ATM_LANAI)		+= lanai.o
+diff -urN linux-2.4.25/drivers/atm/Kconfig linux-2.4.25-atmdd/drivers/atm/Kconfig
+--- linux-2.4.25/drivers/atm/Kcnfig	2003-08-25 13:44:41.000000000 +0200
++++ linux-2.4.25-atmdd/drivers/atm/Kconfig	2004-02-29 22:52:59.000000000 +0100
+@@ -4,6 +4,14 @@
+ 	default y
+ 
+ if ATM_DRIVERS && NETDEVICES && ATM
++
++config ATM_DD
++	tristate "ATM loopback"
++	depends on INET && ATM
++	help
++	  This is an example atm driver.  It does not require any actual ATM
++	  hardware.  It supports AAL5 and AAL0.  Frames are merely looped back
++	  to the sender on the same VC they were sent.
+ 
+ config ATM_DUMMY
+ 	tristate "Dummy ATM driver"
+diff -urN linux-2.4.25/drivers/atm/atmdd.c linux-2.4.25-atmdd/drivers/atm/atmdd.c
+--- linux-2.4.25/drivers/atm/atmdd.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.25-atmdd/drivers/atm/atmdd.c	2004-02-29 22:58:11.000000000 +0100
+@@ -0,0 +1,921 @@
++/*
++#######################################################################
++#
++# (C) Copyright 2001
++# Alex Zeffertt, Cambridge Broadband Ltd, ajz@cambridgebroadband.com
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation; either version 2 of
++# the License, or (at your option) any later version.
++#
++# This program is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write to the Free Software
++# Foundation, Inc., 59 Temple Place, Suite 330, Boston,
++# MA 02111-1307 USA
++#######################################################################
++# Notes:
++# 
++# This is an example atm driver.  It does not require any actual ATM
++# hardware.  It supports AAL5 and AAL0.  frames are merely looped back
++# to the sender on the same VC they were sent.
++# 
++#######################################################################
++*/
++
++/*############ Includes ###############################################*/
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/errno.h>
++#include <linux/atm.h>
++#include <linux/atmdev.h>
++#include <linux/skbuff.h>
++#include <linux/init.h>
++#include <linux/netdevice.h>
++#include <linux/sched.h> /* for xtime */
++
++/*############ Defines ################################################*/
++
++#define MYATMDD "atmdd"
++#define KLOG_PREAMBLE MYATMDD ": "
++#define MYATMDD_VPI_BITS 1     /* Allow ?.1.? but not ?.2.? */
++#define MYATMDD_VCI_BITS 11    /* Allow ?.?.2047 but not ?.?.2048 */
++#define MYATMDD_PCR 100000
++#define RXQ_SZ 16
++#define TXQ_SZ 16
++#define AAL5_MTU (1510+8) /* Default AAL5 Maximum Transmission Unit (and length of AAL5 buffers) */
++#define AAL5_BUFLEN (((AAL5_MTU + 47)/48)*48) /* Round up to n*48 bytes */
++#if 0
++# define DEBUG(format,args...) printk(format,##args)
++#else
++# define DEBUG(format,args...)
++#endif
++/*############ Types ##################################################*/
++
++/* status flags shared between s/w and emulated h/w */
++typedef enum {
++    RX_EMPTY, /* No sk_buff present */
++    RX_FULL,  /* sk_buff present and awaiting data */
++    RX_RECVD, /* sk_buff present and contains valid data */
++} myatmdd_rxstatus_e;
++
++/* status flags shared between s/w and emulated h/w */
++typedef enum {
++    TX_EMPTY, /* No sk_buff present */
++    TX_FULL,  /* sk_buff present and awaiting transmission */
++    TX_SENT,  /* sk_buff present and has been sent */
++} myatmdd_txstatus_e;
++
++typedef struct {
++    struct sk_buff **start;
++    struct sk_buff **end;
++    struct sk_buff **head;
++    struct sk_buff **tail;
++
++    /* everything below this line emulates h/w */
++    myatmdd_rxstatus_e *status;
++    struct sk_buff **hw_ptr;
++    int *pkt_len;
++
++} myatmdd_rxq_t;
++
++typedef struct {
++    struct sk_buff **start;
++    struct sk_buff **end;
++    struct sk_buff **head;
++    struct sk_buff **tail;
++
++    /* everything below this line emulates h/w */
++    myatmdd_txstatus_e *status;
++    struct sk_buff **hw_ptr;
++    int *pkt_len;
++
++} myatmdd_txq_t;
++
++typedef struct {
++} myatmdd_devdata_t;
++
++typedef struct {
++    myatmdd_rxq_t rxqueue;
++    myatmdd_txq_t txqueue;
++} myatmdd_vccdata_t;
++
++/*############ Module paramters #######################################*/
++
++MODULE_AUTHOR("Alex Zeffertt, ajz@cambridgebroadband.com");
++MODULE_DESCRIPTION("Example ATM device driver (loopback)");
++#ifdef MODULE_LICENSE
++MODULE_LICENSE("GPL");
++#endif
++/*#################### Forward declarations ###########################*/
++
++static void myatmdd_emulate_loopback_hardware(struct atm_vcc *vcc);
++
++static void myatmdd_free_tx_skb(struct sk_buff *skb);
++
++/* these functions will need modifying in a real ATM driver */
++static void myatmdd_rx_interrupt(struct atm_vcc *vcc);
++static void myatmdd_tx_interrupt(struct atm_vcc *vcc);
++
++/* functions for manipulating circular bufs */
++static int myatmdd_init_rxq(myatmdd_rxq_t *queue, int size);
++static int myatmdd_init_txq(myatmdd_txq_t *queue, int size);
++static int myatmdd_release_rxq(myatmdd_rxq_t *queue);
++static int myatmdd_release_txq(myatmdd_txq_t *queue);
++static int myatmdd_txq_enqueue(myatmdd_txq_t *queue, struct sk_buff *skb);
++static int myatmdd_rxq_enqueue(myatmdd_rxq_t *queue, struct sk_buff *skb /* empty buffer */);
++static struct sk_buff *myatmdd_txq_dequeue(myatmdd_txq_t *queue);
++static struct sk_buff *myatmdd_rxq_dequeue(myatmdd_rxq_t *queue, int *pkt_len);
++
++/* myatmdd_ops registered by ATM device */
++static int myatmdd_open(struct atm_vcc *vcc);
++static void myatmdd_close(struct atm_vcc *vcc);
++static int myatmdd_ioctl(struct atm_dev *dev, unsigned int cmd,void *arg);
++static int myatmdd_setsockopt(struct atm_vcc *vcc,int level,int optname, void *optval,int optlen);
++static int myatmdd_getsockopt(struct atm_vcc *vcc,int level,int optname, void *optval,int optlen);
++static int myatmdd_send(struct atm_vcc *vcc,struct sk_buff *skb);
++static int myatmdd_change_qos(struct atm_vcc *vcc,struct atm_qos *qos,int flgs);
++static int myatmdd_proc_read(struct atm_dev *dev,loff_t *pos,char *page);
++
++/* myatmdd_phy_ops registered by phy driver */
++static void myatmdd_phy_int(struct atm_dev *dev);
++static int myatmdd_phy_start(struct atm_dev *dev); /* <-- This is the only thing exported by PHY driver */
++static int myatmdd_phy_ioctl(struct atm_dev *dev,unsigned int cmd,void *arg);
++
++/*#################### Global scope variables #########################*/
++
++/* operations registered by the atm device */
++static const struct atmdev_ops myatmdd_ops =
++{
++	open:        myatmdd_open,
++	close:       myatmdd_close,
++	ioctl:       myatmdd_ioctl,
++	getsockopt:  myatmdd_getsockopt,
++	setsockopt:  myatmdd_setsockopt,
++	send:        myatmdd_send,
++	change_qos:  myatmdd_change_qos,
++	proc_read:   myatmdd_proc_read,
++    owner:       THIS_MODULE,
++};
++
++/* operations registered by the phy driver */
++static const struct atmphy_ops myatmdd_phy_ops = {
++	start:      myatmdd_phy_start,
++	ioctl:      myatmdd_phy_ioctl,
++	interrupt:  myatmdd_phy_int,
++};
++
++struct atm_dev *myatmdd_dev;
++
++/*#################### Function definitions ###########################*/
++
++
++/*
++#########################################################
++#
++#  Function : myatmdd_rx_interrupt, and myatmdd_tx_interrupt
++#             
++#  Purpose  : handle interrupt from hardware.  In first 
++#             case this means extract recvd buffers and pass
++#             it up protocol stack.  In 2nd case this means
++#             free the sent buffers.
++#             
++#  Args     : pointer to private data of the VCC concerned
++#             
++#  Returns  : nowt
++#             
++#  Notes    : 
++#             
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++
++static void myatmdd_rx_interrupt(struct atm_vcc *vcc)
++{
++    struct sk_buff *skb;
++    myatmdd_vccdata_t *priv = vcc->dev_data;
++    int pkt_len;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    while ((skb = myatmdd_rxq_dequeue(&priv->rxqueue, &pkt_len)))
++    {
++        struct sk_buff *newskb;
++        struct timeval stamp;
++
++        /* Get a new skb to replace the one just consumed */
++        if (!(newskb = dev_alloc_skb(AAL5_BUFLEN)))
++        {
++            atomic_inc(&vcc->stats->rx_err);
++            printk(KERN_ERR KLOG_PREAMBLE "cannot receive packet - out of memory\n");
++            /* put skb back in rx queue) */
++            myatmdd_rxq_enqueue(&priv->rxqueue, skb);
++            return;
++        }
++        myatmdd_rxq_enqueue(&priv->rxqueue, newskb);
++
++        if (!atm_charge (vcc, skb->truesize))
++        {
++            /* Exceeded memory quota for this vcc
++             * NOTE: if atm_charge succeeds you must then push or accounting will screw up
++             */
++            dev_kfree_skb(skb);
++            /* &vcc->stats->drop stats incremented in atm_charge */
++        }
++        else
++        {
++            /* sk_buff passed all sanity checks! */
++            
++            /* Add received length to socket buffer */
++            skb_put(skb, pkt_len);
++        
++            /* update device stats */
++            atomic_inc(&vcc->stats->rx);
++
++            /* add timestamp for upper layers to use */
++	    do_gettimeofday(&stamp);
++	    skb->tstamp = timeval_to_ktime(stamp);
++        
++            /* Point socket buffer at the right VCC before giving to socket layer */
++            ATM_SKB(skb)->vcc = vcc;
++        
++            /* push socket buffer up to ATM layer */
++            vcc->push(vcc, skb);
++        }
++    }
++}
++
++static void myatmdd_tx_interrupt(struct atm_vcc *vcc)
++{
++    struct sk_buff *skb;
++    myatmdd_vccdata_t *priv = vcc->dev_data;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    while ((skb = myatmdd_txq_dequeue(&priv->txqueue)))
++    {
++        // Update channel stats and free the memory
++        atomic_inc(&vcc->stats->tx);
++        myatmdd_free_tx_skb(skb);
++    }
++}
++
++/*
++#########################################################
++#
++#  Function : myatmdd_emulate_loopback_hardware
++#             
++#  Purpose  : emulate things normally done by hardware
++#             i.e. copying tx bufs to rx bufs (we're modelling
++#             a loopback system here), calling the tx done
++#             interrupt, and calling the rx done interrupt.
++#
++#  Args     : priv = data private to VCC
++#             
++#  Returns  : nowt
++#             
++#  Notes    : 
++#             
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++static void myatmdd_emulate_loopback_hardware(struct atm_vcc *vcc)
++{
++    myatmdd_vccdata_t *priv = vcc->dev_data;
++    struct sk_buff **ptxskb;
++    struct sk_buff **prxskb;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    ptxskb = priv->txqueue.hw_ptr;
++    prxskb = priv->rxqueue.hw_ptr;
++
++    /* Send each tx buff waiting to go */
++    while (priv->txqueue.status[ptxskb - priv->txqueue.start] == TX_FULL)
++    {
++        struct sk_buff *txskb = *ptxskb;
++        struct sk_buff *rxskb = *prxskb;
++        int pkt_len = priv->txqueue.pkt_len[ptxskb - priv->txqueue.start];
++        
++        /* Is there an rx buffer? */
++        if (priv->rxqueue.status[prxskb - priv->rxqueue.start] == RX_FULL)
++        {
++            /* Yes - Is the length in range? */
++            if (pkt_len <= AAL5_BUFLEN)
++            {
++                /* Yes - do the copy */
++                memcpy(rxskb->data, txskb->data,pkt_len);
++                priv->rxqueue.pkt_len[prxskb - priv->rxqueue.start] = pkt_len;
++                
++                /* Indicate rx buffer recvd */
++                priv->rxqueue.status[prxskb - priv->rxqueue.start] = RX_RECVD;
++                
++                /* increment and maybe wrap rx pointer */
++                if (++prxskb == priv->rxqueue.end)
++                    prxskb = priv->rxqueue.start;
++                priv->rxqueue.hw_ptr = prxskb;
++            }
++            else
++            {
++                /* No - then h/w cannot do a recv */
++                printk(KERN_ERR KLOG_PREAMBLE "recvd frame too long - discarded\n");
++            }
++        }
++        else
++        {
++            /* No - then h/w cannot do a recv */
++            printk(KERN_ERR KLOG_PREAMBLE "no rx buffers available\n");
++        }
++        
++        /* Indicate tx buffer sent */
++        priv->txqueue.status[ptxskb - priv->txqueue.start] = TX_SENT;
++
++        /* increment and maybe wrap tx pointer */
++        if (++ptxskb == priv->txqueue.end)
++            ptxskb = priv->txqueue.start;
++        priv->txqueue.hw_ptr = ptxskb;
++        
++        /* Call tx ring interrupt handler */
++        myatmdd_tx_interrupt(vcc);
++           
++        /* Call tx ring interrupt handler */
++        myatmdd_rx_interrupt(vcc);
++    }
++}
++
++/*
++#########################################################
++#
++#  Function : functions for manipulating circular buffs
++#             
++#  Purpose  : 
++#             
++#  Args     : 
++#             
++#  Returns  : 
++#             
++#  Notes    : 
++#             
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++
++static int myatmdd_init_rxq(myatmdd_rxq_t *queue, int size)
++{
++    /* TODO - cope with kmalloc failure */
++    struct sk_buff **pskb;
++    int i;
++
++    DEBUG("%s\n", __FUNCTION__);
++    queue->hw_ptr = queue->head = queue->tail = 
++        queue->start = kmalloc(size * sizeof(struct sk_buff *), GFP_KERNEL);
++    queue->end = &queue->start[size];
++    for (pskb = queue->start; pskb < queue->end; pskb++)
++        *pskb = NULL;
++
++    queue->status = kmalloc(size * sizeof(myatmdd_rxstatus_e),GFP_KERNEL);
++    for (i = 0; i < size; i++)
++        queue->status[i] = RX_EMPTY;
++
++    queue->pkt_len = kmalloc(size * sizeof(int),GFP_KERNEL);
++    for (i = 0; i < size; i++)
++        queue->pkt_len[i] = 0;
++
++    return 0;
++}
++
++static int myatmdd_init_txq(myatmdd_txq_t *queue, int size)
++{
++    /* TODO - cope with kmalloc failure */
++    struct sk_buff **pskb;
++    int i;
++
++    DEBUG("%s\n", __FUNCTION__);
++    queue->hw_ptr = queue->head = queue->tail = 
++        queue->start = kmalloc(size * sizeof(struct sk_buff *), GFP_KERNEL);
++    queue->end = &queue->start[size];
++    for (pskb = queue->start; pskb < queue->end; pskb++)
++        *pskb = NULL;
++
++    queue->status = kmalloc(size * sizeof(myatmdd_rxstatus_e),GFP_KERNEL);
++    for (i = 0; i < size; i++)
++        queue->status[i] = TX_EMPTY;
++
++    queue->pkt_len = kmalloc(size * sizeof(int),GFP_KERNEL);
++    for (i = 0; i < size; i++)
++        queue->pkt_len[i] = 0;
++
++    return 0;
++}
++
++static int myatmdd_release_rxq(myatmdd_rxq_t *queue)
++{
++    struct sk_buff **pskb;
++
++    DEBUG("%s\n", __FUNCTION__);
++    for (pskb = queue->start; pskb < queue->end; pskb++)
++    {
++        /* Is there an skb here */
++        if (*pskb == NULL)
++            continue;   /* No, so skip this entry in ring */
++
++        /* Yes - free it */
++        dev_kfree_skb(*pskb);
++    }
++    kfree(queue->start);
++    kfree(queue->status);
++    kfree(queue->pkt_len);
++
++    return 0;
++}
++
++static int myatmdd_release_txq(myatmdd_txq_t *queue)
++{
++    struct sk_buff **pskb;
++
++    DEBUG("%s\n", __FUNCTION__);
++    /* Scan through all TX bd's and cleanup */
++    for (pskb = queue->start; pskb < queue->end; pskb++)
++    {  
++        /* Is this buffer currently unused - i.e. no skb */
++        if (*pskb == NULL)
++            continue;             /* Yes, so ignore it */
++
++        /* If we reach here, we have found a socket buffer that
++         * exists in the TX ring and is waiting to be released.
++         */
++        printk(KERN_WARNING KLOG_PREAMBLE "discarding unsent tx sk_buff\n");
++        atomic_inc(&ATM_SKB(*pskb)->vcc->stats->tx_err);
++        myatmdd_free_tx_skb(*pskb);
++    }
++    kfree(queue->start);
++    kfree(queue->status);
++    kfree(queue->pkt_len);
++
++    return 0;
++}
++
++/* returns non-zero for "out of space" */
++static int myatmdd_txq_enqueue(myatmdd_txq_t *queue, struct sk_buff *skb)
++{
++    /* increment head and wrap */
++    struct sk_buff **newhead = queue->head + 1;
++    if (newhead == queue->end)
++        newhead = queue->start;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* abort if tx ring full */
++    if (newhead == queue->tail)
++        return -1;
++    
++    /* all is okay if we're here */
++    *queue->head = skb;
++    /* Tell hardware there's a buffer to send */
++    queue->status[queue->head - queue->start] = TX_FULL;
++    queue->pkt_len[queue->head - queue->start] = skb->len;
++    queue->head = newhead;
++    return 0;
++}
++
++/* returns non-zero for "out of space" */
++static int myatmdd_rxq_enqueue(myatmdd_rxq_t *queue, struct sk_buff *skb /* empty buffer */)
++{
++    /* increment head and wrap */
++    struct sk_buff **newhead = queue->head + 1;
++    if (newhead == queue->end)
++        newhead = queue->start;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* abort if rx ring full */
++    if (newhead == queue->tail)
++        return -1;
++    
++    /* all is okay if we're here */
++    *queue->head = skb;
++    /* Tell hardware there's a buffer to send */
++    queue->status[queue->head - queue->start] = RX_FULL;
++    queue->head = newhead;
++    return 0;
++}
++
++static struct sk_buff *myatmdd_txq_dequeue(myatmdd_txq_t *queue)
++{
++    DEBUG("%s\n", __FUNCTION__);
++    if (queue->tail != queue->head && queue->status[queue->tail - queue->start] == TX_SENT)
++    {
++        struct sk_buff *skb = *queue->tail;
++
++        /* increment tail and wrap */
++        struct sk_buff **newtail = queue->tail + 1;
++        if (newtail == queue->end)
++            newtail = queue->start;
++        *queue->tail = NULL;
++        queue->status[queue->tail - queue->start] = TX_EMPTY;
++        queue->tail = newtail;
++        return skb;
++    }
++    return NULL;
++}
++
++/* returns NULL for "no new recvd frames" */
++static struct sk_buff *myatmdd_rxq_dequeue(myatmdd_rxq_t *queue, int *pkt_len)
++{
++    DEBUG("%s\n", __FUNCTION__);
++    if (queue->tail != queue->head && queue->status[queue->tail - queue->start] == RX_RECVD)
++    {
++        struct sk_buff *skb = *queue->tail;
++
++        /* increment tail and wrap */
++        struct sk_buff **newtail = queue->tail + 1;
++        if (newtail == queue->end)
++            newtail = queue->start;
++        *queue->tail = NULL;
++        queue->status[queue->tail - queue->start] = RX_EMPTY;
++        *pkt_len = queue->pkt_len[queue->tail - queue->start];
++        queue->tail = newtail;
++        return skb;
++    }
++    return NULL;
++}
++
++/*
++#########################################################
++#
++#  Functions : 	Implementations of function ptrs in
++#               myatmdd_phy_ops.  This is the phy driver
++#	start:      myatmdd_phy_start,
++#	ioctl:      myatmdd_phy_ioctl,
++#	interrupt:  myatmdd_phy_int,
++#             
++#  Purpose  : See ATM device driver interface v0.1
++#             
++#  Notes    : Conforming to Linux ATM device driver i/f
++#             interface.  Draft version 0.1
++#             
++#             Designed to work with multiple devices
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++static int myatmdd_phy_start(struct atm_dev *dev)
++{
++    /* Provide ATM driver with a pointer via which it
++     * may invoke PHY driver's IOCTL or interrupt 
++     * handlers.
++     */
++    dev->phy = &myatmdd_phy_ops;
++
++    /* If required allocate phy private data and save
++     * pointer in dev->phy_data;
++     */
++    
++    /* TODO Initialise PHY hardware... */
++
++    return 0;
++}
++
++/* Should be called by SAR driver when it needs to handle an interrupt
++ * triggered by PHY.
++ */
++static void myatmdd_phy_int(struct atm_dev *dev)
++{
++    /* Handle interrupt triggered by PHY */
++}
++
++/* Gets called by SAR driver IOCTL handler for IOCTLS it doesn't recognise */
++static int myatmdd_phy_ioctl(struct atm_dev *dev,unsigned int cmd,void *arg)
++{
++	switch (cmd)
++    {
++//		case SONET_GETSTATZ:
++        default:
++            return -EINVAL;
++    }
++}
++
++/*
++#########################################################
++#
++#  Function : myatmdd_free_tx_skb
++#             
++#  Purpose  : frees an sk_buff.
++#             
++#  Args     : skb=pointer to socket buffer
++#             
++#  Notes    : Tries to use the upper layer pop() function
++#             but uses dev_kfree_skb() if this doesn't exist
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++static void myatmdd_free_tx_skb(struct sk_buff *skb)
++{  
++    struct atm_vcc *vcc;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* See if we can use the VCC pop function */
++    if (((vcc = ATM_SKB(skb)->vcc) != NULL) && (vcc->pop != NULL))
++    {
++        /* Yes, so use ATM socket layer pop function */
++        vcc->pop(vcc, skb);
++    }
++    else
++    {  
++        printk(KERN_WARNING KLOG_PREAMBLE "unable to call skb free function\n");
++        /* No, so free socket buffer */
++        dev_kfree_skb(skb);
++    }
++}
++
++/*
++#########################################################
++#
++#  Functions : 	Implementations of function ptrs in
++#               myatmdd_ops.
++#   myatmdd_open(),
++#	myatmdd_close(),
++#	myatmdd_ioctl(),
++#	myatmdd_getsockopt(),
++#	myatmdd_setsockopt(),
++#	myatmdd_send(),
++#	myatmdd_sg_send(),
++#	myatmdd_change_qos(),
++#	myatmdd_proc_read()
++# 
++#             
++#  Purpose  : See ATM device driver interface v0.1
++#             
++#  Notes    : Conforming to Linux ATM device driver i/f
++#             interface.  Draft version 0.1
++#             
++#             Designed to work with multiple devices
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++static int myatmdd_open(struct atm_vcc *vcc)
++{
++    myatmdd_vccdata_t *priv;
++    int i;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* Make sure we are opening a AAL0 or AAL5 connection */
++    if ((vcc->qos.aal != ATM_AAL5) && (vcc->qos.aal != ATM_AAL0))
++    {
++        printk(KERN_WARNING KLOG_PREAMBLE "invalid AAL\n");
++        return -EINVAL;
++    }
++
++    /* Address is in use */
++    set_bit(ATM_VF_ADDR, &vcc->flags);
++
++    /* Allocate some vcc-private memory */
++    vcc->dev_data = kmalloc(sizeof(myatmdd_vccdata_t), GFP_KERNEL);
++    if (vcc->dev_data == NULL)
++        return -ENOMEM;
++    priv = vcc->dev_data;
++
++    /* Setup the hardware for new VC... */
++
++    /* Do not allow half open VCs - otherwise the example driver will not be able
++     * to loop back frames sent !
++     */
++    if (vcc->qos.rxtp.traffic_class == ATM_NONE || vcc->qos.txtp.traffic_class == ATM_NONE)
++    {
++        kfree(vcc->dev_data);
++        return -EPERM;
++    }
++
++    /* Create rx/tx queues for this VC */
++    myatmdd_init_txq(&priv->txqueue, TXQ_SZ);
++    myatmdd_init_rxq(&priv->rxqueue, RXQ_SZ);
++    
++    /* Fill rx queue with empty skbuffs */
++    for (i = 0 ; i < RXQ_SZ - 1; i++)
++    {
++        struct sk_buff *skb = dev_alloc_skb(AAL5_BUFLEN);
++        myatmdd_rxq_enqueue(&priv->rxqueue,skb);
++    }
++   
++    /* Connection is now ready to receive data */
++    set_bit(ATM_VF_READY, &vcc->flags);
++
++    return 0;
++}
++
++static void myatmdd_close(struct atm_vcc *vcc)
++{
++    myatmdd_vccdata_t *priv = vcc->dev_data;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* Indicate channel closed */
++    clear_bit(ATM_VF_READY, &vcc->flags);
++
++    /* TODO Uninitialise the hardware for this VC... */
++    
++    /* empty the rx and tx queues */
++    myatmdd_release_txq(&priv->txqueue);
++    myatmdd_release_rxq(&priv->rxqueue);
++
++    /* Free the vcc-private memory */
++    kfree(vcc->dev_data);
++}
++  
++static int myatmdd_ioctl(struct atm_dev *dev, unsigned int cmd,void *arg)
++{
++    /* myatmdd does not currently have an ioctl interface so pass ioctl onto PHY */
++    if (dev->phy && dev->phy->ioctl) {
++        return dev->phy->ioctl(dev, cmd, arg);
++    }
++    return -EINVAL;
++}
++
++static int myatmdd_getsockopt(struct atm_vcc *vcc,int level,int optname, void *optval,int optlen)
++{
++    return -EINVAL;
++}
++
++static int myatmdd_setsockopt(struct atm_vcc *vcc,int level,int optname, void *optval,int optlen)
++{
++    return -EINVAL;
++}
++
++/* Note may be called in either process or interrupt context! */
++static int myatmdd_send(struct atm_vcc *vcc,struct sk_buff *skb)
++{
++    myatmdd_vccdata_t *priv = vcc->dev_data;
++
++    DEBUG("%s\n", __FUNCTION__);
++
++    /* Assign VCC to socket buffer
++     * Note: this must be done before attempting to call
++     * myatmdd_free_tx_skb() as this may use ATM_SKB(skb)->vcc->pop()
++     */
++    ATM_SKB(skb)->vcc = vcc;
++
++    /* Setup hardware to send and arrange callback of myatmdd_send_complete... */
++
++    /* In this example ATM device driver all VCs are looped back.
++     * So copy to the rxq and emulate an rx interrupt
++     */
++
++    /* Can we accept another skb to send ? */
++    if (myatmdd_txq_enqueue(&priv->txqueue, skb))
++    {
++        /* No - free socket buffer */
++        myatmdd_free_tx_skb(skb);
++        
++        /* Update tx channel stats */
++        atomic_inc(&vcc->stats->tx_err);
++        
++        /* Tell protocol layer to back off */
++        return(-EBUSY);
++    }
++
++    /* This is the bit which copies the tx ring to the rx ring,
++     * and triggers emulated rx and tx interrupts
++     */
++    myatmdd_emulate_loopback_hardware(vcc);
++    
++    return 0;
++}
++
++static int myatmdd_change_qos(struct atm_vcc *vcc,struct atm_qos *qos,int flgs)
++{
++    return 0;
++}
++
++static int myatmdd_proc_read(struct atm_dev *dev,loff_t *pos,char *page)
++{
++    int left = (int) *pos;
++    
++    if (!left--)
++        return sprintf(page, "1st line of stats\n");
++    if (!left--)
++        return sprintf(page, "2nd line of stats\n");
++    if (!left--)
++        return sprintf(page, "3rd line of stats\n");
++
++    return 0;
++}
++
++/*
++#########################################################
++#
++#  Function : myatmdd_init
++#             
++#  Purpose  : init the module, init and register the ATM device
++#             
++#  Args     : none
++#             
++#  Returns  : return code
++#             
++#  Notes    : 
++#             
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++int __init myatmdd_init(void)
++{
++    myatmdd_devdata_t *priv = kmalloc(sizeof(myatmdd_devdata_t),GFP_KERNEL);
++
++    if (priv == NULL)
++        return -ENOMEM;
++
++    /* Register the new device */
++    myatmdd_dev = atm_dev_register(MYATMDD,NULL,&myatmdd_ops,-1,NULL);
++    
++    /* Were we able to register this device? */
++    if (myatmdd_dev == NULL)
++    {
++        printk(KERN_ERR KLOG_PREAMBLE "failed to register CPM ATM device\n");
++        return -EPERM;
++    }
++
++    /* Save pointer to device private data */
++    myatmdd_dev->dev_data = priv;
++
++    /* Initialise device parameters */
++    myatmdd_dev->ci_range.vpi_bits = MYATMDD_VPI_BITS;
++    myatmdd_dev->ci_range.vci_bits = MYATMDD_VCI_BITS;
++    myatmdd_dev->link_rate = MYATMDD_PCR;
++    
++    /* Set up phy device */
++    myatmdd_phy_start(myatmdd_dev);
++    
++    /* TODO Initialise SAR hardware... */
++
++    /* Console output */
++    printk(KERN_INFO KLOG_PREAMBLE "Initialised\n");
++
++    return 0;
++}
++
++/* NOTE:
++ * module_init() is called by insmod, if built as module, 
++ * or by do_initcalls(), if built as a resident driver.
++ */
++module_init(myatmdd_init);
++
++/*
++#########################################################
++#
++#  Function : myatmdd_exit
++#             
++#  Purpose  : delete module, uninit and dereg ATM device
++#             
++#  Args     : none
++#             
++#  Returns  : none
++#             
++#  Notes    : 
++#             
++##########################################################
++#  Edit history:
++#  Who     When    What
++#  AJZ     10Apr03 Created
++##########################################################
++*/
++
++#ifdef MODULE
++static void __exit myatmdd_exit(void)
++{
++    /* Disable SAR hardware... */
++
++    /* Console output */
++    printk(KERN_ERR KLOG_PREAMBLE "Uninitialised\n");
++    kfree(myatmdd_dev->dev_data);
++    atm_dev_deregister(myatmdd_dev);
++}
++module_exit(myatmdd_exit);
++
++#endif /* MODULE */

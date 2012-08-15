@@ -1,0 +1,45 @@
+From bf084d8f6eb4ded3f90a6ab79bb682db00ebfbd4 Mon Sep 17 00:00:00 2001
+From: Milan Broz <mbroz@redhat.com>
+Date: Thu, 28 Jun 2012 17:26:02 +0200
+Subject: [PATCH] crypto: aesni-intel - fix wrong kfree pointer
+
+kfree(new_key_mem) in rfc4106_set_key() should be called on malloced pointer,
+not on aligned one, otherwise it can cause invalid pointer on free.
+
+(Seen at least once when running tcrypt tests with debug kernel.)
+
+Signed-off-by: Milan Broz <mbroz@redhat.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ arch/x86/crypto/aesni-intel_glue.c |    8 ++++----
+ 1 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/arch/x86/crypto/aesni-intel_glue.c b/arch/x86/crypto/aesni-intel_glue.c
+index d662615..34fdcff 100644
+--- a/arch/x86/crypto/aesni-intel_glue.c
++++ b/arch/x86/crypto/aesni-intel_glue.c
+@@ -529,7 +529,7 @@ static int rfc4106_set_key(struct crypto_aead *parent, const u8 *key,
+ 	struct crypto_aead *cryptd_child = cryptd_aead_child(ctx->cryptd_tfm);
+ 	struct aesni_rfc4106_gcm_ctx *child_ctx =
+                                  aesni_rfc4106_gcm_ctx_get(cryptd_child);
+-	u8 *new_key_mem = NULL;
++	u8 *new_key_align, *new_key_mem = NULL;
+ 
+ 	if (key_len < 4) {
+ 		crypto_tfm_set_flags(tfm, CRYPTO_TFM_RES_BAD_KEY_LEN);
+@@ -553,9 +553,9 @@ static int rfc4106_set_key(struct crypto_aead *parent, const u8 *key,
+ 		if (!new_key_mem)
+ 			return -ENOMEM;
+ 
+-		new_key_mem = PTR_ALIGN(new_key_mem, AESNI_ALIGN);
+-		memcpy(new_key_mem, key, key_len);
+-		key = new_key_mem;
++		new_key_align = PTR_ALIGN(new_key_mem, AESNI_ALIGN);
++		memcpy(new_key_align, key, key_len);
++		key = new_key_align;
+ 	}
+ 
+ 	if (!irq_fpu_usable())
+-- 
+1.7.6.5
+

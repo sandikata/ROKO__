@@ -1,0 +1,275 @@
+
+ drivers/atm/he.c                       |    2 +-
+ drivers/isdn/hisax/elsa_ser.c          |   18 +++++++++---------
+ drivers/isdn/hisax/isar.c              |   22 +++++++++++-----------
+ drivers/net/ethernet/sun/sungem.c      |    2 +-
+ drivers/net/irda/donauboe.c            |    2 +-
+ drivers/video/savage/savagefb_driver.c |   10 +++++-----
+ sound/pci/ali5451/ali5451.c            |    8 ++++----
+ 7 files changed, 32 insertions(+), 32 deletions(-)
+
+diff -Nurp linux-3.4/drivers/atm/he.c linux-3.4-arm/drivers/atm/he.c
+--- linux-3.4/drivers/atm/he.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/atm/he.c	2012-05-26 01:36:52.516627423 +0300
+@@ -1066,7 +1066,7 @@ he_start(struct atm_dev *dev)
+ 	he_writel(he_dev, 0x0, RESET_CNTL);
+ 	he_writel(he_dev, 0xff, RESET_CNTL);
+ 
+-	udelay(16*1000);	/* 16 ms */
++	mdelay(16);	/* 16 ms */
+ 	status = he_readl(he_dev, RESET_CNTL);
+ 	if ((status & BOARD_RST_STATUS) == 0) {
+ 		hprintk("reset failed\n");
+diff -Nurp linux-3.4/drivers/isdn/hisax/elsa_ser.c linux-3.4-arm/drivers/isdn/hisax/elsa_ser.c
+--- linux-3.4/drivers/isdn/hisax/elsa_ser.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/isdn/hisax/elsa_ser.c	2012-05-26 01:38:17.773296587 +0300
+@@ -481,43 +481,43 @@ modem_set_init(struct IsdnCardState *cs)
+ 	modem_write_cmd(cs, MInit_1, strlen(MInit_1));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_2, strlen(MInit_2));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_3, strlen(MInit_3));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_4, strlen(MInit_4));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_5, strlen(MInit_5));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_6, strlen(MInit_6));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	modem_write_cmd(cs, MInit_7, strlen(MInit_7));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ }
+@@ -530,7 +530,7 @@ modem_set_dial(struct IsdnCardState *cs,
+ 	modem_write_cmd(cs, MInit_speed28800, strlen(MInit_speed28800));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ 	if (outgoing)
+@@ -539,7 +539,7 @@ modem_set_dial(struct IsdnCardState *cs,
+ 		modem_write_cmd(cs, MInit_dialin, strlen(MInit_dialin));
+ 	timeout = 1000;
+ 	while (timeout-- && cs->hw.elsa.transcnt)
+-		udelay(1000);
++		mdelay(1);
+ 	debugl1(cs, "msi tout=%d", timeout);
+ 	mdelay(RCV_DELAY);
+ }
+diff -Nurp linux-3.4/drivers/isdn/hisax/isar.c linux-3.4-arm/drivers/isdn/hisax/isar.c
+--- linux-3.4/drivers/isdn/hisax/isar.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/isdn/hisax/isar.c	2012-05-26 01:36:52.517627419 +0300
+@@ -326,7 +326,7 @@ isar_load_firmware(struct IsdnCardState
+ 	/* 10ms delay */
+ 	cnt = 10;
+ 	while (cnt--)
+-		udelay(1000);
++		mdelay(1);
+ 	msg[0] = 0xff;
+ 	msg[1] = 0xfe;
+ 	ireg->bstat = 0;
+@@ -351,7 +351,7 @@ isar_load_firmware(struct IsdnCardState
+ 	spin_unlock_irqrestore(&cs->lock, flags);
+ 	cnt = 1000; /* max 1s */
+ 	while ((!ireg->bstat) && cnt) {
+-		udelay(1000);
++		mdelay(1);
+ 		cnt--;
+ 	}
+ 	if (!cnt) {
+@@ -364,7 +364,7 @@ isar_load_firmware(struct IsdnCardState
+ 	/* 10ms delay */
+ 	cnt = 10;
+ 	while (cnt--)
+-		udelay(1000);
++		mdelay(1);
+ 	spin_lock_irqsave(&cs->lock, flags);
+ 	ireg->iis = 0;
+ 	if (!sendmsg(cs, ISAR_HIS_DIAG, ISAR_CTRL_STST, 0, NULL)) {
+@@ -377,7 +377,7 @@ isar_load_firmware(struct IsdnCardState
+ 		udelay(10);
+ 		cnt--;
+ 	}
+-	udelay(1000);
++	mdelay(1);
+ 	if (!cnt) {
+ 		printk(KERN_ERR"isar no self tst response\n");
+ 		ret = 1; goto reterror;
+@@ -402,7 +402,7 @@ isar_load_firmware(struct IsdnCardState
+ 		udelay(10);
+ 		cnt--;
+ 	}
+-	udelay(1000);
++	mdelay(1);
+ 	if (!cnt) {
+ 		printk(KERN_ERR"isar no SVN response\n");
+ 		ret = 1; goto reterror;
+@@ -1324,9 +1324,9 @@ setup_pump(struct BCState *bcs) {
+ 		test_and_set_bit(BC_FLG_FTI_RUN, &bcs->Flag);
+ 		break;
+ 	}
+-	udelay(1000);
++	mdelay(1);
+ 	sendmsg(cs, dps | ISAR_HIS_PSTREQ, 0, 0, NULL);
+-	udelay(1000);
++	mdelay(1);
+ }
+ 
+ static void
+@@ -1360,9 +1360,9 @@ setup_sart(struct BCState *bcs) {
+ 		/* SART must not configured with FAX */
+ 		break;
+ 	}
+-	udelay(1000);
++	mdelay(1);
+ 	sendmsg(cs, dps | ISAR_HIS_BSTREQ, 0, 0, NULL);
+-	udelay(1000);
++	mdelay(1);
+ }
+ 
+ static void
+@@ -1388,9 +1388,9 @@ setup_iom2(struct BCState *bcs) {
+ 		break;
+ 	}
+ 	sendmsg(cs, dps | ISAR_HIS_IOM2CFG, cmsb, 5, msg);
+-	udelay(1000);
++	mdelay(1);
+ 	sendmsg(cs, dps | ISAR_HIS_IOM2REQ, 0, 0, NULL);
+-	udelay(1000);
++	mdelay(1);
+ }
+ 
+ static int
+diff -Nurp linux-3.4/drivers/net/ethernet/sun/sungem.c linux-3.4-arm/drivers/net/ethernet/sun/sungem.c
+--- linux-3.4/drivers/net/ethernet/sun/sungem.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/net/ethernet/sun/sungem.c	2012-05-26 01:36:52.518627416 +0300
+@@ -401,7 +401,7 @@ static int gem_rxmac_reset(struct gem *g
+ 		return 1;
+ 	}
+ 
+-	udelay(5000);
++	mdelay(5);
+ 
+ 	/* Execute RX reset command. */
+ 	writel(gp->swrst_base | GREG_SWRST_RXRST,
+diff -Nurp linux-3.4/drivers/net/irda/donauboe.c linux-3.4-arm/drivers/net/irda/donauboe.c
+--- linux-3.4/drivers/net/irda/donauboe.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/net/irda/donauboe.c	2012-05-26 01:36:52.517627419 +0300
+@@ -1710,7 +1710,7 @@ toshoboe_gotosleep (struct pci_dev *pci_
+ 
+ /* Flush all packets */
+   while ((i--) && (self->txpending))
+-    udelay (10000);
++    mdelay (10);
+ 
+   spin_lock_irqsave(&self->spinlock, flags);
+ 
+diff -Nurp linux-3.4/drivers/video/savage/savagefb_driver.c linux-3.4-arm/drivers/video/savage/savagefb_driver.c
+--- linux-3.4/drivers/video/savage/savagefb_driver.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/drivers/video/savage/savagefb_driver.c	2012-05-26 01:36:52.518627416 +0300
+@@ -1351,7 +1351,7 @@ static void savagefb_set_par_int(struct
+ 	/* following part not present in X11 driver */
+ 	cr67 = vga_in8(0x3d5, par) & 0xf;
+ 	vga_out8(0x3d5, 0x50 | cr67, par);
+-	udelay(10000);
++	mdelay(10);
+ 	vga_out8(0x3d4, 0x67, par);
+ 	/* end of part */
+ 	vga_out8(0x3d5, reg->CR67 & ~0x0c, par);
+@@ -1904,11 +1904,11 @@ static int savage_init_hw(struct savagef
+ 	vga_out8(0x3d4, 0x66, par);
+ 	cr66 = vga_in8(0x3d5, par);
+ 	vga_out8(0x3d5, cr66 | 0x02, par);
+-	udelay(10000);
++	mdelay(10);
+ 
+ 	vga_out8(0x3d4, 0x66, par);
+ 	vga_out8(0x3d5, cr66 & ~0x02, par);	/* clear reset flag */
+-	udelay(10000);
++	mdelay(10);
+ 
+ 
+ 	/*
+@@ -1918,11 +1918,11 @@ static int savage_init_hw(struct savagef
+ 	vga_out8(0x3d4, 0x3f, par);
+ 	cr3f = vga_in8(0x3d5, par);
+ 	vga_out8(0x3d5, cr3f | 0x08, par);
+-	udelay(10000);
++	mdelay(10);
+ 
+ 	vga_out8(0x3d4, 0x3f, par);
+ 	vga_out8(0x3d5, cr3f & ~0x08, par);	/* clear reset flags */
+-	udelay(10000);
++	mdelay(10);
+ 
+ 	/* Savage ramdac speeds */
+ 	par->numClocks = 4;
+diff -Nurp linux-3.4/sound/pci/ali5451/ali5451.c linux-3.4-arm/sound/pci/ali5451/ali5451.c
+--- linux-3.4/sound/pci/ali5451/ali5451.c	2012-05-21 01:29:13.000000000 +0300
++++ linux-3.4-arm/sound/pci/ali5451/ali5451.c	2012-05-26 01:36:52.516627423 +0300
+@@ -451,10 +451,10 @@ static int snd_ali_reset_5451(struct snd
+ 	if (pci_dev) {
+ 		pci_read_config_dword(pci_dev, 0x7c, &dwVal);
+ 		pci_write_config_dword(pci_dev, 0x7c, dwVal | 0x08000000);
+-		udelay(5000);
++		mdelay(5);
+ 		pci_read_config_dword(pci_dev, 0x7c, &dwVal);
+ 		pci_write_config_dword(pci_dev, 0x7c, dwVal & 0xf7ffffff);
+-		udelay(5000);
++		mdelay(5);
+ 	}
+ 	
+ 	pci_dev = codec->pci;
+@@ -463,14 +463,14 @@ static int snd_ali_reset_5451(struct snd
+ 	udelay(500);
+ 	pci_read_config_dword(pci_dev, 0x44, &dwVal);
+ 	pci_write_config_dword(pci_dev, 0x44, dwVal & 0xfffbffff);
+-	udelay(5000);
++	mdelay(5);
+ 	
+ 	wCount = 200;
+ 	while(wCount--) {
+ 		wReg = snd_ali_codec_peek(codec, 0, AC97_POWERDOWN);
+ 		if ((wReg & 0x000f) == 0x000f)
+ 			return 0;
+-		udelay(5000);
++		mdelay(5);
+ 	}
+ 
+ 	/* non-fatal if you have a non PM capable codec */

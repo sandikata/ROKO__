@@ -1,0 +1,10 @@
+--- linux-2.6.21.a/drivers/media/video/pwc/pwc-uncompress.c	2007-04-26 05:08:32.000000000 +0200
++++ linux-2.6.21.b/drivers/media/video/pwc/pwc-uncompress.c	2007-05-02 14:32:49.000000000 +0200
+@@ -26,6 +26,7 @@
+    vim: set ts=8:
+ */
+ 
++#include <linux/threads.h>
+ #include <asm/current.h>
+ #include <asm/types.h>
+ 

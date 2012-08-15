@@ -1,0 +1,84 @@
+From: Anthony G. Basile <blueness@gentoo.org>
+Updated patch for the new Kconfig system for >=3.4.4
+
+---
+From: Kerin Millar <kerframil@gmail.com>
+
+grsecurity contains a number of options which allow certain protections
+to be applied to or exempted from members of a given group. However, the
+default GIDs specified in the upstream patch are entirely arbitrary and
+there is no telling which (if any) groups the GIDs will correlate with
+on an end-user's system. Because some users don't pay a great deal of
+attention to the finer points of kernel configuration, it is probably
+wise to specify some reasonable defaults so as to stop careless users
+from shooting themselves in the foot.
+
+diff -Nuar a/grsecurity/Kconfig b/Kconfig
+--- a/grsecurity/Kconfig	2012-07-01 12:54:58.000000000 -0400
++++ b/grsecurity/Kconfig	2012-07-01 13:00:04.000000000 -0400
+@@ -521,7 +521,7 @@
+ config GRKERNSEC_AUDIT_GID
+ 	int "GID for auditing"
+ 	depends on GRKERNSEC_AUDIT_GROUP
+-	default 1007
++	default 100
+ 
+ config GRKERNSEC_EXECLOG
+ 	bool "Exec logging"
+@@ -736,7 +736,7 @@
+ config GRKERNSEC_TPE_GID
+ 	int "GID for untrusted users"
+ 	depends on GRKERNSEC_TPE && !GRKERNSEC_TPE_INVERT
+-	default 1005
++	default 100
+ 	help
+ 	  Setting this GID determines what group TPE restrictions will be
+ 	  *enabled* for.  If the sysctl option is enabled, a sysctl option
+@@ -745,7 +745,7 @@
+ config GRKERNSEC_TPE_GID
+ 	int "GID for trusted users"
+ 	depends on GRKERNSEC_TPE && GRKERNSEC_TPE_INVERT
+-	default 1005
++	default 10
+ 	help
+ 	  Setting this GID determines what group TPE restrictions will be
+ 	  *disabled* for.  If the sysctl option is enabled, a sysctl option
+@@ -820,7 +820,7 @@
+ config GRKERNSEC_SOCKET_ALL_GID
+ 	int "GID to deny all sockets for"
+ 	depends on GRKERNSEC_SOCKET_ALL
+-	default 1004
++	default 65534
+ 	help
+ 	  Here you can choose the GID to disable socket access for. Remember to
+ 	  add the users you want socket access disabled for to the GID
+@@ -841,7 +841,7 @@
+ config GRKERNSEC_SOCKET_CLIENT_GID
+ 	int "GID to deny client sockets for"
+ 	depends on GRKERNSEC_SOCKET_CLIENT
+-	default 1003
++	default 65534
+ 	help
+ 	  Here you can choose the GID to disable client socket access for.
+ 	  Remember to add the users you want client socket access disabled for to
+@@ -859,7 +859,7 @@
+ config GRKERNSEC_SOCKET_SERVER_GID
+ 	int "GID to deny server sockets for"
+ 	depends on GRKERNSEC_SOCKET_SERVER
+-	default 1002
++	default 65534
+ 	help
+ 	  Here you can choose the GID to disable server socket access for.
+ 	  Remember to add the users you want server socket access disabled for to
+diff -Nuar a/security/Kconfig b/security/Kconfig
+--- a/security/Kconfig	2012-07-01 12:51:41.000000000 -0400
++++ b/security/Kconfig	2012-07-01 13:00:23.000000000 -0400
+@@ -191,7 +191,7 @@
+ 
+ config GRKERNSEC_PROC_GID
+ 	int "GID exempted from /proc restrictions"
+-	default 1001
++	default 10
+ 	help
+ 	  Setting this GID determines which group will be exempted from
+ 	  grsecurity's /proc restrictions, allowing users of the specified

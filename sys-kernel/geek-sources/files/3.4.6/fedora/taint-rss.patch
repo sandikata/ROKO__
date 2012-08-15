@@ -1,0 +1,13 @@
+diff --git a/kernel/fork.c b/kernel/fork.c
+index ab5211b..0aa3c51 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -556,7 +556,7 @@ static void check_mm(struct mm_struct *mm)
+ 
+ 		if (unlikely(x))
+ 			printk(KERN_ALERT "BUG: Bad rss-counter state "
+-					  "mm:%p idx:%d val:%ld\n", mm, i, x);
++					  "mm:%p idx:%d val:%ld (%s)\n", mm, i, x, print_tainted());
+ 	}
+ 
+ #ifdef CONFIG_TRANSPARENT_HUGEPAGE

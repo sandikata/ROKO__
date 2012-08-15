@@ -1,0 +1,101 @@
+# http://dev.gentoo.org/~spock/projects/fbcondecor/archive/fbcondecor-0.9.4-2.6.25-rc6.patch
+kernel-fbcondecor.patch
+kernel-fbcon-margins.patch
+linux-wistron-amilo8210.patch
+
+# netfilter related stuff mostly based on patch-o-matic-ng
+# snapshot 20070806 with some fixes. Some modules
+# were ported to nf_conntrack.
+
+kernel-pom-ng-IPV4OPTSSTRIP.patch
+
+kernel-pom-ng-mms-conntrack-nat.patch
+kernel-pom-ng-rsh.patch
+kernel-pom-ng-rpc.patch
+
+# http://ftp.linux-vserver.org/pub/people/dhozac/p/k/delta-owner-xid-feat02.diff
+kernel-owner-xid.patch
+
+# based on kernel-2.6.25-layer7-2.20.patch from
+# http://switch.dl.sourceforge.net/sourceforge/l7-filter/netfilter-layer7-v2.20.tar.gz
+kernel-layer7.patch
+
+### End netfilter
+
+# http://zph.bratcheda.org/linux-2.6.26.3-zph.patch
+kernel-zph.patch
+
+# based on http://www.linuximq.net/patchs/patch-imqmq-3.1.diff.bz2
+kernel-imq.patch
+
+# http://www.kernel.org/pub/linux/kernel/people/edward/reiser4/reiser4-for-2.6/reiser4-for-2.6.35.patch.bz2
+kernel-reiser4.patch
+
+# http://fatooh.org/esfq-2.6/sfq-2.6.24.1.tar.bz2
+kernel-esfq.patch
+
+# by Baggins request:
+# derived from ftp://ftp.cmf.nrl.navy.mil/pub/chas/linux-atm/vbr/vbr-kernel-diffs
+kernel-atm-vbr.patch
+kernel-atmdd.patch
+
+# http://synce.svn.sourceforge.net/svnroot/synce/trunk/patches/linux-2.6.22-rndis_host-wm5.patch
+kernel-rndis_host-wm5.patch
+
+# adds some ids for hostap suported cards and monitor_enable from/for aircrack-ng
+# http://patches.aircrack-ng.org/hostap-kernel-2.6.18.patch
+kernel-hostap.patch
+
+# http://vserver.13thfloor.at/Experimental/patch-3.4-vs2.3.3.4.diff
+kernel-vserver-2.3.patch
+kernel-vserver-fixes.patch
+
+# http://download.filesystems.org/unionfs/unionfs-2.x/unionfs-2.5.11_for_3.3.0-rc3.diff.gz
+kernel-unionfs.patch
+
+# git://aufs.git.sourceforge.net/gitroot/aufs/aufs3-standalone.git, read README
+# Patch creation:
+# git clone git://aufs.git.sourceforge.net/gitroot/aufs/aufs3-standalone.git
+# cd aufs3-standalone
+# git checkout -b aufs3.4 origin/aufs3.4
+# cat aufs3-kbuild.patch aufs3-base.patch aufs3-standalone.patch > ~/rpm/packages/kernel/kernel-aufs3.patch
+# mkdir linux
+# cp -a Documentation fs include linux
+# diff -urN /usr/share/empty linux >> ~/rpm/packages/kernel/kernel-aufs3.patch
+# drop hunk at the end of patch (hunk is patching include/linux/Kbuild with single line change)
+#
+kernel-aufs3.patch
+kernel-aufs2-unionfs.patch
+kernel-aufs2-no-const-grsec.patch
+kernel-aufs2-reiser4.patch
+
+# Show normal colors in menuconfig with ncurses ABI 6
+kernel-fix_256colors_menuconfig.patch
+
+# https://patchwork.kernel.org/patch/236261/
+kernel-virtio-gl-accel.patch
+
+kernel-small_fixes.patch
+kernel-pwc-uncompress.patch
+kernel-regressions.patch
+
+# http://git.kernel.org/?p=linux/kernel/git/jj/linux-apparmor.git;a=shortlog;h=refs/heads/v3.4-aa2.8
+kernel-apparmor.patch
+
+# for rescuecd
+# based on ftp://ftp.leg.uct.ac.za/pub/linux/rip/tmpfs_root-2.6.30.diff.gz
+kernel-inittmpfs.patch
+
+# based on http://grsecurity.net/~spender/grsecurity-2.2.2-3.1.1-201111181902.patch
+# NOTE: put raw upstream patches on kernel-grsec_full.patch:GRSECURITY_RAW for reference
+#       (since upstream deletes older patches)
+# NOTE: mirror of old grsecurity patches:
+#	https://github.com/slashbeast/grsecurity-scrape/tree/master/test
+kernel-grsec_full.patch
+kernel-grsec-caps.patch
+kernel-grsec-common.patch
+kernel-grsec_fixes.patch
+
+# Do not remove this line, please. It is easier for me to uncomment two lines, then patch
+# kernel.spec every time.
+#Patch50000:	kernel-usb_reset.patch
