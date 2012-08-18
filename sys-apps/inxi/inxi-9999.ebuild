@@ -11,6 +11,13 @@ LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="amd64 x86"
 
+DEPEND="
+	x11-apps/mesa-progs
+	x11-apps/xrandr
+	x11-apps/xdpyinfo
+"
+RDEPEND="${DEPEND}"
+
 src_unpack() {
 	cp "${DISTDIR}"/inxi ${PN} || die
 }
