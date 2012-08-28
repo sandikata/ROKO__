@@ -1,0 +1,598 @@
+--- a/debian/ureadahead.dirs
++++ b/debian/ureadahead.dirs
+@@ -0,0 +1,3 @@
++usr/share/apport/package-hooks
++var/lib/ureadahead
++var/lib/ureadahead/debugfs
+--- a/debian/sreadahead.postrm
++++ b/debian/sreadahead.postrm
+@@ -0,0 +1,80 @@
++#!/bin/sh -e
++# This script can be called in the following ways:
++#
++# After the package was removed:
++#	<postrm> remove
++#
++# After the package was purged:
++#	<postrm> purge
++#
++# After the package was upgraded:
++#	<old-postrm> upgrade <new-version>
++# if that fails:
++#	<new-postrm> failed-upgrade <old-version>
++#
++#
++# After all of the packages files have been replaced:
++#	<postrm> disappear <overwriting-package> <version>
++#
++#
++# If preinst fails during install:
++#	<new-postrm> abort-install
++#
++# If preinst fails during upgrade of removed package:
++#	<new-postrm> abort-install <old-version>
++#
++# If preinst fails during upgrade:
++#	<new-postrm> abort-upgrade <old-version>
++
++
++# Undo removal of a no-longer used conffile
++undo_rm_conffile()
++{
++    CONFFILE="$1"
++
++    if [ ! -e "$CONFFILE" ]; then
++	if [ -e "$CONFFILE".dpkg-bak ]; then
++	    echo "Restoring modified conffile $CONFFILE"
++	    mv -f "$CONFFILE".dpkg-bak "$CONFFILE"
++	elif [ -e "$CONFFILE".dpkg-obsolete ]; then
++	    mv -f "$CONFFILE".dpkg-obsolete "$CONFFILE"
++	fi
++    fi
++}
++
++# Finish removal of a no-longer used conffile
++finish_rm_conffile()
++{
++    CONFFILE="$1"
++
++    if [ -e "$CONFFILE".dpkg-bak ]; then
++	rm -f "$CONFFILE".dpkg-bak
++    fi
++}
++
++
++case "$1" in
++    remove)
++	;;
++
++    purge)
++    	finish_rm_conffile /etc/init/sreadahead.conf
++    	finish_rm_conffile /etc/cron.monthly/sreadahead
++	;;
++
++    upgrade|failed-upgrade|disappear)
++	;;
++
++    abort-install|abort-upgrade)
++    	undo_rm_conffile /etc/init/sreadahead.conf
++    	undo_rm_conffile /etc/cron.monthly/sreadahead
++	;;
++
++    *)
++	echo "$0 called with unknown argument \`$1'" 1>&2
++	exit 1
++	;;
++esac
++
++#DEBHELPER#
++exit 0
+--- a/debian/control
++++ b/debian/control
+@@ -0,0 +1,30 @@
++Source: ureadahead
++Section: admin
++Priority: required
++Maintainer: Scott James Remnant <scott@ubuntu.com>
++Standards-Version: 3.8.0.0
++Build-Depends: debhelper (>= 7.3.15ubuntu3), pkg-config (>= 0.22), libnih-dev (>= 1.0.0), libblkid-dev (>= 2.16), e2fslibs-dev (>= 1.41)
++
++Package: ureadahead
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}, upstart (>= 0.6.0)
++Conflicts: readahead
++Provides: readahead
++Replaces: readahead
++Description: Read required files in advance
++ Ã¼ber-readahead is used during boot to read files in advance of when
++ they are needed such that they are already in the page cache,
++ improving boot performance.
++ .
++ Its data files are regenerated on the first boot after install, and
++ either monthly thereafter or when packages with init scripts or
++ configs are installed or updated.
++ .
++ ureadahead requires a kernel patch included in the Ubuntu kernel.
++
++Package: sreadahead
++Architecture: any
++Depends: ${shlibs:Depends}, ${misc:Depends}, ureadahead
++Description: Transitional package for ureadahead
++ sreadahead has been replaced by ureadahead, this package ensures
++ that you are transitioned over and may be safely removed.
+--- a/debian/copyright
++++ b/debian/copyright
+@@ -0,0 +1,17 @@
++This is the Ubuntu package of ureadahead.
++
++Copyright Â© 2009 Canonical Ltd.
++
++Licence:
++
++This program is free software; you can redistribute it and/or modify
++it under the terms of the GNU General Public License version 2, as
++published by the Free Software Foundation.
++
++This program is distributed in the hope that it will be useful, but
++WITHOUT ANY WARRANTY; without even the implied warranty of
++MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++General Public License for more details.
++
++On Ubuntu systems, the complete text of the GNU General Public License
++can be found in â€˜/usr/share/common-licenses/GPLâ€™.
+--- a/debian/ureadahead.postrm
++++ b/debian/ureadahead.postrm
+@@ -0,0 +1,61 @@
++#!/bin/sh -e
++# This script can be called in the following ways:
++#
++# After the package was removed:
++#	<postrm> remove
++#
++# After the package was purged:
++#	<postrm> purge
++#
++# After the package was upgraded:
++#	<old-postrm> upgrade <new-version>
++# if that fails:
++#	<new-postrm> failed-upgrade <old-version>
++#
++#
++# After all of the packages files have been replaced:
++#	<postrm> disappear <overwriting-package> <version>
++#
++#
++# If preinst fails during install:
++#	<new-postrm> abort-install
++#
++# If preinst fails during upgrade of removed package:
++#	<new-postrm> abort-install <old-version>
++#
++# If preinst fails during upgrade:
++#	<new-postrm> abort-upgrade <old-version>
++
++
++# Remove pack file
++purge_files()
++{
++    if [ -f /var/lib/ureadahead/pack ]; then
++	rm -f /var/lib/ureadahead/pack /var/lib/ureadahead/*.pack || true
++	rmdir /var/lib/ureadahead || true
++    fi
++}
++
++
++case "$1" in
++    remove)
++	;;
++
++    purge)
++	purge_files
++	;;
++
++    upgrade|failed-upgrade|disappear)
++	;;
++
++    abort-install|abort-upgrade)
++	;;
++
++    *)
++	echo "$0 called with unknown argument \`$1'" 1>&2
++	exit 1
++	;;
++esac
++
++#DEBHELPER#
++exit 0
+--- a/debian/ureadahead.postinst
++++ b/debian/ureadahead.postinst
+@@ -0,0 +1,44 @@
++#!/bin/sh -e
++# This script can be called in the following ways:
++#
++# After the package was installed:
++#	<postinst> configure <old-version>
++#
++# After a trigger is activated:
++#       <postinst> triggered <trigger-name>...
++#
++#
++# If prerm fails during upgrade or fails on failed upgrade:
++#	<old-postinst> abort-upgrade <new-version>
++#
++# If prerm fails during deconfiguration of a package:
++#	<postinst> abort-deconfigure in-favour <new-package> <version>
++#	           removing <old-package> <version>
++#
++# If prerm fails during replacement due to conflict:
++#	<postinst> abort-remove in-favour <new-package> <version>
++
++
++case "$1" in
++    configure)
++	;;
++
++    triggered)
++	# Force a reprofile
++	if [ -f /var/lib/ureadahead/pack ]; then
++	    echo "ureadahead will be reprofiled on next reboot"
++	    rm -f /var/lib/ureadahead/pack /var/lib/ureadahead/*.pack
++	fi
++	;;
++
++    abort-upgrade|abort-deconfigure|abort-remove)
++	;;
++
++    *)
++	echo "$0 called with unknown argument \`$1'" 1>&2
++	exit 1
++	;;
++esac
++
++#DEBHELPER#
++exit 0
+--- a/debian/changelog
++++ b/debian/changelog
+@@ -0,0 +1,111 @@
++ureadahead (0.100.0-5) maverick; urgency=low
++
++  * src/pack.c: Amend mount point detection logic to stat the mount point
++    instead of just comparing major/minor versions with /proc/self/mountinfo
++    (LP: #570014).
++
++ -- Chow Loong Jin <hyperair@ubuntu.com>  Fri, 25 Jun 2010 13:14:54 +0100
++
++ureadahead (0.100.0-4.1) lucid; urgency=low
++
++  * Revert previous upload; had forgotten that the sreadahead package
++    contains all the clean-up stuff so we want to keep it for the
++    release upgrade after all.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Wed, 17 Feb 2010 12:57:00 +0000
++
++ureadahead (0.100.0-4) lucid; urgency=low
++
++  * debian/control: drop sreadahead migration package; dist-upgrade users
++    will have ureadahead installed by the standard meta-packages. 
++
++ -- Scott James Remnant <scott@ubuntu.com>  Wed, 17 Feb 2010 12:14:09 +0000
++
++ureadahead (0.100.0-3) lucid; urgency=low
++
++  * conf/ureadahead-other.conf: Change from "on mount" to "on mounted",
++    the former didn't work anyway. 
++
++ -- Scott James Remnant <scott@ubuntu.com>  Mon, 21 Dec 2009 23:20:02 +0000
++
++ureadahead (0.100.0-2) lucid; urgency=low
++
++  * Put an all-important "--" in the dh_auto_configure invocation so that
++    ureadahead is installed into the right path (/sbin)
++
++ -- Scott James Remnant <scott@ubuntu.com>  Tue, 01 Dec 2009 02:25:50 +0000
++
++ureadahead (0.100.0-1) lucid; urgency=low
++
++  * New upstream release:
++    - Use external libnih
++
++  * debian/control: Add build-dependency on libnih-dev
++  * debian/rules: Fix installation of apport hook.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Sun, 29 Nov 2009 15:24:15 +0000
++
++ureadahead (0.90.3-2) karmic-proposed; urgency=low
++
++  * Ã¼ber-readahead is a replacement for sreadahead that should
++    significantly improve boot performance on rotational hard drives,
++    especially those that had regressed in performance from jaunty to
++    karmic.
++
++    It does this by pre-loading such things as ext2/3/4 inodes and opening
++    files in as logical order as possible before loading all blocks in one
++    pass across the disk.
++
++    On SSD, this behaves much as sreadahead used to, replacing that package
++    with slightly improved tracing code.
++
++    This requires the kernel package also found in karmic-proposed.
++
++    LP: #432089.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Mon, 09 Nov 2009 18:38:51 +0000
++
++ureadahead (0.90.3-1) karmic; urgency=low
++
++  * New upstream release:
++    - Move ext2fs inode group lookup into the tracing stage, storing the
++      groups to preload in the pack, rather than spending time on normal
++      boots working it out.
++    - Open files in order of inode group (or inode number on non-ext2fs),
++      which seems to give a benefit in load time and certainly produces
++      better blktrace output.
++    - Increase the "too old" check from a month to a year.
++    - Fix dump of zero-byte files to not claim a single page.
++    - Fix unhandled error output when given an unknown pack file.
++    - Don't call ureadhead for the root filesystem twice on boot (the second
++      time should only take a few ms, but that's still time)
++    - Consider exit status 4 (no pack file for given mount point) normal.
++    - Make uselib tracing optional.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Thu, 05 Nov 2009 15:10:06 +0000
++
++ureadahead (0.90.2-1) karmic; urgency=low
++
++  * New upstream release:
++    - improved SSD mode
++    - inode group preload threshold configurable by environment variable
++    - default inode group preload threshold changed to 16, because random
++      stabbing in the dark suggested it was a good number
++    - add a job that profiles extra mountpoints
++
++  * Remove /etc/cron.monthly/sreadahead too.
++  * Add an apport hook to attach a dump of the packs.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Thu, 29 Oct 2009 18:14:51 +0000
++
++ureadahead (0.90.1-1) karmic; urgency=low
++
++  * Bug fixes.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Thu, 29 Oct 2009 02:13:38 +0000
++
++ureadahead (0.90.0-1) karmic; urgency=low
++
++  * Initial release to ubuntu-boot PPA.
++
++ -- Scott James Remnant <scott@ubuntu.com>  Thu, 29 Oct 2009 01:01:42 +0000
+--- a/debian/rules
++++ b/debian/rules
+@@ -0,0 +1,33 @@
++#!/usr/bin/make -f
++%:
++	dh $@
++
++
++CFLAGS = -Wall -g -fstack-protector -fPIE
++LDFLAGS = -Wl,-z,relro -Wl,-z,now -pie
++
++# Disable optimisations if noopt found in $DEB_BUILD_OPTIONS
++ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
++	CFLAGS += -O0
++	LDFLAGS += -Wl,-O0
++else
++	CFLAGS += -Os
++	LDFLAGS += -Wl,-O1
++endif
++
++override_dh_auto_configure:
++	dh_auto_configure -- CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
++		--exec-prefix=
++
++
++override_dh_install:
++	dh_install
++	install debian/ureadahead.apport \
++		debian/ureadahead/usr/share/apport/package-hooks/ureadahead.py
++
++
++version := $(shell sed -e '1{;s|^ureadahead (\(.*\))\ .*|\1|;q;}' debian/changelog)
++
++override_dh_gencontrol:
++	dh_gencontrol -psreadahead -u-v1:$(version)
++	dh_gencontrol -Nsreadahead
+--- a/debian/ureadahead.apport
++++ b/debian/ureadahead.apport
+@@ -0,0 +1,15 @@
++'''apport package hook for ureadahead
++
++(c) 2009 Canonical Ltd.
++Author: Scott James Remnant <scott@ubuntu.com>
++'''
++
++import os
++import apport.hookutils
++
++def add_info(report):
++    for f in os.listdir('/var/lib/ureadahead'):
++        if f == 'pack':
++            report['PackDump'] = apport.hookutils.command_output(['ureadahead', '--dump'])
++        elif f.endswith('.pack'):
++            report['PackDump'+f[:-5].title()] = apport.hookutils.command_output(['ureadahead', '--dump'])
+--- a/debian/sreadahead.postinst
++++ b/debian/sreadahead.postinst
+@@ -0,0 +1,55 @@
++#!/bin/sh -e
++# This script can be called in the following ways:
++#
++# After the package was installed:
++#	<postinst> configure <old-version>
++#
++# After a trigger is activated:
++#       <postinst> triggered <trigger-name>...
++#
++#
++# If prerm fails during upgrade or fails on failed upgrade:
++#	<old-postinst> abort-upgrade <new-version>
++#
++# If prerm fails during deconfiguration of a package:
++#	<postinst> abort-deconfigure in-favour <new-package> <version>
++#	           removing <old-package> <version>
++#
++# If prerm fails during replacement due to conflict:
++#	<postinst> abort-remove in-favour <new-package> <version>
++
++
++# Remove a no-longer used conffile
++rm_conffile()
++{
++    CONFFILE="$1"
++
++    if [ -e "$CONFFILE".dpkg-obsolete ]; then
++	echo "Removing obsolete conffile $CONFFILE"
++	rm -f "$CONFFILE".dpkg-obsolete
++    fi
++}
++
++
++case "$1" in
++    configure)
++	rm_conffile /etc/init/sreadahead.conf
++	rm_conffile /etc/cron.monthly/sreadahead
++
++	if [ -f /var/lib/sreadahead/pack ]; then
++            rm -f /var/lib/sreadahead/pack || true
++            rmdir /var/lib/sreadahead || true
++	fi
++	;;
++
++    abort-upgrade|abort-deconfigure|abort-remove)
++	;;
++
++    *)
++	echo "$0 called with unknown argument \`$1'" 1>&2
++	exit 1
++	;;
++esac
++
++#DEBHELPER#
++exit 0
+--- a/debian/sreadahead.preinst
++++ b/debian/sreadahead.preinst
+@@ -0,0 +1,52 @@
++#!/bin/sh -e
++# This script can be called in the following ways:
++#
++# Before the package is installed:
++#	<new-preinst> install
++#
++# Before removed package is upgraded:
++#	<new-preinst> install <old-version>
++#
++# Before the package is upgraded:
++#	<new-preinst> upgrade <old-version>
++#
++#
++# If postrm fails during upgrade or fails on failed upgrade:
++#	<old-preinst> abort-upgrade <new-version>
++
++
++# Prepare to remove a no-longer used conffile
++prep_rm_conffile()
++{
++    CONFFILE="$1"
++
++    if [ -e "$CONFFILE" ]; then
++        md5sum="`md5sum \"$CONFFILE\" | sed -e \"s/ .*//\"`"
++        old_md5sum="`sed -n -e \"/^Conffiles:/,/^[^ ]/{\\\\' $CONFFILE '{s/ obsolete$//;s/.* //;p}}\" /var/lib/dpkg/status`"
++        if [ "$md5sum" != "$old_md5sum" ]; then
++            echo "Obsolete conffile $CONFFILE has been modified by you, renaming to .dpkg-bak"
++            mv -f "$CONFFILE" "$CONFFILE".dpkg-bak
++	else
++	    mv -f "$CONFFILE" "$CONFFILE".dpkg-obsolete
++	fi
++    fi
++}
++
++
++case "$1" in
++    install|upgrade)
++	prep_rm_conffile /etc/init/sreadahead.conf
++	prep_rm_conffile /etc/cron.monthly/sreadahead
++	;;
++
++    abort-upgrade)
++	;;
++
++    *)
++	echo "$0 called with unknown argument \`$1'" 1>&2
++	exit 1
++	;;
++esac
++
++#DEBHELPER#
++exit 0
+--- a/debian/ureadahead.install
++++ b/debian/ureadahead.install
+@@ -0,0 +1,3 @@
++etc/init
++sbin/ureadahead
++usr/share/man/man8/ureadahead.8
+--- a/debian/ureadahead.triggers
++++ b/debian/ureadahead.triggers
+@@ -0,0 +1,2 @@
++interest /etc/init
++interest /etc/init.d
+--- a/debian/compat
++++ b/debian/compat
+@@ -0,0 +1 @@
++7
+--- a/conf/ureadahead-other.conf
++++ b/conf/ureadahead-other.conf
+@@ -6,7 +6,7 @@
+ 
+ description	"Read required files in advance (for other mountpoints)"
+ 
+-start on mount DEVICE=[/UL]* MOUNTPOINT=/?*
++start on mounted DEVICE=[/UL]* MOUNTPOINT=/?*
+ 
+ # Forks into the background both when reading from disk and when profiling
+ # (HDD mode won't fork, but that's ok because we'll wait for it in spawned).
+--- a/src/pack.c
++++ b/src/pack.c
+@@ -163,6 +163,7 @@
+ 		unsigned int maj;
+ 		unsigned int min;
+ 		char *       mount;
++		struct stat  statbuf;
+ 
+ 		/* mount ID */
+ 		ptr = strtok_r (line, " \t\n", &saveptr);
+@@ -185,14 +186,6 @@
+ 			continue;
+ 		}
+ 
+-		/* Check whether this is the right device */
+-		if ((sscanf (device, "%d:%d", &maj, &min) < 2)
+-		    || (maj != major (dev))
+-		    || (min != minor (dev))) {
+-			nih_free (line);
+-			continue;
+-		}
+-
+ 		/* root */
+ 		ptr = strtok_r (NULL, " \t\n", &saveptr);
+ 		if (! ptr) {
+@@ -207,6 +200,12 @@
+ 			continue;
+ 		}
+ 
++		/* Check whether this is the right device */
++		if (stat (mount, &statbuf) || statbuf.st_dev != dev) {
++			nih_free (line);
++			continue;
++		}
++
+ 		/* Done, convert the mountpoint to a pack filename */
+ 		if (fclose (fp) < 0)
+ 			nih_return_system_error (NULL);

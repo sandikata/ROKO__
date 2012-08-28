@@ -1,0 +1,1387 @@
+diff -ruN nautilus-2.30.0.orig//libnautilus-private/nautilus-global-preferences.c nautilus-2.30.0/libnautilus-private/nautilus-global-preferences.c
+--- nautilus-2.30.0.orig//libnautilus-private/nautilus-global-preferences.c	2010-03-03 02:41:45.000000000 -0600
++++ nautilus-2.30.0/libnautilus-private/nautilus-global-preferences.c	2010-04-06 00:37:15.000000000 -0500
+@@ -563,6 +563,46 @@
+ 	  PREFERENCE_BOOLEAN,
+ 	  GINT_TO_POINTER (FALSE)
+ 	},
++	/**************************************************************/
++	/*  SOME PREFERENCE ADDED TO ACTIVATE SOME UI TWEAKS
++	/**************************************************************/
++	{ NAUTILUS_PREFERENCES_HIDE_BACK_FORWARD_MENUS,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (TRUE)
++	},
++	{ NAUTILUS_PREFERENCES_PATHBAR_OVERLAP_BUTTONS,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (FALSE)
++	},
++	{ NAUTILUS_PREFERENCES_PATHBAR_LIKE_BREADCRUMBS,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (TRUE)
++	},
++	{ NAUTILUS_PREFERENCES_PATHBAR_SHOW_IN_TOOLBAR,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (TRUE)
++	},
++	{ NAUTILUS_PREFERENCES_PATHBAR_POSITION_TOOLBAR,
++	  PREFERENCE_INTEGER,
++	  GINT_TO_POINTER (2)
++	},
++	{ NAUTILUS_PREFERENCES_PATHBAR_WIDTH_TOOLBAR,
++	  PREFERENCE_INTEGER,
++	  GINT_TO_POINTER (400)
++	},
++	{ NAUTILUS_PREFERENCES_TOOLBAR_BREADCRUMB_SPACE,
++	  PREFERENCE_INTEGER,
++	  GINT_TO_POINTER (3)
++	},
++	{ NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (TRUE)
++	},
++	{ NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS,
++	  PREFERENCE_BOOLEAN,
++	  GINT_TO_POINTER (TRUE)
++	},
++	/**************************************************************/
+ 	{ NULL }
+ };
+ 
+diff -ruN nautilus-2.30.0.orig//libnautilus-private/nautilus-global-preferences.h nautilus-2.30.0/libnautilus-private/nautilus-global-preferences.h
+--- nautilus-2.30.0.orig//libnautilus-private/nautilus-global-preferences.h	2010-03-03 02:41:45.000000000 -0600
++++ nautilus-2.30.0/libnautilus-private/nautilus-global-preferences.h	2010-04-04 11:09:37.000000000 -0500
+@@ -79,6 +79,24 @@
+ #define NAUTILUS_PREFERENCES_MOUSE_FORWARD_BUTTON		"preferences/mouse_forward_button"
+ #define NAUTILUS_PREFERENCES_MOUSE_BACK_BUTTON			"preferences/mouse_back_button"
+ 
++
++/**************************************************************/
++/*  SOME PREFERENCE ADDED TO ACTIVATE SOME UI TWEAKS
++/**************************************************************/
++/* Toolbar */
++#define NAUTILUS_PREFERENCES_HIDE_BACK_FORWARD_MENUS 		"preferences/hide_back_forward_menus"
++#define NAUTILUS_PREFERENCES_TOOLBAR_BREADCRUMB_SPACE 		"preferences/toolbar_breadcrumb_space"
++/* Pathbar */
++#define NAUTILUS_PREFERENCES_PATHBAR_LIKE_BREADCRUMBS 		"preferences/pathbar_like_breadcrumbs"
++#define NAUTILUS_PREFERENCES_PATHBAR_OVERLAP_BUTTONS 		"preferences/pathbar_overlap_buttons"
++#define NAUTILUS_PREFERENCES_PATHBAR_SHOW_IN_TOOLBAR 		"preferences/pathbar_show_in_toolbar"
++#define NAUTILUS_PREFERENCES_PATHBAR_POSITION_TOOLBAR		"preferences/pathbar_position_toolbar"
++#define NAUTILUS_PREFERENCES_PATHBAR_WIDTH_TOOLBAR		"preferences/pathbar_width_toolbar"
++/*Zoom slider*/
++#define NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER 		"preferences/show_zoom_slider"
++#define NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS	"preferences/show_zoom_slider_icons"
++/**************************************************************/
++
+ typedef enum
+ {
+ 	NAUTILUS_DATE_FORMAT_LOCALE,
+diff -ruN nautilus-2.30.0.orig//src/nautilus-file-management-properties.c nautilus-2.30.0/src/nautilus-file-management-properties.c
+--- nautilus-2.30.0.orig//src/nautilus-file-management-properties.c	2009-12-17 09:45:13.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-file-management-properties.c	2010-04-04 11:04:03.000000000 -0500
+@@ -71,6 +71,21 @@
+ #define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_MEDIA_AUTOMOUNT_OPEN "media_automount_open_checkbutton"
+ #define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_MEDIA_AUTORUN_NEVER "media_autorun_never_checkbutton"
+ 
++
++/**************************************************************/
++/*  SOME PREFERENCE ADDED TO ACTIVATE SOME UI TWEAKS
++/**************************************************************/
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_HIDE_BACK_FORWARD_MENUS  "hide_back_forward_menus_checkbutton"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_OVERLAP_BUTTONS  "pathbar_overlap_buttons_checkbutton"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_LIKE_BREADCRUMBS "pathbar_like_breadcrumbs_checkbutton"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_SHOW_IN_TOOLBAR  "pathbar_show_in_toolbar_checkbutton"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_POSITION_TOOLBAR "pathbar_position_toolbar_combobox"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_WIDTH_TOOLBAR    "pathbar_width_toolbar_combobox"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_TOOLBAR_BREADCRUMB_SPACE "toolbar_breadcrumb_space_combobox"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_SHOW_ZOOM_SLIDER	     "show_zoom_slider_checkbutton"
++#define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_SHOW_ZOOM_SLIDER_ICONS   "show_zoom_slider_icons_checkbutton"
++
++
+ /* int enums */
+ #define NAUTILUS_FILE_MANAGEMENT_PROPERTIES_THUMBNAIL_LIMIT_WIDGET "preview_image_size_combobox"
+ 
+@@ -161,6 +176,34 @@
+ 	NULL
+ };
+ 
++
++/**************************************************************/
++/*  SOME PREFERENCE ADDED TO ACTIVATE SOME UI TWEAKS
++/**************************************************************/
++static const guint position_toolbar_values[] = {
++	0,
++	2,
++	3,
++	4,
++	5,
++	-1
++};
++static const guint position_width_values[] = {
++	200,
++	300,
++	400,
++	500,
++	600,
++	700
++};
++static const guint breadcrumbs_space_values[] = {
++	0,
++	1,
++	2,
++	3
++};
++/**************************************************************/
++
+ static void
+ nautilus_file_management_properties_size_group_create (GtkBuilder *builder,
+ 						       char *prefix,
+@@ -790,6 +833,55 @@
+ 						   (const guint *) thumbnail_limit_values,
+ 						   G_N_ELEMENTS (thumbnail_limit_values));
+ 
++	
++	/**************************************************************/
++	/*  SOME PREFERENCE ADDED TO ACTIVATE SOME UI TWEAKS
++	/**************************************************************/
++
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_HIDE_BACK_FORWARD_MENUS,
++					      NAUTILUS_PREFERENCES_HIDE_BACK_FORWARD_MENUS);
++					      
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_LIKE_BREADCRUMBS,
++					      NAUTILUS_PREFERENCES_PATHBAR_LIKE_BREADCRUMBS);
++					      
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_OVERLAP_BUTTONS,
++					      NAUTILUS_PREFERENCES_PATHBAR_OVERLAP_BUTTONS);
++					      
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_SHOW_IN_TOOLBAR,
++					      NAUTILUS_PREFERENCES_PATHBAR_SHOW_IN_TOOLBAR);
++					      
++	eel_preferences_builder_connect_uint_enum (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_POSITION_TOOLBAR,
++					      NAUTILUS_PREFERENCES_PATHBAR_POSITION_TOOLBAR,
++						   (const guint *) position_toolbar_values,
++						   G_N_ELEMENTS (position_toolbar_values));
++						   
++	eel_preferences_builder_connect_uint_enum (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_PATHBAR_WIDTH_TOOLBAR,
++					      NAUTILUS_PREFERENCES_PATHBAR_WIDTH_TOOLBAR,
++						   (const guint *) position_width_values,
++						   G_N_ELEMENTS (position_width_values));
++						   
++	eel_preferences_builder_connect_uint_enum (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_TOOLBAR_BREADCRUMB_SPACE,
++					      NAUTILUS_PREFERENCES_TOOLBAR_BREADCRUMB_SPACE,
++						   (const guint *) breadcrumbs_space_values,
++						   G_N_ELEMENTS (breadcrumbs_space_values));
++						   
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_SHOW_ZOOM_SLIDER,
++					      NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER);
++					      
++	eel_preferences_builder_connect_bool (builder,
++					      NAUTILUS_FILE_MANAGEMENT_PROPERTIES_SHOW_ZOOM_SLIDER_ICONS,
++					      NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS);
++
++	/**************************************************************/
++	
+ 	nautilus_file_management_properties_dialog_setup_icon_caption_page (builder);
+ 	nautilus_file_management_properties_dialog_setup_list_column_page (builder);
+ 	nautilus_file_management_properties_dialog_setup_media_page (builder);
+diff -ruN nautilus-2.30.0.orig//src/nautilus-file-management-properties.ui nautilus-2.30.0/src/nautilus-file-management-properties.ui
+--- nautilus-2.30.0.orig//src/nautilus-file-management-properties.ui	2009-12-17 09:46:37.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-file-management-properties.ui	2010-04-04 11:07:42.000000000 -0500
+@@ -1,6 +1,14 @@
+ <?xml version="1.0"?>
+ <!--*- mode: xml -*-->
+ <interface>
++  <object class="GtkAdjustment" id="adjustment1">
++    <property name="upper">1024</property>
++    <property name="lower">1</property>
++    <property name="page_increment">10</property>
++    <property name="step_increment">1</property>
++    <property name="page_size">0</property>
++    <property name="value">3</property>
++  </object>
+   <object class="GtkListStore" id="model1">
+     <columns>
+       <column type="gchararray"/>
+@@ -250,6 +258,80 @@
+       <column type="gchararray"/>
+     </columns>
+   </object>
++  <!-- ************************************************* -->
++	   <object class="GtkListStore" id="model15">
++		<columns>
++		  <column type="gchararray"/>
++		</columns>
++		<data>
++		  <row>
++		    <col id="0" translatable="yes">First</col>
++		  </row>
++		  <row>
++		    <col id="0" translatable="yes">After navigation arrows</col>
++		  </row>
++		  <row>
++		    <col id="0" translatable="yes">third</col>
++		  </row>
++		  <row>
++		    <col id="0" translatable="yes">Fourth</col>
++		  </row>
++		  <row>
++		    <col id="0" translatable="yes">Fifth</col>
++		  </row>
++		  <row>
++		    <col id="0" translatable="yes">Last</col>
++		  </row>
++		</data>
++	  </object>
++	  
++	  <object class="GtkListStore" id="model16">
++		<columns>
++		  <column type="gchararray"/>
++		</columns>
++		<data>
++		  <row>
++		    <col id="0">200</col>
++		  </row>
++		  <row>
++		    <col id="0">300</col>
++		  </row>
++		  <row>
++		    <col id="0">400</col>
++		  </row>
++		  <row>
++		    <col id="0">500</col>
++		  </row>
++		  <row>
++		    <col id="0">600</col>
++		  </row>
++		  <row>
++		    <col id="0">700</col>
++		  </row>
++		</data>
++	  </object>
++
++	  <object class="GtkListStore" id="model17">
++		<columns>
++		  <column type="gchararray"/>
++		</columns>
++		<data>
++		  <row>
++		    <col id="0">None</col>
++		  </row>
++		  <row>
++		    <col id="0">Small space</col>
++		  </row>
++		  <row>
++		    <col id="0">Large space</col>
++		  </row>
++		  <row>
++		    <col id="0">right alignment</col>
++		  </row>
++		</data>
++	  </object>
++  <!-- ************************************************* -->
++  
+   <object class="GtkDialog" id="file_management_dialog">
+     <property name="border_width">5</property>
+     <property name="title" translatable="yes">File Management Preferences</property>
+@@ -3063,6 +3145,542 @@
+                 <property name="angle">0</property>
+               </object>
+             </child>
++            <!-- THIS SHOW A EXTRA TAB IN THE NAUTILUS PREFERENCE TO MANAGE THE UI TWEAKS -->
++            <child>
++              <object class="GtkVBox" id="vbox53">
++                <property name="border_width">12</property>
++                <property name="visible">True</property>
++                <property name="homogeneous">False</property>
++                <property name="spacing">18</property>
++                <child>
++                  <object class="GtkVBox" id="vbox54">
++                    <property name="visible">True</property>
++                    <property name="homogeneous">False</property>
++                    <property name="spacing">6</property>
++                    <child>
++                      <object class="GtkLabel" id="label104">
++                        <property name="visible">True</property>
++                        <property name="label" translatable="yes">&lt;b&gt;Toolbar&lt;/b&gt;</property>
++                        <property name="use_underline">False</property>
++                        <property name="use_markup">True</property>
++                        <property name="justify">GTK_JUSTIFY_LEFT</property>
++                        <property name="wrap">False</property>
++                        <property name="selectable">False</property>
++                        <property name="xalign">0</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xpad">0</property>
++                        <property name="ypad">0</property>
++                        <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                        <property name="width_chars">-1</property>
++                        <property name="single_line_mode">False</property>
++                        <property name="angle">0</property>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">False</property>
++                        <property name="fill">False</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment232">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                        <child>
++                          <object class="GtkVBox" id="vbox114">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="hide_back_forward_menus_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">Hide Back and Forward menus</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    
++                    <child>
++                      <object class="GtkHBox" id="hbox1143">
++                        <property name="visible">True</property>
++                        <property name="homogeneous">False</property>
++                        <property name="spacing">6</property>
++                        <child>
++                          <object class="GtkLabel" id="preview_label_42">
++                            <property name="visible">True</property>
++                            <property name="label" translatable="yes">Breadcrumbs position:</property>
++                            <property name="use_underline">True</property>
++                            <property name="use_markup">False</property>
++                            <property name="justify">GTK_JUSTIFY_LEFT</property>
++                            <property name="wrap">False</property>
++                            <property name="selectable">False</property>
++                            <property name="xalign">0</property>
++                            <property name="yalign">0.5</property>
++                            <property name="xpad">0</property>
++                            <property name="ypad">0</property>
++                            <property name="mnemonic_widget">pathbar_position_toolbar_combobox</property>
++                            <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                            <property name="width_chars">-1</property>
++                            <property name="single_line_mode">False</property>
++                            <property name="angle">0</property>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">False</property>
++                            <property name="fill">False</property>
++                          </packing>
++                        </child>
++                        <child>
++                          <object class="GtkComboBox" id="pathbar_position_toolbar_combobox">
++                            <property name="visible">True</property>
++                            <property name="add_tearoffs">False</property>
++                            <property name="focus_on_click">True</property>
++                            <property name="model">model15</property>
++                            <child>
++                              <object class="GtkCellRendererText" id="renderer84"/>
++                              <attributes>
++                                <attribute name="text">0</attribute>
++                              </attributes>
++                            </child>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">True</property>
++                            <property name="fill">True</property>
++                          </packing>
++                        </child>
++                        <child>
++                          <object class="GtkLabel" id="preview_label_442">
++                            <property name="visible">True</property>
++                            <property name="label" translatable="yes">width:  </property>
++                            <property name="use_underline">True</property>
++                            <property name="use_markup">False</property>
++                            <property name="justify">GTK_JUSTIFY_LEFT</property>
++                            <property name="wrap">False</property>
++                            <property name="selectable">False</property>
++                            <property name="xalign">0</property>
++                            <property name="yalign">0.5</property>
++                            <property name="xpad">0</property>
++                            <property name="ypad">0</property>
++                            <property name="mnemonic_widget">pathbar_width_toolbar_combobox</property>
++                            <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                            <property name="width_chars">-1</property>
++                            <property name="single_line_mode">False</property>
++                            <property name="angle">0</property>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">False</property>
++                            <property name="fill">False</property>
++                          </packing>
++                        </child>
++                        <child>
++                          <object class="GtkComboBox" id="pathbar_width_toolbar_combobox">
++                            <property name="visible">True</property>
++                            <property name="add_tearoffs">False</property>
++                            <property name="focus_on_click">True</property>
++                            <property name="model">model16</property>
++                            <child>
++                              <object class="GtkCellRendererText" id="renderer484"/>
++                              <attributes>
++                                <attribute name="text">0</attribute>
++                              </attributes>
++                            </child>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">True</property>
++                            <property name="fill">True</property>
++                          </packing>
++                        </child>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">False</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    
++                    <child>
++                      <object class="GtkHBox" id="hbox7143">
++                        <property name="visible">True</property>
++                        <property name="homogeneous">False</property>
++                        <property name="spacing">6</property>
++                        <child>
++                          <object class="GtkLabel" id="preview_label_742">
++                            <property name="visible">True</property>
++                            <property name="label" translatable="yes">Space after breadcrumbs:</property>
++                            <property name="use_underline">True</property>
++                            <property name="use_markup">False</property>
++                            <property name="justify">GTK_JUSTIFY_LEFT</property>
++                            <property name="wrap">False</property>
++                            <property name="selectable">False</property>
++                            <property name="xalign">0</property>
++                            <property name="yalign">0.5</property>
++                            <property name="xpad">0</property>
++                            <property name="ypad">0</property>
++                            <property name="mnemonic_widget">pathbar_position_toolbar_combobox</property>
++                            <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                            <property name="width_chars">-1</property>
++                            <property name="single_line_mode">False</property>
++                            <property name="angle">0</property>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">False</property>
++                            <property name="fill">False</property>
++                          </packing>
++                        </child>
++                        <child>
++                          <object class="GtkComboBox" id="toolbar_breadcrumb_space_combobox">
++                            <property name="visible">True</property>
++                            <property name="add_tearoffs">False</property>
++                            <property name="focus_on_click">True</property>
++                            <property name="model">model17</property>
++                            <child>
++                              <object class="GtkCellRendererText" id="renderer784"/>
++                              <attributes>
++                                <attribute name="text">0</attribute>
++                              </attributes>
++                            </child>
++                          </object>
++                          <packing>
++                            <property name="padding">0</property>
++                            <property name="expand">True</property>
++                            <property name="fill">True</property>
++                          </packing>
++                        </child>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">False</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    
++                    <child>
++                      <object class="GtkLabel" id="label105">
++                        <property name="visible">True</property>
++                        <property name="label" translatable="yes">&lt;b&gt;Pathbar&lt;/b&gt;</property>
++                        <property name="use_underline">False</property>
++                        <property name="use_markup">True</property>
++                        <property name="justify">GTK_JUSTIFY_LEFT</property>
++                        <property name="wrap">False</property>
++                        <property name="selectable">False</property>
++                        <property name="xalign">0</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xpad">0</property>
++                        <property name="ypad">0</property>
++                        <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                        <property name="width_chars">-1</property>
++                        <property name="single_line_mode">False</property>
++                        <property name="angle">0</property>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">False</property>
++                        <property name="fill">False</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment233">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                        <child>
++                          <object class="GtkVBox" id="vbox115">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="pathbar_like_breadcrumbs_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">Show like breadcrumbs</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++ 					  <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment833">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                        <child>
++                          <object class="GtkVBox" id="vbox815">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="pathbar_overlap_buttons_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">Overlap buttons (make breadcrumbs more real)</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++ 					  <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment234">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                         <child>
++                          <object class="GtkVBox" id="vbox116">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="pathbar_show_in_toolbar_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">Show in toolbar</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++
++                    <child>
++                      <object class="GtkLabel" id="label305">
++                        <property name="visible">True</property>
++                        <property name="label" translatable="yes">&lt;b&gt;Zoom Slider&lt;/b&gt;</property>
++                        <property name="use_underline">False</property>
++                        <property name="use_markup">True</property>
++                        <property name="justify">GTK_JUSTIFY_LEFT</property>
++                        <property name="wrap">False</property>
++                        <property name="selectable">False</property>
++                        <property name="xalign">0</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xpad">0</property>
++                        <property name="ypad">0</property>
++                        <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                        <property name="width_chars">-1</property>
++                        <property name="single_line_mode">False</property>
++                        <property name="angle">0</property>
++                      </object>
++                      <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">False</property>
++                        <property name="fill">False</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment333">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                        <child>
++                          <object class="GtkVBox" id="vbox3215">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="show_zoom_slider_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">Activate zoom sliders</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++ 					  <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    <child>
++                      <object class="GtkAlignment" id="alignment1833">
++                        <property name="visible">True</property>
++                        <property name="xalign">0.5</property>
++                        <property name="yalign">0.5</property>
++                        <property name="xscale">1</property>
++                        <property name="yscale">1</property>
++                        <property name="top_padding">0</property>
++                        <property name="bottom_padding">0</property>
++                        <property name="left_padding">12</property>
++                        <property name="right_padding">0</property>
++                        <child>
++                          <object class="GtkVBox" id="vbox2315">
++                            <property name="visible">True</property>
++                            <property name="homogeneous">False</property>
++                            <property name="spacing">6</property>
++                            <child>
++                              <object class="GtkCheckButton" id="show_zoom_slider_icons_checkbutton">
++                                <property name="visible">True</property>
++                                <property name="can_focus">True</property>
++                                <property name="label" translatable="yes">show icons</property>
++                                <property name="use_underline">True</property>
++                                <property name="relief">GTK_RELIEF_NORMAL</property>
++                                <property name="focus_on_click">True</property>
++                                <property name="active">False</property>
++                                <property name="inconsistent">False</property>
++                                <property name="draw_indicator">True</property>
++                              </object>
++                              <packing>
++                                <property name="padding">0</property>
++                                <property name="expand">False</property>
++                                <property name="fill">False</property>
++                              </packing>
++                            </child>
++                          </object>
++                        </child>
++                      </object>
++ 					  <packing>
++                        <property name="padding">0</property>
++                        <property name="expand">True</property>
++                        <property name="fill">True</property>
++                      </packing>
++                    </child>
++                    <!-- *********************************************** -->
++                  </object>
++                  <packing>
++                    <property name="padding">0</property>
++                    <property name="expand">False</property>
++                    <property name="fill">True</property>
++                  </packing>
++                </child>
++              </object>
++              <packing>
++                <property name="tab_expand">False</property>
++                <property name="tab_fill">True</property>
++              </packing>
++            </child>
++            <child type="tab">
++              <object class="GtkLabel" id="label231">
++                <property name="visible">True</property>
++                <property name="label" translatable="yes">Tweaks</property>
++                <property name="use_underline">False</property>
++                <property name="use_markup">False</property>
++                <property name="justify">GTK_JUSTIFY_LEFT</property>
++                <property name="wrap">False</property>
++                <property name="selectable">False</property>
++                <property name="xalign">0.5</property>
++                <property name="yalign">0.5</property>
++                <property name="xpad">0</property>
++                <property name="ypad">0</property>
++                <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
++                <property name="width_chars">-1</property>
++                <property name="single_line_mode">False</property>
++                <property name="angle">0</property>
++              </object>
++            </child>
++            <!-- END OF THE TWEAKS -->
+           </object>
+           <packing>
+             <property name="padding">0</property>
+diff -ruN nautilus-2.30.0.orig//src/nautilus-navigation-action.c nautilus-2.30.0/src/nautilus-navigation-action.c
+--- nautilus-2.30.0.orig//src/nautilus-navigation-action.c	2009-12-15 04:22:12.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-navigation-action.c	2010-04-02 21:13:56.000000000 -0500
+@@ -35,6 +35,7 @@
+ #include "nautilus-navigation-window-slot.h"
+ #include <gtk/gtk.h>
+ #include <eel/eel-gtk-extensions.h>
++#include <libnautilus-private/nautilus-global-preferences.h>
+ 
+ static void nautilus_navigation_action_init       (NautilusNavigationAction *action);
+ static void nautilus_navigation_action_class_init (NautilusNavigationActionClass *class);
+@@ -333,7 +334,13 @@
+ 
+ 	parent_class = g_type_class_peek_parent (class);
+ 
+-	action_class->toolbar_item_type = GTK_TYPE_MENU_TOOL_BUTTON;
++        /**************************************************************************************/
++        /* This show or hide the menus arrows beside the back and forward buttons
++        /**************************************************************************************/	
++	if ( !eel_preferences_get_boolean (NAUTILUS_PREFERENCES_HIDE_BACK_FORWARD_MENUS) ) {
++                action_class->toolbar_item_type = GTK_TYPE_MENU_TOOL_BUTTON;
++        }
++        
+ 	action_class->connect_proxy = connect_proxy;
+ 	action_class->disconnect_proxy = disconnect_proxy;
+ 
+diff -ruN nautilus-2.30.0.orig//src/nautilus-navigation-window-pane.c nautilus-2.30.0/src/nautilus-navigation-window-pane.c
+--- nautilus-2.30.0.orig//src/nautilus-navigation-window-pane.c	2010-03-10 07:28:38.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-navigation-window-pane.c	2010-04-04 10:24:28.000000000 -0500
+@@ -696,6 +696,180 @@
+ }
+ 
+ 
++/**************************************************************************************/
++/**************************************************************************************/
++/* the follow functions are necesary to put the pathbar on the toolbar, the first function
++/* configure the notebook and the pane layout, the second function make the pathbar and put
++/* it in the toolbar. Is necesary two functions because the pane it's setup before the toolbar
++/* and if not set the pane layout nautilus crash.
++/**************************************************************************************/
++/**************************************************************************************/
++void
++nautilus_navigation_window_pane_notebook_setup (NautilusNavigationWindowPane *pane)
++{
++	pane->widget = gtk_vbox_new (FALSE, 0);
++	pane->path_bar = g_object_new (NAUTILUS_TYPE_PATH_BAR, NULL);
++	pane->navigation_bar = nautilus_location_bar_new (pane);
++	
++	pane->notebook = g_object_new (NAUTILUS_TYPE_NOTEBOOK, NULL);
++	gtk_box_pack_start (GTK_BOX (pane->widget), pane->notebook,
++			    TRUE, TRUE, 0);
++	g_signal_connect (pane->notebook,
++			  "tab-close-request",
++			  G_CALLBACK (notebook_tab_close_requested),
++			  pane);
++	g_signal_connect_after (pane->notebook,
++				"button_press_event",
++				G_CALLBACK (notebook_button_press_cb),
++				pane);
++	g_signal_connect (pane->notebook, "popup-menu",
++			  G_CALLBACK (notebook_popup_menu_cb),
++			  pane);
++	g_signal_connect (pane->notebook,
++			  "switch-page",
++			  G_CALLBACK (notebook_switch_page_cb),
++			  pane);
++
++	gtk_notebook_set_show_tabs (GTK_NOTEBOOK (pane->notebook), FALSE);
++	gtk_notebook_set_show_border (GTK_NOTEBOOK (pane->notebook), FALSE);
++	gtk_widget_show (pane->notebook);
++	gtk_container_set_border_width (GTK_CONTAINER (pane->notebook), 0);
++
++	/* Ensure that the view has some minimal size and that other parts
++	 * of the UI (like location bar and tabs) don't request more and
++	 * thus affect the default position of the split view paned.
++	 */
++	gtk_widget_set_size_request (pane->widget, 60, 60);
++}
++
++
++void
++nautilus_navigation_window_pathbar_toolbar_setup (NautilusNavigationWindowPane *pane, GtkWidget *toolbar)
++{
++	GtkWidget *hbox;
++	NautilusEntry *entry;
++	GtkToolItem *item;
++	GtkSizeGroup *header_size_group;
++	gint pathbar_position, pathbar_width, space_after_breadcrumbs;
++	int i, position_space;
++
++	/*pane->widget = gtk_vbox_new (FALSE, 0);*/
++
++	hbox = gtk_hbox_new (FALSE, 0);
++	pane->location_bar = hbox;
++	gtk_container_set_border_width (GTK_CONTAINER (hbox), 0);
++	/*gtk_box_pack_start (GTK_BOX (pane->widget), hbox,
++			    FALSE, FALSE, 0);*/
++	gtk_widget_show (hbox);
++
++	header_size_group = NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window)->details->header_size_group;
++
++	/*pane->path_bar = g_object_new (NAUTILUS_TYPE_PATH_BAR, NULL);*/
++	gtk_size_group_add_widget (header_size_group, pane->path_bar);
++	gtk_widget_show (pane->path_bar);
++
++	g_signal_connect_object (pane->path_bar, "path_clicked",
++				 G_CALLBACK (path_bar_location_changed_callback), pane, 0);
++	g_signal_connect_object (pane->path_bar, "path_set",
++				 G_CALLBACK (path_bar_path_set_callback), pane, 0);
++
++	gtk_box_pack_start (GTK_BOX (hbox),
++			    pane->path_bar,
++			    TRUE, TRUE, 0);
++	
++	/**************************************************************************************/
++	/* Get the width and position of the pathbar from nautilus preference, so they can controlled
++	/* by the user. 
++	/**************************************************************************************/
++	pathbar_width =eel_preferences_get_integer (NAUTILUS_PREFERENCES_PATHBAR_WIDTH_TOOLBAR);
++	pathbar_position =eel_preferences_get_integer (NAUTILUS_PREFERENCES_PATHBAR_POSITION_TOOLBAR);
++
++	gtk_widget_set_size_request (hbox, pathbar_width, -1);
++	
++	item = gtk_tool_item_new ();
++	gtk_container_set_border_width (GTK_CONTAINER (item), 4);
++	gtk_widget_show (GTK_WIDGET (item));
++	gtk_tool_item_set_expand (item, TRUE);
++	gtk_container_add (GTK_CONTAINER (item),  hbox);
++	gtk_toolbar_insert (GTK_TOOLBAR (toolbar),
++			    item, pathbar_position);
++
++	//pane->navigation_bar = nautilus_location_bar_new (pane);
++	gtk_size_group_add_widget (header_size_group, pane->navigation_bar);
++	g_signal_connect_object (pane->navigation_bar, "location_changed",
++				 G_CALLBACK (navigation_bar_location_changed_callback), pane, 0);
++	g_signal_connect_object (pane->navigation_bar, "cancel",
++				 G_CALLBACK (navigation_bar_cancel_callback), pane, 0);
++	entry = nautilus_location_bar_get_entry (NAUTILUS_LOCATION_BAR (pane->navigation_bar));
++	g_signal_connect (entry, "focus-in-event",
++			G_CALLBACK (navigation_bar_focus_in_callback), pane);
++
++	gtk_box_pack_start (GTK_BOX (hbox),
++			    pane->navigation_bar,
++			    TRUE, TRUE, 0);
++
++	pane->search_bar = nautilus_search_bar_new ();
++	gtk_size_group_add_widget (header_size_group, pane->search_bar);
++	g_signal_connect_object (pane->search_bar, "activate",
++				 G_CALLBACK (search_bar_activate_callback), pane, 0);
++	g_signal_connect_object (pane->search_bar, "cancel",
++				 G_CALLBACK (search_bar_cancel_callback), pane, 0);
++	g_signal_connect_object (pane->search_bar, "focus-in",
++				 G_CALLBACK (search_bar_focus_in_callback), pane, 0);
++	gtk_box_pack_start (GTK_BOX (hbox),
++			    pane->search_bar,
++			    TRUE, TRUE, 0);
++
++	/**************************************************************************************/
++	/* Add the selected space after breadcrumbs. 
++	/* This is a awful way to get it, however, it's the only way that works and the space adapt 
++	/* automaticly to the window's width... I hope found a better way to get the same effect
++	/**************************************************************************************/
++	
++	space_after_breadcrumbs = eel_preferences_get_integer (NAUTILUS_PREFERENCES_TOOLBAR_BREADCRUMB_SPACE);
++	
++	if( space_after_breadcrumbs > 0 ){
++		hbox = gtk_hbox_new (FALSE, 0);
++		gtk_widget_set_size_request (hbox, 100, -1);
++	
++		item = gtk_tool_item_new ();
++		gtk_container_set_border_width (GTK_CONTAINER (item), 4);
++		gtk_widget_show (GTK_WIDGET (item));
++		gtk_tool_item_set_expand (item, TRUE);
++		gtk_container_add (GTK_CONTAINER (item),  hbox);
++		
++		if( pathbar_position>=0 ){
++			position_space= (int) pathbar_position + 1;
++		}
++		else{
++			position_space= -1;
++		}
++
++		//small space
++		gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++		//large space
++		if(space_after_breadcrumbs > 1 ){
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++		}
++		//right alignment
++		if(space_after_breadcrumbs > 2 ){
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++			gtk_toolbar_insert (GTK_TOOLBAR (toolbar), item, position_space);
++		}
++		
++	}
++}
++
++/**************************************************************************************/
++/**************************************************************************************/
++/**************************************************************************************/
++
++
+ void
+ nautilus_navigation_window_pane_show_location_bar_temporarily (NautilusNavigationWindowPane *pane)
+ {
+diff -ruN nautilus-2.30.0.orig//src/nautilus-navigation-window-ui.xml nautilus-2.30.0/src/nautilus-navigation-window-ui.xml
+--- nautilus-2.30.0.orig//src/nautilus-navigation-window-ui.xml	2010-01-22 09:45:17.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-navigation-window-ui.xml	2010-04-04 11:38:20.000000000 -0500
+@@ -60,18 +60,19 @@
+ 	<toolitem name="Back" action="Back"/>
+ 	<toolitem name="Forward" action="Forward"/>
+ 
+-	<toolitem name="Up" action="Up"/>
++	<placeholder name="Extra Buttons Placeholder">
++          <placeholder name="Extension Actions"/>
++    </placeholder>
+ 	<toolitem name="Stop" action="Stop"/>
+ 	<toolitem name="Reload" action="Reload"/>
+-	<separator/>
++	<toolitem name="Search" action="Search"/>
++	<!--<separator/>
++	<toolitem name="Up" action="Up"/>
+ 	<toolitem name="Home" action="Home"/>
+ 	<toolitem name="Computer" action="Go to Computer"/>
+ 	<separator/>
+ 	<toolitem name="Zoom" action="Zoom"/>
++	-->
+ 	<toolitem name="ViewAs" action="ViewAs"/>
+-	<toolitem name="Search" action="Search"/>
+-	<placeholder name="Extra Buttons Placeholder">
+-	          <placeholder name="Extension Actions"/>
+-        </placeholder>
+ </toolbar>
+ </ui>
+diff -ruN nautilus-2.30.0.orig//src/nautilus-navigation-window.c nautilus-2.30.0/src/nautilus-navigation-window.c
+--- nautilus-2.30.0.orig//src/nautilus-navigation-window.c	2010-03-11 07:26:24.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-navigation-window.c	2010-04-04 13:36:19.000000000 -0500
+@@ -120,6 +120,64 @@
+ #endif
+ };
+ 
++/***********************************************************************************************/
++/* This function create the zoom sliders, all credit for the implementation of the sliders goes
++/* to the elementary team, I only copy the code and adapted to the nautilus 2.30
++/***********************************************************************************************/
++static GtkWidget *
++create_zoom_slider_widget_for_view (NautilusNavigationWindow *window)
++{
++	GtkWidget *box, *scale;
++	GtkWidget *zoom_in_image, *zoom_in_event_box;
++	GtkWidget *zoom_out_image, *zoom_out_event_box;
++
++	box = gtk_hbox_new (FALSE, 0);
++
++	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS))
++	{
++		zoom_in_image = gtk_image_new_from_stock (GTK_STOCK_ZOOM_IN, GTK_ICON_SIZE_MENU);
++		zoom_in_event_box = gtk_event_box_new ();
++	
++		gtk_container_add (GTK_CONTAINER (zoom_in_event_box), zoom_in_image);
++		g_signal_connect_object (G_OBJECT (zoom_in_event_box), "button-press-event", 
++					 G_CALLBACK (nautilus_window_zoom_in), window, G_CONNECT_SWAPPED);
++
++		zoom_out_image = gtk_image_new_from_stock (GTK_STOCK_ZOOM_OUT, GTK_ICON_SIZE_MENU);
++		zoom_out_event_box = gtk_event_box_new ();
++		    gtk_container_add (GTK_CONTAINER (zoom_out_event_box), zoom_out_image);
++		    
++		g_signal_connect_object (G_OBJECT (zoom_out_event_box), "button-press-event", 
++			         G_CALLBACK (nautilus_window_zoom_out), window, G_CONNECT_SWAPPED);
++	}
++
++	scale = gtk_hscale_new_with_range (NAUTILUS_ZOOM_LEVEL_SMALLEST, NAUTILUS_ZOOM_LEVEL_LARGEST, 1);
++	window->details->zs_range = GTK_RANGE(scale);
++	
++	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS))
++	    gtk_widget_set_size_request (scale, 100, -1); /* This is arbitrary */
++	else
++	    gtk_widget_set_size_request (scale, 110, -1); /* This is arbitrary */
++	    
++	gtk_scale_set_draw_value (GTK_SCALE (scale), FALSE);
++	gtk_scale_set_digits (GTK_SCALE (scale), 0);
++	g_object_set (scale, "update-policy", GTK_UPDATE_CONTINUOUS, NULL);
++	g_signal_connect_object (scale, "value-changed", G_CALLBACK (zoom_slider_value_changed), window, G_CONNECT_SWAPPED);
++
++
++	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS))
++	    gtk_box_pack_end (GTK_BOX (box), zoom_in_event_box, FALSE, FALSE, 0);
++	gtk_box_pack_end (GTK_BOX (box), scale, TRUE, TRUE, 0);
++	
++	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER_ICONS))
++	    gtk_box_pack_end (GTK_BOX (box), zoom_out_event_box, FALSE, FALSE, 0);
++
++	gtk_widget_show_all (box);
++
++	return box;
++}
++/***********************************************************************************************/
++
++
+ static void
+ nautilus_navigation_window_init (NautilusNavigationWindow *window)
+ {
+@@ -129,6 +187,7 @@
+ 	NautilusNavigationWindowPane *pane;
+ 	GtkWidget *hpaned;
+ 	GtkWidget *vbox;
++	GtkWidget *zoom_slider;
+ 
+ 	win = NAUTILUS_WINDOW (window);
+ 
+@@ -160,8 +219,17 @@
+ 
+ 	gtk_box_pack_start (GTK_BOX (vbox), win->details->statusbar, FALSE, FALSE, 0);
+ 	gtk_widget_show (win->details->statusbar);
+-
+-	nautilus_navigation_window_pane_setup (pane);
++	
++	/**************************************************************************************/
++        /* Show the pathbar in the toolbar or content pane
++        /**************************************************************************************/
++	if ( eel_preferences_get_boolean (NAUTILUS_PREFERENCES_PATHBAR_SHOW_IN_TOOLBAR) ) {
++		nautilus_navigation_window_pane_notebook_setup (pane);
++        }
++        else{
++        	nautilus_navigation_window_pane_setup (pane);
++        }
++        /**************************************************************************************/
+ 
+ 	gtk_paned_pack1 (GTK_PANED(hpaned), pane->widget, TRUE, FALSE);
+ 	gtk_widget_show (pane->widget);
+@@ -187,6 +255,23 @@
+ 
+ 	nautilus_navigation_window_initialize_toolbars (window);
+ 
++	/**************************************************************************************/
++        /* Show the pathbar in the toolbar or content pane
++        /**************************************************************************************/
++	if ( eel_preferences_get_boolean (NAUTILUS_PREFERENCES_PATHBAR_SHOW_IN_TOOLBAR) ) {
++                nautilus_navigation_window_pathbar_toolbar_setup (pane, toolbar);
++        }
++	/**************************************************************************************/
++        /* Show the zoom sliders
++        /**************************************************************************************/
++	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_SHOW_ZOOM_SLIDER))
++	{
++		zoom_slider = create_zoom_slider_widget_for_view (window);
++		gtk_box_pack_end (GTK_BOX (NAUTILUS_WINDOW (window)->details->statusbar), zoom_slider, FALSE, FALSE, 0);
++	    	window->details->zoom_slider = zoom_slider;
++	}
++        /**************************************************************************************/
++        
+ 	/* Set initial sensitivity of some buttons & menu items 
+ 	 * now that they're all created.
+ 	 */
+@@ -740,6 +825,7 @@
+ 	nautilus_notebook_sync_tab_label (notebook, slot);
+ }
+ 
++
+ static NautilusIconInfo *
+ real_get_icon (NautilusWindow *window,
+ 	       NautilusWindowSlot *slot)
+diff -ruN nautilus-2.30.0.orig//src/nautilus-pathbar.c nautilus-2.30.0/src/nautilus-pathbar.c
+--- nautilus-2.30.0.orig//src/nautilus-pathbar.c	2010-03-10 07:28:38.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-pathbar.c	2010-04-05 21:18:51.000000000 -0500
+@@ -140,14 +140,22 @@
+ 
+ static GtkWidget *
+ get_slider_button (NautilusPathBar  *path_bar,
+-		   GtkArrowType arrow_type)
++		   GtkArrowType arrow_type, char *button_name)
+ {
+         GtkWidget *button;
+ 
+         gtk_widget_push_composite_child ();
+ 
+-        button = gtk_button_new ();
+-	gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
++		
++		/***********************************************************************************************/
++		/* Make sliders customizables
++		/***********************************************************************************************/
++        button = g_object_new (GTK_TYPE_BUTTON,
++			       "name", button_name,
++			       "focus-on-click", FALSE,
++			       NULL);
++        //button = gtk_button_new ();
++		//gtk_button_set_focus_on_click (GTK_BUTTON (button), FALSE);
+         gtk_container_add (GTK_CONTAINER (button), gtk_arrow_new (arrow_type, GTK_SHADOW_OUT));
+         gtk_container_add (GTK_CONTAINER (path_bar), button);
+         gtk_widget_show_all (button);
+@@ -291,9 +299,18 @@
+         GTK_WIDGET_SET_FLAGS (path_bar, GTK_NO_WINDOW);
+         gtk_widget_set_redraw_on_allocate (GTK_WIDGET (path_bar), FALSE);
+ 
+-        path_bar->spacing = 3;
+-        path_bar->up_slider_button = get_slider_button (path_bar, GTK_ARROW_LEFT);
+-        path_bar->down_slider_button = get_slider_button (path_bar, GTK_ARROW_RIGHT);
++	/***********************************************************************************************/
++	/* Set this to 0 to make the buttons appear together OR -10 to make them appear like real breadcrumbs, 
++	/* also name the sliders buttons to make them customizables
++	/***********************************************************************************************/
++		if ( eel_preferences_get_boolean ( NAUTILUS_PREFERENCES_PATHBAR_OVERLAP_BUTTONS ) ){
++        	path_bar->spacing = -13;
++        }
++        else{
++        	path_bar->spacing = 0;
++        }
++        path_bar->up_slider_button = get_slider_button (path_bar, GTK_ARROW_LEFT, "left_slider");
++        path_bar->down_slider_button = get_slider_button (path_bar, GTK_ARROW_RIGHT, "right_slider");
+         path_bar->icon_size = NAUTILUS_PATH_BAR_ICON_SIZE;
+ 
+ 	p = nautilus_get_desktop_directory ();
+@@ -544,7 +561,10 @@
+         gint up_slider_offset;
+         gint down_slider_offset;
+ 
+-	need_sliders = FALSE;
++	/***********************************************************************************************/
++	/* Set this to true to always show the sliders, necesary if the pathbar show like breadcrumbs
++	/***********************************************************************************************/
++	need_sliders = eel_preferences_get_boolean (NAUTILUS_PREFERENCES_PATHBAR_LIKE_BREADCRUMBS);//FALSE;
+ 	up_slider_offset = 0;
+ 	down_slider_offset = 0;
+ 	path_bar = NAUTILUS_PATH_BAR (widget);
+@@ -683,7 +703,24 @@
+ 	  		down_slider_offset = border_width;
+ 		} else {
+ 			down_slider_offset = child_allocation.x - widget->allocation.x;
+-	  		down_slider_offset = allocation->width - border_width - path_bar->slider_width;
++			/***********************************************************************************************/
++			/* set the down slider position into the pathbar, if the pathbar is set to show like breadcrumbs then
++			/* the sliders will positioned beside the last button.
++			/*
++			/* child_allocation.x = x position of the las button
++			/* child_allocation.width = the width of the last button
++			/* widget->allocation.x = initial position for buttons, is base for the buttons that are not the first
++			/***********************************************************************************************/
++			if ( eel_preferences_get_boolean (NAUTILUS_PREFERENCES_PATHBAR_LIKE_BREADCRUMBS) ) {
++                down_slider_offset = child_allocation.x + child_allocation.width - widget->allocation.x;
++				if ( eel_preferences_get_boolean (NAUTILUS_PREFERENCES_PATHBAR_OVERLAP_BUTTONS) ) {
++					down_slider_offset -=13;
++				}
++        	}
++        	else{
++	  			allocation->width - border_width - path_bar->slider_width; //original value
++	  		}
++	  		/***********************************************************************************************/
+ 	  		child_allocation.x += child_allocation.width + path_bar->spacing;
+ 		}
+         }
+diff -ruN nautilus-2.30.0.orig//src/nautilus-window-private.h nautilus-2.30.0/src/nautilus-window-private.h
+--- nautilus-2.30.0.orig//src/nautilus-window-private.h	2010-03-10 07:28:39.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-window-private.h	2010-04-04 11:19:34.000000000 -0500
+@@ -119,6 +119,10 @@
+         	
+         /* split view */
+         GtkWidget *split_view_hpane;
++
++        /* zoom slider */
++        GtkWidget   *zoom_slider;
++       	GtkRange    *zs_range;
+ };
+ 
+ #define NAUTILUS_MENU_PATH_BACK_ITEM			"/menu/Go/Back"
+@@ -187,6 +191,11 @@
+                                                                           NautilusZoomLevel  level);
+ void               nautilus_window_zoom_to_default                       (NautilusWindow    *window);
+ 
++/***********************************************************************************************/
++void               zoom_slider_update_value                              (NautilusWindow    *window);
++void               zoom_slider_value_changed                             (NautilusWindow    *window);
++/***********************************************************************************************/
++
+ NautilusWindowSlot *nautilus_window_open_slot                            (NautilusWindowPane *pane,
+ 									  NautilusWindowOpenSlotFlags flags);
+ void                nautilus_window_close_slot                           (NautilusWindowSlot *slot);
+diff -ruN nautilus-2.30.0.orig//src/nautilus-window-slot.c nautilus-2.30.0/src/nautilus-window-slot.c
+--- nautilus-2.30.0.orig//src/nautilus-window-slot.c	2009-12-16 10:53:51.000000000 -0600
++++ nautilus-2.30.0/src/nautilus-window-slot.c	2010-04-04 13:14:15.000000000 -0500
+@@ -115,6 +115,9 @@
+ 	nautilus_window_sync_allow_stop (window, slot);
+ 	nautilus_window_sync_title (window, slot);
+ 	nautilus_window_sync_zoom_widgets (window);
++	/************************************************/
++	zoom_slider_update_value ( window );
++	/************************************************/
+ 	nautilus_window_pane_sync_location_widgets (slot->pane);
+ 	nautilus_window_pane_sync_search_widgets (slot->pane);
+ 
+diff -ruN nautilus-2.30.0.orig//src/nautilus-window.c nautilus-2.30.0/src/nautilus-window.c
+--- nautilus-2.30.0.orig//src/nautilus-window.c	2010-03-17 05:14:05.000000000 -0500
++++ nautilus-2.30.0/src/nautilus-window.c	2010-04-04 13:31:54.000000000 -0500
+@@ -446,6 +446,43 @@
+ 	nautilus_window_pane_zoom_to_default (window->details->active_pane);
+ }
+ 
++/***********************************************************************************************/
++/* Update zoom slider to the zoom level of the pane
++/***********************************************************************************************/
++void
++zoom_slider_update_value (NautilusWindow *window)
++{
++	NautilusWindowSlot *slot;
++	NautilusZoomLevel zoom_level;
++
++	g_assert (window != NULL);
++
++	slot = window->details->active_pane->active_slot;
++
++	if (slot->content_view != NULL && NAUTILUS_NAVIGATION_WINDOW (window)->details->zoom_slider != NULL) {
++		zoom_level = nautilus_view_get_zoom_level (slot->content_view);
++		gtk_range_set_value (NAUTILUS_NAVIGATION_WINDOW (window)->details->zs_range, zoom_level);
++	}
++}
++
++void
++zoom_slider_value_changed (NautilusWindow *window)
++{
++	NautilusWindowSlot *slot;
++	NautilusZoomLevel zoom_level;
++
++	g_assert (window != NULL);
++
++	slot = window->details->active_pane->active_slot;
++
++	if (slot->content_view != NULL) {
++	    zoom_level = (NautilusZoomLevel) gtk_range_get_value
++            (NAUTILUS_NAVIGATION_WINDOW (window)->details->zs_range);
++	    nautilus_view_zoom_to_level (slot->content_view, zoom_level);
++    }
++}
++/***********************************************************************************************/
++
+ /* Code should never force the window taller than this size.
+  * (The user can still stretch the window taller if desired).
+  */
+@@ -1445,6 +1482,10 @@
+ 	 * a zooming operation.
+ 	 */
+ 	nautilus_window_sync_zoom_widgets (window);
++	/***********************************************************************************************/
++	/* Update zoom slider when active slot successfully completed a zooming operation
++	/***********************************************************************************************/
++	zoom_slider_update_value ( window );
+ }
