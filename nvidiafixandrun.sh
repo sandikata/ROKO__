@@ -1,7 +1,5 @@
-#Stefano Angeleri (c) 2012 - weltall2@gmail.com
-#a quick and dirty script to get the patch done easily.
-#to use just do ./script path_to_the_nvidia_installer params to the nvidia installer
-#remember to run the script as root else the nvidia installer will ask for it
+#!/bin/bash
+# Росен Александров
 Directory=`$1 --info | grep "Target directory" | cut --delimiter=":" -f 2`
 eval "$1 -x"
 cd $Directory
