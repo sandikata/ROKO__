@@ -1,0 +1,33 @@
+--- eel/eel-background.c.orig 2010-04-22 07:54:59.000000000 +0800
++++ eel/eel-background.c 2010-04-22 07:54:20.000000000 +0800
+@@ -385,7 +385,7 @@
+
+set_image_properties (background);
+
+- background->details->background_changes_with_size = gnome_bg_changes_with_size (background->details->bg);
++ //background->details->background_changes_with_size = gnome_bg_changes_with_size (background->details->bg);
+background->details->background_pixmap = gnome_bg_create_pixmap (background->details->bg,
+window,
+entire_width, entire_height,
+@@ -769,8 +769,8 @@
+}
+}
+
+- background->details->background_changes_with_size =
+- gnome_bg_changes_with_size (background->details->bg);
++ //background->details->background_changes_with_size =
++ // gnome_bg_changes_with_size (background->details->bg);
+
+if (background->details->is_desktop && !in_fade) {
+set_root_pixmap (background, window);
+@@ -1022,7 +1022,7 @@
+gboolean
+eel_background_is_dark (EelBackground *background)
+{
+- return gnome_bg_is_dark (background->details->bg);
++ return gnome_bg_is_dark (background->details->bg, 0, 0);
+}
+
+/* handle dropped colors */
+
+
