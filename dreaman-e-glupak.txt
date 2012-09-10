@@ -16,5 +16,5 @@ emerge xchat-xsys
 
 За гат искаш да ползваш тестинг пакети пишеш следното
 
-echo 'ACCEPT_KEYWORDS="~amd64" >> /etc/make.conf'
+echo 'ACCEPT_KEYWORDS="~amd64"' >> /etc/make.conf
 emerge -uDNav @world
