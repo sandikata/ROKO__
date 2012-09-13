@@ -15,7 +15,6 @@ DEPEND="
 	x11-apps/mesa-progs
 	x11-apps/xrandr
 	x11-apps/xdpyinfo
-	sys-apps/gawk
 "
 RDEPEND="${DEPEND}"
 
