@@ -9,7 +9,7 @@ SRC_URI="http://smxi.org/inxi"
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="amd64 x86"
+KEYWORDS="-*"
 
 DEPEND="
 	x11-apps/mesa-progs

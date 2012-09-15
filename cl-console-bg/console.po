@@ -200,10 +200,10 @@ msgid "Failed to clear the cache! "
 msgstr ""
 
 msgid "yes"
-msgstr ""
+msgstr "да"
 
 msgid "no"
-msgstr ""
+msgstr "не"
 
 msgid "auto"
 msgstr ""
