@@ -34,12 +34,12 @@ SUBLEVEL="${3}"
 KMV="${1}.${2}"
 
 # ebuild default values setup settings
-EXTRAVERSION="-calculate"
+EXTRAVERSION="-geek"
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
 SLOT="${PV}"
 
-KNOWN_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice imq mageia pardus pld reiser4 rt suse uksm"
+KNOWN_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice imq mageia pardus pld reiser4 rt suse uksm vserver zfs"
 
 SRC_URI="http://www.kernel.org/pub/linux/kernel/v3.0/linux-${KMV}.tar.xz"
 
@@ -69,12 +69,15 @@ fbcondecor_src="http://sources.gentoo.org/cgi-bin/viewvc.cgi/linux-patches/genpa
 # Intermediate Queueing Device patches
 imq_src="http://www.linuximq.net/patches/patch-imqmq-${imq_ver/KMV/$KMV}.diff.xz"
 
-reiser4_src="mirror://kernel/linux/kernel/people/edward/reiser4/reiser4-for-2.6/reiser4-for-${REISER4_OKV}${REISER4_VER}.patch.bz2"
+reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${PV}.patch.gz"
 
 # Ingo Molnar's realtime preempt patches
 rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
 
 xenomai_src="http://download.gna.org/xenomai/stable/xenomai-${xenomai_ver/KVM/$KMV}.tar.bz2"
+
+# VServer
+vserver_src="http://vserver.13thfloor.at/Experimental/patch-${PV}-vs${vserver_ver}.diff"
 
 featureKnown() {
 	local feature="${1/-/}"
@@ -176,10 +179,18 @@ featureKnown() {
 			HOMEPAGE="${HOMEPAGE} ${pld_url}"
 			;;
 		reiser4)
+			if [ "${OVERRIDE_reiser4_src}" != "" ]; then
+				reiser4_src="${OVERRIDE_reiser4_src}"
+			fi
 			reiser4_url="http://sourceforge.net/projects/reiser4"
 			HOMEPAGE="${HOMEPAGE} ${reiser4_url}"
+			SRC_URI="${SRC_URI}
+				reiser4?	( ${reiser4_src} )"
 			;;
 		rt)
+			if [ "${OVERRIDE_rt_src}" != "" ]; then
+				rt_src="${OVERRIDE_rt_src}"
+			fi
 			rt_url="http://www.kernel.org/pub/linux/kernel/projects/rt"
 			HOMEPAGE="${HOMEPAGE} ${rt_url}"
 			SRC_URI="${SRC_URI}
@@ -192,6 +203,21 @@ featureKnown() {
 		uksm)
 			uksm_url="http://kerneldedup.org"
 			HOMEPAGE="${HOMEPAGE} ${uksm_url}"
+			;;
+		vserver)
+			if [ "${OVERRIDE_vserver_src}" != "" ]; then
+				vserver_src="${OVERRIDE_vserver_src}"
+			fi
+			vserver_url="http://linux-vserver.org"
+			HOMEPAGE="${HOMEPAGE} ${vserver_url}"
+			SRC_URI="${SRC_URI}
+				vserver?	( ${vserver_src} )"
+			;;
+		zfs)
+			zfs_url="http://zfsonlinux.org"
+			HOMEPAGE="${HOMEPAGE} ${zfs_url}"
+			RDEPEND="${RDEPEND}
+				zfs?	( >=sys-fs/zfs-0.6.0_rc9-r6 )"
 			;;
 	esac
 }
@@ -292,6 +318,8 @@ kernel-geek_src_unpack() {
 
 kernel-geek_src_prepare() {
 
+	use vserver && ApplyPatch "${DISTDIR}/patch-${PV}-vs${vserver_ver}.diff" "VServer - ${vserver_url}"
+
 	use bfq && ApplyPatch "${FILESDIR}/${PV}/bfq/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}"
 
 	use ck && ApplyPatch "$DISTDIR/patch-${ck_ver}.bz2" "Con Kolivas high performance patchset - ${ck_url}"
@@ -303,10 +331,8 @@ kernel-geek_src_prepare() {
 	use ice && ApplyPatch "${FILESDIR}/tuxonice-kernel-${PV}.patch.xz" "TuxOnIce - ${ice_url}"
 
 	use imq && ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}"
-#	use imq && ApplyPatch "$FILESDIR/${PV}/pld/kernel-imq.patch" "Intermediate Queueing Device patches - ${imq_url} ${pld_url}"
 
-	use reiser4 && ApplyPatch "${DISTDIR}/reiser4-for-${PV}.patch.bz2" "Reiser4 - ${reiser4_url}"
-#	use reiser4 && ApplyPatch "$FILESDIR/${PV}/pld/kernel-reiser4.patch" "Reiser4 - ${reiser4_url} ${pld_url}"
+	use reiser4 && ApplyPatch "${DISTDIR}/reiser4-for-${PV}.patch.gz" "Reiser4 - ${reiser4_url}"
 
 	use rt && ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}"
 
@@ -349,7 +375,11 @@ kernel-geek_src_prepare() {
 
 	use pld && ApplyPatch "$FILESDIR/${PV}/pld/patch_list" "PLD - ${pld_url}"
 
+	use zfs && ApplyPatch "$FILESDIR/${PV}/zfs/patch_list" "zfs - ${zfs_url}"
+
 	ApplyPatch "${FILESDIR}/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41"
+
+	ApplyPatch "${FILESDIR}/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991"
 
 	# USE branding
 	if use branding; then
