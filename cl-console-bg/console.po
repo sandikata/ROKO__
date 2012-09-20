@@ -429,13 +429,13 @@ msgid "Subject"
 msgstr ""
 
 msgid "Add the CA certificate to trusted? y/[n]:"
-msgstr ""
+msgstr "Добави CA сертификата в доверени? y/[n]:"
 
 msgid "Certificate not added to trusted"
-msgstr ""
+msgstr "Сертификата не е добавен в доверени"
 
 msgid "Untrusted server certificate!"
-msgstr ""
+msgstr "Недоверен сървър сертификат!"
 
 msgid "Add this server certificate to trusted (s) or"
 msgstr ""
@@ -444,7 +444,7 @@ msgid "Try to add the CA and ROOT certificates to trusted (c) or"
 msgstr ""
 
 msgid "Quit (q)? s/c/[q]: "
-msgstr ""
+msgstr "Изход (q)? s/c/[q]: "
 
 msgid "Try to add the CA and ROOT certificates"
 msgstr ""
