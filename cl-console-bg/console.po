@@ -182,7 +182,7 @@ msgid "The server gets PID errors"
 msgstr ""
 
 msgid "No methods available"
-msgstr ""
+msgstr "Няма налични методи"
 
 msgid "You can execute:"
 msgstr ""
@@ -191,10 +191,10 @@ msgid "use"
 msgstr ""
 
 msgid "Process not found"
-msgstr ""
+msgstr "Процесът не съществува"
 
 msgid "Time"
-msgstr ""
+msgstr "Време"
 
 msgid "Failed to clear the cache! "
 msgstr ""
@@ -206,7 +206,7 @@ msgid "no"
 msgstr "не"
 
 msgid "auto"
-msgstr ""
+msgstr "авто"
 
 msgid "Method not found: "
 msgstr ""
