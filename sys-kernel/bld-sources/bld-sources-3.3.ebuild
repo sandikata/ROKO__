@@ -19,7 +19,7 @@ SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
 SLOT="3.3"
-KEYWORDS="~amd64 ~x86"
+KEYWORDS="amd64 x86"
 IUSE="deblob +vmlinuz"
 
 DEPEND="dev-libs/klibc
