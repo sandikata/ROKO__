@@ -15,7 +15,7 @@ RESTRICT="nomirror"
 
 SLOT="0"
 LICENSE="GPL-2"
-KEYWORDS="x86"
+KEYWORDS="amd64"
 IUSE=""
 
 DEPEND="kde-base/kdelibs
