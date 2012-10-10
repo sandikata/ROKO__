@@ -6,7 +6,7 @@ EAPI=3
 
 DESCRIPTION="Remote Desktop Viewer"
 HOMEPAGE="http://teamviewer.com/"
-SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/teamviewer-7.0.9300.tar.bz2"
+SRC_URI="ftp://calculate-linuxmaniac.tk/pub/downloads/teamviewer-7.0.9300.tar.bz2"
 
 LICENSE=""
 SLOT="unstable"
