@@ -140,7 +140,7 @@ msgid "Unknown parameter"
 msgstr "Неизвестен параметър"
 
 msgid "Method not available"
-msgstr ""
+msgstr "Методът не съществува"
 
 msgid "Run the process? (yes/no): "
 msgstr "Изпълни процесът? (yes/no): "
