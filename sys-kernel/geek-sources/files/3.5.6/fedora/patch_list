@@ -1,0 +1,154 @@
+### BRANCH APPLY ###
+
+linux-2.6-makefile-after_link.patch
+
+taint-vbox.patch
+taint-rss.patch
+
+vmbugon-warnon.patch
+
+# Architecture patches
+# x86(-64)
+
+#
+# ARM
+#
+#arm-omap-dt-compat.patch
+# arm-smsc-support-reading-mac-address-from-device-tree.patch
+arm-tegra-nvec-kconfig.patch
+arm-tegra-usb-no-reset-linux33.patch
+#arm-beagle-usb-init.patch
+#arm-omap-drm-register.patch
+
+#
+# bugfixes to drivers and filesystems
+#
+
+# ext4
+
+# xfs
+
+# btrfs
+
+
+# eCryptfs
+
+# NFSv4
+
+# USB
+
+# WMI
+
+# ACPI
+linux-2.6-defaults-acpi-video.patch
+linux-2.6-acpi-video-dos.patch
+linux-2.6-acpi-debug-infinite-loop.patch
+acpi-sony-nonvs-blacklist.patch
+
+#
+# PCI
+#
+
+#
+# SCSI Bits.
+#
+
+# ACPI
+
+# ALSA
+
+# Networking
+
+# Misc fixes
+# The input layer spews crap no-one cares about.
+linux-2.6-input-kill-stupid-messages.patch
+
+# stop floppy.ko from autoloading during udev...
+die-floppy-die.patch
+
+linux-2.6.30-no-pcspkr-modalias.patch
+
+# Allow to use 480600 baud on 16C950 UARTs
+linux-2.6-serial-460800.patch
+
+# Silence some useless messages that still get printed with 'quiet'
+linux-2.6-silence-noise.patch
+
+# Make fbcon not show the penguins with 'quiet'
+linux-2.6-silence-fbcon-logo.patch
+
+# Changes to upstream defaults.
+
+
+# /dev/crash driver.
+linux-2.6-crash-driver.patch
+
+# Hack e1000e to work on Montevina SDV
+linux-2.6-e1000-ich9-montevina.patch
+
+# crypto/
+
+# Assorted Virt Fixes
+
+# DRM core
+#drm-edid-try-harder-to-fix-up-broken-headers.patch
+drm-vgem.patch
+
+# Nouveau DRM
+
+# Intel DRM
+drm-i915-dp-stfu.patch
+
+linux-2.6-intel-iommu-igfx.patch
+
+# silence the ACPI blacklist code
+linux-2.6-silence-acpi-blacklist.patch
+quite-apm.patch
+
+# Patches headed upstream
+fs-proc-devtree-remove_proc_entry.patch
+
+disable-i8042-check-on-apple-mac.patch
+
+# rhbz#605888
+dmar-disable-when-ricoh-multifunction.patch
+
+efi-dont-map-boot-services-on-32bit.patch
+
+lis3-improve-handling-of-null-rate.patch
+
+team-update-from-net-next.patch
+
+ips-noirq.patch
+
+# Uprobes (rhbz 832083)
+uprobes-backport.patch
+
+power-x86-destdir.patch
+
+#rhbz 754518
+scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
+
+unhandled-irqs-switch-to-polling.patch
+
+weird-root-dentry-name-debug.patch
+
+#Highbank clock functions
+highbank-export-clock-functions.patch
+
+#selinux ptrace child permissions
+selinux-apply-different-permission-to-ptrace-child.patch
+
+efifb-skip-DMI-checks-if-bootloader-knows.patch
+
+#Fix FIPS for aesni hardare
+crypto-testmgr-allow-aesni-intel-and-ghash_clmulni-intel.patch
+crypto-aesni-intel-fix-wrong-kfree-pointer.patch
+
+#rhbz 714271
+CPU-hotplug-cpusets-suspend-Dont-modify-cpusets-during.patch
+
+#rhbz 857324
+net-tcp-bz857324.patch
+
+# END OF PATCH APPLICATIONS

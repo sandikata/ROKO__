@@ -1,0 +1,647 @@
+# Kernel patches configuration file
+# vim: set ts=8 sw=8 noet:
+#
+# There are three kinds of rules (see guards.1 for details):
+# +symbol       include this patch if symbol is defined; otherwise exclude.
+# -symbol       exclude this patch if symbol is defined; otherwise include.
+# -     exclude this patch.
+#
+# Using symbols means that an entirely different source tree will be
+# generated depending on which symbols are defined. This used to be
+# a good thing when arch-specific patches contained conflicts with other
+# patches, but we now have a policy that patches must build everywhere.
+# The result is a unified source tree that allows us to do neat things
+# like ship kernel module packages. Creating a divergent tree breaks
+# these # so you'd better have an extraordinary reason for using them.
+# For example, the openSUSE 10.3 kernel uses them for segregating the
+# -rt patches until they can be integrated completely, and these are
+# only applied at the very end of the series.
+#
+# The most common use in recent kernels is to disable a patch with a
+# username as the symbol to indicate responsbility. Another use is
+# to check in a patch for testing, but have it disabled in all but your
+# own build environment.
+
+########################################################
+# latest standard kernel patches
+# DO NOT MODIFY THEM!
+# Send separate patches upstream if you find a problem...
+########################################################
+
+########################################################
+# Build fixes that apply to the vanilla kernel too.
+# Patches in patches.rpmify are applied to both -vanilla
+# and patched flavors.
+########################################################
+#patches.rpmify/apm-honor-config_apm_cpu_idle-n
+#patches.rpmify/nouveau-make-vga_switcheroo-code-depend-on-vga_switcheroo
+#patches.rpmify/pti-depends-on-x86-pci
+#patches.rpmify/geode-depends-on-x86_32
+#patches.rpmify/ubifs-remove-DATE-TIME.patch
+#patches.rpmify/chipidea-clean-up-dependencies
+
+########################################################
+# kABI consistency patches
+########################################################
+
+########################################################
+#
+# packaging-specific patches (tweaks for autobuild,
+# CONFIG_SUSE_KERNEL, config/version tracking and other
+# build stuff like that ...).
+#
+# Note that every patch in the patches.rpmify directory
+# will be included in the vanilla package.
+########################################################
+#patches.rpmify/firmware-path
+
+#patches.rpmify/rpm-kernel-config
+#patches.rpmify/split-package
+#patches.rpmify/cloneconfig.diff
+
+########################################################
+# kbuild/module infrastructure fixes
+########################################################
+#patches.suse/supported-flag
+#patches.suse/supported-flag-enterprise
+#patches.suse/genksyms-add-override-flag.diff
+#patches.suse/kconfig-automate-kernel-desktop
+
+########################################################
+# Simple export additions/removals
+########################################################
+
+########################################################
+# Bug workarounds for binutils
+########################################################
+
+########################################################
+# Scheduler / Core
+########################################################
+patches.suse/setuid-dumpable-wrongdir
+
+########################################################
+# Architecture-specific patches. These used to be all
+# at the end of series.conf, but since we don't do
+# conditional builds anymore, there's no point.
+########################################################
+
+
+########################################################
+# ia64
+########################################################
+
+########################################################
+# i386
+########################################################
+
+
+# amd64 | x86-64 | x86_64
+# 'Intel(r) Extended Memory 64 Technology' | 'Intel(r) EM64T'
+# x64
+# Intel 64
+# "the architecture with too many names"
+# TAWTMN
+
+########################################################
+# x86_64/i386 biarch
+########################################################
+patches.arch/x86_64-hpet-64bit-timer.patch
+
+#patches.arch/kvm-split-paravirt-ops-by-functionality
+#patches.arch/kvm-only-export-selected-pv-ops-feature-structs
+#patches.arch/kvm-split-the-KVM-pv-ops-support-by-feature
+#patches.arch/kvm-replace-kvm-io-delay-pv-ops-with-linux-magic
+
+########################################################
+# x86 MCE/MCA (Machine Check Error/Architecture) extensions
+########################################################
+
+
+########################################################
+# x86_64/4096CPUS - from SGI
+########################################################
+patches.arch/x86-apic-force-bigsmp-apic-on-IBM-EXA3-4.patch
+
+########################################################
+# x86 UV patches from SGI
+########################################################
+
+########################################################
+# x86_64/i386 depending on the UV patchset
+########################################################
+
+########################################################
+# powerpc/generic
+########################################################
+patches.suse/8250-sysrq-ctrl_o.patch
+#patches.suse/ppc-no-LDFLAGS_MODULE.patch
+patches.arch/ppc-pegasos-console-autodetection.patch
+patches.suse/ppc-powerbook-usb-fn-key-default.patch
+patches.drivers/ppc64-adb
+patches.suse/suse-ppc64-branding
+#patches.arch/ppc64-xmon-dmesg-printing.patch
+patches.arch/ppc-prom-nodisplay.patch
+patches.fixes/ptrace-getsiginfo
+
+########################################################
+# PS3
+########################################################
+
+########################################################
+# ARM
+########################################################
+#patches.arch/arm-phys-offset.patch
+patches.arch/cubox-configuration.patch
+
+########################################################
+# S/390
+########################################################
+patches.arch/s390-message-catalog.diff
+patches.arch/kmsg-fix-parameter-limitations
+
+########################################################
+# VM/FS patches
+########################################################
+patches.fixes/oom-warning
+
+patches.fixes/remount-no-shrink-dcache
+
+patches.suse/readahead-request-tunables.patch
+patches.fixes/fs-partitions-efi-c-corrupted-guid-partition-tables-can-cause-kernel-oops
+patches.fixes/mm-Fix-assertion-mapping-nrpages-0-in-end_writeback.patch
+
+########################################################
+# IPC patches
+########################################################
+
+########################################################
+# nfsacl protocol (agruen)
+########################################################
+
+########################################################
+# misc small fixes
+########################################################
+patches.suse/connector-read-mostly
+patches.suse/kbd-ignore-gfx.patch
+
+########################################################
+#
+# ACPI patches
+#
+########################################################
+# Check resource conflicts between hwmon and ACPI OpRegs
+patches.arch/acpi_thinkpad_introduce_acpi_root_table_boot_param.patch
+
+patches.arch/acpi_thermal_passive_blacklist.patch
+
+# Queued for 2.6.36 -> just revert after some time
+patches.fixes/acpi_ec_sys_access_user_space_with_get_user.patch
+
+# Needs comparison with f7b004a17c9183f023796dea0d70284684ec000d
+#patches.arch/acpica_introduce_acpi_os_phys_table_override_function.patch
+#patches.arch/acpica_fix_wrongly_mapped_acpi_table_header_when_overriding_via_initrd.patch
+#patches.arch/acpi_implement_overriding_of_arbitrary_acpi_tables_via_initrd.patch
+
+########################################################
+# CPUFREQ
+########################################################
+
+patches.fixes/cpufreq_ondemand_performance_optimise_default_settings.patch
+
+## cpuidle perf events cleanups and related
+patches.arch/perf_timechart_fix_zero_timestamps.patch
+patches.drivers/x86_acpi_cpufreq_autoload.patch
+
+########################################################
+# AGP, graphics related stuff
+########################################################
+
+########################################################
+# Suse specific stuff
+########################################################
+patches.suse/suse-hv-Cleanup-the-guest-ID-computation.patch
+patches.suse/suse-hv-identify-virtual-pc-in-ata_piix.patch
+patches.fixes/hv-storvsc-reset-wait.patch
+
+########################################################
+# Networking, IPv6
+########################################################
+patches.fixes/bridge-module-get-put.patch
+
+########################################################
+# NFS
+########################################################
+
+#patches.fixes/nfsd-06-sunrpc-cache-retry-cache-lookups-that-return-ETIMEDO.patch
+patches.fixes/nfs-adaptive-readdir-plus
+patches.fixes/nfs-connect-timeout
+
+########################################################
+# lockd + statd
+########################################################
+
+########################################################
+# cifs patches
+########################################################
+
+########################################################
+# ext2/ext3
+########################################################
+#patches.suse/ext2-fsync-err
+
+########################################################
+# ext4
+########################################################
+
+########################################################
+# btrfs
+########################################################
+patches.suse/btrfs-use-correct-device-for-maps.patch
+
+########################################################
+# Reiserfs Patches
+########################################################
+#patches.suse/reiser4-dependencies
+patches.fixes/reiserfs-fix-deadlock-with-nfs-racing-on-create-lookup
+
+########################################################
+# dlm
+########################################################
+
+########################################################
+# ocfs2
+########################################################
+
+########################################################
+# gfs2
+########################################################
+
+########################################################
+# xfs
+########################################################
+
+########################################################
+# other filesystem stuff: richacls
+########################################################
+patches.suse/0001-vfs-Hooks-for-more-fine-grained-directory-permission.patch
+patches.suse/0002-vfs-Add-generic-IS_ACL-test-for-acl-support.patch
+patches.suse/0003-vfs-Add-IS_RICHACL-test-for-richacl-support.patch
+patches.suse/0004-richacl-In-memory-representation-and-helper-function.patch
+patches.suse/0005-richacl-Permission-mapping-functions.patch
+patches.suse/0006-richacl-Compute-maximum-file-masks-from-an-acl.patch
+patches.suse/0007-richacl-Update-the-file-masks-in-chmod.patch
+patches.suse/0008-richacl-Permission-check-algorithm.patch
+patches.suse/0009-richacl-Helper-functions-for-implementing-richacl-in.patch
+patches.suse/0010-richacl-Create-time-inheritance.patch
+patches.suse/0011-richacl-Check-if-an-acl-is-equivalent-to-a-file-mode.patch
+patches.suse/0012-richacl-Automatic-Inheritance.patch
+patches.suse/0013-richacl-Restrict-access-check-algorithm.patch
+patches.suse/0014-richacl-xattr-mapping-functions.patch
+#patches.suse/0016-ext4-Implement-richacl-support-in-ext4.patch
+
+########################################################
+# other filesystem stuff
+########################################################
+patches.fixes/hfs-avoid-crash-in-hfs_bnode_create
+
+########################################################
+# Swap-over-NFS
+########################################################
+
+########################################################
+# Netfilter
+########################################################
+
+patches.suse/netfilter-ip_conntrack_slp.patch
+patches.fixes/netfilter-implement-rfc-1123-for-ftp-conntrack
+
+########################################################
+#
+# Device drivers
+#
+########################################################
+patches.drivers/spi-orion-convert-to-new-infrastructure.patch
+
+########################################################
+# Storage
+########################################################
+
+# Block layer fixes
+patches.fixes/scsi-inquiry-too-short-ratelimit
+patches.suse/scsi-netlink-ml
+
+patches.fixes/scsi-retry-alua-transition-in-progress
+
+patches.fixes/scsi-dh-queuedata-accessors
+
+patches.fixes/scsi-check-host-lookup-failure
+patches.drivers/megaraid-mbox-fix-SG_IO
+
+# Remaining SCSI patches (garloff)
+patches.suse/scsi-error-test-unit-ready-timeout
+patches.fixes/scsi-scan-blist-update
+
+patches.fixes/scsi-ibmvscsi-show-config.patch
+# bnc#362850
+patches.fixes/sd_liberal_28_sense_invalid.diff
+
+patches.fixes/scsi-ibmvscsi-module_alias.patch
+patches.suse/sd_init.mark_majors_busy.patch
+
+########################################################
+# DRM/Video
+########################################################
+
+########################################################
+# video4linux
+########################################################
+
+########################################################
+# Network
+########################################################
+patches.fixes/tulip-quad-NIC-ifdown
+patches.drivers/ehea-modinfo.patch
+
+########################################################
+# Wireless Networking
+########################################################
+patches.suse/b43-missing-firmware-info.patch
+patches.fixes/brcmsmac-firmware
+
+########################################################
+# ISDN
+########################################################
+patches.fixes/misdn-add-support-for-group-membership-check
+
+########################################################
+# iSCSI
+########################################################
+
+########################################################
+# PCI and PCI hotplug
+########################################################
+
+########################################################
+# sysfs / driver core
+########################################################
+
+########################################################
+# USB
+########################################################
+
+########################################################
+# I2C
+########################################################
+
+########################################################
+# Input & Console
+########################################################
+patches.suse/SUSE-bootsplash
+patches.drivers/elousb.patch
+patches.fixes/input-add-acer-aspire-5710-to-nomux.patch
+
+##########################################################
+# Sound
+##########################################################
+
+########################################################
+# Char / serial
+########################################################
+
+########################################################
+# Other driver fixes
+########################################################
+patches.fixes/parport-mutex
+
+# Needs updating WRT d27769ec (block: add GENHD_FL_NO_PART_SCAN)
+#patches.suse/no-partition-scan
+
+########################################################
+# Other drivers we have added to the tree
+########################################################
+
+########################################################
+# Suspend/Resume stuff
+########################################################
+
+########################################################
+# device-mapper
+########################################################
+patches.suse/dm-emulate-blkrrpart-ioctl
+patches.suse/dm-raid45-26-Nov-2009.patch
+patches.suse/dmraid45-dm_dirty_log_create-api-fix
+patches.suse/dmraid45-dm_get_device-takes-fewer-arguments
+patches.suse/dm-raid45-api-update-remove-dm_put-after-dm_table_get_md
+patches.suse/dm-raid45-api-update-no-barriers
+patches.suse/dm-raid45-api-2.6.39
+patches.suse/dm-raid45-api-3.0
+patches.suse/dm-raid45-split-dependencies
+patches.fixes/dm-mpath-reattach-dh
+patches.suse/dm-mpath-leastpending-path-update
+#patches.suse/dm-mpath-accept-failed-paths
+#patches.suse/dm-mpath-detach-existing-hardware-handler
+patches.fixes/dm-table-switch-to-readonly
+patches.fixes/dm-release-map_lock-before-set_disk_ro
+patches.suse/dm-mpath-no-activate-for-offlined-paths
+patches.suse/dm-mpath-no-partitions-feature
+patches.suse/mpath-fix
+
+########################################################
+# md
+########################################################
+
+##########################################################
+#
+# Security stuff
+#
+##########################################################
+
+##########################################################
+# Audit
+##########################################################
+
+##########################################################
+# AppArmor
+##########################################################
+patches.apparmor/apparmor-compatibility-patch-for-v5-network-control
+patches.apparmor/apparmor-profiles-seq_file
+
+########################################################
+# Address space layout randomization
+########################################################
+
+########################################################
+# KDB v4.4
+########################################################
+
+########################################################
+# Other patches for debugging
+########################################################
+patches.suse/crasher-26.diff
+patches.suse/stack-unwind
+patches.suse/revert-x86-remove-warning-and-warning_symbol-from-struct-stacktrace_ops
+patches.suse/no-frame-pointer-select
+patches.arch/x86_64-unwind-annotations
+patches.arch/stack-unwind-cfi_ignore-takes-more-arguments
+
+########################################################
+# Kdump
+########################################################
+
+########################################################
+# cgroups
+########################################################
+
+########################################################
+# audit subsystem
+########################################################
+
+########################################################
+# Performance Monitoring, Tracing etc
+########################################################
+patches.fixes/ia64-configure-HAVE_UNSTABLE_SCHED_CLOCK-for-SGI_SN.patch
+
+########################################################
+# KVM patches
+########################################################
+patches.fixes/kvm-ioapic.patch
+patches.fixes/kvm-macos.patch
+
+########################################################
+# Staging tree patches
+# new drivers that are going upstream
+########################################################
+
+########################################################
+# You'd better have a good reason for adding a patch
+# below here.
+########################################################
+
+########################################################
+# XEN architecture, version 3
+########################################################
+
+# xen patches, from xenbits mercurial repository.
+# http://xenbits.xensource.com/ext/linux-2.6-merge.hg
+#
+# everything named "xen3-auto-*" is auto-generated.
+# PLEASE DON'T EDIT THESE PATCHES.  Create fixup patches
+# on top of them instead.  This reduces workload when
+# re-basing to a newer xen tree.
+#
+# split out patches
+#patches.xen/kexec-move-segment-code-i386.patch
+#patches.xen/kexec-move-segment-code-x86_64.patch
+#patches.xen/ipv6-no-autoconf
+#patches.xen/pci-guestdev
+#patches.xen/pci-reserve
+
+# bulk stuff, new files for xen
+#patches.xen/xen3-auto-xen-arch.diff
+#patches.xen/xen3-auto-xen-drivers.diff
+#patches.xen/xen3-auto-include-xen-interface.diff
+#patches.xen/xen3-auto-blktap2-pvops.diff
+
+# kconfig bits for xen
+#patches.xen/xen3-auto-xen-kconfig.diff
+
+# common code changes
+#patches.xen/xen3-auto-common.diff
+#patches.xen/xen3-auto-arch-x86.diff
+#patches.xen/xen3-auto-arch-i386.diff
+#patches.xen/xen3-auto-arch-x86_64.diff
+
+# fixups due to upstream Xen parts
+#patches.xen/xen3-fixup-xen
+
+# newer changeset backports
+
+# changes outside arch/{i386,x86_64}/xen
+#patches.xen/xen3-fixup-kconfig
+#patches.xen/xen3-fixup-common
+#patches.xen/xen3-fixup-arch-x86
+#patches.xen/xen3-fixup-blktap2-pvops
+
+# ports of upstream patches
+#patches.xen/xen3-patch-2.6.18
+#patches.xen/xen3-patch-2.6.19
+#patches.xen/xen3-patch-2.6.20
+#patches.xen/xen3-patch-2.6.21
+#patches.xen/xen3-patch-2.6.22
+#patches.xen/xen3-patch-2.6.23
+#patches.xen/xen3-patch-2.6.24
+#patches.xen/xen3-patch-2.6.25
+#patches.xen/xen3-patch-2.6.26
+#patches.xen/xen3-patch-2.6.27
+#patches.xen/xen3-patch-2.6.28
+#patches.xen/xen3-patch-2.6.29
+#patches.xen/xen3-patch-2.6.30
+#patches.xen/xen3-patch-2.6.31
+#patches.xen/xen3-patch-2.6.32
+#patches.xen/xen3-patch-2.6.33
+#patches.xen/xen3-patch-2.6.34
+#patches.xen/xen3-patch-2.6.35
+#patches.xen/xen3-patch-2.6.36
+#patches.xen/xen3-patch-2.6.37
+#patches.xen/xen3-patch-2.6.38
+#patches.xen/xen3-patch-2.6.39
+#patches.xen/xen3-patch-3.0
+#patches.xen/xen3-patch-3.1
+#patches.xen/xen3-patch-3.2
+#patches.xen/xen3-patch-3.3
+#patches.xen/xen3-patch-3.4
+#patches.xen/xen3-patch-3.5
+#patches.xen/xen3-patch-3.6-rc4
+
+# ports of other patches
+#patches.xen/xen3-acpi_implement_overriding_of_arbitrary_acpi_tables_via_initrd.patch
+#patches.xen/xen3-stack-unwind
+#patches.xen/xen3-x86_64-unwind-annotations
+
+# bugfixes and enhancements
+#patches.xen/xen-kconfig-compat
+#patches.xen/xen-sys-suspend
+#patches.xen/xen-ipi-per-cpu-irq
+#patches.xen/xen-virq-per-cpu-irq
+#patches.xen/xen-clockevents
+#patches.xen/xen-spinlock-poll-early
+#patches.xen/xen-pcpu-hotplug
+#patches.xen/xen-pcpu-hotplug-kexec
+#patches.xen/xen-mem-hotplug
+#patches.xen/xen-swiotlb-heuristics
+#patches.xen/xen-configurable-guest-devices
+#patches.xen/xen-setup-gsi
+#patches.xen/xen-sections
+#patches.xen/xen-unpriv-build
+#patches.xen/xen-cpufreq-report
+#patches.xen/xen-balloon-max-target
+#patches.xen/xen-blkif-protocol-fallback-hack
+#patches.xen/xen-blkback-cdrom
+#patches.xen/xen-blktap-modular
+#patches.xen/xen-blktap-write-barriers
+#patches.xen/xen-blktap2-configurable-nr-devs
+#patches.xen/xen-blkif-op-packet
+#patches.xen/xen-blkfront-cdrom
+#patches.xen/xen-blkfront-hvm-no-cdrom
+#patches.xen/xen-netback-nr-irqs
+#patches.xen/xen-netback-notify-multi
+#patches.xen/xen-netback-generalize
+#patches.xen/xen-netback-multiple-tasklets
+#patches.xen/xen-netback-kernel-threads
+#patches.xen/xen-cxgb3
+#patches.xen/xen-dcdbas
+#patches.xen/xen-x86-panic-no-reboot
+#patches.xen/xen-x86-dcr-fallback
+#patches.xen/xen-x86-no-lapic
+#patches.xen/xen-x86-pmd-handling
+#patches.xen/xen-x86-bigmem
+#patches.xen/xen-x86-exit-mmap
+#patches.xen/xen-x86-per-cpu-vcpu-info
+#patches.xen/xen-x86-pcpu
+#patches.xen/xen-x86-EFI
+#patches.xen/xen-x86_64-pgd-pin
+#patches.xen/xen-x86_64-pgd-alloc-order
+#patches.xen/xen-x86_64-dump-user-pgt
+#patches.xen/xen-x86_64-note-init-p2m
+#patches.xen/xen-x86_64-unmapped-initrd

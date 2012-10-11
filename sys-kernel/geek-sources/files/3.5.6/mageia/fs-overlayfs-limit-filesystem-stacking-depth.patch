@@ -1,0 +1,87 @@
+commit 2088a8e9d36687930e49a8f8ffa1b9dde73ccbbc
+Author: Miklos Szeredi <mszeredi@suse.cz>
+Date:   Mon May 14 13:06:14 2012 +0200
+
+    UBUNTU: ubuntu: overlayfs -- fs: limit filesystem stacking depth
+    
+    Add a simple read-only counter to super_block that indicates deep this
+    is in the stack of filesystems.  Previously ecryptfs was the only
+    stackable filesystem and it explicitly disallowed multiple layers of
+    itself.
+    
+    Overlayfs, however, can be stacked recursively and also may be stacked
+    on top of ecryptfs or vice versa.
+    
+    To limit the kernel stack usage we must limit the depth of the
+    filesystem stack.  Initially the limit is set to 2.
+    
+    Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+
+diff --git a/fs/ecryptfs/main.c b/fs/ecryptfs/main.c
+index 6895493..c54ea90 100644
+--- a/fs/ecryptfs/main.c
++++ b/fs/ecryptfs/main.c
+@@ -544,6 +544,13 @@ static struct dentry *ecryptfs_mount(struct file_system_type *fs_type, int flags
+ 	s->s_maxbytes = path.dentry->d_sb->s_maxbytes;
+ 	s->s_blocksize = path.dentry->d_sb->s_blocksize;
+ 	s->s_magic = ECRYPTFS_SUPER_MAGIC;
++	s->s_stack_depth = path.dentry->d_sb->s_stack_depth + 1;
++
++	rc = -EINVAL;
++	if (s->s_stack_depth > FILESYSTEM_MAX_STACK_DEPTH) {
++		printk(KERN_ERR "eCryptfs: maximum fs stacking depth exceeded\n");
++		goto out_free;
++	}
+ 
+ 	inode = ecryptfs_get_inode(path.dentry->d_inode, s);
+ 	rc = PTR_ERR(inode);
+diff --git a/fs/overlayfs/super.c b/fs/overlayfs/super.c
+index b8f8fa4..1d2d1e2 100644
+--- a/fs/overlayfs/super.c
++++ b/fs/overlayfs/super.c
+@@ -551,6 +551,16 @@ static int ovl_fill_super(struct super_block *sb, void *data, int silent)
+ 	    !S_ISDIR(lowerpath.dentry->d_inode->i_mode))
+ 		goto out_put_lowerpath;
+ 
++	sb->s_stack_depth = max(upperpath.mnt->mnt_sb->s_stack_depth,
++				lowerpath.mnt->mnt_sb->s_stack_depth) + 1;
++
++	err = -EINVAL;
++	if (sb->s_stack_depth > FILESYSTEM_MAX_STACK_DEPTH) {
++		printk(KERN_ERR "overlayfs: maximum fs stacking depth exceeded\n");
++		goto out_put_lowerpath;
++	}
++
++
+ 	ufs->upper_mnt = clone_private_mount(&upperpath);
+ 	err = PTR_ERR(ufs->upper_mnt);
+ 	if (IS_ERR(ufs->upper_mnt)) {
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 05d046f..49b86cf 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -499,6 +499,12 @@ struct iattr {
+  */
+ #include <linux/quota.h>
+ 
++/*
++ * Maximum number of layers of fs stack.  Needs to be limited to
++ * prevent kernel stack overflow
++ */
++#define FILESYSTEM_MAX_STACK_DEPTH 2
++
+ /** 
+  * enum positive_aop_returns - aop return codes with specific semantics
+  *
+@@ -1542,6 +1548,11 @@ struct super_block {
+ 
+ 	/* Being remounted read-only */
+ 	int s_readonly_remount;
++
++	/*
++	 * Indicates how deep in a filesystem stack this SB is
++	 */
++	int s_stack_depth;
+ };
+ 
+ /* superblock cache pruning functions */

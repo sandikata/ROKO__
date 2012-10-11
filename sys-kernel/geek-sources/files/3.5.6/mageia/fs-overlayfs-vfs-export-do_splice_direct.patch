@@ -1,0 +1,22 @@
+commit 4f78423e9f7ac15916683df84e919ce5a4c98b3c
+Author: Miklos Szeredi <mszeredi@suse.cz>
+Date:   Mon May 14 13:06:13 2012 +0200
+
+    UBUNTU: ubuntu: overlayfs -- vfs: export do_splice_direct() to modules
+    
+    Export do_splice_direct() to modules.  Needed by overlay filesystem.
+    
+    Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+
+diff --git a/fs/splice.c b/fs/splice.c
+index 7bf08fa..890b82d 100644
+--- a/fs/splice.c
++++ b/fs/splice.c
+@@ -1305,6 +1305,7 @@ long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
+ 
+ 	return ret;
+ }
++EXPORT_SYMBOL(do_splice_direct);
+ 
+ static int splice_pipe_to_pipe(struct pipe_inode_info *ipipe,
+ 			       struct pipe_inode_info *opipe,

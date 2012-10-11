@@ -1,0 +1,44 @@
+From 0e050923a797c1fc46ccc1e5182fd3090f33a75d Mon Sep 17 00:00:00 2001
+From: Frank Kunz <xxxxxmichl@googlemail.com>
+Date: Thu, 5 Jul 2012 22:32:49 +0200
+Subject: HID: add Sennheiser BTD500USB device support
+
+From: Frank Kunz <xxxxxmichl@googlemail.com>
+
+commit 0e050923a797c1fc46ccc1e5182fd3090f33a75d upstream.
+
+The Sennheiser BTD500USB composit device requires the
+HID_QUIRK_NOGET flag to be set for working proper. Without the
+flag the device crashes during hid intialization.
+
+Signed-off-by: Frank Kunz <xxxxxmichl@googlemail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/hid/hid-ids.h           |    3 +++
+ drivers/hid/usbhid/hid-quirks.c |    1 +
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/hid/hid-ids.h
++++ b/drivers/hid/hid-ids.h
+@@ -650,6 +650,9 @@
+ #define USB_DEVICE_ID_SAMSUNG_IR_REMOTE	0x0001
+ #define USB_DEVICE_ID_SAMSUNG_WIRELESS_KBD_MOUSE	0x0600
+ 
++#define USB_VENDOR_ID_SENNHEISER	0x1395
++#define USB_DEVICE_ID_SENNHEISER_BTD500USB	0x002c
++
+ #define USB_VENDOR_ID_SIGMA_MICRO	0x1c4f
+ #define USB_DEVICE_ID_SIGMA_MICRO_KEYBOARD	0x0002
+ 
+--- a/drivers/hid/usbhid/hid-quirks.c
++++ b/drivers/hid/usbhid/hid-quirks.c
+@@ -76,6 +76,7 @@ static const struct hid_blacklist {
+ 	{ USB_VENDOR_ID_PRODIGE, USB_DEVICE_ID_PRODIGE_CORDLESS, HID_QUIRK_NOGET },
+ 	{ USB_VENDOR_ID_QUANTA, USB_DEVICE_ID_PIXART_IMAGING_INC_OPTICAL_TOUCH_SCREEN, HID_QUIRK_NOGET },
+ 	{ USB_VENDOR_ID_QUANTA, USB_DEVICE_ID_QUANTA_OPTICAL_TOUCH_3008, HID_QUIRK_NOGET },
++	{ USB_VENDOR_ID_SENNHEISER, USB_DEVICE_ID_SENNHEISER_BTD500USB, HID_QUIRK_NOGET },
+ 	{ USB_VENDOR_ID_SUN, USB_DEVICE_ID_RARITAN_KVM_DONGLE, HID_QUIRK_NOGET },
+ 	{ USB_VENDOR_ID_SYMBOL, USB_DEVICE_ID_SYMBOL_SCANNER_1, HID_QUIRK_NOGET },
+ 	{ USB_VENDOR_ID_SYMBOL, USB_DEVICE_ID_SYMBOL_SCANNER_2, HID_QUIRK_NOGET },

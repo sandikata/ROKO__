@@ -1,0 +1,75 @@
+diff -Nur linux-2.6.26.3/include/net/inet_sock.h linux-2.6.26.3-zph/include/net/inet_sock.h
+--- linux-2.6.26.3/include/net/inet_sock.h	2008-08-20 21:11:37.000000000 +0300
++++ linux-2.6.26.3-zph/include/net/inet_sock.h	2008-08-21 16:51:59.000000000 +0300
+@@ -157,6 +157,7 @@
+ 	__be32			mc_addr;
+ 	struct ip_mc_socklist __rcu	*mc_list;
+ 	struct inet_cork_full	cork;
++	__u16			zph_tos;	/* ZPH TOS received on connect */
+ };
+ 
+ #define IPCORK_OPT	1	/* ip-options has been held in ipcork.opt */
+diff -Nur linux-2.6.26.3/net/ipv4/ip_sockglue.c linux-2.6.26.3-zph/net/ipv4/ip_sockglue.c
+--- linux-2.6.26.3/net/ipv4/ip_sockglue.c	2008-08-20 21:11:37.000000000 +0300
++++ linux-2.6.26.3-zph/net/ipv4/ip_sockglue.c	2008-08-21 16:54:21.000000000 +0300
+@@ -1126,6 +1126,10 @@
+ 			int hlim = inet->mc_ttl;
+ 			put_cmsg(&msg, SOL_IP, IP_TTL, sizeof(hlim), &hlim);
+ 		}
++		if (inet->cmsg_flags&IP_CMSG_TOS) {
++			int hlim = inet->zph_tos & 0xFF;
++			put_cmsg(&msg, SOL_IP, IP_TOS, sizeof(hlim), &hlim);
++		}
+ 		len -= msg.msg_controllen;
+ 		return put_user(len, optlen);
+ 	}
+diff -Nur linux-2.6.26.3/net/ipv4/tcp_input.c linux-2.6.26.3-zph/net/ipv4/tcp_input.c
+--- linux-2.6.26.3/net/ipv4/tcp_input.c	2008-08-20 21:11:37.000000000 +0300
++++ linux-2.6.26.3-zph/net/ipv4/tcp_input.c	2008-08-21 17:06:55.000000000 +0300
+@@ -3900,6 +3900,8 @@
+ 	struct tcphdr *th = tcp_hdr(skb);
+ 	struct tcp_sock *tp = tcp_sk(sk);
+ 	int eaten = -1;
++	struct inet_sock *inet = inet_sk(sk);
++	struct iphdr *iph = ip_hdr(skb);
+ 
+ 	if (TCP_SKB_CB(skb)->seq == TCP_SKB_CB(skb)->end_seq)
+ 		goto drop;
+@@ -3914,6 +3916,12 @@
+ 					     4 - tp->rx_opt.tstamp_ok);
+ 	}
+ 
++	// ZPH: Copy the TOS value of the first data ACK segment
++	// received from the remote peer.
++	if (0==(inet->zph_tos & 0x8000)) {
++		inet->zph_tos = 0x8000 | iph->tos;
++	}
++
+ 	/*  Queue data for delivery to the user.
+ 	 *  Packets in sequence go to the receive queue.
+ 	 *  Out of sequence packets to the out_of_order_queue.
+@@ -4915,6 +4923,8 @@
+ 	struct inet_connection_sock *icsk = inet_csk(sk);
+ 	struct tcp_sock *tp = tcp_sk(sk);
+ 	struct tcp_cookie_values *cvp = tp->cookie_values;
++	struct inet_sock *inet = inet_sk(sk);
++	struct iphdr *iph = ip_hdr(skb);
+ 	int saved_clamp = tp->rx_opt.mss_clamp;
+ 
+ 	tcp_parse_options(skb, &tp->rx_opt, &hash_location, 0);
+@@ -4973,6 +4983,15 @@
+ 
+ 		TCP_ECN_rcv_synack(tp, th);
+ 
++		/* ZPH:
++		 * Copy TOS field from the SYNACK packet to zph_tos field of the af_inet
++		 * member of sock structure. This value shall be overwritten when the first
++		 * data segment is received from the peer. However, for completeness in
++		 * case the socket TOS is being asked befor that, we copy the TOS value from
++		 * the SYNACK packet.
++		 */
++		inet->zph_tos = iph->tos;
++
+ 		tp->snd_wl1 = TCP_SKB_CB(skb)->seq;
+ 		tcp_ack(sk, skb, FLAG_SLOWPATH);
+ 

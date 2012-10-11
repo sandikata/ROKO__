@@ -1,0 +1,148 @@
+From 3da1481549db672e17ed661a448399f7f648e312 Mon Sep 17 00:00:00 2001
+From: Herton Ronaldo Krzesinski <herton@mandriva.com.br>
+Date: Thu, 6 Jan 2011 13:58:45 -0200
+Subject: [PATCH 2/2] fb: avoid possible deadlock caused by fb_set_suspend
+
+A lock ordering issue can cause deadlocks: in framebuffer/console code,
+all needed struct fb_info locks are taken before acquire_console_sem(),
+in places which need to take console semaphore.
+
+But fb_set_suspend is always called with console semaphore held, and
+inside it we call lock_fb_info which gets the fb_info lock, inverse
+locking order of what the rest of the code does. This causes a real
+deadlock issue, when we write to state fb sysfs attribute (which calls
+fb_set_suspend) while a framebuffer is being unregistered by
+remove_conflicting_framebuffers, as can be shown by following show
+blocked state trace on a test program which loads i915 and runs another
+forked processes writing to state attribute:
+
+Test process with semaphore held and trying to get fb_info lock:
+...
+fb-test2      D 0000000000000000     0   237    228 0x00000000
+ ffff8800774f3d68 0000000000000082 00000000000135c0 00000000000135c0
+ ffff880000000000 ffff8800774f3fd8 ffff8800774f3fd8 ffff880076ee4530
+ 00000000000135c0 ffff8800774f3fd8 ffff8800774f2000 00000000000135c0
+Call Trace:
+ [<ffffffff8141287a>] __mutex_lock_slowpath+0x11a/0x1e0
+ [<ffffffff814142f2>] ? _raw_spin_lock_irq+0x22/0x40
+ [<ffffffff814123d3>] mutex_lock+0x23/0x50
+ [<ffffffff8125dfc5>] lock_fb_info+0x25/0x60
+ [<ffffffff8125e3f0>] fb_set_suspend+0x20/0x80
+ [<ffffffff81263e2f>] store_fbstate+0x4f/0x70
+ [<ffffffff812e7f70>] dev_attr_store+0x20/0x30
+ [<ffffffff811c46b4>] sysfs_write_file+0xd4/0x160
+ [<ffffffff81155a26>] vfs_write+0xc6/0x190
+ [<ffffffff81155d51>] sys_write+0x51/0x90
+ [<ffffffff8100c012>] system_call_fastpath+0x16/0x1b
+...
+modprobe process stalled because has the fb_info lock (got inside
+unregister_framebuffer) but waiting for the semaphore held by the
+test process which is waiting to get the fb_info lock:
+...
+modprobe      D 0000000000000000     0   230    218 0x00000000
+ ffff880077a4d618 0000000000000082 0000000000000001 0000000000000001
+ ffff880000000000 ffff880077a4dfd8 ffff880077a4dfd8 ffff8800775a2e20
+ 00000000000135c0 ffff880077a4dfd8 ffff880077a4c000 00000000000135c0
+Call Trace:
+ [<ffffffff81411fe5>] schedule_timeout+0x215/0x310
+ [<ffffffff81058051>] ? get_parent_ip+0x11/0x50
+ [<ffffffff814130dd>] __down+0x6d/0xb0
+ [<ffffffff81089f71>] down+0x41/0x50
+ [<ffffffff810629ac>] acquire_console_sem+0x2c/0x50
+ [<ffffffff812ca53d>] unbind_con_driver+0xad/0x2d0
+ [<ffffffff8126f5f7>] fbcon_event_notify+0x457/0x890
+ [<ffffffff814144ff>] ? _raw_spin_unlock_irqrestore+0x1f/0x50
+ [<ffffffff81058051>] ? get_parent_ip+0x11/0x50
+ [<ffffffff8141836d>] notifier_call_chain+0x4d/0x70
+ [<ffffffff8108a3b8>] __blocking_notifier_call_chain+0x58/0x80
+ [<ffffffff8108a3f6>] blocking_notifier_call_chain+0x16/0x20
+ [<ffffffff8125dabb>] fb_notifier_call_chain+0x1b/0x20
+ [<ffffffff8125e6ac>] unregister_framebuffer+0x7c/0x130
+ [<ffffffff8125e8b3>] remove_conflicting_framebuffers+0x153/0x180
+ [<ffffffff8125eef3>] register_framebuffer+0x93/0x2c0
+ [<ffffffffa0331112>] drm_fb_helper_single_fb_probe+0x252/0x2f0 [drm_kms_helper]
+ [<ffffffffa03314a3>] drm_fb_helper_initial_config+0x2f3/0x6d0 [drm_kms_helper]
+ [<ffffffffa03318dd>] ? drm_fb_helper_single_add_all_connectors+0x5d/0x1c0 [drm_kms_helper]
+ [<ffffffffa037b588>] intel_fbdev_init+0xa8/0x160 [i915]
+ [<ffffffffa0343d74>] i915_driver_load+0x854/0x12b0 [i915]
+ [<ffffffffa02f0e7e>] drm_get_pci_dev+0x19e/0x360 [drm]
+ [<ffffffff8141821d>] ? sub_preempt_count+0x9d/0xd0
+ [<ffffffffa0386f91>] i915_pci_probe+0x15/0x17 [i915]
+ [<ffffffff8124481f>] local_pci_probe+0x5f/0xd0
+ [<ffffffff81244f89>] pci_device_probe+0x119/0x120
+ [<ffffffff812eccaa>] ? driver_sysfs_add+0x7a/0xb0
+ [<ffffffff812ed003>] driver_probe_device+0xa3/0x290
+ [<ffffffff812ed1f0>] ? __driver_attach+0x0/0xb0
+ [<ffffffff812ed29b>] __driver_attach+0xab/0xb0
+ [<ffffffff812ed1f0>] ? __driver_attach+0x0/0xb0
+ [<ffffffff812ebd3e>] bus_for_each_dev+0x5e/0x90
+ [<ffffffff812ecc2e>] driver_attach+0x1e/0x20
+ [<ffffffff812ec6f2>] bus_add_driver+0xe2/0x320
+ [<ffffffffa03aa000>] ? i915_init+0x0/0x96 [i915]
+ [<ffffffff812ed536>] driver_register+0x76/0x140
+ [<ffffffffa03aa000>] ? i915_init+0x0/0x96 [i915]
+ [<ffffffff81245216>] __pci_register_driver+0x56/0xd0
+ [<ffffffffa02f1264>] drm_pci_init+0xe4/0xf0 [drm]
+ [<ffffffffa03aa000>] ? i915_init+0x0/0x96 [i915]
+ [<ffffffffa02e84a8>] drm_init+0x58/0x70 [drm]
+ [<ffffffffa03aa094>] i915_init+0x94/0x96 [i915]
+ [<ffffffff81002194>] do_one_initcall+0x44/0x190
+ [<ffffffff810a066b>] sys_init_module+0xcb/0x210
+ [<ffffffff8100c012>] system_call_fastpath+0x16/0x1b
+...
+
+fb-test2 which reproduces above is available on kernel bug #26232.
+To solve this issue, avoid calling lock_fb_info inside fb_set_suspend,
+and move it out to where needed (callers of fb_set_suspend must call
+lock_fb_info before if needed). So far, the only place which needs to
+call lock_fb_info is store_fbstate, all other places which calls
+fb_set_suspend are suspend/resume hooks that should not need the lock as
+they should be run only when processes are already frozen in
+suspend/resume.
+
+Signed-off-by: Herton Ronaldo Krzesinski <herton@mandriva.com.br>
+[rebased for 2.6.38.2 / tmb]
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+---
+ drivers/video/fbmem.c   |    4 +---
+ drivers/video/fbsysfs.c |    4 ++++
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff -Nurp linux-2.6.38.2.fb/drivers/video/fbmem.c linux-2.6.38.2.fb2/drivers/video/fbmem.c
+--- linux-2.6.38.2.fb/drivers/video/fbmem.c	2011-03-28 16:28:39.790542409 +0300
++++ linux-2.6.38.2.fb2/drivers/video/fbmem.c	2011-03-28 16:30:09.296329631 +0300
+@@ -1741,8 +1741,7 @@ void fb_set_suspend(struct fb_info *info
+ {
+ 	struct fb_event event;
+ 
+-	if (!lock_fb_info(info))
+-		return;
++	WARN_ON(info->state == FBINFO_STATE_EXITING);
+ 	event.info = info;
+ 	if (state) {
+ 		fb_notifier_call_chain(FB_EVENT_SUSPEND, &event);
+@@ -1751,7 +1750,6 @@ void fb_set_suspend(struct fb_info *info
+ 		info->state = FBINFO_STATE_RUNNING;
+ 		fb_notifier_call_chain(FB_EVENT_RESUME, &event);
+ 	}
+-	unlock_fb_info(info);
+ }
+ 
+ /**
+diff -Nurp linux-2.6.38.2.fb/drivers/video/fbsysfs.c linux-2.6.38.2.fb2/drivers/video/fbsysfs.c
+--- linux-2.6.38.2.fb/drivers/video/fbsysfs.c	2011-03-28 16:28:40.054524084 +0300
++++ linux-2.6.38.2.fb2/drivers/video/fbsysfs.c	2011-03-28 16:32:53.529929573 +0300
+@@ -401,9 +401,13 @@ static ssize_t store_fbstate(struct devi
+ 	if (state && state > 1)
+ 		return -EINVAL;
+ 
++	if (!lock_fb_info(fb_info))
++		return -ENODEV;
++
+ 	console_lock();
+ 	fb_set_suspend(fb_info, (int)state);
+ 	console_unlock();
++	unlock_fb_info(fb_info);
+ 
+ 	return count;
+ }

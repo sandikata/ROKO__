@@ -1,0 +1,1839 @@
+Update team driver to latest net-next.
+
+Split patches available here:
+http://people.redhat.com/jpirko/f18_team_update/
+
+David S. Miller (1):
+  team: Revert previous two changes.
+
+Jiri Pirko (25):
+  team: make team_mode struct const
+  team: for nomode use dummy struct team_mode
+  team: add mode priv to port
+  team: lb: push hash counting into separate function
+  team: allow read/write-only options
+  team: introduce array options
+  team: comments: s/net\/drivers\/team/drivers\/net\/team/
+  team: push array_index and port into separate structure
+  team: allow async option changes
+  team: fix error path in team_nl_fill_options_get()
+  team: fix error path in team_nl_fill_port_list_get()
+  team: allow to specify one option instance to be send to userspace
+  team: pass NULL to __team_option_inst_add() instead of 0
+  team: add port_[enabled/disabled] mode callbacks
+  team: lb: introduce infrastructure for userspace driven tx
+    loadbalancing
+  team: implement multipart netlink messages for options transfers
+  team: ensure correct order of netlink messages delivery
+  team: allow to send multiple set events in one message
+  team: use rcu_dereference_bh() in tx path
+  team: use rcu_access_pointer to access RCU pointer by writer
+  team: use RCU_INIT_POINTER for NULL assignment of RCU pointer
+  team: do RCU update path fixups
+  team: fix team_adjust_ops with regard to enabled ports
+  team: do not allow to map disabled ports
+  team: remove unused rcu_head field from team_port struct
+
+ drivers/net/team/team.c                   |  577 ++++++++++++++++++-----------
+ drivers/net/team/team_mode_activebackup.c |   14 +-
+ drivers/net/team/team_mode_loadbalance.c  |  543 +++++++++++++++++++++++++--
+ drivers/net/team/team_mode_roundrobin.c   |    4 +-
+ include/linux/if_team.h                   |   25 +-
+ 5 files changed, 919 insertions(+), 244 deletions(-)
+
+Signed-off-by: Jiri Pirko <jpirko@redhat.com>
+
+diff --git a/drivers/net/team/team.c b/drivers/net/team/team.c
+index c61ae35..5350eea 100644
+--- a/drivers/net/team/team.c
++++ b/drivers/net/team/team.c
+@@ -1,5 +1,5 @@
+ /*
+- * net/drivers/team/team.c - Network team device driver
++ * drivers/net/team/team.c - Network team device driver
+  * Copyright (c) 2011 Jiri Pirko <jpirko@redhat.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -82,14 +82,16 @@ static void team_refresh_port_linkup(struct team_port *port)
+ 						   port->state.linkup;
+ }
+ 
++
+ /*******************
+  * Options handling
+  *******************/
+ 
+ struct team_option_inst { /* One for each option instance */
+ 	struct list_head list;
++	struct list_head tmp_list;
+ 	struct team_option *option;
+-	struct team_port *port; /* != NULL if per-port */
++	struct team_option_inst_info info;
+ 	bool changed;
+ 	bool removed;
+ };
+@@ -106,22 +108,6 @@ static struct team_option *__team_find_option(struct team *team,
+ 	return NULL;
+ }
+ 
+-static int __team_option_inst_add(struct team *team, struct team_option *option,
+-				  struct team_port *port)
+-{
+-	struct team_option_inst *opt_inst;
+-
+-	opt_inst = kmalloc(sizeof(*opt_inst), GFP_KERNEL);
+-	if (!opt_inst)
+-		return -ENOMEM;
+-	opt_inst->option = option;
+-	opt_inst->port = port;
+-	opt_inst->changed = true;
+-	opt_inst->removed = false;
+-	list_add_tail(&opt_inst->list, &team->option_inst_list);
+-	return 0;
+-}
+-
+ static void __team_option_inst_del(struct team_option_inst *opt_inst)
+ {
+ 	list_del(&opt_inst->list);
+@@ -139,14 +125,49 @@ static void __team_option_inst_del_option(struct team *team,
+ 	}
+ }
+ 
++static int __team_option_inst_add(struct team *team, struct team_option *option,
++				  struct team_port *port)
++{
++	struct team_option_inst *opt_inst;
++	unsigned int array_size;
++	unsigned int i;
++	int err;
++
++	array_size = option->array_size;
++	if (!array_size)
++		array_size = 1; /* No array but still need one instance */
++
++	for (i = 0; i < array_size; i++) {
++		opt_inst = kmalloc(sizeof(*opt_inst), GFP_KERNEL);
++		if (!opt_inst)
++			return -ENOMEM;
++		opt_inst->option = option;
++		opt_inst->info.port = port;
++		opt_inst->info.array_index = i;
++		opt_inst->changed = true;
++		opt_inst->removed = false;
++		list_add_tail(&opt_inst->list, &team->option_inst_list);
++		if (option->init) {
++			err = option->init(team, &opt_inst->info);
++			if (err)
++				return err;
++		}
++
++	}
++	return 0;
++}
++
+ static int __team_option_inst_add_option(struct team *team,
+ 					 struct team_option *option)
+ {
+ 	struct team_port *port;
+ 	int err;
+ 
+-	if (!option->per_port)
+-		return __team_option_inst_add(team, option, 0);
++	if (!option->per_port) {
++		err = __team_option_inst_add(team, option, NULL);
++		if (err)
++			goto inst_del_option;
++	}
+ 
+ 	list_for_each_entry(port, &team->port_list, list) {
+ 		err = __team_option_inst_add(team, option, port);
+@@ -180,7 +201,7 @@ static void __team_option_inst_del_port(struct team *team,
+ 
+ 	list_for_each_entry_safe(opt_inst, tmp, &team->option_inst_list, list) {
+ 		if (opt_inst->option->per_port &&
+-		    opt_inst->port == port)
++		    opt_inst->info.port == port)
+ 			__team_option_inst_del(opt_inst);
+ 	}
+ }
+@@ -211,7 +232,7 @@ static void __team_option_inst_mark_removed_port(struct team *team,
+ 	struct team_option_inst *opt_inst;
+ 
+ 	list_for_each_entry(opt_inst, &team->option_inst_list, list) {
+-		if (opt_inst->port == port) {
++		if (opt_inst->info.port == port) {
+ 			opt_inst->changed = true;
+ 			opt_inst->removed = true;
+ 		}
+@@ -324,28 +345,12 @@ void team_options_unregister(struct team *team,
+ }
+ EXPORT_SYMBOL(team_options_unregister);
+ 
+-static int team_option_port_add(struct team *team, struct team_port *port)
+-{
+-	int err;
+-
+-	err = __team_option_inst_add_port(team, port);
+-	if (err)
+-		return err;
+-	__team_options_change_check(team);
+-	return 0;
+-}
+-
+-static void team_option_port_del(struct team *team, struct team_port *port)
+-{
+-	__team_option_inst_mark_removed_port(team, port);
+-	__team_options_change_check(team);
+-	__team_option_inst_del_port(team, port);
+-}
+-
+ static int team_option_get(struct team *team,
+ 			   struct team_option_inst *opt_inst,
+ 			   struct team_gsetter_ctx *ctx)
+ {
++	if (!opt_inst->option->getter)
++		return -EOPNOTSUPP;
+ 	return opt_inst->option->getter(team, ctx);
+ }
+ 
+@@ -353,16 +358,26 @@ static int team_option_set(struct team *team,
+ 			   struct team_option_inst *opt_inst,
+ 			   struct team_gsetter_ctx *ctx)
+ {
+-	int err;
++	if (!opt_inst->option->setter)
++		return -EOPNOTSUPP;
++	return opt_inst->option->setter(team, ctx);
++}
+ 
+-	err = opt_inst->option->setter(team, ctx);
+-	if (err)
+-		return err;
++void team_option_inst_set_change(struct team_option_inst_info *opt_inst_info)
++{
++	struct team_option_inst *opt_inst;
+ 
++	opt_inst = container_of(opt_inst_info, struct team_option_inst, info);
+ 	opt_inst->changed = true;
++}
++EXPORT_SYMBOL(team_option_inst_set_change);
++
++void team_options_change_check(struct team *team)
++{
+ 	__team_options_change_check(team);
+-	return err;
+ }
++EXPORT_SYMBOL(team_options_change_check);
++
+ 
+ /****************
+  * Mode handling
+@@ -371,13 +386,18 @@ static int team_option_set(struct team *team,
+ static LIST_HEAD(mode_list);
+ static DEFINE_SPINLOCK(mode_list_lock);
+ 
+-static struct team_mode *__find_mode(const char *kind)
++struct team_mode_item {
++	struct list_head list;
++	const struct team_mode *mode;
++};
++
++static struct team_mode_item *__find_mode(const char *kind)
+ {
+-	struct team_mode *mode;
++	struct team_mode_item *mitem;
+ 
+-	list_for_each_entry(mode, &mode_list, list) {
+-		if (strcmp(mode->kind, kind) == 0)
+-			return mode;
++	list_for_each_entry(mitem, &mode_list, list) {
++		if (strcmp(mitem->mode->kind, kind) == 0)
++			return mitem;
+ 	}
+ 	return NULL;
+ }
+@@ -392,49 +412,65 @@ static bool is_good_mode_name(const char *name)
+ 	return true;
+ }
+ 
+-int team_mode_register(struct team_mode *mode)
++int team_mode_register(const struct team_mode *mode)
+ {
+ 	int err = 0;
++	struct team_mode_item *mitem;
+ 
+ 	if (!is_good_mode_name(mode->kind) ||
+ 	    mode->priv_size > TEAM_MODE_PRIV_SIZE)
+ 		return -EINVAL;
++
++	mitem = kmalloc(sizeof(*mitem), GFP_KERNEL);
++	if (!mitem)
++		return -ENOMEM;
++
+ 	spin_lock(&mode_list_lock);
+ 	if (__find_mode(mode->kind)) {
+ 		err = -EEXIST;
++		kfree(mitem);
+ 		goto unlock;
+ 	}
+-	list_add_tail(&mode->list, &mode_list);
++	mitem->mode = mode;
++	list_add_tail(&mitem->list, &mode_list);
+ unlock:
+ 	spin_unlock(&mode_list_lock);
+ 	return err;
+ }
+ EXPORT_SYMBOL(team_mode_register);
+ 
+-int team_mode_unregister(struct team_mode *mode)
++void team_mode_unregister(const struct team_mode *mode)
+ {
++	struct team_mode_item *mitem;
++
+ 	spin_lock(&mode_list_lock);
+-	list_del_init(&mode->list);
++	mitem = __find_mode(mode->kind);
++	if (mitem) {
++		list_del_init(&mitem->list);
++		kfree(mitem);
++	}
+ 	spin_unlock(&mode_list_lock);
+-	return 0;
+ }
+ EXPORT_SYMBOL(team_mode_unregister);
+ 
+-static struct team_mode *team_mode_get(const char *kind)
++static const struct team_mode *team_mode_get(const char *kind)
+ {
+-	struct team_mode *mode;
++	struct team_mode_item *mitem;
++	const struct team_mode *mode = NULL;
+ 
+ 	spin_lock(&mode_list_lock);
+-	mode = __find_mode(kind);
+-	if (!mode) {
++	mitem = __find_mode(kind);
++	if (!mitem) {
+ 		spin_unlock(&mode_list_lock);
+ 		request_module("team-mode-%s", kind);
+ 		spin_lock(&mode_list_lock);
+-		mode = __find_mode(kind);
++		mitem = __find_mode(kind);
+ 	}
+-	if (mode)
++	if (mitem) {
++		mode = mitem->mode;
+ 		if (!try_module_get(mode->owner))
+ 			mode = NULL;
++	}
+ 
+ 	spin_unlock(&mode_list_lock);
+ 	return mode;
+@@ -458,26 +494,45 @@ rx_handler_result_t team_dummy_receive(struct team *team,
+ 	return RX_HANDLER_ANOTHER;
+ }
+ 
+-static void team_adjust_ops(struct team *team)
++static const struct team_mode __team_no_mode = {
++	.kind		= "*NOMODE*",
++};
++
++static bool team_is_mode_set(struct team *team)
++{
++	return team->mode != &__team_no_mode;
++}
++
++static void team_set_no_mode(struct team *team)
++{
++	team->mode = &__team_no_mode;
++}
++
++static void __team_adjust_ops(struct team *team, int en_port_count)
+ {
+ 	/*
+ 	 * To avoid checks in rx/tx skb paths, ensure here that non-null and
+ 	 * correct ops are always set.
+ 	 */
+ 
+-	if (list_empty(&team->port_list) ||
+-	    !team->mode || !team->mode->ops->transmit)
++	if (!en_port_count || !team_is_mode_set(team) ||
++	    !team->mode->ops->transmit)
+ 		team->ops.transmit = team_dummy_transmit;
+ 	else
+ 		team->ops.transmit = team->mode->ops->transmit;
+ 
+-	if (list_empty(&team->port_list) ||
+-	    !team->mode || !team->mode->ops->receive)
++	if (!en_port_count || !team_is_mode_set(team) ||
++	    !team->mode->ops->receive)
+ 		team->ops.receive = team_dummy_receive;
+ 	else
+ 		team->ops.receive = team->mode->ops->receive;
+ }
+ 
++static void team_adjust_ops(struct team *team)
++{
++	__team_adjust_ops(team, team->en_port_count);
++}
++
+ /*
+  * We can benefit from the fact that it's ensured no port is present
+  * at the time of mode change. Therefore no packets are in fly so there's no
+@@ -487,7 +542,7 @@ static int __team_change_mode(struct team *team,
+ 			      const struct team_mode *new_mode)
+ {
+ 	/* Check if mode was previously set and do cleanup if so */
+-	if (team->mode) {
++	if (team_is_mode_set(team)) {
+ 		void (*exit_op)(struct team *team) = team->ops.exit;
+ 
+ 		/* Clear ops area so no callback is called any longer */
+@@ -497,7 +552,7 @@ static int __team_change_mode(struct team *team,
+ 		if (exit_op)
+ 			exit_op(team);
+ 		team_mode_put(team->mode);
+-		team->mode = NULL;
++		team_set_no_mode(team);
+ 		/* zero private data area */
+ 		memset(&team->mode_priv, 0,
+ 		       sizeof(struct team) - offsetof(struct team, mode_priv));
+@@ -523,7 +578,7 @@ static int __team_change_mode(struct team *team,
+ 
+ static int team_change_mode(struct team *team, const char *kind)
+ {
+-	struct team_mode *new_mode;
++	const struct team_mode *new_mode;
+ 	struct net_device *dev = team->dev;
+ 	int err;
+ 
+@@ -532,7 +587,7 @@ static int team_change_mode(struct team *team, const char *kind)
+ 		return -EBUSY;
+ 	}
+ 
+-	if (team->mode && strcmp(team->mode->kind, kind) == 0) {
++	if (team_is_mode_set(team) && strcmp(team->mode->kind, kind) == 0) {
+ 		netdev_err(dev, "Unable to change to the same mode the team is in\n");
+ 		return -EINVAL;
+ 	}
+@@ -559,8 +614,6 @@ static int team_change_mode(struct team *team, const char *kind)
+  * Rx path frame handler
+  ************************/
+ 
+-static bool team_port_enabled(struct team_port *port);
+-
+ /* note: already called with rcu_read_lock */
+ static rx_handler_result_t team_handle_frame(struct sk_buff **pskb)
+ {
+@@ -618,10 +671,11 @@ static bool team_port_find(const struct team *team,
+ 	return false;
+ }
+ 
+-static bool team_port_enabled(struct team_port *port)
++bool team_port_enabled(struct team_port *port)
+ {
+ 	return port->index != -1;
+ }
++EXPORT_SYMBOL(team_port_enabled);
+ 
+ /*
+  * Enable/disable port by adding to enabled port hashlist and setting
+@@ -637,6 +691,9 @@ static void team_port_enable(struct team *team,
+ 	port->index = team->en_port_count++;
+ 	hlist_add_head_rcu(&port->hlist,
+ 			   team_port_index_hash(team, port->index));
++	team_adjust_ops(team);
++	if (team->ops.port_enabled)
++		team->ops.port_enabled(team, port);
+ }
+ 
+ static void __reconstruct_port_hlist(struct team *team, int rm_index)
+@@ -656,14 +713,20 @@ static void __reconstruct_port_hlist(struct team *team, int rm_index)
+ static void team_port_disable(struct team *team,
+ 			      struct team_port *port)
+ {
+-	int rm_index = port->index;
+-
+ 	if (!team_port_enabled(port))
+ 		return;
++	if (team->ops.port_disabled)
++		team->ops.port_disabled(team, port);
+ 	hlist_del_rcu(&port->hlist);
+-	__reconstruct_port_hlist(team, rm_index);
+-	team->en_port_count--;
++	__reconstruct_port_hlist(team, port->index);
+ 	port->index = -1;
++	__team_adjust_ops(team, team->en_port_count - 1);
++	/*
++	 * Wait until readers see adjusted ops. This ensures that
++	 * readers never see team->en_port_count == 0
++	 */
++	synchronize_rcu();
++	team->en_port_count--;
+ }
+ 
+ #define TEAM_VLAN_FEATURES (NETIF_F_ALL_CSUM | NETIF_F_SG | \
+@@ -758,7 +821,8 @@ static int team_port_add(struct team *team, struct net_device *port_dev)
+ 		return -EBUSY;
+ 	}
+ 
+-	port = kzalloc(sizeof(struct team_port), GFP_KERNEL);
++	port = kzalloc(sizeof(struct team_port) + team->mode->port_priv_size,
++		       GFP_KERNEL);
+ 	if (!port)
+ 		return -ENOMEM;
+ 
+@@ -809,7 +873,7 @@ static int team_port_add(struct team *team, struct net_device *port_dev)
+ 		goto err_handler_register;
+ 	}
+ 
+-	err = team_option_port_add(team, port);
++	err = __team_option_inst_add_port(team, port);
+ 	if (err) {
+ 		netdev_err(dev, "Device %s failed to add per-port options\n",
+ 			   portname);
+@@ -819,9 +883,9 @@ static int team_port_add(struct team *team, struct net_device *port_dev)
+ 	port->index = -1;
+ 	team_port_enable(team, port);
+ 	list_add_tail_rcu(&port->list, &team->port_list);
+-	team_adjust_ops(team);
+ 	__team_compute_features(team);
+ 	__team_port_change_check(port, !!netif_carrier_ok(port_dev));
++	__team_options_change_check(team);
+ 
+ 	netdev_info(dev, "Port device %s added\n", portname);
+ 
+@@ -865,12 +929,13 @@ static int team_port_del(struct team *team, struct net_device *port_dev)
+ 		return -ENOENT;
+ 	}
+ 
++	__team_option_inst_mark_removed_port(team, port);
++	__team_options_change_check(team);
++	__team_option_inst_del_port(team, port);
+ 	port->removed = true;
+ 	__team_port_change_check(port, false);
+ 	team_port_disable(team, port);
+ 	list_del_rcu(&port->list);
+-	team_adjust_ops(team);
+-	team_option_port_del(team, port);
+ 	netdev_rx_handler_unregister(port_dev);
+ 	netdev_set_master(port_dev, NULL);
+ 	vlan_vids_del_by_dev(port_dev, dev);
+@@ -891,11 +956,9 @@ static int team_port_del(struct team *team, struct net_device *port_dev)
+  * Net device ops
+  *****************/
+ 
+-static const char team_no_mode_kind[] = "*NOMODE*";
+-
+ static int team_mode_option_get(struct team *team, struct team_gsetter_ctx *ctx)
+ {
+-	ctx->data.str_val = team->mode ? team->mode->kind : team_no_mode_kind;
++	ctx->data.str_val = team->mode->kind;
+ 	return 0;
+ }
+ 
+@@ -907,39 +970,47 @@ static int team_mode_option_set(struct team *team, struct team_gsetter_ctx *ctx)
+ static int team_port_en_option_get(struct team *team,
+ 				   struct team_gsetter_ctx *ctx)
+ {
+-	ctx->data.bool_val = team_port_enabled(ctx->port);
++	struct team_port *port = ctx->info->port;
++
++	ctx->data.bool_val = team_port_enabled(port);
+ 	return 0;
+ }
+ 
+ static int team_port_en_option_set(struct team *team,
+ 				   struct team_gsetter_ctx *ctx)
+ {
++	struct team_port *port = ctx->info->port;
++
+ 	if (ctx->data.bool_val)
+-		team_port_enable(team, ctx->port);
++		team_port_enable(team, port);
+ 	else
+-		team_port_disable(team, ctx->port);
++		team_port_disable(team, port);
+ 	return 0;
+ }
+ 
+ static int team_user_linkup_option_get(struct team *team,
+ 				       struct team_gsetter_ctx *ctx)
+ {
+-	ctx->data.bool_val = ctx->port->user.linkup;
++	struct team_port *port = ctx->info->port;
++
++	ctx->data.bool_val = port->user.linkup;
+ 	return 0;
+ }
+ 
+ static int team_user_linkup_option_set(struct team *team,
+ 				       struct team_gsetter_ctx *ctx)
+ {
+-	ctx->port->user.linkup = ctx->data.bool_val;
+-	team_refresh_port_linkup(ctx->port);
++	struct team_port *port = ctx->info->port;
++
++	port->user.linkup = ctx->data.bool_val;
++	team_refresh_port_linkup(port);
+ 	return 0;
+ }
+ 
+ static int team_user_linkup_en_option_get(struct team *team,
+ 					  struct team_gsetter_ctx *ctx)
+ {
+-	struct team_port *port = ctx->port;
++	struct team_port *port = ctx->info->port;
+ 
+ 	ctx->data.bool_val = port->user.linkup_enabled;
+ 	return 0;
+@@ -948,10 +1019,10 @@ static int team_user_linkup_en_option_get(struct team *team,
+ static int team_user_linkup_en_option_set(struct team *team,
+ 					  struct team_gsetter_ctx *ctx)
+ {
+-	struct team_port *port = ctx->port;
++	struct team_port *port = ctx->info->port;
+ 
+ 	port->user.linkup_enabled = ctx->data.bool_val;
+-	team_refresh_port_linkup(ctx->port);
++	team_refresh_port_linkup(port);
+ 	return 0;
+ }
+ 
+@@ -993,6 +1064,7 @@ static int team_init(struct net_device *dev)
+ 
+ 	team->dev = dev;
+ 	mutex_init(&team->lock);
++	team_set_no_mode(team);
+ 
+ 	team->pcpu_stats = alloc_percpu(struct team_pcpu_stats);
+ 	if (!team->pcpu_stats)
+@@ -1482,16 +1554,128 @@ err_fill:
+ 	return err;
+ }
+ 
+-static int team_nl_fill_options_get(struct sk_buff *skb,
+-				    u32 pid, u32 seq, int flags,
+-				    struct team *team, bool fillall)
++typedef int team_nl_send_func_t(struct sk_buff *skb,
++				struct team *team, u32 pid);
++
++static int team_nl_send_unicast(struct sk_buff *skb, struct team *team, u32 pid)
++{
++	return genlmsg_unicast(dev_net(team->dev), skb, pid);
++}
++
++static int team_nl_fill_one_option_get(struct sk_buff *skb, struct team *team,
++				       struct team_option_inst *opt_inst)
++{
++	struct nlattr *option_item;
++	struct team_option *option = opt_inst->option;
++	struct team_option_inst_info *opt_inst_info = &opt_inst->info;
++	struct team_gsetter_ctx ctx;
++	int err;
++
++	ctx.info = opt_inst_info;
++	err = team_option_get(team, opt_inst, &ctx);
++	if (err)
++		return err;
++
++	option_item = nla_nest_start(skb, TEAM_ATTR_ITEM_OPTION);
++	if (!option_item)
++		return -EMSGSIZE;
++
++	if (nla_put_string(skb, TEAM_ATTR_OPTION_NAME, option->name))
++		goto nest_cancel;
++	if (opt_inst_info->port &&
++	    nla_put_u32(skb, TEAM_ATTR_OPTION_PORT_IFINDEX,
++			opt_inst_info->port->dev->ifindex))
++		goto nest_cancel;
++	if (opt_inst->option->array_size &&
++	    nla_put_u32(skb, TEAM_ATTR_OPTION_ARRAY_INDEX,
++			opt_inst_info->array_index))
++		goto nest_cancel;
++
++	switch (option->type) {
++	case TEAM_OPTION_TYPE_U32:
++		if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_U32))
++			goto nest_cancel;
++		if (nla_put_u32(skb, TEAM_ATTR_OPTION_DATA, ctx.data.u32_val))
++			goto nest_cancel;
++		break;
++	case TEAM_OPTION_TYPE_STRING:
++		if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_STRING))
++			goto nest_cancel;
++		if (nla_put_string(skb, TEAM_ATTR_OPTION_DATA,
++				   ctx.data.str_val))
++			goto nest_cancel;
++		break;
++	case TEAM_OPTION_TYPE_BINARY:
++		if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_BINARY))
++			goto nest_cancel;
++		if (nla_put(skb, TEAM_ATTR_OPTION_DATA, ctx.data.bin_val.len,
++			    ctx.data.bin_val.ptr))
++			goto nest_cancel;
++		break;
++	case TEAM_OPTION_TYPE_BOOL:
++		if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_FLAG))
++			goto nest_cancel;
++		if (ctx.data.bool_val &&
++		    nla_put_flag(skb, TEAM_ATTR_OPTION_DATA))
++			goto nest_cancel;
++		break;
++	default:
++		BUG();
++	}
++	if (opt_inst->removed && nla_put_flag(skb, TEAM_ATTR_OPTION_REMOVED))
++		goto nest_cancel;
++	if (opt_inst->changed) {
++		if (nla_put_flag(skb, TEAM_ATTR_OPTION_CHANGED))
++			goto nest_cancel;
++		opt_inst->changed = false;
++	}
++	nla_nest_end(skb, option_item);
++	return 0;
++
++nest_cancel:
++	nla_nest_cancel(skb, option_item);
++	return -EMSGSIZE;
++}
++
++static int __send_and_alloc_skb(struct sk_buff **pskb,
++				struct team *team, u32 pid,
++				team_nl_send_func_t *send_func)
++{
++	int err;
++
++	if (*pskb) {
++		err = send_func(*pskb, team, pid);
++		if (err)
++			return err;
++	}
++	*pskb = genlmsg_new(NLMSG_DEFAULT_SIZE - GENL_HDRLEN, GFP_KERNEL);
++	if (!*pskb)
++		return -ENOMEM;
++	return 0;
++}
++
++static int team_nl_send_options_get(struct team *team, u32 pid, u32 seq,
++				    int flags, team_nl_send_func_t *send_func,
++				    struct list_head *sel_opt_inst_list)
+ {
+ 	struct nlattr *option_list;
++	struct nlmsghdr *nlh;
+ 	void *hdr;
+ 	struct team_option_inst *opt_inst;
+ 	int err;
++	struct sk_buff *skb = NULL;
++	bool incomplete;
++	int i;
+ 
+-	hdr = genlmsg_put(skb, pid, seq, &team_nl_family, flags,
++	opt_inst = list_first_entry(sel_opt_inst_list,
++				    struct team_option_inst, tmp_list);
++
++start_again:
++	err = __send_and_alloc_skb(&skb, team, pid, send_func);
++	if (err)
++		return err;
++
++	hdr = genlmsg_put(skb, pid, seq, &team_nl_family, flags | NLM_F_MULTI,
+ 			  TEAM_CMD_OPTIONS_GET);
+ 	if (IS_ERR(hdr))
+ 		return PTR_ERR(hdr);
+@@ -1500,122 +1684,80 @@ static int team_nl_fill_options_get(struct sk_buff *skb,
+ 		goto nla_put_failure;
+ 	option_list = nla_nest_start(skb, TEAM_ATTR_LIST_OPTION);
+ 	if (!option_list)
+-		return -EMSGSIZE;
+-
+-	list_for_each_entry(opt_inst, &team->option_inst_list, list) {
+-		struct nlattr *option_item;
+-		struct team_option *option = opt_inst->option;
+-		struct team_gsetter_ctx ctx;
++		goto nla_put_failure;
+ 
+-		/* Include only changed options if fill all mode is not on */
+-		if (!fillall && !opt_inst->changed)
+-			continue;
+-		option_item = nla_nest_start(skb, TEAM_ATTR_ITEM_OPTION);
+-		if (!option_item)
+-			goto nla_put_failure;
+-		if (nla_put_string(skb, TEAM_ATTR_OPTION_NAME, option->name))
+-			goto nla_put_failure;
+-		if (opt_inst->changed) {
+-			if (nla_put_flag(skb, TEAM_ATTR_OPTION_CHANGED))
+-				goto nla_put_failure;
+-			opt_inst->changed = false;
+-		}
+-		if (opt_inst->removed &&
+-		    nla_put_flag(skb, TEAM_ATTR_OPTION_REMOVED))
+-			goto nla_put_failure;
+-		if (opt_inst->port &&
+-		    nla_put_u32(skb, TEAM_ATTR_OPTION_PORT_IFINDEX,
+-				opt_inst->port->dev->ifindex))
+-			goto nla_put_failure;
+-		ctx.port = opt_inst->port;
+-		switch (option->type) {
+-		case TEAM_OPTION_TYPE_U32:
+-			if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_U32))
+-				goto nla_put_failure;
+-			err = team_option_get(team, opt_inst, &ctx);
+-			if (err)
+-				goto errout;
+-			if (nla_put_u32(skb, TEAM_ATTR_OPTION_DATA,
+-					ctx.data.u32_val))
+-				goto nla_put_failure;
+-			break;
+-		case TEAM_OPTION_TYPE_STRING:
+-			if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_STRING))
+-				goto nla_put_failure;
+-			err = team_option_get(team, opt_inst, &ctx);
+-			if (err)
+-				goto errout;
+-			if (nla_put_string(skb, TEAM_ATTR_OPTION_DATA,
+-					   ctx.data.str_val))
+-				goto nla_put_failure;
+-			break;
+-		case TEAM_OPTION_TYPE_BINARY:
+-			if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_BINARY))
+-				goto nla_put_failure;
+-			err = team_option_get(team, opt_inst, &ctx);
+-			if (err)
+-				goto errout;
+-			if (nla_put(skb, TEAM_ATTR_OPTION_DATA,
+-				    ctx.data.bin_val.len, ctx.data.bin_val.ptr))
+-				goto nla_put_failure;
+-			break;
+-		case TEAM_OPTION_TYPE_BOOL:
+-			if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_FLAG))
+-				goto nla_put_failure;
+-			err = team_option_get(team, opt_inst, &ctx);
+-			if (err)
+-				goto errout;
+-			if (ctx.data.bool_val &&
+-			    nla_put_flag(skb, TEAM_ATTR_OPTION_DATA))
+-				goto nla_put_failure;
+-			break;
+-		default:
+-			BUG();
++	i = 0;
++	incomplete = false;
++	list_for_each_entry_from(opt_inst, sel_opt_inst_list, tmp_list) {
++		err = team_nl_fill_one_option_get(skb, team, opt_inst);
++		if (err) {
++			if (err == -EMSGSIZE) {
++				if (!i)
++					goto errout;
++				incomplete = true;
++				break;
++			}
++			goto errout;
+ 		}
+-		nla_nest_end(skb, option_item);
++		i++;
+ 	}
+ 
+ 	nla_nest_end(skb, option_list);
+-	return genlmsg_end(skb, hdr);
++	genlmsg_end(skb, hdr);
++	if (incomplete)
++		goto start_again;
++
++send_done:
++	nlh = nlmsg_put(skb, pid, seq, NLMSG_DONE, 0, flags | NLM_F_MULTI);
++	if (!nlh) {
++		err = __send_and_alloc_skb(&skb, team, pid, send_func);
++		if (err)
++			goto errout;
++		goto send_done;
++	}
++
++	return send_func(skb, team, pid);
+ 
+ nla_put_failure:
+ 	err = -EMSGSIZE;
+ errout:
+ 	genlmsg_cancel(skb, hdr);
++	nlmsg_free(skb);
+ 	return err;
+ }
+ 
+-static int team_nl_fill_options_get_all(struct sk_buff *skb,
+-					struct genl_info *info, int flags,
+-					struct team *team)
+-{
+-	return team_nl_fill_options_get(skb, info->snd_pid,
+-					info->snd_seq, NLM_F_ACK,
+-					team, true);
+-}
+-
+ static int team_nl_cmd_options_get(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct team *team;
++	struct team_option_inst *opt_inst;
+ 	int err;
++	LIST_HEAD(sel_opt_inst_list);
+ 
+ 	team = team_nl_team_get(info);
+ 	if (!team)
+ 		return -EINVAL;
+ 
+-	err = team_nl_send_generic(info, team, team_nl_fill_options_get_all);
++	list_for_each_entry(opt_inst, &team->option_inst_list, list)
++		list_add_tail(&opt_inst->tmp_list, &sel_opt_inst_list);
++	err = team_nl_send_options_get(team, info->snd_pid, info->snd_seq,
++				       NLM_F_ACK, team_nl_send_unicast,
++				       &sel_opt_inst_list);
+ 
+ 	team_nl_team_put(team);
+ 
+ 	return err;
+ }
+ 
++static int team_nl_send_event_options_get(struct team *team,
++					  struct list_head *sel_opt_inst_list);
++
+ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ {
+ 	struct team *team;
+ 	int err = 0;
+ 	int i;
+ 	struct nlattr *nl_option;
++	LIST_HEAD(opt_inst_list);
+ 
+ 	team = team_nl_team_get(info);
+ 	if (!team)
+@@ -1629,10 +1771,12 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 
+ 	nla_for_each_nested(nl_option, info->attrs[TEAM_ATTR_LIST_OPTION], i) {
+ 		struct nlattr *opt_attrs[TEAM_ATTR_OPTION_MAX + 1];
+-		struct nlattr *attr_port_ifindex;
++		struct nlattr *attr;
+ 		struct nlattr *attr_data;
+ 		enum team_option_type opt_type;
+ 		int opt_port_ifindex = 0; /* != 0 for per-port options */
++		u32 opt_array_index = 0;
++		bool opt_is_array = false;
+ 		struct team_option_inst *opt_inst;
+ 		char *opt_name;
+ 		bool opt_found = false;
+@@ -1674,23 +1818,33 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 		}
+ 
+ 		opt_name = nla_data(opt_attrs[TEAM_ATTR_OPTION_NAME]);
+-		attr_port_ifindex = opt_attrs[TEAM_ATTR_OPTION_PORT_IFINDEX];
+-		if (attr_port_ifindex)
+-			opt_port_ifindex = nla_get_u32(attr_port_ifindex);
++		attr = opt_attrs[TEAM_ATTR_OPTION_PORT_IFINDEX];
++		if (attr)
++			opt_port_ifindex = nla_get_u32(attr);
++
++		attr = opt_attrs[TEAM_ATTR_OPTION_ARRAY_INDEX];
++		if (attr) {
++			opt_is_array = true;
++			opt_array_index = nla_get_u32(attr);
++		}
+ 
+ 		list_for_each_entry(opt_inst, &team->option_inst_list, list) {
+ 			struct team_option *option = opt_inst->option;
+ 			struct team_gsetter_ctx ctx;
++			struct team_option_inst_info *opt_inst_info;
+ 			int tmp_ifindex;
+ 
+-			tmp_ifindex = opt_inst->port ?
+-				      opt_inst->port->dev->ifindex : 0;
++			opt_inst_info = &opt_inst->info;
++			tmp_ifindex = opt_inst_info->port ?
++				      opt_inst_info->port->dev->ifindex : 0;
+ 			if (option->type != opt_type ||
+ 			    strcmp(option->name, opt_name) ||
+-			    tmp_ifindex != opt_port_ifindex)
++			    tmp_ifindex != opt_port_ifindex ||
++			    (option->array_size && !opt_is_array) ||
++			    opt_inst_info->array_index != opt_array_index)
+ 				continue;
+ 			opt_found = true;
+-			ctx.port = opt_inst->port;
++			ctx.info = opt_inst_info;
+ 			switch (opt_type) {
+ 			case TEAM_OPTION_TYPE_U32:
+ 				ctx.data.u32_val = nla_get_u32(attr_data);
+@@ -1715,6 +1869,8 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 			err = team_option_set(team, opt_inst, &ctx);
+ 			if (err)
+ 				goto team_put;
++			opt_inst->changed = true;
++			list_add(&opt_inst->tmp_list, &opt_inst_list);
+ 		}
+ 		if (!opt_found) {
+ 			err = -ENOENT;
+@@ -1722,6 +1878,8 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 		}
+ 	}
+ 
++	err = team_nl_send_event_options_get(team, &opt_inst_list);
++
+ team_put:
+ 	team_nl_team_put(team);
+ 
+@@ -1746,7 +1904,7 @@ static int team_nl_fill_port_list_get(struct sk_buff *skb,
+ 		goto nla_put_failure;
+ 	port_list = nla_nest_start(skb, TEAM_ATTR_LIST_PORT);
+ 	if (!port_list)
+-		return -EMSGSIZE;
++		goto nla_put_failure;
+ 
+ 	list_for_each_entry(port, &team->port_list, list) {
+ 		struct nlattr *port_item;
+@@ -1838,27 +1996,18 @@ static struct genl_multicast_group team_change_event_mcgrp = {
+ 	.name = TEAM_GENL_CHANGE_EVENT_MC_GRP_NAME,
+ };
+ 
+-static int team_nl_send_event_options_get(struct team *team)
++static int team_nl_send_multicast(struct sk_buff *skb,
++				  struct team *team, u32 pid)
+ {
+-	struct sk_buff *skb;
+-	int err;
+-	struct net *net = dev_net(team->dev);
+-
+-	skb = nlmsg_new(NLMSG_GOODSIZE, GFP_KERNEL);
+-	if (!skb)
+-		return -ENOMEM;
+-
+-	err = team_nl_fill_options_get(skb, 0, 0, 0, team, false);
+-	if (err < 0)
+-		goto err_fill;
+-
+-	err = genlmsg_multicast_netns(net, skb, 0, team_change_event_mcgrp.id,
+-				      GFP_KERNEL);
+-	return err;
++	return genlmsg_multicast_netns(dev_net(team->dev), skb, 0,
++				       team_change_event_mcgrp.id, GFP_KERNEL);
++}
+ 
+-err_fill:
+-	nlmsg_free(skb);
+-	return err;
++static int team_nl_send_event_options_get(struct team *team,
++					  struct list_head *sel_opt_inst_list)
++{
++	return team_nl_send_options_get(team, 0, 0, 0, team_nl_send_multicast,
++					sel_opt_inst_list);
+ }
+ 
+ static int team_nl_send_event_port_list_get(struct team *team)
+@@ -1918,10 +2067,17 @@ static void team_nl_fini(void)
+ static void __team_options_change_check(struct team *team)
+ {
+ 	int err;
++	struct team_option_inst *opt_inst;
++	LIST_HEAD(sel_opt_inst_list);
+ 
+-	err = team_nl_send_event_options_get(team);
++	list_for_each_entry(opt_inst, &team->option_inst_list, list) {
++		if (opt_inst->changed)
++			list_add_tail(&opt_inst->tmp_list, &sel_opt_inst_list);
++	}
++	err = team_nl_send_event_options_get(team, &sel_opt_inst_list);
+ 	if (err)
+-		netdev_warn(team->dev, "Failed to send options change via netlink\n");
++		netdev_warn(team->dev, "Failed to send options change via netlink (err %d)\n",
++			    err);
+ }
+ 
+ /* rtnl lock is held */
+@@ -1965,6 +2121,7 @@ static void team_port_change_check(struct team_port *port, bool linkup)
+ 	mutex_unlock(&team->lock);
+ }
+ 
++
+ /************************************
+  * Net device notifier event handler
+  ************************************/
+diff --git a/drivers/net/team/team_mode_activebackup.c b/drivers/net/team/team_mode_activebackup.c
+index fd6bd03..253b8a5 100644
+--- a/drivers/net/team/team_mode_activebackup.c
++++ b/drivers/net/team/team_mode_activebackup.c
+@@ -1,5 +1,5 @@
+ /*
+- * net/drivers/team/team_mode_activebackup.c - Active-backup mode for team
++ * drivers/net/team/team_mode_activebackup.c - Active-backup mode for team
+  * Copyright (c) 2011 Jiri Pirko <jpirko@redhat.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -40,7 +40,7 @@ static bool ab_transmit(struct team *team, struct sk_buff *skb)
+ {
+ 	struct team_port *active_port;
+ 
+-	active_port = rcu_dereference(ab_priv(team)->active_port);
++	active_port = rcu_dereference_bh(ab_priv(team)->active_port);
+ 	if (unlikely(!active_port))
+ 		goto drop;
+ 	skb->dev = active_port->dev;
+@@ -61,8 +61,12 @@ static void ab_port_leave(struct team *team, struct team_port *port)
+ 
+ static int ab_active_port_get(struct team *team, struct team_gsetter_ctx *ctx)
+ {
+-	if (ab_priv(team)->active_port)
+-		ctx->data.u32_val = ab_priv(team)->active_port->dev->ifindex;
++	struct team_port *active_port;
++
++	active_port = rcu_dereference_protected(ab_priv(team)->active_port,
++						lockdep_is_held(&team->lock));
++	if (active_port)
++		ctx->data.u32_val = active_port->dev->ifindex;
+ 	else
+ 		ctx->data.u32_val = 0;
+ 	return 0;
+@@ -108,7 +112,7 @@ static const struct team_mode_ops ab_mode_ops = {
+ 	.port_leave		= ab_port_leave,
+ };
+ 
+-static struct team_mode ab_mode = {
++static const struct team_mode ab_mode = {
+ 	.kind		= "activebackup",
+ 	.owner		= THIS_MODULE,
+ 	.priv_size	= sizeof(struct ab_priv),
+diff --git a/drivers/net/team/team_mode_loadbalance.c b/drivers/net/team/team_mode_loadbalance.c
+index 86e8183..51a4b19 100644
+--- a/drivers/net/team/team_mode_loadbalance.c
++++ b/drivers/net/team/team_mode_loadbalance.c
+@@ -17,34 +17,210 @@
+ #include <linux/filter.h>
+ #include <linux/if_team.h>
+ 
++struct lb_priv;
++
++typedef struct team_port *lb_select_tx_port_func_t(struct team *,
++						   struct lb_priv *,
++						   struct sk_buff *,
++						   unsigned char);
++
++#define LB_TX_HASHTABLE_SIZE 256 /* hash is a char */
++
++struct lb_stats {
++	u64 tx_bytes;
++};
++
++struct lb_pcpu_stats {
++	struct lb_stats hash_stats[LB_TX_HASHTABLE_SIZE];
++	struct u64_stats_sync syncp;
++};
++
++struct lb_stats_info {
++	struct lb_stats stats;
++	struct lb_stats last_stats;
++	struct team_option_inst_info *opt_inst_info;
++};
++
++struct lb_port_mapping {
++	struct team_port __rcu *port;
++	struct team_option_inst_info *opt_inst_info;
++};
++
++struct lb_priv_ex {
++	struct team *team;
++	struct lb_port_mapping tx_hash_to_port_mapping[LB_TX_HASHTABLE_SIZE];
++	struct sock_fprog *orig_fprog;
++	struct {
++		unsigned int refresh_interval; /* in tenths of second */
++		struct delayed_work refresh_dw;
++		struct lb_stats_info info[LB_TX_HASHTABLE_SIZE];
++	} stats;
++};
++
+ struct lb_priv {
+ 	struct sk_filter __rcu *fp;
+-	struct sock_fprog *orig_fprog;
++	lb_select_tx_port_func_t __rcu *select_tx_port_func;
++	struct lb_pcpu_stats __percpu *pcpu_stats;
++	struct lb_priv_ex *ex; /* priv extension */
+ };
+ 
+-static struct lb_priv *lb_priv(struct team *team)
++static struct lb_priv *get_lb_priv(struct team *team)
+ {
+ 	return (struct lb_priv *) &team->mode_priv;
+ }
+ 
+-static bool lb_transmit(struct team *team, struct sk_buff *skb)
++struct lb_port_priv {
++	struct lb_stats __percpu *pcpu_stats;
++	struct lb_stats_info stats_info;
++};
++
++static struct lb_port_priv *get_lb_port_priv(struct team_port *port)
++{
++	return (struct lb_port_priv *) &port->mode_priv;
++}
++
++#define LB_HTPM_PORT_BY_HASH(lp_priv, hash) \
++	(lb_priv)->ex->tx_hash_to_port_mapping[hash].port
++
++#define LB_HTPM_OPT_INST_INFO_BY_HASH(lp_priv, hash) \
++	(lb_priv)->ex->tx_hash_to_port_mapping[hash].opt_inst_info
++
++static void lb_tx_hash_to_port_mapping_null_port(struct team *team,
++						 struct team_port *port)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	bool changed = false;
++	int i;
++
++	for (i = 0; i < LB_TX_HASHTABLE_SIZE; i++) {
++		struct lb_port_mapping *pm;
++
++		pm = &lb_priv->ex->tx_hash_to_port_mapping[i];
++		if (rcu_access_pointer(pm->port) == port) {
++			RCU_INIT_POINTER(pm->port, NULL);
++			team_option_inst_set_change(pm->opt_inst_info);
++			changed = true;
++		}
++	}
++	if (changed)
++		team_options_change_check(team);
++}
++
++/* Basic tx selection based solely by hash */
++static struct team_port *lb_hash_select_tx_port(struct team *team,
++						struct lb_priv *lb_priv,
++						struct sk_buff *skb,
++						unsigned char hash)
+ {
+-	struct sk_filter *fp;
+-	struct team_port *port;
+-	unsigned int hash;
+ 	int port_index;
+ 
+-	fp = rcu_dereference(lb_priv(team)->fp);
+-	if (unlikely(!fp))
+-		goto drop;
+-	hash = SK_RUN_FILTER(fp, skb);
+ 	port_index = hash % team->en_port_count;
+-	port = team_get_port_by_index_rcu(team, port_index);
++	return team_get_port_by_index_rcu(team, port_index);
++}
++
++/* Hash to port mapping select tx port */
++static struct team_port *lb_htpm_select_tx_port(struct team *team,
++						struct lb_priv *lb_priv,
++						struct sk_buff *skb,
++						unsigned char hash)
++{
++	return rcu_dereference_bh(LB_HTPM_PORT_BY_HASH(lb_priv, hash));
++}
++
++struct lb_select_tx_port {
++	char *name;
++	lb_select_tx_port_func_t *func;
++};
++
++static const struct lb_select_tx_port lb_select_tx_port_list[] = {
++	{
++		.name = "hash",
++		.func = lb_hash_select_tx_port,
++	},
++	{
++		.name = "hash_to_port_mapping",
++		.func = lb_htpm_select_tx_port,
++	},
++};
++#define LB_SELECT_TX_PORT_LIST_COUNT ARRAY_SIZE(lb_select_tx_port_list)
++
++static char *lb_select_tx_port_get_name(lb_select_tx_port_func_t *func)
++{
++	int i;
++
++	for (i = 0; i < LB_SELECT_TX_PORT_LIST_COUNT; i++) {
++		const struct lb_select_tx_port *item;
++
++		item = &lb_select_tx_port_list[i];
++		if (item->func == func)
++			return item->name;
++	}
++	return NULL;
++}
++
++static lb_select_tx_port_func_t *lb_select_tx_port_get_func(const char *name)
++{
++	int i;
++
++	for (i = 0; i < LB_SELECT_TX_PORT_LIST_COUNT; i++) {
++		const struct lb_select_tx_port *item;
++
++		item = &lb_select_tx_port_list[i];
++		if (!strcmp(item->name, name))
++			return item->func;
++	}
++	return NULL;
++}
++
++static unsigned int lb_get_skb_hash(struct lb_priv *lb_priv,
++				    struct sk_buff *skb)
++{
++	struct sk_filter *fp;
++	uint32_t lhash;
++	unsigned char *c;
++
++	fp = rcu_dereference_bh(lb_priv->fp);
++	if (unlikely(!fp))
++		return 0;
++	lhash = SK_RUN_FILTER(fp, skb);
++	c = (char *) &lhash;
++	return c[0] ^ c[1] ^ c[2] ^ c[3];
++}
++
++static void lb_update_tx_stats(unsigned int tx_bytes, struct lb_priv *lb_priv,
++			       struct lb_port_priv *lb_port_priv,
++			       unsigned char hash)
++{
++	struct lb_pcpu_stats *pcpu_stats;
++	struct lb_stats *port_stats;
++	struct lb_stats *hash_stats;
++
++	pcpu_stats = this_cpu_ptr(lb_priv->pcpu_stats);
++	port_stats = this_cpu_ptr(lb_port_priv->pcpu_stats);
++	hash_stats = &pcpu_stats->hash_stats[hash];
++	u64_stats_update_begin(&pcpu_stats->syncp);
++	port_stats->tx_bytes += tx_bytes;
++	hash_stats->tx_bytes += tx_bytes;
++	u64_stats_update_end(&pcpu_stats->syncp);
++}
++
++static bool lb_transmit(struct team *team, struct sk_buff *skb)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	lb_select_tx_port_func_t *select_tx_port_func;
++	struct team_port *port;
++	unsigned char hash;
++	unsigned int tx_bytes = skb->len;
++
++	hash = lb_get_skb_hash(lb_priv, skb);
++	select_tx_port_func = rcu_dereference_bh(lb_priv->select_tx_port_func);
++	port = select_tx_port_func(team, lb_priv, skb, hash);
+ 	if (unlikely(!port))
+ 		goto drop;
+ 	skb->dev = port->dev;
+ 	if (dev_queue_xmit(skb))
+ 		return false;
++	lb_update_tx_stats(tx_bytes, lb_priv, get_lb_port_priv(port), hash);
+ 	return true;
+ 
+ drop:
+@@ -54,14 +230,16 @@ drop:
+ 
+ static int lb_bpf_func_get(struct team *team, struct team_gsetter_ctx *ctx)
+ {
+-	if (!lb_priv(team)->orig_fprog) {
++	struct lb_priv *lb_priv = get_lb_priv(team);
++
++	if (!lb_priv->ex->orig_fprog) {
+ 		ctx->data.bin_val.len = 0;
+ 		ctx->data.bin_val.ptr = NULL;
+ 		return 0;
+ 	}
+-	ctx->data.bin_val.len = lb_priv(team)->orig_fprog->len *
++	ctx->data.bin_val.len = lb_priv->ex->orig_fprog->len *
+ 				sizeof(struct sock_filter);
+-	ctx->data.bin_val.ptr = lb_priv(team)->orig_fprog->filter;
++	ctx->data.bin_val.ptr = lb_priv->ex->orig_fprog->filter;
+ 	return 0;
+ }
+ 
+@@ -94,7 +272,9 @@ static void __fprog_destroy(struct sock_fprog *fprog)
+ 
+ static int lb_bpf_func_set(struct team *team, struct team_gsetter_ctx *ctx)
+ {
++	struct lb_priv *lb_priv = get_lb_priv(team);
+ 	struct sk_filter *fp = NULL;
++	struct sk_filter *orig_fp;
+ 	struct sock_fprog *fprog = NULL;
+ 	int err;
+ 
+@@ -110,14 +290,238 @@ static int lb_bpf_func_set(struct team *team, struct team_gsetter_ctx *ctx)
+ 		}
+ 	}
+ 
+-	if (lb_priv(team)->orig_fprog) {
++	if (lb_priv->ex->orig_fprog) {
+ 		/* Clear old filter data */
+-		__fprog_destroy(lb_priv(team)->orig_fprog);
+-		sk_unattached_filter_destroy(lb_priv(team)->fp);
++		__fprog_destroy(lb_priv->ex->orig_fprog);
++		orig_fp = rcu_dereference_protected(lb_priv->fp,
++						lockdep_is_held(&team->lock));
++		sk_unattached_filter_destroy(orig_fp);
+ 	}
+ 
+-	rcu_assign_pointer(lb_priv(team)->fp, fp);
+-	lb_priv(team)->orig_fprog = fprog;
++	rcu_assign_pointer(lb_priv->fp, fp);
++	lb_priv->ex->orig_fprog = fprog;
++	return 0;
++}
++
++static int lb_tx_method_get(struct team *team, struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	lb_select_tx_port_func_t *func;
++	char *name;
++
++	func = rcu_dereference_protected(lb_priv->select_tx_port_func,
++					 lockdep_is_held(&team->lock));
++	name = lb_select_tx_port_get_name(func);
++	BUG_ON(!name);
++	ctx->data.str_val = name;
++	return 0;
++}
++
++static int lb_tx_method_set(struct team *team, struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	lb_select_tx_port_func_t *func;
++
++	func = lb_select_tx_port_get_func(ctx->data.str_val);
++	if (!func)
++		return -EINVAL;
++	rcu_assign_pointer(lb_priv->select_tx_port_func, func);
++	return 0;
++}
++
++static int lb_tx_hash_to_port_mapping_init(struct team *team,
++					   struct team_option_inst_info *info)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	unsigned char hash = info->array_index;
++
++	LB_HTPM_OPT_INST_INFO_BY_HASH(lb_priv, hash) = info;
++	return 0;
++}
++
++static int lb_tx_hash_to_port_mapping_get(struct team *team,
++					  struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	struct team_port *port;
++	unsigned char hash = ctx->info->array_index;
++
++	port = LB_HTPM_PORT_BY_HASH(lb_priv, hash);
++	ctx->data.u32_val = port ? port->dev->ifindex : 0;
++	return 0;
++}
++
++static int lb_tx_hash_to_port_mapping_set(struct team *team,
++					  struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	struct team_port *port;
++	unsigned char hash = ctx->info->array_index;
++
++	list_for_each_entry(port, &team->port_list, list) {
++		if (ctx->data.u32_val == port->dev->ifindex &&
++		    team_port_enabled(port)) {
++			rcu_assign_pointer(LB_HTPM_PORT_BY_HASH(lb_priv, hash),
++					   port);
++			return 0;
++		}
++	}
++	return -ENODEV;
++}
++
++static int lb_hash_stats_init(struct team *team,
++			      struct team_option_inst_info *info)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	unsigned char hash = info->array_index;
++
++	lb_priv->ex->stats.info[hash].opt_inst_info = info;
++	return 0;
++}
++
++static int lb_hash_stats_get(struct team *team, struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	unsigned char hash = ctx->info->array_index;
++
++	ctx->data.bin_val.ptr = &lb_priv->ex->stats.info[hash].stats;
++	ctx->data.bin_val.len = sizeof(struct lb_stats);
++	return 0;
++}
++
++static int lb_port_stats_init(struct team *team,
++			      struct team_option_inst_info *info)
++{
++	struct team_port *port = info->port;
++	struct lb_port_priv *lb_port_priv = get_lb_port_priv(port);
++
++	lb_port_priv->stats_info.opt_inst_info = info;
++	return 0;
++}
++
++static int lb_port_stats_get(struct team *team, struct team_gsetter_ctx *ctx)
++{
++	struct team_port *port = ctx->info->port;
++	struct lb_port_priv *lb_port_priv = get_lb_port_priv(port);
++
++	ctx->data.bin_val.ptr = &lb_port_priv->stats_info.stats;
++	ctx->data.bin_val.len = sizeof(struct lb_stats);
++	return 0;
++}
++
++static void __lb_stats_info_refresh_prepare(struct lb_stats_info *s_info)
++{
++	memcpy(&s_info->last_stats, &s_info->stats, sizeof(struct lb_stats));
++	memset(&s_info->stats, 0, sizeof(struct lb_stats));
++}
++
++static bool __lb_stats_info_refresh_check(struct lb_stats_info *s_info,
++					  struct team *team)
++{
++	if (memcmp(&s_info->last_stats, &s_info->stats,
++	    sizeof(struct lb_stats))) {
++		team_option_inst_set_change(s_info->opt_inst_info);
++		return true;
++	}
++	return false;
++}
++
++static void __lb_one_cpu_stats_add(struct lb_stats *acc_stats,
++				   struct lb_stats *cpu_stats,
++				   struct u64_stats_sync *syncp)
++{
++	unsigned int start;
++	struct lb_stats tmp;
++
++	do {
++		start = u64_stats_fetch_begin_bh(syncp);
++		tmp.tx_bytes = cpu_stats->tx_bytes;
++	} while (u64_stats_fetch_retry_bh(syncp, start));
++	acc_stats->tx_bytes += tmp.tx_bytes;
++}
++
++static void lb_stats_refresh(struct work_struct *work)
++{
++	struct team *team;
++	struct lb_priv *lb_priv;
++	struct lb_priv_ex *lb_priv_ex;
++	struct lb_pcpu_stats *pcpu_stats;
++	struct lb_stats *stats;
++	struct lb_stats_info *s_info;
++	struct team_port *port;
++	bool changed = false;
++	int i;
++	int j;
++
++	lb_priv_ex = container_of(work, struct lb_priv_ex,
++				  stats.refresh_dw.work);
++
++	team = lb_priv_ex->team;
++	lb_priv = get_lb_priv(team);
++
++	if (!mutex_trylock(&team->lock)) {
++		schedule_delayed_work(&lb_priv_ex->stats.refresh_dw, 0);
++		return;
++	}
++
++	for (j = 0; j < LB_TX_HASHTABLE_SIZE; j++) {
++		s_info = &lb_priv->ex->stats.info[j];
++		__lb_stats_info_refresh_prepare(s_info);
++		for_each_possible_cpu(i) {
++			pcpu_stats = per_cpu_ptr(lb_priv->pcpu_stats, i);
++			stats = &pcpu_stats->hash_stats[j];
++			__lb_one_cpu_stats_add(&s_info->stats, stats,
++					       &pcpu_stats->syncp);
++		}
++		changed |= __lb_stats_info_refresh_check(s_info, team);
++	}
++
++	list_for_each_entry(port, &team->port_list, list) {
++		struct lb_port_priv *lb_port_priv = get_lb_port_priv(port);
++
++		s_info = &lb_port_priv->stats_info;
++		__lb_stats_info_refresh_prepare(s_info);
++		for_each_possible_cpu(i) {
++			pcpu_stats = per_cpu_ptr(lb_priv->pcpu_stats, i);
++			stats = per_cpu_ptr(lb_port_priv->pcpu_stats, i);
++			__lb_one_cpu_stats_add(&s_info->stats, stats,
++					       &pcpu_stats->syncp);
++		}
++		changed |= __lb_stats_info_refresh_check(s_info, team);
++	}
++
++	if (changed)
++		team_options_change_check(team);
++
++	schedule_delayed_work(&lb_priv_ex->stats.refresh_dw,
++			      (lb_priv_ex->stats.refresh_interval * HZ) / 10);
++
++	mutex_unlock(&team->lock);
++}
++
++static int lb_stats_refresh_interval_get(struct team *team,
++					 struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++
++	ctx->data.u32_val = lb_priv->ex->stats.refresh_interval;
++	return 0;
++}
++
++static int lb_stats_refresh_interval_set(struct team *team,
++					 struct team_gsetter_ctx *ctx)
++{
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	unsigned int interval;
++
++	interval = ctx->data.u32_val;
++	if (lb_priv->ex->stats.refresh_interval == interval)
++		return 0;
++	lb_priv->ex->stats.refresh_interval = interval;
++	if (interval)
++		schedule_delayed_work(&lb_priv->ex->stats.refresh_dw, 0);
++	else
++		cancel_delayed_work(&lb_priv->ex->stats.refresh_dw);
+ 	return 0;
+ }
+ 
+@@ -128,30 +532,125 @@ static const struct team_option lb_options[] = {
+ 		.getter = lb_bpf_func_get,
+ 		.setter = lb_bpf_func_set,
+ 	},
++	{
++		.name = "lb_tx_method",
++		.type = TEAM_OPTION_TYPE_STRING,
++		.getter = lb_tx_method_get,
++		.setter = lb_tx_method_set,
++	},
++	{
++		.name = "lb_tx_hash_to_port_mapping",
++		.array_size = LB_TX_HASHTABLE_SIZE,
++		.type = TEAM_OPTION_TYPE_U32,
++		.init = lb_tx_hash_to_port_mapping_init,
++		.getter = lb_tx_hash_to_port_mapping_get,
++		.setter = lb_tx_hash_to_port_mapping_set,
++	},
++	{
++		.name = "lb_hash_stats",
++		.array_size = LB_TX_HASHTABLE_SIZE,
++		.type = TEAM_OPTION_TYPE_BINARY,
++		.init = lb_hash_stats_init,
++		.getter = lb_hash_stats_get,
++	},
++	{
++		.name = "lb_port_stats",
++		.per_port = true,
++		.type = TEAM_OPTION_TYPE_BINARY,
++		.init = lb_port_stats_init,
++		.getter = lb_port_stats_get,
++	},
++	{
++		.name = "lb_stats_refresh_interval",
++		.type = TEAM_OPTION_TYPE_U32,
++		.getter = lb_stats_refresh_interval_get,
++		.setter = lb_stats_refresh_interval_set,
++	},
+ };
+ 
+ static int lb_init(struct team *team)
+ {
+-	return team_options_register(team, lb_options,
+-				     ARRAY_SIZE(lb_options));
++	struct lb_priv *lb_priv = get_lb_priv(team);
++	lb_select_tx_port_func_t *func;
++	int err;
++
++	/* set default tx port selector */
++	func = lb_select_tx_port_get_func("hash");
++	BUG_ON(!func);
++	rcu_assign_pointer(lb_priv->select_tx_port_func, func);
++
++	lb_priv->ex = kzalloc(sizeof(*lb_priv->ex), GFP_KERNEL);
++	if (!lb_priv->ex)
++		return -ENOMEM;
++	lb_priv->ex->team = team;
++
++	lb_priv->pcpu_stats = alloc_percpu(struct lb_pcpu_stats);
++	if (!lb_priv->pcpu_stats) {
++		err = -ENOMEM;
++		goto err_alloc_pcpu_stats;
++	}
++
++	INIT_DELAYED_WORK(&lb_priv->ex->stats.refresh_dw, lb_stats_refresh);
++
++	err = team_options_register(team, lb_options, ARRAY_SIZE(lb_options));
++	if (err)
++		goto err_options_register;
++	return 0;
++
++err_options_register:
++	free_percpu(lb_priv->pcpu_stats);
++err_alloc_pcpu_stats:
++	kfree(lb_priv->ex);
++	return err;
+ }
+ 
+ static void lb_exit(struct team *team)
+ {
++	struct lb_priv *lb_priv = get_lb_priv(team);
++
+ 	team_options_unregister(team, lb_options,
+ 				ARRAY_SIZE(lb_options));
++	cancel_delayed_work_sync(&lb_priv->ex->stats.refresh_dw);
++	free_percpu(lb_priv->pcpu_stats);
++	kfree(lb_priv->ex);
++}
++
++static int lb_port_enter(struct team *team, struct team_port *port)
++{
++	struct lb_port_priv *lb_port_priv = get_lb_port_priv(port);
++
++	lb_port_priv->pcpu_stats = alloc_percpu(struct lb_stats);
++	if (!lb_port_priv->pcpu_stats)
++		return -ENOMEM;
++	return 0;
++}
++
++static void lb_port_leave(struct team *team, struct team_port *port)
++{
++	struct lb_port_priv *lb_port_priv = get_lb_port_priv(port);
++
++	free_percpu(lb_port_priv->pcpu_stats);
++}
++
++static void lb_port_disabled(struct team *team, struct team_port *port)
++{
++	lb_tx_hash_to_port_mapping_null_port(team, port);
+ }
+ 
+ static const struct team_mode_ops lb_mode_ops = {
+ 	.init			= lb_init,
+ 	.exit			= lb_exit,
++	.port_enter		= lb_port_enter,
++	.port_leave		= lb_port_leave,
++	.port_disabled		= lb_port_disabled,
+ 	.transmit		= lb_transmit,
+ };
+ 
+-static struct team_mode lb_mode = {
++static const struct team_mode lb_mode = {
+ 	.kind		= "loadbalance",
+ 	.owner		= THIS_MODULE,
+ 	.priv_size	= sizeof(struct lb_priv),
++	.port_priv_size	= sizeof(struct lb_port_priv),
+ 	.ops		= &lb_mode_ops,
+ };
+ 
+diff --git a/drivers/net/team/team_mode_roundrobin.c b/drivers/net/team/team_mode_roundrobin.c
+index 6abfbdc..52dd0ec 100644
+--- a/drivers/net/team/team_mode_roundrobin.c
++++ b/drivers/net/team/team_mode_roundrobin.c
+@@ -1,5 +1,5 @@
+ /*
+- * net/drivers/team/team_mode_roundrobin.c - Round-robin mode for team
++ * drivers/net/team/team_mode_roundrobin.c - Round-robin mode for team
+  * Copyright (c) 2011 Jiri Pirko <jpirko@redhat.com>
+  *
+  * This program is free software; you can redistribute it and/or modify
+@@ -81,7 +81,7 @@ static const struct team_mode_ops rr_mode_ops = {
+ 	.port_change_mac	= rr_port_change_mac,
+ };
+ 
+-static struct team_mode rr_mode = {
++static const struct team_mode rr_mode = {
+ 	.kind		= "roundrobin",
+ 	.owner		= THIS_MODULE,
+ 	.priv_size	= sizeof(struct rr_priv),
+diff --git a/include/linux/if_team.h b/include/linux/if_team.h
+index 8185f57..99efd60 100644
+--- a/include/linux/if_team.h
++++ b/include/linux/if_team.h
+@@ -60,9 +60,11 @@ struct team_port {
+ 		unsigned int mtu;
+ 	} orig;
+ 
+-	struct rcu_head rcu;
++	long mode_priv[0];
+ };
+ 
++extern bool team_port_enabled(struct team_port *port);
++
+ struct team_mode_ops {
+ 	int (*init)(struct team *team);
+ 	void (*exit)(struct team *team);
+@@ -73,6 +75,8 @@ struct team_mode_ops {
+ 	int (*port_enter)(struct team *team, struct team_port *port);
+ 	void (*port_leave)(struct team *team, struct team_port *port);
+ 	void (*port_change_mac)(struct team *team, struct team_port *port);
++	void (*port_enabled)(struct team *team, struct team_port *port);
++	void (*port_disabled)(struct team *team, struct team_port *port);
+ };
+ 
+ enum team_option_type {
+@@ -82,6 +86,11 @@ enum team_option_type {
+ 	TEAM_OPTION_TYPE_BOOL,
+ };
+ 
++struct team_option_inst_info {
++	u32 array_index;
++	struct team_port *port; /* != NULL if per-port */
++};
++
+ struct team_gsetter_ctx {
+ 	union {
+ 		u32 u32_val;
+@@ -92,23 +101,28 @@ struct team_gsetter_ctx {
+ 		} bin_val;
+ 		bool bool_val;
+ 	} data;
+-	struct team_port *port;
++	struct team_option_inst_info *info;
+ };
+ 
+ struct team_option {
+ 	struct list_head list;
+ 	const char *name;
+ 	bool per_port;
++	unsigned int array_size; /* != 0 means the option is array */
+ 	enum team_option_type type;
++	int (*init)(struct team *team, struct team_option_inst_info *info);
+ 	int (*getter)(struct team *team, struct team_gsetter_ctx *ctx);
+ 	int (*setter)(struct team *team, struct team_gsetter_ctx *ctx);
+ };
+ 
++extern void team_option_inst_set_change(struct team_option_inst_info *opt_inst_info);
++extern void team_options_change_check(struct team *team);
++
+ struct team_mode {
+-	struct list_head list;
+ 	const char *kind;
+ 	struct module *owner;
+ 	size_t priv_size;
++	size_t port_priv_size;
+ 	const struct team_mode_ops *ops;
+ };
+ 
+@@ -178,8 +192,8 @@ extern int team_options_register(struct team *team,
+ extern void team_options_unregister(struct team *team,
+ 				    const struct team_option *option,
+ 				    size_t option_count);
+-extern int team_mode_register(struct team_mode *mode);
+-extern int team_mode_unregister(struct team_mode *mode);
++extern int team_mode_register(const struct team_mode *mode);
++extern void team_mode_unregister(const struct team_mode *mode);
+ 
+ #endif /* __KERNEL__ */
+ 
+@@ -241,6 +255,7 @@ enum {
+ 	TEAM_ATTR_OPTION_DATA,		/* dynamic */
+ 	TEAM_ATTR_OPTION_REMOVED,	/* flag */
+ 	TEAM_ATTR_OPTION_PORT_IFINDEX,	/* u32 */ /* for per-port options */
++	TEAM_ATTR_OPTION_ARRAY_INDEX,	/* u32 */ /* for array options */
+ 
+ 	__TEAM_ATTR_OPTION_MAX,
+ 	TEAM_ATTR_OPTION_MAX = __TEAM_ATTR_OPTION_MAX - 1,
+_______________________________________________
+kernel mailing list
+kernel@lists.fedoraproject.org
+https://admin.fedoraproject.org/mailman/listinfo/kernel

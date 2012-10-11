@@ -34,7 +34,7 @@ SUBLEVEL="${3}"
 KMV="${1}.${2}"
 
 # ebuild default values setup settings
-EXTRAVERSION="-geek"
+EXTRAVERSION="-calculate"
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
 SLOT="${PV}"
@@ -69,7 +69,7 @@ fbcondecor_src="http://sources.gentoo.org/cgi-bin/viewvc.cgi/linux-patches/genpa
 # Intermediate Queueing Device patches
 imq_src="http://www.linuximq.net/patches/patch-imqmq-${imq_ver/KMV/$KMV}.diff.xz"
 
-reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${PV}.patch.gz"
+reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${reiser4_ver/PV/$PV}.patch.gz"
 
 # Ingo Molnar's realtime preempt patches
 rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
@@ -316,76 +316,130 @@ kernel-geek_src_unpack() {
 	fi
 }
 
+# @FUNCTION: in_iuse
+# @USAGE: <flag>
+# @DESCRIPTION:
+# Determines whether the given flag is in IUSE. Strips IUSE default prefixes
+# as necessary.
+#
+# Note that this function should not be used in the global scope.
+in_iuse() {
+	debug-print-function ${FUNCNAME} "${@}"
+	[[ ${#} -eq 1 ]] || die "Invalid args to ${FUNCNAME}()"
+
+	local flag=${1}
+	local liuse=( ${IUSE} )
+
+	has "${flag}" "${liuse[@]#[+-]}"
+}
+
+# @FUNCTION: use_if_iuse
+# @USAGE: <flag>
+# @DESCRIPTION:
+# Return true if the given flag is in USE and IUSE.
+#
+# Note that this function should not be used in the global scope.
+use_if_iuse() {
+	in_iuse $1 || return 1
+	use $1
+}
+
 kernel-geek_src_prepare() {
-
-	use vserver && ApplyPatch "${DISTDIR}/patch-${PV}-vs${vserver_ver}.diff" "VServer - ${vserver_url}"
-
-	use bfq && ApplyPatch "${FILESDIR}/${PV}/bfq/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}"
-
-	use ck && ApplyPatch "$DISTDIR/patch-${ck_ver}.bz2" "Con Kolivas high performance patchset - ${ck_url}"
-
-	use fbcondecor && ApplyPatch "${DISTDIR}/4200_fbcondecor-0.9.6.patch" "Spock's fbsplash patch - ${fbcondecor_url}"
-
-	use grsecurity && ApplyPatch "${FILESDIR}/${PV}/grsecurity/patch_list" "GrSecurity patches - ${grsecurity_url}"
-
-	use ice && ApplyPatch "${FILESDIR}/tuxonice-kernel-${PV}.patch.xz" "TuxOnIce - ${ice_url}"
-
-	use imq && ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}"
-
-	use reiser4 && ApplyPatch "${DISTDIR}/reiser4-for-${PV}.patch.gz" "Reiser4 - ${reiser4_url}"
-
-	use rt && ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}"
-
-	if use bld; then
-		echo
-		cd "${T}"
-		unpack "bld-${bld_ver}.tar.bz2"
-		cp "${T}/bld-${bld_ver}/BLD-${KMV}.patch" "${S}/BLD-${KMV}.patch"
-		cd "${S}"
-		ApplyPatch "BLD-${KMV}.patch" "Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}"
-		rm -f "BLD-${KMV}.patch"
-		rm -r "${T}/bld-${bld_ver}" # Clean temp
-	fi
-
-	use uksm && ApplyPatch "${FILESDIR}/${PV}/uksm/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}"
-
-#	if use xenomai; then
-#		# Portage's ``unpack'' macro unpacks to the current directory.
-#		# Unpack to the work directory.  Afterwards, ``work'' contains:
-#		#   linux-2.6.29-xenomai-r5
-#		#   xenomai-2.4.9
-#		cd ${WORKDIR}
-#		unpack ${XENO_TAR} || die "unpack failed"
-#		cd ${WORKDIR}/${XENO_SRC}
-#		ApplyPatch ${FILESDIR}/prepare-kernel.patch || die "patch failed"
-#		scripts/prepare-kernel.sh --linux=${S} || die "prepare kernel failed"
-#	fi
 
 ### BRANCH APPLY ###
 
-	use aufs && ApplyPatch "$FILESDIR/${PV}/aufs/patch_list" "aufs3 - ${aufs_url}"
-
-	use mageia && ApplyPatch "$FILESDIR/${PV}/mageia/patch_list" "Mandriva/Mageia - ${mageia_url}"
-
-	use fedora && ApplyPatch "$FILESDIR/${PV}/fedora/patch_list" "Fedora - ${fedora_url}"
-
-	use suse && ApplyPatch "$FILESDIR/${PV}/suse/patch_list" "OpenSuSE - ${suse_url}"
-
-	use pardus && ApplyPatch "$FILESDIR/${PV}/pardus/patch_list" "Pardus - ${pardus_url}"
-
-	use pld && ApplyPatch "$FILESDIR/${PV}/pld/patch_list" "PLD - ${pld_url}"
-
-	use zfs && ApplyPatch "$FILESDIR/${PV}/zfs/patch_list" "zfs - ${zfs_url}"
-
-	ApplyPatch "${FILESDIR}/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41"
-
-	ApplyPatch "${FILESDIR}/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991"
-
-	# USE branding
-	if use branding; then
-		ApplyPatch "${FILESDIR}/font-8x16-iso-latin-1-v2.patch" "font - CONFIG_FONT_ISO_LATIN_1_8x16 http://sudormrf.wordpress.com/2010/10/23/ka-ping-yee-iso-latin-1%c2%a0font-in-linux-kernel/"
-		ApplyPatch "${FILESDIR}/gentoo-larry-logo-v2.patch" "logo - CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/larry.png"
+	config_file="/etc/portage/kernel.conf"
+	if [ -e "$config_file" ]
+	then
+		source "$config_file"
+		ewarn "GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\""
+	else
+		GEEKSOURCES_PATCHING_ORDER="vserver bfq ck fbcondecor grsecurity ice imq reiser4 rt bld uksm aufs mageia fedora suse pardus pld zfs branding";
+		ewarn "The order of patching is defined in file $config_file with the variable GEEKSOURCES_PATCHING_ORDER is its default value:
+GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"
+You are free to choose any order of patching.
+For example, if you like the alphabetical order of patching you must set the variable:
+echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding ck fbcondecor fedora grsecurity ice imq mageia pardus pld reiser4 rt suse uksm vserver zfs\"' > $config_file
+Otherwise i will use the default value of GEEKSOURCES_PATCHING_ORDER!
+And may the Force be with you…"
 	fi
+
+	for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
+	if use_if_iuse "$Current_Patch"; then
+			case ${Current_Patch} in
+				aufs)
+					ApplyPatch "$FILESDIR/${PV}/aufs/patch_list" "aufs3 - ${aufs_url}";
+					;;
+				bfq)
+					ApplyPatch "${FILESDIR}/${PV}/bfq/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}";
+					;;
+				bld)
+					echo;
+					cd "${T}";
+					unpack "bld-${bld_ver/KMV/$KMV}.tar.bz2";
+					cp "${T}/bld-${bld_ver/KMV/$KMV}/BLD-${KMV}.patch" "${S}/BLD-${KMV}.patch";
+					cd "${S}";
+					ApplyPatch "BLD-${KMV}.patch" "Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}";
+					rm -f "BLD-${KMV}.patch";
+					rm -r "${T}/bld-${bld_ver/KMV/$KMV}"; # Clean temp
+					;;
+				branding)
+					ApplyPatch "${FILESDIR}/font-8x16-iso-latin-1-v2.patch" "font - CONFIG_FONT_ISO_LATIN_1_8x16 http://sudormrf.wordpress.com/2010/10/23/ka-ping-yee-iso-latin-1%c2%a0font-in-linux-kernel/";
+					ApplyPatch "${FILESDIR}/gentoo-larry-logo-v2.patch" "logo - CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/larry.png";
+					;;
+				ck)
+					ApplyPatch "$DISTDIR/patch-${ck_ver}.bz2" "Con Kolivas high performance patchset - ${ck_url}";
+					;;
+				fbcondecor)
+					ApplyPatch "${DISTDIR}/4200_fbcondecor-0.9.6.patch" "Spock's fbsplash patch - ${fbcondecor_url}";
+					;;
+				fedora)
+					ApplyPatch "$FILESDIR/${PV}/fedora/patch_list" "Fedora - ${fedora_url}";
+					;;
+				grsecurity)
+					ApplyPatch "${FILESDIR}/${PV}/grsecurity/patch_list" "GrSecurity patches - ${grsecurity_url}";
+					;;
+				ice)
+					ApplyPatch "${FILESDIR}/tuxonice-kernel-${PV}.patch.xz" "TuxOnIce - ${ice_url}";
+					;;
+				imq)
+					ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}";
+					;;
+				mageia)
+					ApplyPatch "$FILESDIR/${PV}/mageia/patch_list" "Mandriva/Mageia - ${mageia_url}";
+					;;
+				pardus)
+					ApplyPatch "$FILESDIR/${PV}/pardus/patch_list" "Pardus - ${pardus_url}";
+					;;
+				pld)
+					ApplyPatch "$FILESDIR/${PV}/pld/patch_list" "PLD - ${pld_url}";
+					;;
+				reiser4)
+					ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "Reiser4 - ${reiser4_url}";
+					;;
+				rt)
+					ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}";
+					;;
+				suse)
+					ApplyPatch "$FILESDIR/${PV}/suse/patch_list" "OpenSuSE - ${suse_url}";
+					;;
+				uksm)
+					ApplyPatch "${FILESDIR}/${PV}/uksm/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
+					;;
+				vserver)
+					ApplyPatch "${DISTDIR}/patch-${PV}-vs${vserver_ver}.diff" "VServer - ${vserver_url}";
+					;;
+				zfs)
+					ApplyPatch "$FILESDIR/${PV}/zfs/patch_list" "zfs - ${zfs_url}";
+					;;
+			esac
+		else continue
+		fi;
+	done;
+
+	ApplyPatch "${FILESDIR}/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41";
+
+	((${PATCHLEVEL} < 6)) && ApplyPatch "${FILESDIR}/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991";
 
 ### END OF PATCH APPLICATIONS ###
 
@@ -398,7 +452,7 @@ kernel-geek_src_prepare() {
 
 	# Comment out EXTRAVERSION added by CK patch:
 	use ck && sed -i -e 's/\(^EXTRAVERSION :=.*$\)/# \1/' "Makefile"
-	
+
 	einfo "Copy current config from /proc"
 	if [ -e "/usr/src/linux-${KV_FULL}/.config" ]; then
 		ewarn "Kernel config file already exist."

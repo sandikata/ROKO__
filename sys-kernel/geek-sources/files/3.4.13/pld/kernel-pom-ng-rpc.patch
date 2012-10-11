@@ -1,0 +1,1712 @@
+diff -Nur --exclude '*.orig' linux/include/linux/netfilter/nf_conntrack_rpc.h linux/include/linux/netfilter/nf_conntrack_rpc.h
+--- linux/include/linux/netfilter/nf_conntrack_rpc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/linux/netfilter/nf_conntrack_rpc.h	2006-05-04 11:26:08.000000000 +0200
+@@ -0,0 +1,76 @@
++/* RPC extension for IP connection tracking, Version 2.2
++ * (C) 2000 by Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>
++ *	- original rpc tracking module
++ *	- "recent" connection handling for kernel 2.3+ netfilter
++ *
++ * (C) 2001 by Rusty Russell <rusty@rustcorp.com.au>
++ *	- upgraded conntrack modules to oldnat api - kernel 2.4.0+
++ *
++ * (C) 2002 by Ian (Larry) Latter <Ian.Latter@mq.edu.au>
++ *	- upgraded conntrack modules to newnat api - kernel 2.4.20+
++ *	- extended matching to support filtering on procedures
++ *
++ * (C) 2005 by David Stes <stes@pandora.be>
++ *      - upgraded to 2.6.13 API
++ *
++ * ip_conntrack_rpc.h,v 2.2 2003/01/12 18:30:00
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ **
++ */
++
++#include <asm/param.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/stddef.h>
++#include <linux/list.h>
++
++#include <net/netfilter/nf_conntrack_helper.h>
++
++#ifndef _IP_CONNTRACK_RPC_H
++#define _IP_CONNTRACK_RPC_H
++
++#define RPC_PORT       111
++
++
++/* Datum in RPC packets are encoded in XDR */
++#define IXDR_GET_INT32(buf) ((u_int32_t) ntohl((uint32_t)*buf))
++
++/* Fast timeout, to deny DoS atacks */
++#define EXP (60 * HZ)
++
++/* Normal timeouts */
++#define EXPIRES (180 * HZ)
++
++/* For future conections RPC, using client's cache bindings
++ * I'll use ip_conntrack_lock to lock these lists	*/
++
++/* This identifies each request and stores protocol */
++struct request_p {
++	struct list_head list;
++
++	u_int32_t xid;   
++	u_int32_t ip;
++	u_int16_t port;
++	
++	/* Protocol */
++	u_int16_t proto;
++
++	struct timer_list timeout;
++};
++
++static inline int request_p_cmp(const struct request_p *p, u_int32_t xid, 
++				u_int32_t ip, u_int32_t port) {
++	return (p->xid == xid && p->ip == ip && p->port);
++
++}
++#define NIPQUAD(addr) \
++       ((unsigned char *)&addr)[0], \
++       ((unsigned char *)&addr)[1], \
++       ((unsigned char *)&addr)[2], \
++       ((unsigned char *)&addr)[3]
++
++#endif /* _IP_CONNTRACK_RPC_H */
+diff -Nur --exclude '*.orig' linux/include/linux/netfilter_ipv4/ipt_rpc.h linux/include/linux/netfilter_ipv4/ipt_rpc.h
+--- linux/include/linux/netfilter_ipv4/ipt_rpc.h	1970-01-01 01:00:00.000000000 +0100
++++ linux/include/linux/netfilter_ipv4/ipt_rpc.h	2006-05-04 11:26:08.000000000 +0200
+@@ -0,0 +1,35 @@
++/* RPC extension for IP netfilter matching, Version 2.2
++ * (C) 2000 by Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>
++ *	- original rpc tracking module
++ *	- "recent" connection handling for kernel 2.3+ netfilter
++ *
++ * (C) 2001 by Rusty Russell <rusty@rustcorp.com.au>
++ *	- upgraded conntrack modules to oldnat api - kernel 2.4.0+
++ *
++ * (C) 2002 by Ian (Larry) Latter <Ian.Latter@mq.edu.au>
++ *	- upgraded conntrack modules to newnat api - kernel 2.4.20+
++ *	- extended matching to support filtering on procedures
++ *
++ * ipt_rpc.h.c,v 2.2 2003/01/12 18:30:00
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ **
++ */
++
++#ifndef _IPT_RPC_H
++#define _IPT_RPC_H
++
++struct ipt_rpc_data;
++
++struct ipt_rpc_info {
++	int inverse;
++	int strict;
++	const char c_procs[1408];
++	int i_procs;
++	struct ipt_rpc_data *data;
++};
++
++#endif /* _IPT_RPC_H */
+diff -Nur --exclude '*.orig' linux/net/ipv4/netfilter/Kconfig linux/net/ipv4/netfilter/Kconfig
+--- linux/net/ipv4/netfilter/Kconfig	2006-05-02 23:38:44.000000000 +0200
++++ linux/net/ipv4/netfilter/Kconfig	2006-05-04 11:26:08.000000000 +0200
+@@ -606,5 +606,37 @@
+ 	  Allows altering the ARP packet payload: source and destination
+ 	  hardware and network addresses.
+ 
++config IP_NF_MATCH_RPC
++	tristate  'RPC match support'
++	depends on NF_CONNTRACK && IP_NF_IPTABLES
++	help
++	  This adds CONFIG_IP_NF_MATCH_RPC, which is the RPC connection
++	  matcher and tracker.
++	
++	  This option supplies two connection tracking modules;
++	  ip_conntrack_rpc_udp and ip_conntrack_rpc_tcp, which track
++	  portmapper requests using UDP and TCP respectively.
++	
++	  This option also adds an RPC match module for iptables, which
++	  matches both via the old "record match" method and a new
++	  "procedure match" method. The older method matches all RPC
++	  procedure packets that relate to previously recorded packets
++	  seen querying a portmapper. The newer method matches only
++	  those RPC procedure packets explicitly specified by the user,
++	  and that can then be related to previously recorded packets
++	  seen querying a portmapper.
++	
++	  These three modules are required if RPCs are to be filtered
++	  accurately; as RPCs are allocated pseudo-randomly to UDP and
++	  TCP ports as they register with the portmapper.
++	
++	  Up to 8 portmapper ports per module, and up to 128 RPC
++	  procedures per iptables rule, may be specified by the user,
++	  to enable effective RPC management.
++	
++	
++	  If you want to compile it as a module, say M here and read
++	  <file:Documentation/modules.txt>.  If unsure, say `N'.
++
+ endmenu
+ 
+diff -Nur --exclude '*.orig' linux/net/ipv4/netfilter/Makefile linux/net/ipv4/netfilter/Makefile
+--- linux/net/ipv4/netfilter/Makefile	2006-05-02 23:38:44.000000000 +0200
++++ linux/net/ipv4/netfilter/Makefile	2006-05-04 11:26:08.000000000 +0200
+@@ -0,0 +0,1 @@
++obj-$(CONFIG_IP_NF_MATCH_RPC) += ip_conntrack_rpc_tcp.o ip_conntrack_rpc_udp.o ipt_rpc.o
+diff -Nur --exclude '*.orig' linux/net/ipv4/netfilter/ip_conntrack_rpc_tcp.c linux/net/ipv4/netfilter/ip_conntrack_rpc_tcp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_rpc_tcp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux/net/ipv4/netfilter/ip_conntrack_rpc_tcp.c	2007-08-15 03:04:53.000000000 +0200
+@@ -0,0 +1,557 @@
++/* RPC extension for IP (TCP) connection tracking, Version 2.2
++ * (C) 2000 by Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>
++ *	- original rpc tracking module
++ *	- "recent" connection handling for kernel 2.3+ netfilter
++ *
++ * (C) 2001 by Rusty Russell <rusty@rustcorp.com.au>
++ *	- upgraded conntrack modules to oldnat api - kernel 2.4.0+
++ *
++ * (C) 2002,2003 by Ian (Larry) Latter <Ian.Latter@mq.edu.au>
++ *	- upgraded conntrack modules to newnat api - kernel 2.4.20+
++ *	- extended matching to support filtering on procedures
++ * 
++ * (c) 2004,2005 by David Stes <stes@pandora.be>
++ *      - add nsrexec option for Legato NetWorker
++ *	- upgraded to 2.6.12+ conntrack module api
++ *
++ * (c) 2005 by David Stes <stes@pandora.be>
++ *      - upgraded to 2.6.13 conntrack module api
++ *
++ * ip_conntrack_rpc_tpc.c,v 2.2 2003/01/12 18:30:00
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ **
++ *	Module load syntax:
++ *	insmod ip_conntrack_rpc_tcp.o nsrexec=<n> ports=port1,...port<MAX_PORTS>
++ *
++ *	Please give the ports of all RPC servers you wish to connect to.
++ *      For example, ports=111,7938 for Legato NetWorker's portmapper on 7938.
++ *	If you don't specify ports, the default will be port 111 (SUN portmap).
++ *
++ *      Please specify nsrexec, the TCP port of the rexec() service of
++ *      Legato NetWorker.  For example, nsrexec=7937
++ *
++ **
++ *	Note to all:
++ *
++ *	RPCs should not be exposed to the internet - ask the Pentagon;
++ *
++ *	  "The unidentified crackers pleaded guilty in July to charges
++ *	   of juvenile delinquency stemming from a string of Pentagon
++ *	   network intrusions in February.
++ *
++ *	   The youths, going by the names TooShort and Makaveli, used
++ *	   a common server security hole to break in, according to
++ *	   Dane Jasper, owner of the California Internet service
++ *	   provider, Sonic. They used the hole, known as the 'statd'
++ *	   exploit, to attempt more than 800 break-ins, Jasper said."
++ *
++ *	From: Wired News; "Pentagon Kids Kicked Off Grid" - Nov 6, 1998
++ *	URL:  http://www.wired.com/news/politics/0,1283,16098,00.html
++ **
++ */
++
++#include <linux/module.h>
++#include <linux/netfilter.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++#include <net/tcp.h>
++
++#include <asm/param.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/stddef.h>
++#include <linux/list.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <net/netfilter/nf_conntrack_expect.h>
++#include <net/netfilter/nf_conntrack_helper.h>
++#include <linux/netfilter/nf_conntrack_rpc.h>
++
++#define MAX_PORTS 8
++static int ports[MAX_PORTS];
++static int ports_n_c = 0;
++static int nsrexec = 0;
++
++#ifdef MODULE_PARM
++module_param(nsrexec,int, 0400);
++MODULE_PARM_DESC(nsrexec, "TCP port of Legato NetWorker's rexec service");
++module_param_array(ports, int, &ports_n_c, 0400);
++MODULE_PARM_DESC(ports, "port numbers (TCP/UDP) of RPC portmapper servers");
++#endif
++
++MODULE_AUTHOR("Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>");
++MODULE_DESCRIPTION("RPC TCP connection tracking module");
++MODULE_LICENSE("GPL");
++
++#define PRINTK(format, args...) printk(KERN_DEBUG "ip_conntrack_rpc_tcp: " \
++					format, ## args)
++
++#if 0
++#define DEBUGP(format, args...) printk(KERN_DEBUG "ip_conntrack_rpc_tcp: " \
++					format, ## args)
++#else
++#define DEBUGP(format, args...)
++#endif
++
++DEFINE_RWLOCK(ipct_rpc_tcp_lock);
++
++//#define ASSERT_READ_LOCK(x)
++//#define ASSERT_WRITE_LOCK(x)
++
++//#include <linux/netfilter_ipv4/listhelp.h>
++
++/* For future conections RPC, using client's cache bindings
++ * I'll use ip_conntrack_lock to lock these lists	   */
++
++LIST_HEAD(request_p_list_tcp);
++
++
++static void delete_request_p(unsigned long request_p_ul) 
++{
++	struct request_p *p = (void *)request_p_ul;
++	
++	write_lock_bh(&ipct_rpc_tcp_lock);
++	list_del(&p->list);
++	write_unlock_bh(&ipct_rpc_tcp_lock);
++	kfree(p);
++	return;
++}
++
++
++static void req_cl(struct request_p * r)
++{
++	write_lock_bh(&ipct_rpc_tcp_lock);
++	del_timer(&r->timeout);
++	list_del(&r->list);
++	write_unlock_bh(&ipct_rpc_tcp_lock);
++	kfree(r);
++	return;
++}
++
++
++static void clean_request(struct list_head *list)
++{
++	struct list_head *first = list->prev;
++	struct list_head *temp = list->next;
++	struct list_head *aux;
++
++	if (list_empty(list))
++		return;
++
++	while (first != temp) {
++		aux = temp->next;
++		req_cl((struct request_p *)temp);
++		temp = aux;	
++	}
++	req_cl((struct request_p *)temp);
++	return;
++}
++
++
++static void alloc_request_p(u_int32_t xid, u_int16_t proto, u_int32_t ip,
++		     u_int16_t port)
++{
++	struct request_p *req_p = NULL, *p;
++	
++	/* Verifies if entry already exists */
++	write_lock_bh(&ipct_rpc_tcp_lock);
++//	req_p = LIST_FIND(&request_p_list_tcp, request_p_cmp,
++//		struct request_p *, xid, ip, port);
++
++	list_for_each_entry(p, &request_p_list_tcp, list)
++		if (p->xid == xid && p->ip == ip && p->port == port)
++			req_p = p;
++
++	if (req_p) {
++		/* Refresh timeout */
++		if (del_timer(&req_p->timeout)) {
++			req_p->timeout.expires = jiffies + EXP;
++			add_timer(&req_p->timeout);	
++		} 
++		write_unlock_bh(&ipct_rpc_tcp_lock);
++		return;	
++
++	}
++	write_unlock_bh(&ipct_rpc_tcp_lock);
++	
++	/* Allocate new request_p */
++	req_p = (struct request_p *) kmalloc(sizeof(struct request_p), GFP_ATOMIC);
++	if (!req_p) {
++ 		DEBUGP("can't allocate request_p\n");
++		return;			
++	}
++
++        req_p->list.next = NULL;
++        req_p->list.prev = NULL;
++        req_p->xid = xid;
++        req_p->ip = ip;
++        req_p->port = port;
++        req_p->proto = proto;
++      
++	/* Initialize timer */
++	init_timer(&req_p->timeout);
++        req_p->timeout.expires = jiffies + EXP;
++	req_p->timeout.data = (unsigned long)req_p;
++	req_p->timeout.function = delete_request_p;
++	add_timer(&req_p->timeout); 
++
++	/* Put in list */
++	write_lock_bh(&ipct_rpc_tcp_lock);
++	list_add(req_p, &request_p_list_tcp);
++	write_unlock_bh(&ipct_rpc_tcp_lock); 
++	return; 
++}
++
++
++static int check_rpc_packet(const u_int32_t *data,
++			int dir, struct nf_conn *ct,
++			struct list_head request_p_list)
++{
++	u_int32_t xid;
++        int ret = NF_ACCEPT;
++	struct request_p *req_p = NULL, *p;
++	struct nf_conntrack_expect *exp;
++
++
++	if (ct == NULL) {
++		DEBUGP("ct is NULL");
++		return ret;
++	}
++
++        /* Translstion's buffer for XDR */
++        u_int16_t port_buf;
++
++	/* Get XID */
++	xid = *data;
++
++ 	/* This does sanity checking on RPC payloads,
++	 * and permits only the RPC "get port" (3)
++	 * in authorised procedures in client
++	 * communications with the portmapper.
++	 */
++
++	/* perform direction dependant RPC work */
++	if (dir == IP_CT_DIR_ORIGINAL) {
++
++		data += 5;
++
++		/* Get RPC requestor */
++		if (IXDR_GET_INT32(data) != 3) {
++			DEBUGP("RPC packet contains an invalid (non \"get\") requestor. [skip]\n");
++			return NF_ACCEPT;
++		}
++		DEBUGP("RPC packet contains a \"get\" requestor. [cont]\n");
++
++		data++;
++
++		/* Jump Credentials and Verfifier */
++		data += IXDR_GET_INT32(data) + 2;
++		data += IXDR_GET_INT32(data) + 2;
++
++		/* Get RPC procedure */
++		DEBUGP("RPC packet contains procedure request [%u]. [cont]\n",
++			(unsigned int)IXDR_GET_INT32(data));
++
++		/* Get RPC protocol and store against client parameters */
++		data = data + 2;
++		alloc_request_p(xid, IXDR_GET_INT32(data), ct->tuplehash[dir].tuple.src.u3.ip,
++				ct->tuplehash[dir].tuple.src.u.all);
++
++		DEBUGP("allocated RPC req_p for xid=%u proto=%u %u.%u.%u.%u:%u\n",
++			xid, IXDR_GET_INT32(data),
++			NIPQUAD(ct->tuplehash[dir].tuple.src.u3.ip),
++			ntohs(ct->tuplehash[dir].tuple.src.u.all));
++
++		DEBUGP("allocated RPC request for protocol %u. [done]\n",
++			(unsigned int)IXDR_GET_INT32(data));
++
++	} else {
++
++		/* Check for returning packet's stored counterpart */
++	/*	req_p = LIST_FIND(&request_p_list_tcp, request_p_cmp,
++				  struct request_p *, xid,
++				  ct->tuplehash[!dir].tuple.src.u3.ip,
++				  ct->tuplehash[!dir].tuple.src.u.all);
++	*/
++
++		list_for_each_entry(p, &request_p_list_tcp, list)
++			if (p->xid == xid &&
++			    p->ip == ct->tuplehash[!dir].tuple.src.u3.ip &&
++			    p->port == ct->tuplehash[!dir].tuple.src.u.all)
++				req_p = p;
++
++		/* Drop unexpected packets */
++		if (!req_p) {
++			DEBUGP("packet is not expected. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Verifies if packet is really an RPC reply packet */
++		data++;
++		if (IXDR_GET_INT32(data) != 1) {
++			DEBUGP("packet is not a valid RPC reply. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Is status accept? */
++		data++;
++		if (IXDR_GET_INT32(data)) {
++			DEBUGP("packet is not an RPC accept. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Get Verifier length. Jump verifier */
++		data++;
++		data = data + IXDR_GET_INT32(data) + 2;
++
++		/* Is accpet status "success"? */
++		if (IXDR_GET_INT32(data)) {
++			DEBUGP("packet is not an RPC accept status of success. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Get server port number */	  
++		data++;
++		port_buf = (u_int16_t) IXDR_GET_INT32(data);
++
++		/* If a packet has made it this far then it deserves an
++		 * expectation ...  if port == 0, then this service is 
++		 * not going to be registered.
++		 */
++		if (port_buf && port_buf != nsrexec) {
++			DEBUGP("port found: %u\n", port_buf);
++
++                        exp = nf_ct_expect_alloc(ct);
++                        if (!exp) {
++                          ret = NF_DROP;
++                          goto out;
++                        }
++
++			/* Watch out, Radioactive-Man! */
++			exp->tuple.src.u3.ip = ct->tuplehash[!dir].tuple.src.u3.ip;
++			exp->tuple.dst.u3.ip = ct->tuplehash[!dir].tuple.dst.u3.ip;
++			exp->mask.src.u3.ip = 0xffffffff;
++
++			switch (req_p->proto) {
++				case IPPROTO_UDP:
++					exp->tuple.src.u.udp.port = 0;
++					exp->tuple.dst.u.udp.port = htons(port_buf);
++					exp->tuple.dst.protonum = IPPROTO_UDP;
++					exp->mask.src.u.udp.port = 0;
++					break;
++
++				case IPPROTO_TCP:
++					exp->tuple.src.u.tcp.port = 0;
++					exp->tuple.dst.u.tcp.port = htons(port_buf);
++					exp->tuple.dst.protonum = IPPROTO_TCP;
++					exp->mask.src.u.tcp.port = 0;
++					break;
++			}
++			exp->expectfn = NULL;
++			exp->master = ct;
++
++			struct nf_conn_help *m_help = nfct_help(exp->master);
++			if (m_help->helper == NULL) {
++				DEBUGP("master helper NULL");
++				ret = NF_ACCEPT;
++			}
++			
++			DEBUGP("expect related ip   %u.%u.%u.%u:0-%u.%u.%u.%u:%u proto=%u\n",
++				NIPQUAD(exp->tuple.src.u3.ip),
++				NIPQUAD(exp->tuple.dst.u3.ip),
++				port_buf, req_p->proto);
++
++			DEBUGP("expect related mask %u.%u.%u.%u:0-%u.%u.%u.%u:65535 proto=%u\n",
++				NIPQUAD(exp->mask.src.u3.ip),
++				NIPQUAD(exp->mask.dst.u3.ip),
++				exp->mask.dst.protonum);
++
++			if (nf_ct_expect_related(exp) != 0) {
++        		        ret = NF_DROP;
++        		}
++
++		}
++
++out:
++		req_cl(req_p);
++
++		DEBUGP("packet evaluated. [expect]\n");
++	}
++
++	return ret;
++
++}
++
++
++/* RPC TCP helper */
++/* static int help(const struct iphdr *iph, size_t len,
++		struct nf_conn *ct, enum ip_conntrack_info ctinfo) */
++static int help(struct sk_buff **pskb,
++		struct nf_conn *ct, enum ip_conntrack_info ctinfo)
++{
++	int dir;
++	int crp_ret;
++	struct tcphdr _tcph, *tcph;
++	const u_int32_t *data;
++	size_t tcplen;
++        struct iphdr *iph;
++        size_t len;
++
++	/* Not whole TCP header? */
++        iph=ip_hdr(*pskb);
++	tcph = skb_header_pointer(*pskb,iph->ihl*4,sizeof(_tcph),&_tcph);
++	if (!tcph)
++		return NF_ACCEPT;
++
++	len = (*pskb)->len; /* stes */
++	data = (const u_int32_t *)tcph + tcph->doff;
++        tcplen = len - iph->ihl * 4;
++	dir = CTINFO2DIR(ctinfo);
++
++	DEBUGP("new packet to evaluate ..\n");
++
++	/* This works for packets like handshake packets, ignore */
++	if (len == ((tcph->doff + iph->ihl) * 4)) {
++		DEBUGP("packet has no data (may still be handshaking). [skip]\n");
++		return NF_ACCEPT;
++	}
++
++	/* Until there's been traffic both ways, don't look in packets. */
++	if (ctinfo != IP_CT_ESTABLISHED
++	    && ctinfo != IP_CT_ESTABLISHED + IP_CT_IS_REPLY) {
++		DEBUGP("connection tracking state is; ctinfo=%u ..\n", ctinfo);
++		DEBUGP("[note: failure to get past this error may indicate asymmetric routing]\n");
++		DEBUGP("packet is not yet part of a two way stream. [skip]\n");
++		return NF_ACCEPT;
++	}
++
++	/* Not whole TCP header? */
++	if (tcplen < sizeof(struct tcphdr) || tcplen < tcph->doff * 4) {
++		DEBUGP("TCP header length is; tcplen=%u ..\n", (unsigned) tcplen);
++		DEBUGP("packet does not contain a complete TCP header. [skip]\n");
++		return NF_ACCEPT;
++	}
++
++	/* perform direction dependant protocol work */
++	if (dir == IP_CT_DIR_ORIGINAL) {
++
++		DEBUGP("packet is from the initiator. [cont]\n");
++
++		/* Tests if packet len is ok */
++		if ((tcplen - (tcph->doff * 4)) != 60) {
++			DEBUGP("packet length is not correct. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++	} else {
++
++		DEBUGP("packet is from the receiver. [cont]\n");
++
++		/* Tests if packet len is ok */
++		if ((tcplen - (tcph->doff * 4)) != 32) {
++			DEBUGP("packet length is not correct. [skip]\n");
++			return NF_ACCEPT;
++		}
++	}
++
++	/* Get to the data */
++	data++;
++
++	/* Check the RPC data */
++	crp_ret = check_rpc_packet(data, dir, ct, request_p_list_tcp);
++
++	return crp_ret;
++
++}
++
++
++static struct nf_conntrack_helper rpc_helpers[MAX_PORTS];
++static char rpc_names[MAX_PORTS][10];
++static const struct nf_conntrack_expect_policy rpc_exp_policy = {
++	.max_expected      = 1,
++	.timeout      = 5 * 60, /* stes */
++};
++
++static void fini(void);
++
++static int __init init(void)
++{
++	int port, ret;
++	char *tmpname;
++
++	/* If no port given, default to standard RPC port */
++	if (ports[0] == 0)
++		ports[0] = RPC_PORT;
++
++	for (port = 0; (port < MAX_PORTS) && ports[port]; port++) {
++		memset(&rpc_helpers[port], 0, sizeof(struct nf_conntrack_helper));
++
++		tmpname = &rpc_names[port][0];
++		if (ports[port] == RPC_PORT)
++			sprintf(tmpname, "rpc");
++		else
++			sprintf(tmpname, "rpc-%d", ports[port]);
++		rpc_helpers[port].name = tmpname;
++
++		rpc_helpers[port].me = THIS_MODULE;
++		rpc_helpers[port].expect_policy = &rpc_exp_policy;
++
++		rpc_helpers[port].tuple.dst.protonum = IPPROTO_TCP;
++
++		/* RPC can come from ports 0:65535 to ports[port] (111) */
++		rpc_helpers[port].tuple.src.u.tcp.port = htons(ports[port]);
++
++		rpc_helpers[port].help = help;
++
++		PRINTK("registering helper for port #%d: %d/TCP\n", port, ports[port]);
++		PRINTK("helper match ip   %u.%u.%u.%u:%u->%u.%u.%u.%u:%u\n",
++			NIPQUAD(rpc_helpers[port].tuple.dst.u3.ip),
++			ntohs(rpc_helpers[port].tuple.dst.u.tcp.port),
++			NIPQUAD(rpc_helpers[port].tuple.src.u3.ip),
++			ntohs(rpc_helpers[port].tuple.src.u.tcp.port));
++
++		ret = nf_conntrack_helper_register(&rpc_helpers[port]);
++
++		if (ret) {
++			printk("ERROR registering port %d\n",
++				ports[port]);
++			fini();
++			return -EBUSY;
++		}
++		ports_n_c++;
++	}
++
++	PRINTK("%s Legato NetWorker support for port %d/TCP\n", (nsrexec)?"enabling":"disabling", nsrexec);
++
++	return 0;
++}
++
++
++/* This function is intentionally _NOT_ defined as __exit, because 
++ * it is needed by the init function */
++static void fini(void)
++{
++	int port;
++
++	DEBUGP("cleaning request list\n");
++	clean_request(&request_p_list_tcp);
++
++	for (port = 0; (port < ports_n_c) && ports[port]; port++) {
++		DEBUGP("unregistering port %d\n", ports[port]);
++		nf_conntrack_helper_unregister(&rpc_helpers[port]);
++	}
++}
++
++
++module_init(init);
++module_exit(fini);
++
++struct module *ip_conntrack_rpc_tcp = THIS_MODULE;
++EXPORT_SYMBOL(request_p_list_tcp);
++EXPORT_SYMBOL(ip_conntrack_rpc_tcp);
++EXPORT_SYMBOL(ipct_rpc_tcp_lock);
++
+diff -Nur --exclude '*.orig' linux/net/ipv4/netfilter/ip_conntrack_rpc_udp.c linux/net/ipv4/netfilter/ip_conntrack_rpc_udp.c
+--- linux/net/ipv4/netfilter/ip_conntrack_rpc_udp.c	1970-01-01 01:00:00.000000000 +0100
++++ linux/net/ipv4/netfilter/ip_conntrack_rpc_udp.c	2007-08-15 01:44:02.000000000 +0200
+@@ -0,0 +1,530 @@
++/* RPC extension for IP (UDP) connection tracking, Version 2.2
++ * (C) 2000 by Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>
++ *	- original rpc tracking module
++ *	- "recent" connection handling for kernel 2.3+ netfilter
++ *
++ * (C) 2001 by Rusty Russell <rusty@rustcorp.com.au>
++ *	- upgraded conntrack modules to oldnat api - kernel 2.4.0+
++ *
++ * (C) 2002,2003 by Ian (Larry) Latter <Ian.Latter@mq.edu.au>
++ *	- upgraded conntrack modules to newnat api - kernel 2.4.20+
++ *	- extended matching to support filtering on procedures
++ * 
++ * (c) 2004,2005 by David Stes <stes@pandora.be>
++ *	- upgraded to 2.6.12+ conntrack module api
++ *
++ * (c) 2005 by David Stes <stes@pandora.be>
++ *      - upgraded to 2.6.13 api
++ *
++ * ip_conntrack_rpc_udp.c,v 2.2 2003/01/12 18:30:00
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ **
++ *	Module load syntax:
++ *	insmod ip_conntrack_rpc_udp.o ports=port1,port2,...port<MAX_PORTS>
++ *
++ *	Please give the ports of all RPC servers you wish to connect to.
++ *	If you don't specify ports, the default will be port 111.
++ **
++ *	Note to all:
++ *
++ *	RPCs should not be exposed to the internet - ask the Pentagon;
++ *
++ *	  "The unidentified crackers pleaded guilty in July to charges
++ *	   of juvenile delinquency stemming from a string of Pentagon
++ *	   network intrusions in February.
++ *
++ *	   The youths, going by the names TooShort and Makaveli, used
++ *	   a common server security hole to break in, according to
++ *	   Dane Jasper, owner of the California Internet service
++ *	   provider, Sonic. They used the hole, known as the 'statd'
++ *	   exploit, to attempt more than 800 break-ins, Jasper said."
++ *
++ *	From: Wired News; "Pentagon Kids Kicked Off Grid" - Nov 6, 1998
++ *	URL:  http://www.wired.com/news/politics/0,1283,16098,00.html
++ **
++ */
++
++#include <linux/module.h>
++#include <linux/netfilter.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++#include <net/udp.h>
++
++#include <asm/param.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/stddef.h>
++#include <linux/list.h>
++#include <linux/udp.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <net/netfilter/nf_conntrack_expect.h>
++#include <net/netfilter/nf_conntrack_helper.h>
++#include <linux/netfilter/nf_conntrack_rpc.h>
++
++#define MAX_PORTS 8
++static int ports[MAX_PORTS];
++static int ports_n_c = 0;
++
++#ifdef MODULE_PARM
++module_param_array(ports, int, &ports_n_c, 0400);
++MODULE_PARM_DESC(ports, "port numbers (TCP/UDP) of RPC portmapper servers");
++#endif
++
++MODULE_AUTHOR("Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>");
++MODULE_DESCRIPTION("RPC UDP connection tracking module");
++MODULE_LICENSE("GPL");
++
++#define PRINTK(format, args...) printk(KERN_DEBUG "ip_conntrack_rpc_udp: " \
++					format, ## args)
++
++#if 0
++#define DEBUGP(format, args...) printk(KERN_DEBUG "ip_conntrack_rpc_udp: " \
++					format, ## args)
++#else
++#define DEBUGP(format, args...)
++#endif
++
++DEFINE_RWLOCK(ipct_rpc_udp_lock);
++//#define ASSERT_READ_LOCK(x) 
++//#define ASSERT_WRITE_LOCK(x)
++//#include <linux/netfilter_ipv4/listhelp.h>
++
++/* For future conections RPC, using client's cache bindings
++ * I'll use ip_conntrack_lock to lock these lists           */
++
++LIST_HEAD(request_p_list_udp);
++
++
++static void delete_request_p(unsigned long request_p_ul)
++{
++	struct request_p *p = (void *)request_p_ul;
++	
++	write_lock_bh(&ipct_rpc_udp_lock);
++	list_del(&p->list);
++	write_unlock_bh(&ipct_rpc_udp_lock);
++	kfree(p);
++	return;
++}
++
++
++static void req_cl(struct request_p * r)
++{
++	write_lock_bh(&ipct_rpc_udp_lock);
++	del_timer(&r->timeout);
++	list_del(&r->list);
++	write_unlock_bh(&ipct_rpc_udp_lock);
++	kfree(r);
++	return;
++}
++
++
++static void clean_request(struct list_head *list)
++{
++	struct list_head *first = list->prev;
++	struct list_head *temp = list->next;
++	struct list_head *aux;
++
++	if (list_empty(list))
++		return;
++
++	while (first != temp) {
++		aux = temp->next;
++		req_cl((struct request_p *)temp);
++		temp = aux;	
++	}
++	req_cl((struct request_p *)temp);
++	return;
++}
++
++
++static void alloc_request_p(u_int32_t xid, u_int16_t proto, u_int32_t ip,
++		     u_int16_t port)
++{
++	struct request_p *req_p = NULL, *p;
++        
++	/* Verifies if entry already exists */
++	write_lock_bh(&ipct_rpc_udp_lock);
++//	req_p = LIST_FIND(&request_p_list_udp, request_p_cmp,
++//		struct request_p *, xid, ip, port);
++	
++	list_for_each_entry(p, &request_p_list_udp, list)
++		if (p->xid == xid && p->ip == ip && p->port == port)
++			req_p = p;
++
++	if (req_p) {
++		/* Refresh timeout */
++		if (del_timer(&req_p->timeout)) {
++			req_p->timeout.expires = jiffies + EXP;
++			add_timer(&req_p->timeout);	
++		} 
++		write_unlock_bh(&ipct_rpc_udp_lock);
++		return;	
++
++	}
++	write_unlock_bh(&ipct_rpc_udp_lock);
++	
++	/* Allocate new request_p */
++	req_p = (struct request_p *) kmalloc(sizeof(struct request_p), GFP_ATOMIC);
++	if (!req_p) {
++ 		DEBUGP("can't allocate request_p\n");
++		return;			
++	}
++
++        req_p->list.next = NULL;
++        req_p->list.prev = NULL;
++        req_p->xid = xid;
++        req_p->ip = ip;
++        req_p->port = port;
++        req_p->proto = proto;
++      
++	/* Initialize timer */
++	init_timer(&req_p->timeout);
++        req_p->timeout.expires = jiffies + EXP;
++	req_p->timeout.data = (unsigned long)req_p;
++	req_p->timeout.function = delete_request_p;
++	add_timer(&req_p->timeout); 
++
++	/* Put in list */
++	write_lock_bh(&ipct_rpc_udp_lock);
++	list_add(req_p, &request_p_list_udp);
++	write_unlock_bh(&ipct_rpc_udp_lock); 
++	return; 
++
++}
++
++
++static int check_rpc_packet(const u_int32_t *data,
++			int dir, struct nf_conn *ct,
++			struct list_head request_p_list)
++{
++        int ret = NF_ACCEPT;
++	u_int32_t xid;
++	struct request_p *req_p = NULL, *p;
++	struct nf_conntrack_expect *exp;
++
++	/* Translstion's buffer for XDR */
++	u_int16_t port_buf;
++
++
++	/* Get XID */
++	xid = *data;
++
++ 	/* This does sanity checking on RPC payloads,
++	 * and permits only the RPC "get port" (3)
++	 * in authorised procedures in client
++	 * communications with the portmapper.
++	 */
++
++	/* perform direction dependant RPC work */
++	if (dir == IP_CT_DIR_ORIGINAL) {
++
++		data += 5;
++
++		/* Get RPC requestor */
++		if (IXDR_GET_INT32(data) != 3) {
++			DEBUGP("RPC packet contains an invalid (non \"get\") requestor. [skip]\n");
++			return NF_ACCEPT;
++		}
++		DEBUGP("RPC packet contains a \"get\" requestor. [cont]\n");
++
++		data++;
++
++		/* Jump Credentials and Verfifier */
++		data = data + IXDR_GET_INT32(data) + 2;
++		data = data + IXDR_GET_INT32(data) + 2;
++
++		/* Get RPC procedure */
++		DEBUGP("RPC packet contains procedure request [%u]. [cont]\n",
++			(unsigned int)IXDR_GET_INT32(data));
++
++		/* Get RPC protocol and store against client parameters */
++		data = data + 2;
++		alloc_request_p(xid, IXDR_GET_INT32(data), ct->tuplehash[dir].tuple.src.u3.ip,
++				ct->tuplehash[dir].tuple.src.u.all);
++
++		DEBUGP("allocated RPC req_p for xid=%u proto=%u %u.%u.%u.%u:%u\n",
++			xid, IXDR_GET_INT32(data),
++			NIPQUAD(ct->tuplehash[dir].tuple.src.u3.ip),
++			ntohs(ct->tuplehash[dir].tuple.src.u.all));
++
++		DEBUGP("allocated RPC request for protocol %u. [done]\n",
++			(unsigned int)IXDR_GET_INT32(data));
++
++	} else {
++
++		/* Check for returning packet's stored counterpart */
++	/*	req_p = LIST_FIND(&request_p_list_udp, request_p_cmp,
++				  struct request_p *, xid,
++				  ct->tuplehash[!dir].tuple.src.u3.ip,
++				  ct->tuplehash[!dir].tuple.src.u.all);
++
++	*/
++		list_for_each_entry(p, &request_p_list_udp, list)
++			if (p->xid == xid &&
++			    p->ip == ct->tuplehash[!dir].tuple.src.u3.ip &&
++			    p->port == ct->tuplehash[!dir].tuple.src.u.all)
++				req_p = p;
++
++		/* Drop unexpected packets */
++		if (!req_p) {
++			DEBUGP("packet is not expected. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Verifies if packet is really an RPC reply packet */
++		data++;
++		if (IXDR_GET_INT32(data) != 1) {
++			DEBUGP("packet is not a valid RPC reply. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Is status accept? */
++		data++;
++		if (IXDR_GET_INT32(data)) {
++			DEBUGP("packet is not an RPC accept. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Get Verifier length. Jump verifier */
++		data++;
++		data = data + IXDR_GET_INT32(data) + 2;
++
++		/* Is accpet status "success"? */
++		if (IXDR_GET_INT32(data)) {
++			DEBUGP("packet is not an RPC accept status of success. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Get server port number */	  
++		data++;
++		port_buf = (u_int16_t) IXDR_GET_INT32(data);
++
++		/* If a packet has made it this far then it deserves an
++		 * expectation ...  if port == 0, then this service is 
++		 * not going to be registered.
++		 */
++		if (port_buf) {
++			DEBUGP("port found: %u\n", port_buf);
++
++                        exp = nf_ct_expect_alloc(ct);
++                        if (!exp) {
++                          ret = NF_DROP;
++                          goto out;
++                        }
++
++			/* Watch out, Radioactive-Man! */
++			exp->tuple.src.u3.ip = ct->tuplehash[!dir].tuple.src.u3.ip;
++			exp->tuple.dst.u3.ip = ct->tuplehash[!dir].tuple.dst.u3.ip;
++			exp->mask.src.u3.ip = 0xffffffff;
++
++			switch (req_p->proto) {
++				case IPPROTO_UDP:
++					exp->tuple.src.u.udp.port = 0;
++					exp->tuple.dst.u.udp.port = htons(port_buf);
++					exp->tuple.dst.protonum = IPPROTO_UDP;
++					exp->mask.src.u.udp.port = 0;
++					break;
++
++				case IPPROTO_TCP:
++					exp->tuple.src.u.tcp.port = 0;
++					exp->tuple.dst.u.tcp.port = htons(port_buf);
++					exp->tuple.dst.protonum = IPPROTO_TCP;
++					exp->mask.src.u.tcp.port = 0;
++					break;
++			}
++			exp->expectfn = NULL;
++			exp->master = ct;
++
++			DEBUGP("expect related ip   %u.%u.%u.%u:0-%u.%u.%u.%u:%u proto=%u\n",
++				NIPQUAD(exp->tuple.src.u3.ip),
++				NIPQUAD(exp->tuple.dst.u3.ip),
++				port_buf, req_p->proto);
++
++			DEBUGP("expect related mask %u.%u.%u.%u:0-%u.%u.%u.%u:65535 proto=%u\n",
++				NIPQUAD(exp->mask.src.u3.ip),
++				NIPQUAD(exp->mask.dst.u3.ip),
++				exp->mask.dst.protonum);
++
++			if (nf_ct_expect_related(exp) != 0) {
++        		        ret = NF_DROP;
++        		}
++		}
++
++out:
++		req_cl(req_p);
++
++		DEBUGP("packet evaluated. [expect]\n");
++	}
++
++	return ret;
++}
++
++
++/* RPC UDP helper */
++/* static int help(const struct iphdr *iph, size_t len,
++		struct nf_conn *ct, enum ip_conntrack_info ctinfo) */
++static int help(struct sk_buff **pskb,
++		struct nf_conn *ct, enum ip_conntrack_info ctinfo)
++{
++	int dir;
++	int crp_ret;
++	struct udphdr _udph, *udph;
++	const u_int32_t *data;
++	size_t udplen;
++        struct iphdr *iph;
++        size_t len;
++	const u_int16_t *chsm;
++
++	/* Not whole UDP header? */
++        iph=ip_hdr(*pskb);
++	udph = skb_header_pointer(*pskb,iph->ihl*4,sizeof(_udph),&_udph);
++	if (!udph)
++		return NF_ACCEPT;
++
++	len = (*pskb)->len; /* stes */
++	data = (const u_int32_t *)udph + 2;
++        udplen = len - iph->ihl * 4;
++	dir = CTINFO2DIR(ctinfo);
++
++	/* Checksum */
++        chsm = (const u_int16_t *)udph + 3;
++
++	DEBUGP("new packet to evaluate ..\n");
++
++	/* Not whole UDP header? */
++	if (udplen < sizeof(struct udphdr)) {
++		DEBUGP("UDP header length is; udplen=%u ..\n", (unsigned) udplen);
++		DEBUGP("packet does not contain a complete UDP header. [skip]\n");
++		return NF_ACCEPT;
++	}
++
++	/* perform direction dependant protocol work */
++	if (dir == IP_CT_DIR_ORIGINAL) {
++
++		DEBUGP("packet is from the initiator. [cont]\n");
++
++		/* Tests if packet len is ok */
++		if ((udplen - sizeof(struct udphdr)) != 56) {
++			DEBUGP("packet length is not correct. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++	} else {
++
++		DEBUGP("packet is from the receiver. [cont]\n");
++
++		/* Until there's been traffic both ways, don't look in packets. */
++		if (ctinfo != IP_CT_ESTABLISHED + IP_CT_IS_REPLY) {
++			DEBUGP("connection tracking state is; ctinfo=%u ..\n", ctinfo);
++			DEBUGP("[note: failure to get past this error may indicate asymmetric routing]\n");
++			DEBUGP("packet is not yet part of a two way stream. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++		/* Tests if packet len is ok */
++			if ((udplen - sizeof(struct udphdr)) != 28) {
++			DEBUGP("packet length is not correct. [skip]\n");
++			return NF_ACCEPT;
++		}
++
++	}
++
++	/* Get to the data */
++	/* udp *data == *correct */
++
++	/* Check the RPC data */
++	crp_ret = check_rpc_packet(data, dir, ct, request_p_list_udp);
++
++	return crp_ret;
++
++}
++
++
++static struct nf_conntrack_helper rpc_helpers[MAX_PORTS];
++static char rpc_names[MAX_PORTS][10];
++static const struct nf_conntrack_expect_policy rpc_exp_policy = {
++	.max_expected      = 1,
++	.timeout      = 5 * 60, /* stes */
++};
++
++static void fini(void);
++
++static int __init init(void)
++{
++	int port, ret;
++	char *tmpname;
++
++	/* If no port given, default to standard RPC port */
++	if (ports[0] == 0)
++		ports[0] = RPC_PORT;
++
++	for (port = 0; (port < MAX_PORTS) && ports[port]; port++) {
++		memset(&rpc_helpers[port], 0, sizeof(struct nf_conntrack_helper));
++
++		tmpname = &rpc_names[port][0];
++		if (ports[port] == RPC_PORT)
++			sprintf(tmpname, "rpc");
++		else
++			sprintf(tmpname, "rpc-%d", ports[port]);
++		rpc_helpers[port].name = tmpname;
++
++		rpc_helpers[port].me = THIS_MODULE;
++		rpc_helpers[port].expect_policy = &rpc_exp_policy;
++
++		rpc_helpers[port].tuple.dst.protonum = IPPROTO_UDP;
++
++		/* RPC can come from ports 0:65535 to ports[port] (111) */
++		rpc_helpers[port].tuple.src.u.udp.port = htons(ports[port]);
++
++		rpc_helpers[port].help = help;
++
++		PRINTK("registering helper for port #%d: %d/UDP\n", port, ports[port]);
++		PRINTK("helper match ip   %u.%u.%u.%u:%u->%u.%u.%u.%u:%u\n",
++			NIPQUAD(rpc_helpers[port].tuple.dst.u3.ip),
++			ntohs(rpc_helpers[port].tuple.dst.u.udp.port),
++			NIPQUAD(rpc_helpers[port].tuple.src.u3.ip),
++			ntohs(rpc_helpers[port].tuple.src.u.udp.port));
++
++		ret = nf_conntrack_helper_register(&rpc_helpers[port]);
++
++		if (ret) {
++			printk("ERROR registering port %d\n",
++				ports[port]);
++			fini();
++			return -EBUSY;
++		}
++		ports_n_c++;
++	}
++	return 0;
++}
++
++
++/* This function is intentionally _NOT_ defined as __exit, because 
++ * it is needed by the init function */
++static void fini(void)
++{
++	int port;
++
++	DEBUGP("cleaning request list\n");
++	clean_request(&request_p_list_udp);
++
++	for (port = 0; (port < ports_n_c) && ports[port]; port++) {
++		DEBUGP("unregistering port %d\n", ports[port]);
++		nf_conntrack_helper_unregister(&rpc_helpers[port]);
++	}
++}
++
++
++module_init(init);
++module_exit(fini);
++
++struct module *ip_conntrack_rpc_udp = THIS_MODULE;
++EXPORT_SYMBOL(request_p_list_udp);
++EXPORT_SYMBOL(ip_conntrack_rpc_udp);
++EXPORT_SYMBOL(ipct_rpc_udp_lock);
++
+diff -Nur --exclude '*.orig' linux/net/ipv4/netfilter/ipt_rpc.c linux/net/ipv4/netfilter/ipt_rpc.c
+--- linux/net/ipv4/netfilter/ipt_rpc.c	1970-01-01 01:00:00.000000000 +0100
++++ linux/net/ipv4/netfilter/ipt_rpc.c	2007-08-15 01:40:43.000000000 +0200
+@@ -0,0 +1,448 @@
++/* RPC extension for IP connection matching, Version 2.2
++ * (C) 2000 by Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>
++ *	- original rpc tracking module
++ *	- "recent" connection handling for kernel 2.3+ netfilter
++ *
++ * (C) 2001 by Rusty Russell <rusty@rustcorp.com.au>
++ *	- upgraded conntrack modules to oldnat api - kernel 2.4.0+
++ *
++ * (C) 2002,2003 by Ian (Larry) Latter <Ian.Latter@mq.edu.au>
++ *	- upgraded conntrack modules to newnat api - kernel 2.4.20+
++ *	- extended matching to support filtering on procedures
++ * 
++ * (c) 2004,2005 by David Stes <stes@pandora.be>
++ *	- upgraded to 2.6.12+ conntrack module api
++ *      - upgraded to 2.6.13 api
++ *
++ * ipt_rpc.c,v 2.2 2003/01/12 18:30:00
++ *
++ *	This program is free software; you can redistribute it and/or
++ *	modify it under the terms of the GNU General Public License
++ *	as published by the Free Software Foundation; either version
++ *	2 of the License, or (at your option) any later version.
++ **
++ *	Module load syntax:
++ *	insmod ipt_rpc.o ports=port1,port2,...port<MAX_PORTS>
++ *
++ *	Please give the ports of all RPC servers you wish to connect to.
++ *	If you don't specify ports, the default will be port 111.
++ **
++ *	Note to all:
++ *
++ *	RPCs should not be exposed to the internet - ask the Pentagon;
++ *
++ *	  "The unidentified crackers pleaded guilty in July to charges
++ *	   of juvenile delinquency stemming from a string of Pentagon
++ *	   network intrusions in February.
++ *
++ *	   The youths, going by the names TooShort and Makaveli, used
++ *	   a common server security hole to break in, according to
++ *	   Dane Jasper, owner of the California Internet service
++ *	   provider, Sonic. They used the hole, known as the 'statd'
++ *	   exploit, to attempt more than 800 break-ins, Jasper said."
++ *
++ *	From: Wired News; "Pentagon Kids Kicked Off Grid" - Nov 6, 1998
++ *	URL:  http://www.wired.com/news/politics/0,1283,16098,00.html
++ **
++ */
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/list.h>
++#include <linux/udp.h>
++#include <linux/tcp.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter/nf_conntrack_rpc.h>
++#include <linux/netfilter_ipv4/ipt_rpc.h>
++
++#define MAX_PORTS 8
++static int ports[MAX_PORTS];
++static int ports_n_c = 0;
++
++#ifdef MODULE_PARM
++module_param_array(ports, int, &ports_n_c, 0400);
++MODULE_PARM_DESC(ports, "port numbers (TCP/UDP) of RPC portmapper servers");
++#endif
++
++MODULE_AUTHOR("Marcelo Barbosa Lima <marcelo.lima@dcc.unicamp.br>");
++MODULE_DESCRIPTION("RPC connection matching module");
++MODULE_LICENSE("GPL");
++
++#define PRINTK(format, args...) printk(KERN_DEBUG "ipt_rpc: " \
++					format, ## args)
++
++#if 0
++#define DEBUGP(format, args...) printk(KERN_DEBUG "ipt_rpc: " \
++					format, ## args)
++#else
++#define DEBUGP(format, args...)
++#endif
++
++/* EXPORT_NO_SYMBOLS; */
++
++/* vars from ip_conntrack_rpc_tcp */
++extern struct list_head request_p_list_tcp;
++extern struct module *ip_conntrack_rpc_tcp;
++
++/* vars from ip_conntrack_rpc_udp */
++extern struct list_head request_p_list_udp;
++extern struct module *ip_conntrack_rpc_udp;
++
++extern rwlock_t ipct_rpc_tcp_lock;
++extern rwlock_t ipct_rpc_udp_lock;
++
++#define ASSERT_READ_LOCK(x)
++#define ASSERT_WRITE_LOCK(x)
++
++#if 0
++#define ASSERT_READ_LOCK(x)					\
++do {								\
++	if (x == &request_p_list_udp)				\
++		MUST_BE_READ_LOCKED(&ipct_rpc_udp_lock);	\
++	else if (x == &request_p_list_tcp)			\
++		MUST_BE_READ_LOCKED(&ipct_rpc_tcp_lock);	\
++} while (0)
++
++#define ASSERT_WRITE_LOCK(x)					\
++do {								\
++	if (x == &request_p_list_udp)				\
++		MUST_BE_WRITE_LOCKED(&ipct_rpc_udp_lock);	\
++	else if (x == &request_p_list_tcp)			\
++		MUST_BE_WRITE_LOCKED(&ipct_rpc_tcp_lock);	\
++} while (0)
++#endif
++
++const int IPT_RPC_CHAR_LEN = 11;
++
++static int k_atoi(char *string)
++{
++	unsigned int result = 0;
++	int maxoctet = IPT_RPC_CHAR_LEN;
++
++	for ( ; *string != 0 && maxoctet != 0; maxoctet--, string++) {
++		if (*string < 0)
++			return(0);
++		if (*string == 0)
++			break;
++		if (*string < 48 || *string > 57) {
++			return(0);
++		}
++		result = result * 10 + ( *string - 48 );
++	}
++	return(result);
++}
++
++
++static int match_rpcs(char *c_procs, int i_procs, int proc)
++{
++	int   proc_ctr;
++	char *proc_ptr;
++	unsigned int proc_num;
++
++	DEBUGP("entered match_rpcs [%i] [%i] ..\n", i_procs, proc);
++
++	if (i_procs == -1)
++		return 1;
++
++	for (proc_ctr=0; proc_ctr <= i_procs; proc_ctr++) {
++
++		proc_ptr = c_procs;
++		proc_ptr += proc_ctr * IPT_RPC_CHAR_LEN;
++		proc_num = k_atoi(proc_ptr);
++
++		if (proc_num == proc)
++			return 1;
++	}
++
++	return 0;
++}
++
++
++static int check_rpc_packet(const u_int32_t *data, const void *matchinfo,
++			int *hotdrop, int dir, struct nf_conn *ct,
++			int offset, struct list_head request_p_list)
++{
++	const struct ipt_rpc_info *rpcinfo = matchinfo;
++	struct request_p *req_p = NULL, *p;
++	u_int32_t xid;
++
++
++	/* Get XID */
++	xid = *data;
++
++ 	/* This does sanity checking on RPC payloads,
++	 * and permits only the RPC "get port" (3)
++	 * in authorised procedures in client
++	 * communications with the portmapper.
++	 */
++
++	data += 5;
++
++	/* Get RPC requestor */
++	if (IXDR_GET_INT32(data) != 3) {
++		DEBUGP("RPC packet contains an invalid (non \"get\") requestor. [skip]\n");
++		if(rpcinfo->strict == 1)
++			*hotdrop = 1;
++		return 0;
++	}
++	DEBUGP("RPC packet contains a \"get\" requestor. [cont]\n");
++
++	data++;
++
++	/* Jump Credentials and Verfifier */
++	data = data + IXDR_GET_INT32(data) + 2;
++	data = data + IXDR_GET_INT32(data) + 2;
++
++	/* Get RPC procedure */
++	if (match_rpcs((char *)&rpcinfo->c_procs,
++	    rpcinfo->i_procs, IXDR_GET_INT32(data)) == 0) {
++		DEBUGP("RPC packet contains illegal procedure request [%u]. [drop]\n",
++			(unsigned int)IXDR_GET_INT32(data));
++
++		/* If the RPC conntrack half entry already exists .. */
++
++		switch (ct->tuplehash[0].tuple.dst.protonum) {
++			case IPPROTO_UDP:
++				write_lock_bh(&ipct_rpc_udp_lock);
++			case IPPROTO_TCP:
++				write_lock_bh(&ipct_rpc_tcp_lock);
++		}
++/*		req_p = LIST_FIND(&request_p_list, request_p_cmp,
++				  struct request_p *, xid,
++				  ct->tuplehash[dir].tuple.src.u3.ip,
++				  ct->tuplehash[dir].tuple.src.u.all);
++*/
++		list_for_each_entry(p, &request_p_list, list)
++			if (p->xid == xid &&
++			    p->ip == ct->tuplehash[!dir].tuple.src.u3.ip &&
++			    p->port == ct->tuplehash[!dir].tuple.src.u.all)
++				req_p = p;
++
++		if (req_p) {
++			DEBUGP("found req_p for xid=%u proto=%u %u.%u.%u.%u:%u\n",
++				xid, ct->tuplehash[dir].tuple.dst.protonum,
++				NIPQUAD(ct->tuplehash[dir].tuple.src.u3.ip),
++				ntohs(ct->tuplehash[dir].tuple.src.u.all));
++
++			/* .. remove it */
++			if (del_timer(&req_p->timeout))
++				req_p->timeout.expires = 0;
++
++       			list_del(&req_p->list);
++			DEBUGP("RPC req_p removed. [done]\n");
++
++		} else {
++			DEBUGP("no req_p found for xid=%u proto=%u %u.%u.%u.%u:%u\n",
++				xid, ct->tuplehash[dir].tuple.dst.protonum,
++				NIPQUAD(ct->tuplehash[dir].tuple.src.u3.ip),
++				ntohs(ct->tuplehash[dir].tuple.src.u.all));
++
++		}
++		switch (ct->tuplehash[0].tuple.dst.protonum) {
++			case IPPROTO_UDP:
++				write_unlock_bh(&ipct_rpc_udp_lock);
++			case IPPROTO_TCP:
++				write_unlock_bh(&ipct_rpc_tcp_lock);
++		}
++
++		if(rpcinfo->strict == 1)
++			*hotdrop = 1;
++		return 0;
++	}
++
++	DEBUGP("RPC packet contains authorised procedure request [%u]. [match]\n",
++		(unsigned int)IXDR_GET_INT32(data));
++	return (1 && (!offset));
++}
++
++
++
++/* static int match(const struct sk_buff *skb, const struct net_device *in,
++		 const struct net_device *out, const void *matchinfo,
++		 int offset, const void *hdr, u_int16_t datalen, int *hotdrop)
++*/
++static int match(const struct sk_buff *skb, const struct net_device *in,
++		 const struct net_device *out, const void *matchinfo,
++		 int offset, unsigned int protoff, int *hotdrop)
++{
++	struct nf_conn *ct;
++	enum ip_conntrack_info ctinfo;
++	const u_int32_t *data;
++	enum ip_conntrack_dir dir;
++	const struct tcphdr *tcp;
++	const struct ipt_rpc_info *rpcinfo = matchinfo;
++	int port, portsok;
++	int tval;
++	struct iphdr *ip; /* stes */
++        void *hdr; /* stes */
++        u_int16_t datalen; /* stes */
++
++	/* Initialization stes - see 2.4 ip_tables.c ipt_do_table() */
++	ip = ip_hdr(skb);
++	hdr = (u_int32_t *)ip + ip->ihl;
++	datalen = skb->len - ip->ihl * 4;
++
++	DEBUGP("new packet to evaluate ..\n");
++
++	ct = nf_ct_get((struct sk_buff *)skb, &ctinfo);
++	if (!ct) {
++		DEBUGP("no ct available [skip]\n");
++		return 0;
++	}
++
++	DEBUGP("ct detected. [cont]\n");
++	dir = CTINFO2DIR(ctinfo);
++
++	/* we only want the client to server packets for matching */
++	if (dir != IP_CT_DIR_ORIGINAL)
++		return 0;
++
++	/* This does sanity checking on UDP or TCP packets,
++	 * like their respective modules.
++	 */
++
++	switch (ct->tuplehash[0].tuple.dst.protonum) {
++
++		case IPPROTO_UDP:
++			DEBUGP("PROTO_UDP [cont]\n");
++			if (offset == 0 && datalen < sizeof(struct udphdr)) {
++				DEBUGP("packet does not contain a complete header. [drop]\n");
++				return 0;
++			}
++
++			for (port=0,portsok=0; port <= ports_n_c; port++) {
++				if (ntohs(ct->tuplehash[dir].tuple.dst.u.all) == ports[port]) {
++					portsok++;
++					break;
++				}
++			}
++			if (portsok == 0) {
++				DEBUGP("packet is not destined for a portmapper [%u]. [skip]\n",
++					ntohs(ct->tuplehash[dir].tuple.dst.u.all));
++				return 0;
++			}
++
++			if ((datalen - sizeof(struct udphdr)) != 56) {
++				DEBUGP("packet length is not correct for RPC content. [skip]\n");
++				if (rpcinfo->strict == 1)
++					*hotdrop = 1;
++				return 0;
++			}
++			DEBUGP("packet length is correct. [cont]\n");
++
++			/* Get to the data */
++			data = (const u_int32_t *)hdr + 2;
++
++			/* Check the RPC data */
++			tval = check_rpc_packet(data, matchinfo, hotdrop,
++						dir, ct, offset,
++						request_p_list_udp);
++
++			return tval;
++			
++		
++		case IPPROTO_TCP:
++			DEBUGP("PROTO_TCP [cont]\n");
++			if (offset == 0 && datalen < sizeof(struct tcphdr)) {
++				DEBUGP("packet does not contain a complete header. [drop]\n");
++				return 0;
++			}
++	
++			for (port=0,portsok=0; port <= ports_n_c; port++) {
++				if (ntohs(ct->tuplehash[dir].tuple.dst.u.all) == ports[port]) {
++					portsok++;
++					break;
++				}
++			}
++			if (portsok == 0) {
++				DEBUGP("packet is not destined for a portmapper [%u]. [skip]\n",
++					ntohs(ct->tuplehash[dir].tuple.dst.u.all));
++				return 0;
++			}
++
++			tcp = hdr;
++			if (datalen == (tcp->doff * 4)) {
++				DEBUGP("packet does not contain any data. [match]\n");
++				return (1 && (!offset));
++			}
++
++			/* Tests if packet len is ok */
++			if ((datalen - (tcp->doff * 4)) != 60) {
++				DEBUGP("packet length is not correct for RPC content. [skip]\n");
++				if(rpcinfo->strict == 1)
++					*hotdrop = 1;
++				return 0;
++			}
++			DEBUGP("packet length is correct. [cont]\n");
++
++			/* Get to the data */
++			data = (const u_int32_t *)tcp + tcp->doff + 1;	
++
++			/* Check the RPC data */
++			tval = check_rpc_packet(data, matchinfo, hotdrop,
++						dir, ct, offset,
++						request_p_list_tcp);
++
++			return tval;
++
++	}
++
++	DEBUGP("transport protocol=%u, is not supported [skip]\n",
++		ct->tuplehash[0].tuple.dst.protonum);
++	return 0;
++}
++
++
++static int checkentry(const char *tablename, const struct ipt_ip *ip, void *matchinfo,
++		   unsigned int matchsize, unsigned int hook_mask)
++{
++	if (hook_mask
++	    & ~((1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_FORWARD) | (1 << NF_INET_POST_ROUTING)
++		| (1 << NF_INET_LOCAL_IN) | (1 << NF_INET_LOCAL_OUT))) {
++		printk("ipt_rpc: only valid for PRE_ROUTING, FORWARD, POST_ROUTING, LOCAL_IN and/or LOCAL_OUT targets.\n");
++		return 0;
++	}
++
++	if (matchsize != XT_ALIGN(sizeof(struct ipt_rpc_info)))
++		return 0;
++
++	return 1;
++}
++
++static struct xt_match rpc_match = {
++        .name           = "rpc",
++	.family		= AF_INET,
++        .match          = match,
++	.matchsize	= sizeof(struct ipt_rpc_info),
++        .checkentry     = checkentry,
++        .me             = THIS_MODULE,
++};
++
++static int __init init(void)
++{
++	int port;
++
++	/* If no port given, default to standard RPC port */
++	if (ports[0] == 0)
++		ports[0] = RPC_PORT;
++
++	PRINTK("registering match [%s] for;\n", rpc_match.name);
++	for (port = 0; (port < MAX_PORTS) && ports[port]; port++) {
++		PRINTK("  port %i (UDP|TCP);\n", ports[port]);
++		ports_n_c++;
++	}
++	
++	return xt_register_match(&rpc_match);
++}
++
++
++static void fini(void)
++{
++	DEBUGP("unregistering match\n");
++	xt_unregister_match(&rpc_match);
++}
++
++
++module_init(init);
++module_exit(fini);
++

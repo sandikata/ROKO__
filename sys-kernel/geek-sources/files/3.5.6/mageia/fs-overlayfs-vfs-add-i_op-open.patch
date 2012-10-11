@@ -1,0 +1,130 @@
+commit 6098f422fe0635ff9c91b0643d48be0054eaa74d
+Author: Miklos Szeredi <mszeredi@suse.cz>
+Date:   Mon May 14 13:06:13 2012 +0200
+
+    UBUNTU: ubuntu: overlayfs -- vfs: add i_op->open()
+    
+    Add a new inode operation i_op->open().  This is for stacked
+    filesystems that want to return a struct file from a different
+    filesystem.
+    
+    Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+
+diff --git a/Documentation/filesystems/Locking b/Documentation/filesystems/Locking
+index 8e2da1e..d885881 100644
+--- a/Documentation/filesystems/Locking
++++ b/Documentation/filesystems/Locking
+@@ -62,6 +62,7 @@ ata *);
+ 	int (*removexattr) (struct dentry *, const char *);
+ 	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start, u64 len);
+ 	void (*update_time)(struct inode *, struct timespec *, int);
++	struct file *(*open)(struct dentry *,struct file *,const struct cred *);
+ 
+ locking rules:
+ 	all may block
+@@ -89,7 +90,7 @@ listxattr:	no
+ removexattr:	yes
+ fiemap:		no
+ update_time:	no
+-
++open:		no
+ 	Additionally, ->rmdir(), ->unlink() and ->rename() have ->i_mutex on
+ victim.
+ 	cross-directory ->rename() has (per-superblock) ->s_vfs_rename_sem.
+diff --git a/Documentation/filesystems/vfs.txt b/Documentation/filesystems/vfs.txt
+index efd23f4..f586bc6 100644
+--- a/Documentation/filesystems/vfs.txt
++++ b/Documentation/filesystems/vfs.txt
+@@ -364,6 +364,8 @@ struct inode_operations {
+ 	ssize_t (*listxattr) (struct dentry *, char *, size_t);
+ 	int (*removexattr) (struct dentry *, const char *);
+ 	void (*update_time)(struct inode *, struct timespec *, int);
++	struct file *(*open) (struct dentry *, struct file *,
++			      const struct cred *);
+ };
+ 
+ Again, all methods are called without any locks being held, unless
+@@ -476,6 +478,12 @@ otherwise noted.
+   	an inode.  If this is not defined the VFS will update the inode itself
+   	and call mark_inode_dirty_sync.
+ 
++  open: this is an alternative to f_op->open(), the difference is that this
++	method may return any open file, not necessarily originating from the
++	same filesystem as the one i_op->open() was called on.  It may be useful
++	for stacking filesystems which want to allow native I/O directly on
++	underlying files.
++
+ The Address Space Object
+ ========================
+ 
+diff --git a/fs/open.c b/fs/open.c
+index d805458..8751628 100644
+--- a/fs/open.c
++++ b/fs/open.c
+@@ -831,7 +831,7 @@ struct file *nameidata_to_filp(struct nameidata *nd)
+ 	} else {
+ 		struct file *res;
+ 
+-		res = do_dentry_open(&nd->path, filp, NULL, cred);
++		res = vfs_open(&nd->path, filp, cred);
+ 		if (!IS_ERR(res)) {
+ 			int error;
+ 
+@@ -871,7 +871,7 @@ struct file *dentry_open(struct dentry *dentry, struct vfsmount *mnt, int flags,
+ 	f = get_empty_filp();
+ 	if (f != NULL) {
+ 		f->f_flags = flags;
+-		ret = __dentry_open(&path, f, NULL, cred);
++		ret = vfs_open(&path, f, cred);
+ 	}
+ 	path_put(&path);
+ 
+@@ -879,6 +879,27 @@ struct file *dentry_open(struct dentry *dentry, struct vfsmount *mnt, int flags,
+ }
+ EXPORT_SYMBOL(dentry_open);
+ 
++/**
++ * vfs_open - open the file at the given path
++ * @path: path to open
++ * @filp: newly allocated file with f_flag initialized
++ * @cred: credentials to use
++ *
++ * Open the file.  If successful, the returned file will have acquired
++ * an additional reference for path.
++ */
++struct file *vfs_open(struct path *path, struct file *filp,
++		      const struct cred *cred)
++{
++	struct inode *inode = path->dentry->d_inode;
++
++	if (inode->i_op->open)
++		return inode->i_op->open(path->dentry, filp, cred);
++	else
++		return __dentry_open(path, filp, NULL, cred);
++}
++EXPORT_SYMBOL(vfs_open);
++
+ static void __put_unused_fd(struct files_struct *files, unsigned int fd)
+ {
+ 	struct fdtable *fdt = files_fdtable(files);
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 17fd887..05d046f 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1693,6 +1693,8 @@ struct inode_operations {
+ 	int (*fiemap)(struct inode *, struct fiemap_extent_info *, u64 start,
+ 		      u64 len);
+ 	int (*update_time)(struct inode *, struct timespec *, int);
++	struct file *(*open) (struct dentry *, struct file *,
++			      const struct cred *);
+ } ____cacheline_aligned;
+ 
+ struct seq_file;
+@@ -2057,6 +2059,7 @@ extern long do_sys_open(int dfd, const char __user *filename, int flags,
+ extern struct file *filp_open(const char *, int, umode_t);
+ extern struct file *file_open_root(struct dentry *, struct vfsmount *,
+ 				   const char *, int);
++extern struct file *vfs_open(struct path *, struct file *, const struct cred *);
+ extern struct file * dentry_open(struct dentry *, struct vfsmount *, int,
+ 				 const struct cred *);
+ extern int filp_close(struct file *, fl_owner_t id);

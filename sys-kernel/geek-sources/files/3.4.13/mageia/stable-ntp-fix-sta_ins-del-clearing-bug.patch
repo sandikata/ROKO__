@@ -1,0 +1,57 @@
+From 6b1859dba01c7d512b72d77e3fd7da8354235189 Mon Sep 17 00:00:00 2001
+From: John Stultz <johnstul@us.ibm.com>
+Date: Fri, 13 Jul 2012 01:21:50 -0400
+Subject: ntp: Fix STA_INS/DEL clearing bug
+
+From: John Stultz <johnstul@us.ibm.com>
+
+commit 6b1859dba01c7d512b72d77e3fd7da8354235189 upstream.
+
+In commit 6b43ae8a619d17c4935c3320d2ef9e92bdeed05d, I
+introduced a bug that kept the STA_INS or STA_DEL bit
+from being cleared from time_status via adjtimex()
+without forcing STA_PLL first.
+
+Usually once the STA_INS is set, it isn't cleared
+until the leap second is applied, so its unlikely this
+affected anyone. However during testing I noticed it
+took some effort to cancel a leap second once STA_INS
+was set.
+
+Signed-off-by: John Stultz <johnstul@us.ibm.com>
+Cc: Ingo Molnar <mingo@kernel.org>
+Cc: Peter Zijlstra <a.p.zijlstra@chello.nl>
+Cc: Richard Cochran <richardcochran@gmail.com>
+Cc: Prarit Bhargava <prarit@redhat.com>
+Link: http://lkml.kernel.org/r/1342156917-25092-2-git-send-email-john.stultz@linaro.org
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ kernel/time/ntp.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/kernel/time/ntp.c
++++ b/kernel/time/ntp.c
+@@ -409,7 +409,9 @@ int second_overflow(unsigned long secs)
+ 			time_state = TIME_DEL;
+ 		break;
+ 	case TIME_INS:
+-		if (secs % 86400 == 0) {
++		if (!(time_status & STA_INS))
++			time_state = TIME_OK;
++		else if (secs % 86400 == 0) {
+ 			leap = -1;
+ 			time_state = TIME_OOP;
+ 			time_tai++;
+@@ -418,7 +420,9 @@ int second_overflow(unsigned long secs)
+ 		}
+ 		break;
+ 	case TIME_DEL:
+-		if ((secs + 1) % 86400 == 0) {
++		if (!(time_status & STA_DEL))
++			time_state = TIME_OK;
++		else if ((secs + 1) % 86400 == 0) {
+ 			leap = 1;
+ 			time_tai--;
+ 			time_state = TIME_WAIT;

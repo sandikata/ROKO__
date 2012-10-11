@@ -1,0 +1,274 @@
+diff --git a/arch/x86/include/asm/vga.h b/arch/x86/include/asm/vga.h
+index c4b9dc2..2723c07 100644
+--- a/arch/x86/include/asm/vga.h
++++ b/arch/x86/include/asm/vga.h
+@@ -17,4 +17,10 @@
+ #define vga_readb(x) (*(x))
+ #define vga_writeb(x, y) (*(y) = (x))
+ 
++#if CONFIG_FB_EFI
++#define __ARCH_HAS_VGA_DEFAULT_DEVICE
++extern struct pci_dev *vga_default_device(void);
++extern void vga_set_default_device(struct pci_dev *pdev);
++#endif
++
+ #endif /* _ASM_X86_VGA_H */
+diff --git a/arch/x86/video/fbdev.c b/arch/x86/video/fbdev.c
+index c5ffb6a..d5644bb 100644
+--- a/arch/x86/video/fbdev.c
++++ b/arch/x86/video/fbdev.c
+@@ -9,24 +9,34 @@
+ #include <linux/fb.h>
+ #include <linux/pci.h>
+ #include <linux/module.h>
++#include <linux/vgaarb.h>
+ 
+ int fb_is_primary_device(struct fb_info *info)
+ {
+ 	struct device *device = info->device;
+ 	struct pci_dev *pci_dev = NULL;
++	struct pci_dev *default_device = vga_default_device();
+ 	struct resource *res = NULL;
+-	int retval = 0;
+ 
+ 	if (device)
+ 		pci_dev = to_pci_dev(device);
+ 
+-	if (pci_dev)
+-		res = &pci_dev->resource[PCI_ROM_RESOURCE];
++	if (!pci_dev)
++		return 0;
++
++	if (default_device) {
++		if (pci_dev == default_device)
++			return 1;
++		else
++			return 0;
++	}
++
++	res = &pci_dev->resource[PCI_ROM_RESOURCE];
+ 
+ 	if (res && res->flags & IORESOURCE_ROM_SHADOW)
+-		retval = 1;
++		return 1;
+ 
+-	return retval;
++	return 0;
+ }
+ EXPORT_SYMBOL(fb_is_primary_device);
+ MODULE_LICENSE("GPL");
+diff --git a/drivers/gpu/vga/vga_switcheroo.c b/drivers/gpu/vga/vga_switcheroo.c
+index 9a2c805..44c664e 100644
+--- a/drivers/gpu/vga/vga_switcheroo.c
++++ b/drivers/gpu/vga/vga_switcheroo.c
+@@ -28,6 +28,8 @@
+ #include <linux/pci.h>
+ #include <linux/vga_switcheroo.h>
+ 
++#include <linux/vgaarb.h>
++
+ struct vga_switcheroo_client {
+ 	struct pci_dev *pdev;
+ 	struct fb_info *fb_info;
+@@ -140,7 +142,7 @@ int vga_switcheroo_register_client(struct pci_dev *pdev,
+ 	vgasr_priv.clients[index].reprobe = reprobe;
+ 	vgasr_priv.clients[index].can_switch = can_switch;
+ 	vgasr_priv.clients[index].id = -1;
+-	if (pdev->resource[PCI_ROM_RESOURCE].flags & IORESOURCE_ROM_SHADOW)
++	if (pdev == vga_default_device())
+ 		vgasr_priv.clients[index].active = true;
+ 
+ 	vgasr_priv.registered_clients |= (1 << index);
+@@ -248,9 +250,8 @@ static int vga_switchto_stage1(struct vga_switcheroo_client *new_client)
+ 	if (new_client->pwr_state == VGA_SWITCHEROO_OFF)
+ 		vga_switchon(new_client);
+ 
+-	/* swap shadow resource to denote boot VGA device has changed so X starts on new device */
+-	active->pdev->resource[PCI_ROM_RESOURCE].flags &= ~IORESOURCE_ROM_SHADOW;
+-	new_client->pdev->resource[PCI_ROM_RESOURCE].flags |= IORESOURCE_ROM_SHADOW;
++	vga_set_default_device(new_client->pdev);
++
+ 	return 0;
+ }
+ 
+diff --git a/drivers/gpu/vga/vgaarb.c b/drivers/gpu/vga/vgaarb.c
+index 111d956..e223b96 100644
+--- a/drivers/gpu/vga/vgaarb.c
++++ b/drivers/gpu/vga/vgaarb.c
+@@ -136,6 +136,11 @@ struct pci_dev *vga_default_device(void)
+ {
+ 	return vga_default;
+ }
++
++void vga_set_default_device(struct pci_dev *pdev)
++{
++	vga_default = pdev;
++}
+ #endif
+ 
+ static inline void vga_irq_set_state(struct vga_device *vgadev, bool state)
+@@ -605,10 +610,12 @@ static bool vga_arbiter_del_pci_device(struct pci_dev *pdev)
+ 		goto bail;
+ 	}
+ 
++#ifndef __ARCH_HAS_VGA_DEFAULT_DEVICE
+ 	if (vga_default == pdev) {
+ 		pci_dev_put(vga_default);
+ 		vga_default = NULL;
+ 	}
++#endif
+ 
+ 	if (vgadev->decodes & (VGA_RSRC_LEGACY_IO | VGA_RSRC_LEGACY_MEM))
+ 		vga_decode_count--;
+diff --git a/drivers/pci/pci-sysfs.c b/drivers/pci/pci-sysfs.c
+index a3cd8ca..7dd9f2b 100644
+--- a/drivers/pci/pci-sysfs.c
++++ b/drivers/pci/pci-sysfs.c
+@@ -27,6 +27,7 @@
+ #include <linux/security.h>
+ #include <linux/pci-aspm.h>
+ #include <linux/slab.h>
++#include <linux/vgaarb.h>
+ #include "pci.h"
+ 
+ static int sysfs_initialized;	/* = 0 */
+@@ -414,6 +415,10 @@ static ssize_t
+ boot_vga_show(struct device *dev, struct device_attribute *attr, char *buf)
+ {
+ 	struct pci_dev *pdev = to_pci_dev(dev);
++	struct pci_dev *vga_dev = vga_default_device();
++
++	if (vga_dev)
++		return sprintf(buf, "%u\n", (pdev == vga_dev));
+ 
+ 	return sprintf(buf, "%u\n",
+ 		!!(pdev->resource[PCI_ROM_RESOURCE].flags &
+diff --git a/drivers/video/efifb.c b/drivers/video/efifb.c
+index 784139a..66ed991 100644
+--- a/drivers/video/efifb.c
++++ b/drivers/video/efifb.c
+@@ -18,6 +18,8 @@
+ 
+ static bool request_mem_succeeded = false;
+ 
++static struct pci_dev *default_vga;
++
+ static struct fb_var_screeninfo efifb_defined __devinitdata = {
+ 	.activate		= FB_ACTIVATE_NOW,
+ 	.height			= -1,
+@@ -298,35 +300,70 @@ static struct fb_ops efifb_ops = {
+ 	.fb_imageblit	= cfb_imageblit,
+ };
+ 
++struct pci_dev *vga_default_device(void)
++{
++	return default_vga;
++}
++
++void vga_set_default_device(struct pci_dev *pdev)
++{
++	default_vga = pdev;
++}
++
+ static int __init efifb_setup(char *options)
+ {
+ 	char *this_opt;
+ 	int i;
++	struct pci_dev *dev = NULL;
++
++	if (options && *options) {
++		while ((this_opt = strsep(&options, ",")) != NULL) {
++			if (!*this_opt) continue;
++
++			for (i = 0; i < M_UNKNOWN; i++) {
++				if (!strcmp(this_opt, dmi_list[i].optname) &&
++				    dmi_list[i].base != 0) {
++					screen_info.lfb_base = dmi_list[i].base;
++					screen_info.lfb_linelength = dmi_list[i].stride;
++					screen_info.lfb_width = dmi_list[i].width;
++					screen_info.lfb_height = dmi_list[i].height;
++				}
++			}
++			if (!strncmp(this_opt, "base:", 5))
++				screen_info.lfb_base = simple_strtoul(this_opt+5, NULL, 0);
++			else if (!strncmp(this_opt, "stride:", 7))
++				screen_info.lfb_linelength = simple_strtoul(this_opt+7, NULL, 0) * 4;
++			else if (!strncmp(this_opt, "height:", 7))
++				screen_info.lfb_height = simple_strtoul(this_opt+7, NULL, 0);
++			else if (!strncmp(this_opt, "width:", 6))
++				screen_info.lfb_width = simple_strtoul(this_opt+6, NULL, 0);
++		}
++	}
+ 
+-	if (!options || !*options)
+-		return 0;
++	for_each_pci_dev(dev) {
++		int i;
+ 
+-	while ((this_opt = strsep(&options, ",")) != NULL) {
+-		if (!*this_opt) continue;
++		if ((dev->class >> 8) != PCI_CLASS_DISPLAY_VGA)
++			continue;
+ 
+-		for (i = 0; i < M_UNKNOWN; i++) {
+-			if (!strcmp(this_opt, dmi_list[i].optname) &&
+-					dmi_list[i].base != 0) {
+-				screen_info.lfb_base = dmi_list[i].base;
+-				screen_info.lfb_linelength = dmi_list[i].stride;
+-				screen_info.lfb_width = dmi_list[i].width;
+-				screen_info.lfb_height = dmi_list[i].height;
+-			}
++		for (i=0; i < DEVICE_COUNT_RESOURCE; i++) {
++			resource_size_t start, end;
++
++			if (!(pci_resource_flags(dev, i) & IORESOURCE_MEM))
++				continue;
++
++			start = pci_resource_start(dev, i);
++			end  = pci_resource_end(dev, i);
++
++			if (!start || !end)
++				continue;
++
++			if (screen_info.lfb_base >= start &&
++			    (screen_info.lfb_base + screen_info.lfb_size) < end)
++				default_vga = dev;
+ 		}
+-		if (!strncmp(this_opt, "base:", 5))
+-			screen_info.lfb_base = simple_strtoul(this_opt+5, NULL, 0);
+-		else if (!strncmp(this_opt, "stride:", 7))
+-			screen_info.lfb_linelength = simple_strtoul(this_opt+7, NULL, 0) * 4;
+-		else if (!strncmp(this_opt, "height:", 7))
+-			screen_info.lfb_height = simple_strtoul(this_opt+7, NULL, 0);
+-		else if (!strncmp(this_opt, "width:", 6))
+-			screen_info.lfb_width = simple_strtoul(this_opt+6, NULL, 0);
+ 	}
++
+ 	return 0;
+ }
+ 
+diff --git a/include/linux/vgaarb.h b/include/linux/vgaarb.h
+index 9c3120d..7ad7f2a 100644
+--- a/include/linux/vgaarb.h
++++ b/include/linux/vgaarb.h
+@@ -31,6 +31,7 @@
+ #ifndef LINUX_VGA_H
+ #define LINUX_VGA_H
+ 
++#include <video/vga.h>
+ 
+ /* Legacy VGA regions */
+ #define VGA_RSRC_NONE	       0x00
+@@ -177,10 +178,12 @@ extern void vga_put(struct pci_dev *pdev, unsigned int rsrc);
+  *     I suppose it's a matter of having the proper arch hook telling
+  *     us about it, so we basically never allow anybody to succeed a
+  *     vga_get()...
++ *
+  */
+ 
+ #ifndef __ARCH_HAS_VGA_DEFAULT_DEVICE
+ extern struct pci_dev *vga_default_device(void);
++extern void vga_set_default_device(struct pci_dev *pdev)
+ #endif
+ 
+ /**

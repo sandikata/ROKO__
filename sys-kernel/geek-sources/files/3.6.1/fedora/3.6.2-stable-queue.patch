@@ -1,0 +1,3967 @@
+From 9d6bd5f3d98404a9e6509f2c32d1f047029dae8f Mon Sep 17 00:00:00 2001
+From: Antonio Quartulli <ordex@autistici.org>
+Date: Tue, 2 Oct 2012 06:14:17 +0000
+Subject: 8021q: fix mac_len recomputation in vlan_untag()
+
+
+From: Antonio Quartulli <ordex@autistici.org>
+
+[ Upstream commit 5316cf9a5197eb80b2800e1acadde287924ca975 ]
+
+skb_reset_mac_len() relies on the value of the skb->network_header pointer,
+therefore we must wait for such pointer to be recalculated before computing
+the new mac_len value.
+
+Signed-off-by: Antonio Quartulli <ordex@autistici.org>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/8021q/vlan_core.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/net/8021q/vlan_core.c
++++ b/net/8021q/vlan_core.c
+@@ -105,7 +105,6 @@ static struct sk_buff *vlan_reorder_head
+ 		return NULL;
+ 	memmove(skb->data - ETH_HLEN, skb->data - VLAN_ETH_HLEN, 2 * ETH_ALEN);
+ 	skb->mac_header += VLAN_HLEN;
+-	skb_reset_mac_len(skb);
+ 	return skb;
+ }
+ 
+@@ -139,6 +138,8 @@ struct sk_buff *vlan_untag(struct sk_buf
+ 
+ 	skb_reset_network_header(skb);
+ 	skb_reset_transport_header(skb);
++	skb_reset_mac_len(skb);
++
+ 	return skb;
+ 
+ err_free:
+From fc54ab72959edbf229b65ac74b2f122d799ca002 Mon Sep 17 00:00:00 2001
+From: Lin Ming <ming.m.lin@intel.com>
+Date: Mon, 16 Jul 2012 16:30:21 +0800
+Subject: ACPI: run _OSC after ACPI_FULL_INITIALIZATION
+
+From: Lin Ming <ming.m.lin@intel.com>
+
+commit fc54ab72959edbf229b65ac74b2f122d799ca002 upstream.
+
+The _OSC method may exist in module level code,
+so it must be called after ACPI_FULL_INITIALIZATION
+
+On some new platforms with Zero-Power-Optical-Disk-Drive (ZPODD)
+support, this fix is necessary to save power.
+
+Signed-off-by: Lin Ming <ming.m.lin@intel.com>
+Tested-by: Aaron Lu <aaron.lu@intel.com>
+Signed-off-by: Len Brown <len.brown@intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/acpi/bus.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/drivers/acpi/bus.c
++++ b/drivers/acpi/bus.c
+@@ -994,8 +994,6 @@ static int __init acpi_bus_init(void)
+ 	status = acpi_ec_ecdt_probe();
+ 	/* Ignore result. Not having an ECDT is not fatal. */
+ 
+-	acpi_bus_osc_support();
+-
+ 	status = acpi_initialize_objects(ACPI_FULL_INITIALIZATION);
+ 	if (ACPI_FAILURE(status)) {
+ 		printk(KERN_ERR PREFIX "Unable to initialize ACPI objects\n");
+@@ -1003,6 +1001,12 @@ static int __init acpi_bus_init(void)
+ 	}
+ 
+ 	/*
++	 * _OSC method may exist in module level code,
++	 * so it must be run after ACPI_FULL_INITIALIZATION
++	 */
++	acpi_bus_osc_support();
++
++	/*
+ 	 * _PDC control method may load dynamic SSDT tables,
+ 	 * and we need to install the table handler before that.
+ 	 */
+From 8ef102c6b4bc996ff96ca52b34775fe931ec90c9 Mon Sep 17 00:00:00 2001
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+Date: Tue, 2 Oct 2012 17:08:30 +0100
+Subject: ARM: 7548/1: include linux/sched.h in syscall.h
+
+From: Wade Farnsworth <wade_farnsworth@mentor.com>
+
+commit 8ef102c6b4bc996ff96ca52b34775fe931ec90c9 upstream.
+
+The syscall tracing patch introduces a compile bug in lttng-modules
+when the latter calls syscall_get_nr(), similar to the following:
+
+<path-to-linux>/arch/arm/include/asm/syscall.h:21:2: error: implicit declaration of function 'task_thread_info' [-Werror=implicit-function-declaration]
+
+The issue is that we are using task_thread_info() in the
+syscall_get_nr() function in asm/syscall.h, but not explicitly
+including sched.h from this file, so we can expect this bug might
+surface any time that syscall_get_nr() is called.
+
+Explicitly including sched.h solves the problem.
+
+Signed-off-by: Wade Farnsworth <wade_farnsworth@mentor.com>
+Acked-by: Will Deacon <will.deacon@arm.com>
+Signed-off-by: Russell King <rmk+kernel@arm.linux.org.uk>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/arm/include/asm/syscall.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/arm/include/asm/syscall.h
++++ b/arch/arm/include/asm/syscall.h
+@@ -8,6 +8,7 @@
+ #define _ASM_ARM_SYSCALL_H
+ 
+ #include <linux/err.h>
++#include <linux/sched.h>
+ 
+ extern const unsigned long sys_call_table[];
+ 
+From 0eb5a35801df3c438ce3fc91310a415ea4452c00 Mon Sep 17 00:00:00 2001
+From: Fabio Estevam <fabio.estevam@freescale.com>
+Date: Thu, 4 Oct 2012 17:11:16 -0700
+Subject: drivers/dma/dmaengine.c: lower the priority of 'failed to get' dma channel message
+
+From: Fabio Estevam <fabio.estevam@freescale.com>
+
+commit 0eb5a35801df3c438ce3fc91310a415ea4452c00 upstream.
+
+Do the same as commit a03a202e95fd ("dmaengine: failure to get a
+specific DMA channel is not critical") to get rid of the following
+messages during kernel boot:
+
+  dmaengine_get: failed to get dma1chan0: (-22)
+  dmaengine_get: failed to get dma1chan1: (-22)
+  dmaengine_get: failed to get dma1chan2: (-22)
+  dmaengine_get: failed to get dma1chan3: (-22)
+  ..
+
+Signed-off-by: Fabio Estevam <fabio.estevam@freescale.com>
+Cc: Vinod Koul <vinod.koul@intel.com>
+Cc: Dan Williams <dan.j.williams@intel.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/dma/dmaengine.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/dma/dmaengine.c
++++ b/drivers/dma/dmaengine.c
+@@ -582,7 +582,7 @@ void dmaengine_get(void)
+ 				list_del_rcu(&device->global_node);
+ 				break;
+ 			} else if (err)
+-				pr_err("%s: failed to get %s: (%d)\n",
++				pr_debug("%s: failed to get %s: (%d)\n",
+ 				       __func__, dma_chan_name(chan), err);
+ 		}
+ 	}
+From 0f6d93aa9d96cc9022b51bd10d462b03296be146 Mon Sep 17 00:00:00 2001
+From: Martin Michlmayr <tbm@cyrius.com>
+Date: Thu, 4 Oct 2012 17:11:25 -0700
+Subject: drivers/scsi/atp870u.c: fix bad use of udelay
+
+From: Martin Michlmayr <tbm@cyrius.com>
+
+commit 0f6d93aa9d96cc9022b51bd10d462b03296be146 upstream.
+
+The ACARD driver calls udelay() with a value > 2000, which leads to to
+the following compilation error on ARM:
+
+  ERROR: "__bad_udelay" [drivers/scsi/atp870u.ko] undefined!
+  make[1]: *** [__modpost] Error 1
+
+This is because udelay is defined on ARM, roughly speaking, as
+
+	#define udelay(n) ((n) > 2000 ? __bad_udelay() : \
+		__const_udelay((n) * ((2199023U*HZ)>>11)))
+
+The argument to __const_udelay is the number of jiffies to wait divided
+by 4, but this does not work unless the multiplication does not
+overflow, and that is what the build error is designed to prevent.  The
+intended behavior can be achieved by using mdelay to call udelay
+multiple times in a loop.
+
+[jrnieder@gmail.com: adding context]
+Signed-off-by: Martin Michlmayr <tbm@cyrius.com>
+Signed-off-by: Jonathan Nieder <jrnieder@gmail.com>
+Cc: James Bottomley <James.Bottomley@HansenPartnership.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/scsi/atp870u.c |   11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+--- a/drivers/scsi/atp870u.c
++++ b/drivers/scsi/atp870u.c
+@@ -1173,7 +1173,16 @@ wait_io1:
+ 	outw(val, tmport);
+ 	outb(2, 0x80);
+ TCM_SYNC:
+-	udelay(0x800);
++	/*
++	 * The funny division into multiple delays is to accomodate
++	 * arches like ARM where udelay() multiplies its argument by
++	 * a large number to initialize a loop counter.  To avoid
++	 * overflow, the maximum supported udelay is 2000 microseconds.
++	 *
++	 * XXX it would be more polite to find a way to use msleep()
++	 */
++	mdelay(2);
++	udelay(48);
+ 	if ((inb(tmport) & 0x80) == 0x00) {	/* bsy ? */
+ 		outw(0, tmport--);
+ 		outb(0, tmport);
+From df86b5765a48d5f557489577652bd6df145b0e1b Mon Sep 17 00:00:00 2001
+From: Florian Zumbiehl <florz@florz.de>
+Date: Tue, 2 Oct 2012 12:20:37 +0000
+Subject: drm/savage: re-add busmaster enable, regression fix
+
+From: Florian Zumbiehl <florz@florz.de>
+
+commit df86b5765a48d5f557489577652bd6df145b0e1b upstream.
+
+466e69b8b03b8c1987367912782bc12988ad8794 dropped busmaster enable from the
+global drm code and moved it to the individual drivers, but missed the savage
+driver. So, this re-adds busmaster enable to the savage driver, fixing the
+regression.
+
+Signed-off-by: Florian Zumbiehl <florz@florz.de>
+Reviewed-by: Alex Deucher <alexdeucher@gmail.com>
+Signed-off-by: Dave Airlie <airlied@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/gpu/drm/savage/savage_bci.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/gpu/drm/savage/savage_bci.c
++++ b/drivers/gpu/drm/savage/savage_bci.c
+@@ -547,6 +547,8 @@ int savage_driver_load(struct drm_device
+ 
+ 	dev_priv->chipset = (enum savage_family)chipset;
+ 
++	pci_set_master(dev->pdev);
++
+ 	return 0;
+ }
+ 
+From 8e30783b0b3270736b2cff6415c68b894bc411df Mon Sep 17 00:00:00 2001
+From: Mauro Carvalho Chehab <mchehab@redhat.com>
+Date: Tue, 2 Oct 2012 16:01:15 -0300
+Subject: drxk: allow loading firmware synchrousnously
+
+From: Mauro Carvalho Chehab <mchehab@redhat.com>
+
+commit 8e30783b0b3270736b2cff6415c68b894bc411df upstream.
+
+Due to udev-182, the firmware load was changed to be async, as
+otherwise udev would give up of loading a firmware.
+
+Add an option to return to the previous behaviour, async firmware
+loads cause failures with the tda18271 driver.
+
+Antti tested it with the following hardware:
+        Hauppauge WinTV HVR 930C
+        MaxMedia UB425-TC
+        PCTV QuatroStick nano (520e)
+
+Tested-by: Antti Palosaari <crope@iki.fi>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/media/dvb/frontends/drxk.h      |    2 ++
+ drivers/media/dvb/frontends/drxk_hard.c |   20 +++++++++++++++-----
+ 2 files changed, 17 insertions(+), 5 deletions(-)
+
+--- a/drivers/media/dvb/frontends/drxk.h
++++ b/drivers/media/dvb/frontends/drxk.h
+@@ -28,6 +28,7 @@
+  *				A value of 0 (default) or lower indicates that
+  *				the correct number of parameters will be
+  *				automatically detected.
++ * @load_firmware_sync:		Force the firmware load to be synchronous.
+  *
+  * On the *_gpio vars, bit 0 is UIO-1, bit 1 is UIO-2 and bit 2 is
+  * UIO-3.
+@@ -39,6 +40,7 @@ struct drxk_config {
+ 	bool	parallel_ts;
+ 	bool	dynamic_clk;
+ 	bool	enable_merr_cfg;
++	bool	load_firmware_sync;
+ 
+ 	bool	antenna_dvbt;
+ 	u16	antenna_gpio;
+--- a/drivers/media/dvb/frontends/drxk_hard.c
++++ b/drivers/media/dvb/frontends/drxk_hard.c
+@@ -6609,15 +6609,25 @@ struct dvb_frontend *drxk_attach(const s
+ 
+ 	/* Load firmware and initialize DRX-K */
+ 	if (state->microcode_name) {
+-		status = request_firmware_nowait(THIS_MODULE, 1,
++		if (config->load_firmware_sync) {
++			const struct firmware *fw = NULL;
++
++			status = request_firmware(&fw, state->microcode_name,
++						  state->i2c->dev.parent);
++			if (status < 0)
++				fw = NULL;
++			load_firmware_cb(fw, state);
++		} else {
++			status = request_firmware_nowait(THIS_MODULE, 1,
+ 					      state->microcode_name,
+ 					      state->i2c->dev.parent,
+ 					      GFP_KERNEL,
+ 					      state, load_firmware_cb);
+-		if (status < 0) {
+-			printk(KERN_ERR
+-			"drxk: failed to request a firmware\n");
+-			return NULL;
++			if (status < 0) {
++				printk(KERN_ERR
++				       "drxk: failed to request a firmware\n");
++				return NULL;
++			}
+ 		}
+ 	} else if (init_drxk(state) < 0)
+ 		goto error;
+From 6ae5e060840589f567c1837613e8a9d34fc9188a Mon Sep 17 00:00:00 2001
+From: Mauro Carvalho Chehab <mchehab@redhat.com>
+Date: Tue, 2 Oct 2012 15:35:27 -0300
+Subject: em28xx: Make all em28xx extensions to be initialized asynchronously
+
+From: Mauro Carvalho Chehab <mchehab@redhat.com>
+
+commit 6ae5e060840589f567c1837613e8a9d34fc9188a upstream.
+
+em28xx-dvb, em28xx-alsa and em28xx-ir are typically initialized
+asyncrhronously. The exception for it is when those modules
+are loaded before em28xx (or before an em28xx card insertion) or
+when they're built in.
+
+Make the extentions to always load asynchronously. That allows
+having all DVB firmwares loaded synchronously with udev-182.
+
+Antti tested it with the following hardware:
+	Hauppauge WinTV HVR 930C
+	MaxMedia UB425-TC
+	PCTV QuatroStick nano (520e)
+
+Tested-by: Antti Palosaari <crope@iki.fi>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/media/video/em28xx/em28xx-cards.c |   22 ++++++++++------------
+ 1 file changed, 10 insertions(+), 12 deletions(-)
+
+--- a/drivers/media/video/em28xx/em28xx-cards.c
++++ b/drivers/media/video/em28xx/em28xx-cards.c
+@@ -2875,12 +2875,20 @@ static void em28xx_card_setup(struct em2
+ }
+ 
+ 
+-#if defined(CONFIG_MODULES) && defined(MODULE)
+ static void request_module_async(struct work_struct *work)
+ {
+ 	struct em28xx *dev = container_of(work,
+ 			     struct em28xx, request_module_wk);
+ 
++	/*
++	 * The em28xx extensions can be modules or builtin. If the
++	 * modules are already loaded or are built in, those extensions
++	 * can be initialised right now. Otherwise, the module init
++	 * code will do it.
++	 */
++	em28xx_init_extension(dev);
++
++#if defined(CONFIG_MODULES) && defined(MODULE)
+ 	if (dev->has_audio_class)
+ 		request_module("snd-usb-audio");
+ 	else if (dev->has_alsa_audio)
+@@ -2890,6 +2898,7 @@ static void request_module_async(struct
+ 		request_module("em28xx-dvb");
+ 	if (dev->board.ir_codes && !disable_ir)
+ 		request_module("em28xx-rc");
++#endif /* CONFIG_MODULES */
+ }
+ 
+ static void request_modules(struct em28xx *dev)
+@@ -2902,10 +2911,6 @@ static void flush_request_modules(struct
+ {
+ 	flush_work_sync(&dev->request_module_wk);
+ }
+-#else
+-#define request_modules(dev)
+-#define flush_request_modules(dev)
+-#endif /* CONFIG_MODULES */
+ 
+ /*
+  * em28xx_release_resources()
+@@ -3324,13 +3329,6 @@ static int em28xx_usb_probe(struct usb_i
+ 	 */
+ 	mutex_unlock(&dev->lock);
+ 
+-	/*
+-	 * These extensions can be modules. If the modules are already
+-	 * loaded then we can initialise the device now, otherwise we
+-	 * will initialise it when the modules load instead.
+-	 */
+-	em28xx_init_extension(dev);
+-
+ 	return 0;
+ 
+ unlock_and_free:
+From 6a08f447facb4f9e29fcc30fb68060bb5a0d21c2 Mon Sep 17 00:00:00 2001
+From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+Date: Wed, 26 Sep 2012 21:24:57 -0400
+Subject: ext4: always set i_op in ext4_mknod()
+
+From: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+
+commit 6a08f447facb4f9e29fcc30fb68060bb5a0d21c2 upstream.
+
+ext4_special_inode_operations have their own ifdef CONFIG_EXT4_FS_XATTR
+to mask those methods. And ext4_iget also always sets it, so there is
+an inconsistency.
+
+Signed-off-by: Bernd Schubert <bernd.schubert@itwm.fraunhofer.de>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/namei.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -2149,9 +2149,7 @@ retry:
+ 	err = PTR_ERR(inode);
+ 	if (!IS_ERR(inode)) {
+ 		init_special_inode(inode, inode->i_mode, rdev);
+-#ifdef CONFIG_EXT4_FS_XATTR
+ 		inode->i_op = &ext4_special_inode_operations;
+-#endif
+ 		err = ext4_add_nondir(handle, dentry, inode);
+ 	}
+ 	ext4_journal_stop(handle);
+From 2ebd1704ded88a8ae29b5f3998b13959c715c4be Mon Sep 17 00:00:00 2001
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Date: Wed, 5 Sep 2012 01:27:50 -0400
+Subject: ext4: avoid duplicate writes of the backup bg descriptor blocks
+
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+
+commit 2ebd1704ded88a8ae29b5f3998b13959c715c4be upstream.
+
+The resize code was needlessly writing the backup block group
+descriptor blocks multiple times (once per block group) during an
+online resize.
+
+Signed-off-by: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/resize.c |   10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+--- a/fs/ext4/resize.c
++++ b/fs/ext4/resize.c
+@@ -1358,13 +1358,15 @@ exit_journal:
+ 		err = err2;
+ 
+ 	if (!err) {
+-		int i;
++		int gdb_num = group / EXT4_DESC_PER_BLOCK(sb);
++		int gdb_num_end = ((group + flex_gd->count - 1) /
++				   EXT4_DESC_PER_BLOCK(sb));
++
+ 		update_backups(sb, sbi->s_sbh->b_blocknr, (char *)es,
+ 			       sizeof(struct ext4_super_block));
+-		for (i = 0; i < flex_gd->count; i++, group++) {
++		for (; gdb_num <= gdb_num_end; gdb_num++) {
+ 			struct buffer_head *gdb_bh;
+-			int gdb_num;
+-			gdb_num = group / EXT4_BLOCKS_PER_GROUP(sb);
++
+ 			gdb_bh = sbi->s_group_desc[gdb_num];
+ 			update_backups(sb, gdb_bh->b_blocknr, gdb_bh->b_data,
+ 				       gdb_bh->b_size);
+From 6df935ad2fced9033ab52078825fcaf6365f34b7 Mon Sep 17 00:00:00 2001
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Date: Wed, 5 Sep 2012 01:25:50 -0400
+Subject: ext4: don't copy non-existent gdt blocks when resizing
+
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+
+commit 6df935ad2fced9033ab52078825fcaf6365f34b7 upstream.
+
+The resize code was copying blocks at the beginning of each block
+group in order to copy the superblock and block group descriptor table
+(gdt) blocks.  This was, unfortunately, being done even for block
+groups that did not have super blocks or gdt blocks.  This is a
+complete waste of perfectly good I/O bandwidth, to skip writing those
+blocks for sparse bg's.
+
+Signed-off-by: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/resize.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/fs/ext4/resize.c
++++ b/fs/ext4/resize.c
+@@ -456,6 +456,9 @@ static int setup_new_flex_group_blocks(s
+ 		gdblocks = ext4_bg_num_gdb(sb, group);
+ 		start = ext4_group_first_block_no(sb, group);
+ 
++		if (!ext4_bg_has_super(sb, group))
++			goto handle_itb;
++
+ 		/* Copy all of the GDT blocks into the backup in this group */
+ 		for (j = 0, block = start + 1; j < gdblocks; j++, block++) {
+ 			struct buffer_head *gdb;
+@@ -498,6 +501,7 @@ static int setup_new_flex_group_blocks(s
+ 				goto out;
+ 		}
+ 
++handle_itb:
+ 		/* Initialize group tables of the grop @group */
+ 		if (!(bg_flags[i] & EXT4_BG_INODE_ZEROED))
+ 			goto handle_bb;
+From 50df9fd55e4271e89a7adf3b1172083dd0ca199d Mon Sep 17 00:00:00 2001
+From: Herton Ronaldo Krzesinski <herton.krzesinski@canonical.com>
+Date: Sun, 23 Sep 2012 22:49:12 -0400
+Subject: ext4: fix crash when accessing /proc/mounts concurrently
+
+From: Herton Ronaldo Krzesinski <herton.krzesinski@canonical.com>
+
+commit 50df9fd55e4271e89a7adf3b1172083dd0ca199d upstream.
+
+The crash was caused by a variable being erronously declared static in
+token2str().
+
+In addition to /proc/mounts, the problem can also be easily replicated
+by accessing /proc/fs/ext4/<partition>/options in parallel:
+
+$ cat /proc/fs/ext4/<partition>/options > options.txt
+
+... and then running the following command in two different terminals:
+
+$ while diff /proc/fs/ext4/<partition>/options options.txt; do true; done
+
+This is also the cause of the following a crash while running xfstests
+#234, as reported in the following bug reports:
+
+	https://bugs.launchpad.net/bugs/1053019
+	https://bugzilla.kernel.org/show_bug.cgi?id=47731
+
+Signed-off-by: Herton Ronaldo Krzesinski <herton.krzesinski@canonical.com>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Cc: Brad Figg <brad.figg@canonical.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/super.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -1735,7 +1735,7 @@ static inline void ext4_show_quota_optio
+ 
+ static const char *token2str(int token)
+ {
+-	static const struct match_token *t;
++	const struct match_token *t;
+ 
+ 	for (t = tokens; t->token != Opt_err; t++)
+ 		if (t->token == token && !strchr(t->pattern, '='))
+From b71fc079b5d8f42b2a52743c8d2f1d35d655b1c5 Mon Sep 17 00:00:00 2001
+From: Jan Kara <jack@suse.cz>
+Date: Wed, 26 Sep 2012 21:52:20 -0400
+Subject: ext4: fix fdatasync() for files with only i_size changes
+
+From: Jan Kara <jack@suse.cz>
+
+commit b71fc079b5d8f42b2a52743c8d2f1d35d655b1c5 upstream.
+
+Code tracking when transaction needs to be committed on fdatasync(2) forgets
+to handle a situation when only inode's i_size is changed. Thus in such
+situations fdatasync(2) doesn't force transaction with new i_size to disk
+and that can result in wrong i_size after a crash.
+
+Fix the issue by updating inode's i_datasync_tid whenever its size is
+updated.
+
+Reported-by: Kristian Nielsen <knielsen@knielsen-hq.org>
+Signed-off-by: Jan Kara <jack@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/inode.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -4055,6 +4055,7 @@ static int ext4_do_update_inode(handle_t
+ 	struct ext4_inode_info *ei = EXT4_I(inode);
+ 	struct buffer_head *bh = iloc->bh;
+ 	int err = 0, rc, block;
++	int need_datasync = 0;
+ 	uid_t i_uid;
+ 	gid_t i_gid;
+ 
+@@ -4105,7 +4106,10 @@ static int ext4_do_update_inode(handle_t
+ 		raw_inode->i_file_acl_high =
+ 			cpu_to_le16(ei->i_file_acl >> 32);
+ 	raw_inode->i_file_acl_lo = cpu_to_le32(ei->i_file_acl);
+-	ext4_isize_set(raw_inode, ei->i_disksize);
++	if (ei->i_disksize != ext4_isize(raw_inode)) {
++		ext4_isize_set(raw_inode, ei->i_disksize);
++		need_datasync = 1;
++	}
+ 	if (ei->i_disksize > 0x7fffffffULL) {
+ 		struct super_block *sb = inode->i_sb;
+ 		if (!EXT4_HAS_RO_COMPAT_FEATURE(sb,
+@@ -4158,7 +4162,7 @@ static int ext4_do_update_inode(handle_t
+ 		err = rc;
+ 	ext4_clear_inode_state(inode, EXT4_STATE_NEW);
+ 
+-	ext4_update_inode_fsync_trans(handle, inode, 0);
++	ext4_update_inode_fsync_trans(handle, inode, need_datasync);
+ out_brelse:
+ 	brelse(bh);
+ 	ext4_std_error(inode->i_sb, err);
+From 00d4e7362ed01987183e9528295de3213031309c Mon Sep 17 00:00:00 2001
+From: Theodore Ts'o <tytso@mit.edu>
+Date: Wed, 19 Sep 2012 22:42:36 -0400
+Subject: ext4: fix potential deadlock in ext4_nonda_switch()
+
+From: Theodore Ts'o <tytso@mit.edu>
+
+commit 00d4e7362ed01987183e9528295de3213031309c upstream.
+
+In ext4_nonda_switch(), if the file system is getting full we used to
+call writeback_inodes_sb_if_idle().  The problem is that we can be
+holding i_mutex already, and this causes a potential deadlock when
+writeback_inodes_sb_if_idle() when it tries to take s_umount.  (See
+lockdep output below).
+
+As it turns out we don't need need to hold s_umount; the fact that we
+are in the middle of the write(2) system call will keep the superblock
+pinned.  Unfortunately writeback_inodes_sb() checks to make sure
+s_umount is taken, and the VFS uses a different mechanism for making
+sure the file system doesn't get unmounted out from under us.  The
+simplest way of dealing with this is to just simply grab s_umount
+using a trylock, and skip kicking the writeback flusher thread in the
+very unlikely case that we can't take a read lock on s_umount without
+blocking.
+
+Also, we now check the cirteria for kicking the writeback thread
+before we decide to whether to fall back to non-delayed writeback, so
+if there are any outstanding delayed allocation writes, we try to get
+them resolved as soon as possible.
+
+   [ INFO: possible circular locking dependency detected ]
+   3.6.0-rc1-00042-gce894ca #367 Not tainted
+   -------------------------------------------------------
+   dd/8298 is trying to acquire lock:
+    (&type->s_umount_key#18){++++..}, at: [<c02277d4>] writeback_inodes_sb_if_idle+0x28/0x46
+
+   but task is already holding lock:
+    (&sb->s_type->i_mutex_key#8){+.+...}, at: [<c01ddcce>] generic_file_aio_write+0x5f/0xd3
+
+   which lock already depends on the new lock.
+
+   2 locks held by dd/8298:
+    #0:  (sb_writers#2){.+.+.+}, at: [<c01ddcc5>] generic_file_aio_write+0x56/0xd3
+    #1:  (&sb->s_type->i_mutex_key#8){+.+...}, at: [<c01ddcce>] generic_file_aio_write+0x5f/0xd3
+
+   stack backtrace:
+   Pid: 8298, comm: dd Not tainted 3.6.0-rc1-00042-gce894ca #367
+   Call Trace:
+    [<c015b79c>] ? console_unlock+0x345/0x372
+    [<c06d62a1>] print_circular_bug+0x190/0x19d
+    [<c019906c>] __lock_acquire+0x86d/0xb6c
+    [<c01999db>] ? mark_held_locks+0x5c/0x7b
+    [<c0199724>] lock_acquire+0x66/0xb9
+    [<c02277d4>] ? writeback_inodes_sb_if_idle+0x28/0x46
+    [<c06db935>] down_read+0x28/0x58
+    [<c02277d4>] ? writeback_inodes_sb_if_idle+0x28/0x46
+    [<c02277d4>] writeback_inodes_sb_if_idle+0x28/0x46
+    [<c026f3b2>] ext4_nonda_switch+0xe1/0xf4
+    [<c0271ece>] ext4_da_write_begin+0x27/0x193
+    [<c01dcdb0>] generic_file_buffered_write+0xc8/0x1bb
+    [<c01ddc47>] __generic_file_aio_write+0x1dd/0x205
+    [<c01ddce7>] generic_file_aio_write+0x78/0xd3
+    [<c026d336>] ext4_file_write+0x480/0x4a6
+    [<c0198c1d>] ? __lock_acquire+0x41e/0xb6c
+    [<c0180944>] ? sched_clock_cpu+0x11a/0x13e
+    [<c01967e9>] ? trace_hardirqs_off+0xb/0xd
+    [<c018099f>] ? local_clock+0x37/0x4e
+    [<c0209f2c>] do_sync_write+0x67/0x9d
+    [<c0209ec5>] ? wait_on_retry_sync_kiocb+0x44/0x44
+    [<c020a7b9>] vfs_write+0x7b/0xe6
+    [<c020a9a6>] sys_write+0x3b/0x64
+    [<c06dd4bd>] syscall_call+0x7/0xb
+
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/inode.c   |   17 ++++++++++-------
+ fs/fs-writeback.c |    1 +
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -2463,6 +2463,16 @@ static int ext4_nonda_switch(struct supe
+ 	free_blocks  = EXT4_C2B(sbi,
+ 		percpu_counter_read_positive(&sbi->s_freeclusters_counter));
+ 	dirty_blocks = percpu_counter_read_positive(&sbi->s_dirtyclusters_counter);
++	/*
++	 * Start pushing delalloc when 1/2 of free blocks are dirty.
++	 */
++	if (dirty_blocks && (free_blocks < 2 * dirty_blocks) &&
++	    !writeback_in_progress(sb->s_bdi) &&
++	    down_read_trylock(&sb->s_umount)) {
++		writeback_inodes_sb(sb, WB_REASON_FS_FREE_SPACE);
++		up_read(&sb->s_umount);
++	}
++
+ 	if (2 * free_blocks < 3 * dirty_blocks ||
+ 		free_blocks < (dirty_blocks + EXT4_FREECLUSTERS_WATERMARK)) {
+ 		/*
+@@ -2471,13 +2481,6 @@ static int ext4_nonda_switch(struct supe
+ 		 */
+ 		return 1;
+ 	}
+-	/*
+-	 * Even if we don't switch but are nearing capacity,
+-	 * start pushing delalloc when 1/2 of free blocks are dirty.
+-	 */
+-	if (free_blocks < 2 * dirty_blocks)
+-		writeback_inodes_sb_if_idle(sb, WB_REASON_FS_FREE_SPACE);
+-
+ 	return 0;
+ }
+ 
+--- a/fs/fs-writeback.c
++++ b/fs/fs-writeback.c
+@@ -63,6 +63,7 @@ int writeback_in_progress(struct backing
+ {
+ 	return test_bit(BDI_writeback_running, &bdi->state);
+ }
++EXPORT_SYMBOL(writeback_in_progress);
+ 
+ static inline struct backing_dev_info *inode_to_bdi(struct inode *inode)
+ {
+From 03c1c29053f678234dbd51bf3d65f3b7529021de Mon Sep 17 00:00:00 2001
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Date: Wed, 5 Sep 2012 01:21:50 -0400
+Subject: ext4: ignore last group w/o enough space when resizing instead of BUG'ing
+
+From: Yongqiang Yang <xiaoqiangnk@gmail.com>
+
+commit 03c1c29053f678234dbd51bf3d65f3b7529021de upstream.
+
+If the last group does not have enough space for group tables, ignore
+it instead of calling BUG_ON().
+
+Reported-by: Daniel Drake <dsd@laptop.org>
+Signed-off-by: Yongqiang Yang <xiaoqiangnk@gmail.com>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/resize.c |   12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+
+--- a/fs/ext4/resize.c
++++ b/fs/ext4/resize.c
+@@ -200,8 +200,11 @@ static void free_flex_gd(struct ext4_new
+  * be a partial of a flex group.
+  *
+  * @sb: super block of fs to which the groups belongs
++ *
++ * Returns 0 on a successful allocation of the metadata blocks in the
++ * block group.
+  */
+-static void ext4_alloc_group_tables(struct super_block *sb,
++static int ext4_alloc_group_tables(struct super_block *sb,
+ 				struct ext4_new_flex_group_data *flex_gd,
+ 				int flexbg_size)
+ {
+@@ -226,6 +229,8 @@ static void ext4_alloc_group_tables(stru
+ 	       (last_group & ~(flexbg_size - 1))));
+ next_group:
+ 	group = group_data[0].group;
++	if (src_group >= group_data[0].group + flex_gd->count)
++		return -ENOSPC;
+ 	start_blk = ext4_group_first_block_no(sb, src_group);
+ 	last_blk = start_blk + group_data[src_group - group].blocks_count;
+ 
+@@ -235,7 +240,6 @@ next_group:
+ 
+ 	start_blk += overhead;
+ 
+-	BUG_ON(src_group >= group_data[0].group + flex_gd->count);
+ 	/* We collect contiguous blocks as much as possible. */
+ 	src_group++;
+ 	for (; src_group <= last_group; src_group++)
+@@ -300,6 +304,7 @@ next_group:
+ 			       group_data[i].free_blocks_count);
+ 		}
+ 	}
++	return 0;
+ }
+ 
+ static struct buffer_head *bclean(handle_t *handle, struct super_block *sb,
+@@ -1729,7 +1734,8 @@ int ext4_resize_fs(struct super_block *s
+ 	 */
+ 	while (ext4_setup_next_flex_gd(sb, flex_gd, n_blocks_count,
+ 					      flexbg_size)) {
+-		ext4_alloc_group_tables(sb, flex_gd, flexbg_size);
++		if (ext4_alloc_group_tables(sb, flex_gd, flexbg_size) != 0)
++			break;
+ 		err = ext4_flex_group_add(sb, resize_inode, flex_gd);
+ 		if (unlikely(err))
+ 			break;
+From 03bd8b9b896c8e940f282f540e6b4de90d666b7c Mon Sep 17 00:00:00 2001
+From: Dmitry Monakhov <dmonakhov@openvz.org>
+Date: Wed, 26 Sep 2012 12:32:19 -0400
+Subject: ext4: move_extent code cleanup
+
+From: Dmitry Monakhov <dmonakhov@openvz.org>
+
+commit 03bd8b9b896c8e940f282f540e6b4de90d666b7c upstream.
+
+- Remove usless checks, because it is too late to check that inode != NULL
+  at the moment it was referenced several times.
+- Double lock routines looks very ugly and locking ordering relays on
+  order of i_ino, but other kernel code rely on order of pointers.
+  Let's make them simple and clean.
+- check that inodes belongs to the same SB as soon as possible.
+
+Signed-off-by: Dmitry Monakhov <dmonakhov@openvz.org>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/move_extent.c |  167 ++++++++++++++------------------------------------
+ 1 file changed, 47 insertions(+), 120 deletions(-)
+
+--- a/fs/ext4/move_extent.c
++++ b/fs/ext4/move_extent.c
+@@ -141,55 +141,21 @@ mext_next_extent(struct inode *inode, st
+ }
+ 
+ /**
+- * mext_check_null_inode - NULL check for two inodes
+- *
+- * If inode1 or inode2 is NULL, return -EIO. Otherwise, return 0.
+- */
+-static int
+-mext_check_null_inode(struct inode *inode1, struct inode *inode2,
+-		      const char *function, unsigned int line)
+-{
+-	int ret = 0;
+-
+-	if (inode1 == NULL) {
+-		__ext4_error(inode2->i_sb, function, line,
+-			"Both inodes should not be NULL: "
+-			"inode1 NULL inode2 %lu", inode2->i_ino);
+-		ret = -EIO;
+-	} else if (inode2 == NULL) {
+-		__ext4_error(inode1->i_sb, function, line,
+-			"Both inodes should not be NULL: "
+-			"inode1 %lu inode2 NULL", inode1->i_ino);
+-		ret = -EIO;
+-	}
+-	return ret;
+-}
+-
+-/**
+  * double_down_write_data_sem - Acquire two inodes' write lock of i_data_sem
+  *
+- * @orig_inode:		original inode structure
+- * @donor_inode:	donor inode structure
+- * Acquire write lock of i_data_sem of the two inodes (orig and donor) by
+- * i_ino order.
++ * Acquire write lock of i_data_sem of the two inodes
+  */
+ static void
+-double_down_write_data_sem(struct inode *orig_inode, struct inode *donor_inode)
++double_down_write_data_sem(struct inode *first, struct inode *second)
+ {
+-	struct inode *first = orig_inode, *second = donor_inode;
++	if (first < second) {
++		down_write(&EXT4_I(first)->i_data_sem);
++		down_write_nested(&EXT4_I(second)->i_data_sem, SINGLE_DEPTH_NESTING);
++	} else {
++		down_write(&EXT4_I(second)->i_data_sem);
++		down_write_nested(&EXT4_I(first)->i_data_sem, SINGLE_DEPTH_NESTING);
+ 
+-	/*
+-	 * Use the inode number to provide the stable locking order instead
+-	 * of its address, because the C language doesn't guarantee you can
+-	 * compare pointers that don't come from the same array.
+-	 */
+-	if (donor_inode->i_ino < orig_inode->i_ino) {
+-		first = donor_inode;
+-		second = orig_inode;
+ 	}
+-
+-	down_write(&EXT4_I(first)->i_data_sem);
+-	down_write_nested(&EXT4_I(second)->i_data_sem, SINGLE_DEPTH_NESTING);
+ }
+ 
+ /**
+@@ -969,14 +935,6 @@ mext_check_arguments(struct inode *orig_
+ 		return -EINVAL;
+ 	}
+ 
+-	/* Files should be in the same ext4 FS */
+-	if (orig_inode->i_sb != donor_inode->i_sb) {
+-		ext4_debug("ext4 move extent: The argument files "
+-			"should be in same FS [ino:orig %lu, donor %lu]\n",
+-			orig_inode->i_ino, donor_inode->i_ino);
+-		return -EINVAL;
+-	}
+-
+ 	/* Ext4 move extent supports only extent based file */
+ 	if (!(ext4_test_inode_flag(orig_inode, EXT4_INODE_EXTENTS))) {
+ 		ext4_debug("ext4 move extent: orig file is not extents "
+@@ -1072,35 +1030,19 @@ mext_check_arguments(struct inode *orig_
+  * @inode1:	the inode structure
+  * @inode2:	the inode structure
+  *
+- * Lock two inodes' i_mutex by i_ino order.
+- * If inode1 or inode2 is NULL, return -EIO. Otherwise, return 0.
++ * Lock two inodes' i_mutex
+  */
+-static int
++static void
+ mext_inode_double_lock(struct inode *inode1, struct inode *inode2)
+ {
+-	int ret = 0;
+-
+-	BUG_ON(inode1 == NULL && inode2 == NULL);
+-
+-	ret = mext_check_null_inode(inode1, inode2, __func__, __LINE__);
+-	if (ret < 0)
+-		goto out;
+-
+-	if (inode1 == inode2) {
+-		mutex_lock(&inode1->i_mutex);
+-		goto out;
+-	}
+-
+-	if (inode1->i_ino < inode2->i_ino) {
++	BUG_ON(inode1 == inode2);
++	if (inode1 < inode2) {
+ 		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
+ 		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
+ 	} else {
+ 		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_PARENT);
+ 		mutex_lock_nested(&inode1->i_mutex, I_MUTEX_CHILD);
+ 	}
+-
+-out:
+-	return ret;
+ }
+ 
+ /**
+@@ -1109,28 +1051,13 @@ out:
+  * @inode1:     the inode that is released first
+  * @inode2:     the inode that is released second
+  *
+- * If inode1 or inode2 is NULL, return -EIO. Otherwise, return 0.
+  */
+ 
+-static int
++static void
+ mext_inode_double_unlock(struct inode *inode1, struct inode *inode2)
+ {
+-	int ret = 0;
+-
+-	BUG_ON(inode1 == NULL && inode2 == NULL);
+-
+-	ret = mext_check_null_inode(inode1, inode2, __func__, __LINE__);
+-	if (ret < 0)
+-		goto out;
+-
+-	if (inode1)
+-		mutex_unlock(&inode1->i_mutex);
+-
+-	if (inode2 && inode2 != inode1)
+-		mutex_unlock(&inode2->i_mutex);
+-
+-out:
+-	return ret;
++	mutex_unlock(&inode1->i_mutex);
++	mutex_unlock(&inode2->i_mutex);
+ }
+ 
+ /**
+@@ -1187,16 +1114,23 @@ ext4_move_extents(struct file *o_filp, s
+ 	ext4_lblk_t block_end, seq_start, add_blocks, file_end, seq_blocks = 0;
+ 	ext4_lblk_t rest_blocks;
+ 	pgoff_t orig_page_offset = 0, seq_end_page;
+-	int ret1, ret2, depth, last_extent = 0;
++	int ret, depth, last_extent = 0;
+ 	int blocks_per_page = PAGE_CACHE_SIZE >> orig_inode->i_blkbits;
+ 	int data_offset_in_page;
+ 	int block_len_in_page;
+ 	int uninit;
+ 
+-	/* orig and donor should be different file */
+-	if (orig_inode->i_ino == donor_inode->i_ino) {
++	if (orig_inode->i_sb != donor_inode->i_sb) {
++		ext4_debug("ext4 move extent: The argument files "
++			"should be in same FS [ino:orig %lu, donor %lu]\n",
++			orig_inode->i_ino, donor_inode->i_ino);
++		return -EINVAL;
++	}
++
++	/* orig and donor should be different inodes */
++	if (orig_inode == donor_inode) {
+ 		ext4_debug("ext4 move extent: The argument files should not "
+-			"be same file [ino:orig %lu, donor %lu]\n",
++			"be same inode [ino:orig %lu, donor %lu]\n",
+ 			orig_inode->i_ino, donor_inode->i_ino);
+ 		return -EINVAL;
+ 	}
+@@ -1210,16 +1144,14 @@ ext4_move_extents(struct file *o_filp, s
+ 	}
+ 
+ 	/* Protect orig and donor inodes against a truncate */
+-	ret1 = mext_inode_double_lock(orig_inode, donor_inode);
+-	if (ret1 < 0)
+-		return ret1;
++	mext_inode_double_lock(orig_inode, donor_inode);
+ 
+ 	/* Protect extent tree against block allocations via delalloc */
+ 	double_down_write_data_sem(orig_inode, donor_inode);
+ 	/* Check the filesystem environment whether move_extent can be done */
+-	ret1 = mext_check_arguments(orig_inode, donor_inode, orig_start,
++	ret = mext_check_arguments(orig_inode, donor_inode, orig_start,
+ 				    donor_start, &len);
+-	if (ret1)
++	if (ret)
+ 		goto out;
+ 
+ 	file_end = (i_size_read(orig_inode) - 1) >> orig_inode->i_blkbits;
+@@ -1227,13 +1159,13 @@ ext4_move_extents(struct file *o_filp, s
+ 	if (file_end < block_end)
+ 		len -= block_end - file_end;
+ 
+-	ret1 = get_ext_path(orig_inode, block_start, &orig_path);
+-	if (ret1)
++	ret = get_ext_path(orig_inode, block_start, &orig_path);
++	if (ret)
+ 		goto out;
+ 
+ 	/* Get path structure to check the hole */
+-	ret1 = get_ext_path(orig_inode, block_start, &holecheck_path);
+-	if (ret1)
++	ret = get_ext_path(orig_inode, block_start, &holecheck_path);
++	if (ret)
+ 		goto out;
+ 
+ 	depth = ext_depth(orig_inode);
+@@ -1252,13 +1184,13 @@ ext4_move_extents(struct file *o_filp, s
+ 		last_extent = mext_next_extent(orig_inode,
+ 					holecheck_path, &ext_cur);
+ 		if (last_extent < 0) {
+-			ret1 = last_extent;
++			ret = last_extent;
+ 			goto out;
+ 		}
+ 		last_extent = mext_next_extent(orig_inode, orig_path,
+ 							&ext_dummy);
+ 		if (last_extent < 0) {
+-			ret1 = last_extent;
++			ret = last_extent;
+ 			goto out;
+ 		}
+ 		seq_start = le32_to_cpu(ext_cur->ee_block);
+@@ -1272,7 +1204,7 @@ ext4_move_extents(struct file *o_filp, s
+ 	if (le32_to_cpu(ext_cur->ee_block) > block_end) {
+ 		ext4_debug("ext4 move extent: The specified range of file "
+ 							"may be the hole\n");
+-		ret1 = -EINVAL;
++		ret = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -1292,7 +1224,7 @@ ext4_move_extents(struct file *o_filp, s
+ 		last_extent = mext_next_extent(orig_inode, holecheck_path,
+ 						&ext_cur);
+ 		if (last_extent < 0) {
+-			ret1 = last_extent;
++			ret = last_extent;
+ 			break;
+ 		}
+ 		add_blocks = ext4_ext_get_actual_len(ext_cur);
+@@ -1349,18 +1281,18 @@ ext4_move_extents(struct file *o_filp, s
+ 						orig_page_offset,
+ 						data_offset_in_page,
+ 						block_len_in_page, uninit,
+-						&ret1);
++						&ret);
+ 
+ 			/* Count how many blocks we have exchanged */
+ 			*moved_len += block_len_in_page;
+-			if (ret1 < 0)
++			if (ret < 0)
+ 				break;
+ 			if (*moved_len > len) {
+ 				EXT4_ERROR_INODE(orig_inode,
+ 					"We replaced blocks too much! "
+ 					"sum of replaced: %llu requested: %llu",
+ 					*moved_len, len);
+-				ret1 = -EIO;
++				ret = -EIO;
+ 				break;
+ 			}
+ 
+@@ -1374,22 +1306,22 @@ ext4_move_extents(struct file *o_filp, s
+ 		}
+ 
+ 		double_down_write_data_sem(orig_inode, donor_inode);
+-		if (ret1 < 0)
++		if (ret < 0)
+ 			break;
+ 
+ 		/* Decrease buffer counter */
+ 		if (holecheck_path)
+ 			ext4_ext_drop_refs(holecheck_path);
+-		ret1 = get_ext_path(orig_inode, seq_start, &holecheck_path);
+-		if (ret1)
++		ret = get_ext_path(orig_inode, seq_start, &holecheck_path);
++		if (ret)
+ 			break;
+ 		depth = holecheck_path->p_depth;
+ 
+ 		/* Decrease buffer counter */
+ 		if (orig_path)
+ 			ext4_ext_drop_refs(orig_path);
+-		ret1 = get_ext_path(orig_inode, seq_start, &orig_path);
+-		if (ret1)
++		ret = get_ext_path(orig_inode, seq_start, &orig_path);
++		if (ret)
+ 			break;
+ 
+ 		ext_cur = holecheck_path[depth].p_ext;
+@@ -1412,12 +1344,7 @@ out:
+ 		kfree(holecheck_path);
+ 	}
+ 	double_up_write_data_sem(orig_inode, donor_inode);
+-	ret2 = mext_inode_double_unlock(orig_inode, donor_inode);
++	mext_inode_double_unlock(orig_inode, donor_inode);
+ 
+-	if (ret1)
+-		return ret1;
+-	else if (ret2)
+-		return ret2;
+-
+-	return 0;
++	return ret;
+ }
+From f066055a3449f0e5b0ae4f3ceab4445bead47638 Mon Sep 17 00:00:00 2001
+From: Dmitry Monakhov <dmonakhov@openvz.org>
+Date: Wed, 26 Sep 2012 12:32:54 -0400
+Subject: ext4: online defrag is not supported for journaled files
+
+From: Dmitry Monakhov <dmonakhov@openvz.org>
+
+commit f066055a3449f0e5b0ae4f3ceab4445bead47638 upstream.
+
+Proper block swap for inodes with full journaling enabled is
+truly non obvious task. In order to be on a safe side let's
+explicitly disable it for now.
+
+Signed-off-by: Dmitry Monakhov <dmonakhov@openvz.org>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/move_extent.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/fs/ext4/move_extent.c
++++ b/fs/ext4/move_extent.c
+@@ -1142,7 +1142,12 @@ ext4_move_extents(struct file *o_filp, s
+ 			orig_inode->i_ino, donor_inode->i_ino);
+ 		return -EINVAL;
+ 	}
+-
++	/* TODO: This is non obvious task to swap blocks for inodes with full
++	   jornaling enabled */
++	if (ext4_should_journal_data(orig_inode) ||
++	    ext4_should_journal_data(donor_inode)) {
++		return -EINVAL;
++	}
+ 	/* Protect orig and donor inodes against a truncate */
+ 	mext_inode_double_lock(orig_inode, donor_inode);
+ 
+From c415b303a704e5c5f766fc0404093910c36cc4ab Mon Sep 17 00:00:00 2001
+From: Daniel J Blueman <daniel@quora.org>
+Date: Fri, 5 Oct 2012 22:23:55 +0200
+Subject: i2c-piix4: Fix build failure
+
+From: Daniel J Blueman <daniel@quora.org>
+
+commit c415b303a704e5c5f766fc0404093910c36cc4ab upstream.
+
+Fix build failure in Intel PIIX4 I2C driver.
+
+Signed-off-by: Daniel J Blueman <daniel@quora.org>
+Signed-off-by: Jean Delvare <khali@linux-fr.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/i2c/busses/i2c-piix4.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/i2c/busses/i2c-piix4.c
++++ b/drivers/i2c/busses/i2c-piix4.c
+@@ -37,6 +37,7 @@
+ #include <linux/stddef.h>
+ #include <linux/ioport.h>
+ #include <linux/i2c.h>
++#include <linux/slab.h>
+ #include <linux/init.h>
+ #include <linux/dmi.h>
+ #include <linux/acpi.h>
+From 2e12bc29fc5a12242d68e11875db3dd58efad9ff Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Fri, 11 Nov 2011 17:26:44 -0700
+Subject: intel-iommu: Default to non-coherent for domains unattached to iommus
+
+From: Alex Williamson <alex.williamson@redhat.com>
+
+commit 2e12bc29fc5a12242d68e11875db3dd58efad9ff upstream.
+
+domain_update_iommu_coherency() currently defaults to setting domains
+as coherent when the domain is not attached to any iommus.  This
+allows for a window in domain_context_mapping_one() where such a
+domain can update context entries non-coherently, and only after
+update the domain capability to clear iommu_coherency.
+
+This can be seen using KVM device assignment on VT-d systems that
+do not support coherency in the ecap register.  When a device is
+added to a guest, a domain is created (iommu_coherency = 0), the
+device is attached, and ranges are mapped.  If we then hot unplug
+the device, the coherency is updated and set to the default (1)
+since no iommus are attached to the domain.  A subsequent attach
+of a device makes use of the same dmar domain (now marked coherent)
+updates context entries with coherency enabled, and only disables
+coherency as the last step in the process.
+
+To fix this, switch domain_update_iommu_coherency() to use the
+safer, non-coherent default for domains not attached to iommus.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Tested-by: Donald Dutile <ddutile@redhat.com>
+Acked-by: Donald Dutile <ddutile@redhat.com>
+Acked-by: Chris Wright <chrisw@sous-sol.org>
+Signed-off-by: Joerg Roedel <joerg.roedel@amd.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/iommu/intel-iommu.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/drivers/iommu/intel-iommu.c
++++ b/drivers/iommu/intel-iommu.c
+@@ -589,7 +589,9 @@ static void domain_update_iommu_coherenc
+ {
+ 	int i;
+ 
+-	domain->iommu_coherency = 1;
++	i = find_first_bit(domain->iommu_bmp, g_num_of_iommus);
++
++	domain->iommu_coherency = i < g_num_of_iommus ? 1 : 0;
+ 
+ 	for_each_set_bit(i, domain->iommu_bmp, g_num_of_iommus) {
+ 		if (!ecap_coherent(g_iommus[i]->ecap)) {
+From 0f805a4315b509718ad3000e6cd6012573289409 Mon Sep 17 00:00:00 2001
+From: Eric Dumazet <edumazet@google.com>
+Date: Thu, 4 Oct 2012 01:25:26 +0000
+Subject: ipv4: add a fib_type to fib_info
+
+
+From: Eric Dumazet <edumazet@google.com>
+
+[ Upstream commit f4ef85bbda96324785097356336bc79cdd37db0a ]
+
+commit d2d68ba9fe8 (ipv4: Cache input routes in fib_info nexthops.)
+introduced a regression for forwarding.
+
+This was hard to reproduce but the symptom was that packets were
+delivered to local host instead of being forwarded.
+
+David suggested to add fib_type to fib_info so that we dont
+inadvertently share same fib_info for different purposes.
+
+With help from Julian Anastasov who provided very helpful
+hints, reproduced here :
+
+<quote>
+        Can it be a problem related to fib_info reuse
+from different routes. For example, when local IP address
+is created for subnet we have:
+
+broadcast 192.168.0.255 dev DEV  proto kernel  scope link  src
+192.168.0.1
+192.168.0.0/24 dev DEV  proto kernel  scope link  src 192.168.0.1
+local 192.168.0.1 dev DEV  proto kernel  scope host  src 192.168.0.1
+
+        The "dev DEV  proto kernel  scope link  src 192.168.0.1" is
+a reused fib_info structure where we put cached routes.
+The result can be same fib_info for 192.168.0.255 and
+192.168.0.0/24. RTN_BROADCAST is cached only for input
+routes. Incoming broadcast to 192.168.0.255 can be cached
+and can cause problems for traffic forwarded to 192.168.0.0/24.
+So, this patch should solve the problem because it
+separates the broadcast from unicast traffic.
+
+        And the ip_route_input_slow caching will work for
+local and broadcast input routes (above routes 1 and 3) just
+because they differ in scope and use different fib_info.
+
+</quote>
+
+Many thanks to Chris Clayton for his patience and help.
+
+Reported-by: Chris Clayton <chris2553@googlemail.com>
+Bisected-by: Chris Clayton <chris2553@googlemail.com>
+Reported-by: Dave Jones <davej@redhat.com>
+Signed-off-by: Eric Dumazet <edumazet@google.com>
+Cc: Julian Anastasov <ja@ssi.bg>
+Tested-by: Chris Clayton <chris2553@googlemail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ include/net/ip_fib.h     |    1 +
+ net/ipv4/fib_semantics.c |    2 ++
+ 2 files changed, 3 insertions(+)
+
+--- a/include/net/ip_fib.h
++++ b/include/net/ip_fib.h
+@@ -102,6 +102,7 @@ struct fib_info {
+ 	unsigned char		fib_dead;
+ 	unsigned char		fib_protocol;
+ 	unsigned char		fib_scope;
++	unsigned char		fib_type;
+ 	__be32			fib_prefsrc;
+ 	u32			fib_priority;
+ 	u32			*fib_metrics;
+--- a/net/ipv4/fib_semantics.c
++++ b/net/ipv4/fib_semantics.c
+@@ -314,6 +314,7 @@ static struct fib_info *fib_find_info(co
+ 		    nfi->fib_scope == fi->fib_scope &&
+ 		    nfi->fib_prefsrc == fi->fib_prefsrc &&
+ 		    nfi->fib_priority == fi->fib_priority &&
++		    nfi->fib_type == fi->fib_type &&
+ 		    memcmp(nfi->fib_metrics, fi->fib_metrics,
+ 			   sizeof(u32) * RTAX_MAX) == 0 &&
+ 		    ((nfi->fib_flags ^ fi->fib_flags) & ~RTNH_F_DEAD) == 0 &&
+@@ -833,6 +834,7 @@ struct fib_info *fib_create_info(struct
+ 	fi->fib_flags = cfg->fc_flags;
+ 	fi->fib_priority = cfg->fc_priority;
+ 	fi->fib_prefsrc = cfg->fc_prefsrc;
++	fi->fib_type = cfg->fc_type;
+ 
+ 	fi->fib_nhs = nhs;
+ 	change_nexthops(fi) {
+From be5bbaad23547fa5551691b6185641004d206967 Mon Sep 17 00:00:00 2001
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Date: Wed, 26 Sep 2012 00:04:55 +0000
+Subject: ipv6: del unreachable route when an addr is deleted on lo
+
+
+From: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+
+[ Upstream commit 64c6d08e6490fb18cea09bb03686c149946bd818 ]
+
+When an address is added on loopback (ip -6 a a 2002::1/128 dev lo), two routes
+are added:
+ - one in the local table:
+    local 2002::1 via :: dev lo  proto none  metric 0
+ - one the in main table (for the prefix):
+    unreachable 2002::1 dev lo  proto kernel  metric 256  error -101
+
+When the address is deleted, the route inserted in the main table remains
+because we use rt6_lookup(), which returns NULL when dst->error is set, which
+is the case here! Thus, it is better to use ip6_route_lookup() to avoid this
+kind of filter.
+
+Signed-off-by: Nicolas Dichtel <nicolas.dichtel@6wind.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/ipv6/addrconf.c |   10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+--- a/net/ipv6/addrconf.c
++++ b/net/ipv6/addrconf.c
+@@ -788,10 +788,16 @@ static void ipv6_del_addr(struct inet6_i
+ 		struct in6_addr prefix;
+ 		struct rt6_info *rt;
+ 		struct net *net = dev_net(ifp->idev->dev);
++		struct flowi6 fl6 = {};
++
+ 		ipv6_addr_prefix(&prefix, &ifp->addr, ifp->prefix_len);
+-		rt = rt6_lookup(net, &prefix, NULL, ifp->idev->dev->ifindex, 1);
++		fl6.flowi6_oif = ifp->idev->dev->ifindex;
++		fl6.daddr = prefix;
++		rt = (struct rt6_info *)ip6_route_lookup(net, &fl6,
++							 RT6_LOOKUP_F_IFACE);
+ 
+-		if (rt && addrconf_is_prefix_route(rt)) {
++		if (rt != net->ipv6.ip6_null_entry &&
++		    addrconf_is_prefix_route(rt)) {
+ 			if (onlink == 0) {
+ 				ip6_del_rt(rt);
+ 				rt = NULL;
+From 78fd2204e8bd37393c19b9cbe937540a6e558c09 Mon Sep 17 00:00:00 2001
+From: Gao feng <gaofeng@cn.fujitsu.com>
+Date: Wed, 19 Sep 2012 19:25:34 +0000
+Subject: ipv6: release reference of ip6_null_entry's dst entry in __ip6_del_rt
+
+
+From: Gao feng <gaofeng@cn.fujitsu.com>
+
+[ Upstream commit 6825a26c2dc21eb4f8df9c06d3786ddec97cf53b ]
+
+as we hold dst_entry before we call __ip6_del_rt,
+so we should alse call dst_release not only return
+-ENOENT when the rt6_info is ip6_null_entry.
+
+and we already hold the dst entry, so I think it's
+safe to call dst_release out of the write-read lock.
+
+Signed-off-by: Gao feng <gaofeng@cn.fujitsu.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ net/ipv6/route.c |   11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -1589,17 +1589,18 @@ static int __ip6_del_rt(struct rt6_info
+ 	struct fib6_table *table;
+ 	struct net *net = dev_net(rt->dst.dev);
+ 
+-	if (rt == net->ipv6.ip6_null_entry)
+-		return -ENOENT;
++	if (rt == net->ipv6.ip6_null_entry) {
++		err = -ENOENT;
++		goto out;
++	}
+ 
+ 	table = rt->rt6i_table;
+ 	write_lock_bh(&table->tb6_lock);
+-
+ 	err = fib6_del(rt, info);
+-	dst_release(&rt->dst);
+-
+ 	write_unlock_bh(&table->tb6_lock);
+ 
++out:
++	dst_release(&rt->dst);
+ 	return err;
+ }
+ 
+From 1cc92eb871d6cbb1da038b4bcd89eec3c73b9781 Mon Sep 17 00:00:00 2001
+From: Jacob Keller <jacob.e.keller@intel.com>
+Date: Fri, 21 Sep 2012 07:23:20 +0000
+Subject: ixgbe: fix PTP ethtool timestamping function
+
+From: Jacob Keller <jacob.e.keller@intel.com>
+
+commit 1cc92eb871d6cbb1da038b4bcd89eec3c73b9781 upstream.
+
+This patch fixes a development issue that occurred due to invalid modes reported
+in the ethtool get_ts_info function. The issue is resolved by removing
+unsupported modes from the Rx supported list.
+
+Signed-off-by: Jacob Keller <jacob.e.keller@intel.com>
+Tested-by: Phil Schmitt <phillip.j.schmitt@intel.com>
+Signed-off-by: Jeff Kirsher <jeffrey.t.kirsher@intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/net/ethernet/intel/ixgbe/ixgbe_ethtool.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/net/ethernet/intel/ixgbe/ixgbe_ethtool.c
++++ b/drivers/net/ethernet/intel/ixgbe/ixgbe_ethtool.c
+@@ -2690,10 +2690,7 @@ static int ixgbe_get_ts_info(struct net_
+ 			(1 << HWTSTAMP_FILTER_NONE) |
+ 			(1 << HWTSTAMP_FILTER_PTP_V1_L4_SYNC) |
+ 			(1 << HWTSTAMP_FILTER_PTP_V1_L4_DELAY_REQ) |
+-			(1 << HWTSTAMP_FILTER_PTP_V2_SYNC) |
+-			(1 << HWTSTAMP_FILTER_PTP_V2_DELAY_REQ) |
+-			(1 << HWTSTAMP_FILTER_PTP_V2_EVENT) |
+-			(1 << HWTSTAMP_FILTER_SOME);
++			(1 << HWTSTAMP_FILTER_PTP_V2_EVENT);
+ 		break;
+ #endif /* CONFIG_IXGBE_PTP */
+ 	default:
+From eeecef0af5ea4efd763c9554cf2bd80fc4a0efd3 Mon Sep 17 00:00:00 2001
+From: Eric Sandeen <sandeen@redhat.com>
+Date: Sat, 18 Aug 2012 22:29:40 -0400
+Subject: jbd2: don't write superblock when if its empty
+
+From: Eric Sandeen <sandeen@redhat.com>
+
+commit eeecef0af5ea4efd763c9554cf2bd80fc4a0efd3 upstream.
+
+This sequence:
+
+# truncate --size=1g fsfile
+# mkfs.ext4 -F fsfile
+# mount -o loop,ro fsfile /mnt
+# umount /mnt
+# dmesg | tail
+
+results in an IO error when unmounting the RO filesystem:
+
+[  318.020828] Buffer I/O error on device loop1, logical block 196608
+[  318.027024] lost page write due to I/O error on loop1
+[  318.032088] JBD2: Error -5 detected when updating journal superblock for loop1-8.
+
+This was a regression introduced by commit 24bcc89c7e7c: "jbd2: split
+updating of journal superblock and marking journal empty".
+
+Signed-off-by: Eric Sandeen <sandeen@redhat.com>
+Signed-off-by: "Theodore Ts'o" <tytso@mit.edu>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/jbd2/journal.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/fs/jbd2/journal.c
++++ b/fs/jbd2/journal.c
+@@ -1354,6 +1354,11 @@ static void jbd2_mark_journal_empty(jour
+ 
+ 	BUG_ON(!mutex_is_locked(&journal->j_checkpoint_mutex));
+ 	read_lock(&journal->j_state_lock);
++	/* Is it already empty? */
++	if (sb->s_start == 0) {
++		read_unlock(&journal->j_state_lock);
++		return;
++	}
+ 	jbd_debug(1, "JBD2: Marking journal as empty (seq %d)\n",
+ 		  journal->j_tail_sequence);
+ 
+From fe04ddf7c2910362f3817c8156e41cbd6c0ee35d Mon Sep 17 00:00:00 2001
+From: Michal Marek <mmarek@suse.cz>
+Date: Tue, 25 Sep 2012 16:03:03 +0200
+Subject: kbuild: Do not package /boot and /lib in make tar-pkg
+
+From: Michal Marek <mmarek@suse.cz>
+
+commit fe04ddf7c2910362f3817c8156e41cbd6c0ee35d upstream.
+
+There were reports of users destroying their Fedora installs by a kernel
+tarball that replaces the /lib -> /usr/lib symlink. Let's remove the
+toplevel directories from the tarball to prevent this from happening.
+
+Reported-by: Andi Kleen <andi@firstfloor.org>
+Suggested-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Michal Marek <mmarek@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/x86/Makefile        |    2 +-
+ scripts/Makefile.fwinst  |    4 ++--
+ scripts/package/buildtar |    2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -142,7 +142,7 @@ KBUILD_CFLAGS += $(call cc-option,-mno-a
+ KBUILD_CFLAGS += $(mflags-y)
+ KBUILD_AFLAGS += $(mflags-y)
+ 
+-archscripts: scripts_basic
++archscripts:
+ 	$(Q)$(MAKE) $(build)=arch/x86/tools relocs
+ 
+ ###
+--- a/scripts/Makefile.fwinst
++++ b/scripts/Makefile.fwinst
+@@ -27,7 +27,7 @@ endif
+ installed-mod-fw := $(addprefix $(INSTALL_FW_PATH)/,$(mod-fw))
+ 
+ installed-fw := $(addprefix $(INSTALL_FW_PATH)/,$(fw-shipped-all))
+-installed-fw-dirs := $(sort $(dir $(installed-fw))) $(INSTALL_FW_PATH)/./
++installed-fw-dirs := $(sort $(dir $(installed-fw))) $(INSTALL_FW_PATH)/.
+ 
+ # Workaround for make < 3.81, where .SECONDEXPANSION doesn't work.
+ PHONY += $(INSTALL_FW_PATH)/$$(%) install-all-dirs
+@@ -42,7 +42,7 @@ quiet_cmd_install = INSTALL $(subst $(sr
+ $(installed-fw-dirs):
+ 	$(call cmd,mkdir)
+ 
+-$(installed-fw): $(INSTALL_FW_PATH)/%: $(obj)/% | $(INSTALL_FW_PATH)/$$(dir %)
++$(installed-fw): $(INSTALL_FW_PATH)/%: $(obj)/% | $$(dir $(INSTALL_FW_PATH)/%)
+ 	$(call cmd,install)
+ 
+ PHONY +=  __fw_install __fw_modinst FORCE
+--- a/scripts/package/buildtar
++++ b/scripts/package/buildtar
+@@ -109,7 +109,7 @@ esac
+ 	if tar --owner=root --group=root --help >/dev/null 2>&1; then
+ 		opts="--owner=root --group=root"
+ 	fi
+-	tar cf - . $opts | ${compress} > "${tarball}${file_ext}"
++	tar cf - boot/* lib/* $opts | ${compress} > "${tarball}${file_ext}"
+ )
+ 
+ echo "Tarball successfully created in ${tarball}${file_ext}"
+From b1e0d8b70fa31821ebca3965f2ef8619d7c5e316 Mon Sep 17 00:00:00 2001
+From: Jean Delvare <jdelvare@suse.de>
+Date: Tue, 2 Oct 2012 16:42:36 +0200
+Subject: kbuild: Fix gcc -x syntax
+
+From: Jean Delvare <jdelvare@suse.de>
+
+commit b1e0d8b70fa31821ebca3965f2ef8619d7c5e316 upstream.
+
+The correct syntax for gcc -x is "gcc -x assembler", not
+"gcc -xassembler". Even though the latter happens to work, the former
+is what is documented in the manual page and thus what gcc wrappers
+such as icecream do expect.
+
+This isn't a cosmetic change. The missing space prevents icecream from
+recognizing compilation tasks it can't handle, leading to silent kernel
+miscompilations.
+
+Besides me, credits go to Michael Matz and Dirk Mueller for
+investigating the miscompilation issue and tracking it down to this
+incorrect -x parameter syntax.
+
+Signed-off-by: Jean Delvare <jdelvare@suse.de>
+Acked-by: Ingo Molnar <mingo@kernel.org>
+Cc: Bernhard Walle <bernhard@bwalle.de>
+Cc: Michal Marek <mmarek@suse.cz>
+Cc: Ralf Baechle <ralf@linux-mips.org>
+Signed-off-by: Michal Marek <mmarek@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/mips/Makefile                         |    2 +-
+ arch/mips/kernel/Makefile                  |    2 +-
+ arch/x86/Makefile                          |    2 +-
+ scripts/Kbuild.include                     |   12 ++++++------
+ scripts/gcc-version.sh                     |    6 +++---
+ scripts/gcc-x86_32-has-stack-protector.sh  |    2 +-
+ scripts/gcc-x86_64-has-stack-protector.sh  |    2 +-
+ scripts/kconfig/check.sh                   |    2 +-
+ scripts/kconfig/lxdialog/check-lxdialog.sh |    2 +-
+ tools/perf/Makefile                        |    2 +-
+ tools/power/cpupower/Makefile              |    2 +-
+ 11 files changed, 18 insertions(+), 18 deletions(-)
+
+--- a/arch/mips/Makefile
++++ b/arch/mips/Makefile
+@@ -225,7 +225,7 @@ KBUILD_CPPFLAGS += -DDATAOFFSET=$(if $(d
+ LDFLAGS			+= -m $(ld-emul)
+ 
+ ifdef CONFIG_MIPS
+-CHECKFLAGS += $(shell $(CC) $(KBUILD_CFLAGS) -dM -E -xc /dev/null | \
++CHECKFLAGS += $(shell $(CC) $(KBUILD_CFLAGS) -dM -E -x c /dev/null | \
+ 	egrep -vw '__GNUC_(|MINOR_|PATCHLEVEL_)_' | \
+ 	sed -e "s/^\#define /-D'/" -e "s/ /'='/" -e "s/$$/'/")
+ ifdef CONFIG_64BIT
+--- a/arch/mips/kernel/Makefile
++++ b/arch/mips/kernel/Makefile
+@@ -104,7 +104,7 @@ obj-$(CONFIG_MIPS_MACHINE)	+= mips_machi
+ 
+ obj-$(CONFIG_OF)		+= prom.o
+ 
+-CFLAGS_cpu-bugs64.o	= $(shell if $(CC) $(KBUILD_CFLAGS) -Wa,-mdaddi -c -o /dev/null -xc /dev/null >/dev/null 2>&1; then echo "-DHAVE_AS_SET_DADDI"; fi)
++CFLAGS_cpu-bugs64.o	= $(shell if $(CC) $(KBUILD_CFLAGS) -Wa,-mdaddi -c -o /dev/null -x c /dev/null >/dev/null 2>&1; then echo "-DHAVE_AS_SET_DADDI"; fi)
+ 
+ obj-$(CONFIG_HAVE_STD_PC_SERIAL_PORT)	+= 8250-platform.o
+ 
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -92,7 +92,7 @@ endif
+ ifdef CONFIG_X86_X32
+ 	x32_ld_ok := $(call try-run,\
+ 			/bin/echo -e '1: .quad 1b' | \
+-			$(CC) $(KBUILD_AFLAGS) -c -xassembler -o "$$TMP" - && \
++			$(CC) $(KBUILD_AFLAGS) -c -x assembler -o "$$TMP" - && \
+ 			$(OBJCOPY) -O elf32-x86-64 "$$TMP" "$$TMPO" && \
+ 			$(LD) -m elf32_x86_64 "$$TMPO" -o "$$TMP",y,n)
+         ifeq ($(x32_ld_ok),y)
+--- a/scripts/Kbuild.include
++++ b/scripts/Kbuild.include
+@@ -98,24 +98,24 @@ try-run = $(shell set -e;		\
+ # Usage: cflags-y += $(call as-option,-Wa$(comma)-isa=foo,)
+ 
+ as-option = $(call try-run,\
+-	$(CC) $(KBUILD_CFLAGS) $(1) -c -xassembler /dev/null -o "$$TMP",$(1),$(2))
++	$(CC) $(KBUILD_CFLAGS) $(1) -c -x assembler /dev/null -o "$$TMP",$(1),$(2))
+ 
+ # as-instr
+ # Usage: cflags-y += $(call as-instr,instr,option1,option2)
+ 
+ as-instr = $(call try-run,\
+-	printf "%b\n" "$(1)" | $(CC) $(KBUILD_AFLAGS) -c -xassembler -o "$$TMP" -,$(2),$(3))
++	printf "%b\n" "$(1)" | $(CC) $(KBUILD_AFLAGS) -c -x assembler -o "$$TMP" -,$(2),$(3))
+ 
+ # cc-option
+ # Usage: cflags-y += $(call cc-option,-march=winchip-c6,-march=i586)
+ 
+ cc-option = $(call try-run,\
+-	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(1) -c -xc /dev/null -o "$$TMP",$(1),$(2))
++	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(1) -c -x c /dev/null -o "$$TMP",$(1),$(2))
+ 
+ # cc-option-yn
+ # Usage: flag := $(call cc-option-yn,-march=winchip-c6)
+ cc-option-yn = $(call try-run,\
+-	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(1) -c -xc /dev/null -o "$$TMP",y,n)
++	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) $(1) -c -x c /dev/null -o "$$TMP",y,n)
+ 
+ # cc-option-align
+ # Prefix align with either -falign or -malign
+@@ -125,7 +125,7 @@ cc-option-align = $(subst -functions=0,,
+ # cc-disable-warning
+ # Usage: cflags-y += $(call cc-disable-warning,unused-but-set-variable)
+ cc-disable-warning = $(call try-run,\
+-	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) -W$(strip $(1)) -c -xc /dev/null -o "$$TMP",-Wno-$(strip $(1)))
++	$(CC) $(KBUILD_CPPFLAGS) $(KBUILD_CFLAGS) -W$(strip $(1)) -c -x c /dev/null -o "$$TMP",-Wno-$(strip $(1)))
+ 
+ # cc-version
+ # Usage gcc-ver := $(call cc-version)
+@@ -143,7 +143,7 @@ cc-ifversion = $(shell [ $(call cc-versi
+ # cc-ldoption
+ # Usage: ldflags += $(call cc-ldoption, -Wl$(comma)--hash-style=both)
+ cc-ldoption = $(call try-run,\
+-	$(CC) $(1) -nostdlib -xc /dev/null -o "$$TMP",$(1),$(2))
++	$(CC) $(1) -nostdlib -x c /dev/null -o "$$TMP",$(1),$(2))
+ 
+ # ld-option
+ # Usage: LDFLAGS += $(call ld-option, -X)
+--- a/scripts/gcc-version.sh
++++ b/scripts/gcc-version.sh
+@@ -22,10 +22,10 @@ if [ ${#compiler} -eq 0 ]; then
+ 	exit 1
+ fi
+ 
+-MAJOR=$(echo __GNUC__ | $compiler -E -xc - | tail -n 1)
+-MINOR=$(echo __GNUC_MINOR__ | $compiler -E -xc - | tail -n 1)
++MAJOR=$(echo __GNUC__ | $compiler -E -x c - | tail -n 1)
++MINOR=$(echo __GNUC_MINOR__ | $compiler -E -x c - | tail -n 1)
+ if [ "x$with_patchlevel" != "x" ] ; then
+-	PATCHLEVEL=$(echo __GNUC_PATCHLEVEL__ | $compiler -E -xc - | tail -n 1)
++	PATCHLEVEL=$(echo __GNUC_PATCHLEVEL__ | $compiler -E -x c - | tail -n 1)
+ 	printf "%02d%02d%02d\\n" $MAJOR $MINOR $PATCHLEVEL
+ else
+ 	printf "%02d%02d\\n" $MAJOR $MINOR
+--- a/scripts/gcc-x86_32-has-stack-protector.sh
++++ b/scripts/gcc-x86_32-has-stack-protector.sh
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ 
+-echo "int foo(void) { char X[200]; return 3; }" | $* -S -xc -c -O0 -fstack-protector - -o - 2> /dev/null | grep -q "%gs"
++echo "int foo(void) { char X[200]; return 3; }" | $* -S -x c -c -O0 -fstack-protector - -o - 2> /dev/null | grep -q "%gs"
+ if [ "$?" -eq "0" ] ; then
+ 	echo y
+ else
+--- a/scripts/gcc-x86_64-has-stack-protector.sh
++++ b/scripts/gcc-x86_64-has-stack-protector.sh
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ 
+-echo "int foo(void) { char X[200]; return 3; }" | $* -S -xc -c -O0 -mcmodel=kernel -fstack-protector - -o - 2> /dev/null | grep -q "%gs"
++echo "int foo(void) { char X[200]; return 3; }" | $* -S -x c -c -O0 -mcmodel=kernel -fstack-protector - -o - 2> /dev/null | grep -q "%gs"
+ if [ "$?" -eq "0" ] ; then
+ 	echo y
+ else
+--- a/scripts/kconfig/check.sh
++++ b/scripts/kconfig/check.sh
+@@ -1,6 +1,6 @@
+ #!/bin/sh
+ # Needed for systems without gettext
+-$* -xc -o /dev/null - > /dev/null 2>&1 << EOF
++$* -x c -o /dev/null - > /dev/null 2>&1 << EOF
+ #include <libintl.h>
+ int main()
+ {
+--- a/scripts/kconfig/lxdialog/check-lxdialog.sh
++++ b/scripts/kconfig/lxdialog/check-lxdialog.sh
+@@ -38,7 +38,7 @@ trap "rm -f $tmp" 0 1 2 3 15
+ 
+ # Check if we can link to ncurses
+ check() {
+-        $cc -xc - -o $tmp 2>/dev/null <<'EOF'
++        $cc -x c - -o $tmp 2>/dev/null <<'EOF'
+ #include CURSES_LOC
+ main() {}
+ EOF
+--- a/tools/perf/Makefile
++++ b/tools/perf/Makefile
+@@ -62,7 +62,7 @@ ifeq ($(ARCH),x86_64)
+ 	ARCH := x86
+ 	IS_X86_64 := 0
+ 	ifeq (, $(findstring m32,$(EXTRA_CFLAGS)))
+-		IS_X86_64 := $(shell echo __x86_64__ | ${CC} -E -xc - | tail -n 1)
++		IS_X86_64 := $(shell echo __x86_64__ | ${CC} -E -x c - | tail -n 1)
+ 	endif
+ 	ifeq (${IS_X86_64}, 1)
+ 		RAW_ARCH := x86_64
+--- a/tools/power/cpupower/Makefile
++++ b/tools/power/cpupower/Makefile
+@@ -111,7 +111,7 @@ GMO_FILES = ${shell for HLANG in ${LANGU
+ export CROSS CC AR STRIP RANLIB CFLAGS LDFLAGS LIB_OBJS
+ 
+ # check if compiler option is supported
+-cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; fi;}
++cc-supports = ${shell if $(CC) ${1} -S -o /dev/null -x c /dev/null > /dev/null 2>&1; then echo "$(1)"; fi;}
+ 
+ # use '-Os' optimization if available, else use -O2
+ OPTIMIZATION := $(call cc-supports,-Os,-O2)
+From c353acba28fb3fa1fd05fd6b85a9fc7938330f9c Mon Sep 17 00:00:00 2001
+From: Sascha Hauer <s.hauer@pengutronix.de>
+Date: Thu, 4 Oct 2012 17:11:17 -0700
+Subject: kbuild: make: fix if_changed when command contains backslashes
+
+From: Sascha Hauer <s.hauer@pengutronix.de>
+
+commit c353acba28fb3fa1fd05fd6b85a9fc7938330f9c upstream.
+
+The call if_changed mechanism does not work when the command contains
+backslashes.  This basically is an issue with lzo and bzip2 compressed
+kernels.  The compressed binaries do not contain the uncompressed image
+size, so these use size_append to append the size.  This results in
+backslashes in the executed command.  With this if_changed always
+detects a change in the command and rebuilds the compressed image even
+if nothing has changed.
+
+Fix this by escaping backslashes in make-cmd
+
+Signed-off-by: Sascha Hauer <s.hauer@pengutronix.de>
+Signed-off-by: Jan Luebbe <jlu@pengutronix.de>
+Cc: Sam Ravnborg <sam@ravnborg.org>
+Cc: Bernhard Walle <bernhard@bwalle.de>
+Cc: Michal Marek <mmarek@suse.cz>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ scripts/Kbuild.include |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/scripts/Kbuild.include
++++ b/scripts/Kbuild.include
+@@ -209,7 +209,7 @@ endif
+ # >$< substitution to preserve $ when reloading .cmd file
+ # note: when using inline perl scripts [perl -e '...$$t=1;...']
+ # in $(cmd_xxx) double $$ your perl vars
+-make-cmd = $(subst \#,\\\#,$(subst $$,$$$$,$(call escsq,$(cmd_$(1)))))
++make-cmd = $(subst \\,\\\\,$(subst \#,\\\#,$(subst $$,$$$$,$(call escsq,$(cmd_$(1))))))
+ 
+ # Find any prerequisites that is newer than target or that does not exist.
+ # PHONY targets skipped in both cases.
+From f96972f2dc6365421cf2366ebd61ee4cf060c8d5 Mon Sep 17 00:00:00 2001
+From: Shawn Guo <shawn.guo@linaro.org>
+Date: Thu, 4 Oct 2012 17:12:23 -0700
+Subject: kernel/sys.c: call disable_nonboot_cpus() in kernel_restart()
+
+From: Shawn Guo <shawn.guo@linaro.org>
+
+commit f96972f2dc6365421cf2366ebd61ee4cf060c8d5 upstream.
+
+As kernel_power_off() calls disable_nonboot_cpus(), we may also want to
+have kernel_restart() call disable_nonboot_cpus().  Doing so can help
+machines that require boot cpu be the last alive cpu during reboot to
+survive with kernel restart.
+
+This fixes one reboot issue seen on imx6q (Cortex-A9 Quad).  The machine
+requires that the restart routine be run on the primary cpu rather than
+secondary ones.  Otherwise, the secondary core running the restart
+routine will fail to come to online after reboot.
+
+Signed-off-by: Shawn Guo <shawn.guo@linaro.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ kernel/sys.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -368,6 +368,7 @@ EXPORT_SYMBOL(unregister_reboot_notifier
+ void kernel_restart(char *cmd)
+ {
+ 	kernel_restart_prepare(cmd);
++	disable_nonboot_cpus();
+ 	if (!cmd)
+ 		printk(KERN_EMERG "Restarting system.\n");
+ 	else
+From ca16f580a5db7e60bfafe59a50bb133bd3347491 Mon Sep 17 00:00:00 2001
+From: Rusty Russell <rusty@rustcorp.com.au>
+Date: Thu, 4 Oct 2012 12:03:25 +0930
+Subject: lguest: fix occasional crash in example launcher.
+
+From: Rusty Russell <rusty@rustcorp.com.au>
+
+commit ca16f580a5db7e60bfafe59a50bb133bd3347491 upstream.
+
+We usually got away with ->next on the final entry being NULL, but it
+finally bit me.
+
+Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ tools/lguest/lguest.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/tools/lguest/lguest.c
++++ b/tools/lguest/lguest.c
+@@ -1299,6 +1299,7 @@ static struct device *new_device(const c
+ 	dev->feature_len = 0;
+ 	dev->num_vq = 0;
+ 	dev->running = false;
++	dev->next = NULL;
+ 
+ 	/*
+ 	 * Append to device list.  Prepending to a single-linked list is
+From e96875677fb2b7cb739c5d7769824dff7260d31d Mon Sep 17 00:00:00 2001
+From: Davidlohr Bueso <dave@gnu.org>
+Date: Thu, 4 Oct 2012 17:13:18 -0700
+Subject: lib/gcd.c: prevent possible div by 0
+
+From: Davidlohr Bueso <dave@gnu.org>
+
+commit e96875677fb2b7cb739c5d7769824dff7260d31d upstream.
+
+Account for all properties when a and/or b are 0:
+gcd(0, 0) = 0
+gcd(a, 0) = a
+gcd(0, b) = b
+
+Fixes no known problems in current kernels.
+
+Signed-off-by: Davidlohr Bueso <dave@gnu.org>
+Cc: Eric Dumazet <eric.dumazet@gmail.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ lib/gcd.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/lib/gcd.c
++++ b/lib/gcd.c
+@@ -9,6 +9,9 @@ unsigned long gcd(unsigned long a, unsig
+ 
+ 	if (a < b)
+ 		swap(a, b);
++
++	if (!b)
++		return a;
+ 	while ((r = a % b) != 0) {
+ 		a = b;
+ 		b = r;
+From 4eae518d4b01b0cbf2f0d8edb5a6f3d6245ee8fb Mon Sep 17 00:00:00 2001
+From: Yuta Ando <yuta.and@gmail.com>
+Date: Mon, 1 Oct 2012 23:24:30 +0900
+Subject: localmodconfig: Fix localyesconfig to set to 'y' not 'm'
+
+From: Yuta Ando <yuta.and@gmail.com>
+
+commit 4eae518d4b01b0cbf2f0d8edb5a6f3d6245ee8fb upstream.
+
+The kbuild target 'localyesconfig' has been same as 'localmodconfig'
+since the commit 50bce3e "kconfig/streamline_config.pl: merge
+local{mod,yes}config". The commit expects this script generates
+different configure depending on target, but it was not yet implemented.
+
+So I added code that sets to 'yes' when target is 'localyesconfig'.
+
+Link: http://lkml.kernel.org/r/1349101470-12243-1-git-send-email-yuta.and@gmail.com
+
+Signed-off-by: Yuta Ando <yuta.and@gmail.com>
+Cc: linux-kbuild@vger.kernel.org
+Signed-off-by: Steven Rostedt <rostedt@rostedt.homelinux.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ scripts/kconfig/streamline_config.pl |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/scripts/kconfig/streamline_config.pl
++++ b/scripts/kconfig/streamline_config.pl
+@@ -605,6 +605,8 @@ foreach my $line (@config_file) {
+ 	if (defined($configs{$1})) {
+ 	    if ($localyesconfig) {
+ 	        $setconfigs{$1} = 'y';
++		print "$1=y\n";
++		next;
+ 	    } else {
+ 	        $setconfigs{$1} = $2;
+ 	    }
+From 97d2fbf501e3cf105ac957086c7e40e62e15cdf8 Mon Sep 17 00:00:00 2001
+From: Frank Schäfer <fschaefer.oss@googlemail.com>
+Date: Sun, 9 Sep 2012 15:02:19 -0300
+Subject: media: gspca_pac7302: add support for device 1ae7:2001 Speedlink Snappy Microphone SL-6825-SBK
+
+From: Frank Schäfer <fschaefer.oss@googlemail.com>
+
+commit 97d2fbf501e3cf105ac957086c7e40e62e15cdf8 upstream.
+
+Signed-off-by: Frank Schäfer <fschaefer.oss@googlemail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/media/video/gspca/pac7302.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/media/video/gspca/pac7302.c
++++ b/drivers/media/video/gspca/pac7302.c
+@@ -905,6 +905,7 @@ static const struct usb_device_id device
+ 	{USB_DEVICE(0x093a, 0x262a)},
+ 	{USB_DEVICE(0x093a, 0x262c)},
+ 	{USB_DEVICE(0x145f, 0x013c)},
++	{USB_DEVICE(0x1ae7, 0x2001)}, /* SpeedLink Snappy Mic SL-6825-SBK */
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(usb, device_table);
+From db43b9ca2f101d0945d043fa7d5ecd8f2da17fef Mon Sep 17 00:00:00 2001
+From: Frank Schäfer <fschaefer.oss@googlemail.com>
+Date: Sun, 9 Sep 2012 15:02:20 -0300
+Subject: media: gspca_pac7302: make red balance and blue balance controls work again
+
+From: Frank Schäfer <fschaefer.oss@googlemail.com>
+
+commit db43b9ca2f101d0945d043fa7d5ecd8f2da17fef upstream.
+
+Fix a regression from kernel 3.4 which has been introduced with the conversion of the gspca driver to the v4l2 control framework.
+
+Signed-off-by: Frank Schäfer <fschaefer.oss@googlemail.com>
+Signed-off-by: Hans de Goede <hdegoede@redhat.com>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/media/video/gspca/pac7302.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/video/gspca/pac7302.c
++++ b/drivers/media/video/gspca/pac7302.c
+@@ -616,7 +616,7 @@ static int sd_init_controls(struct gspca
+ 	sd->red_balance = v4l2_ctrl_new_std(hdl, &sd_ctrl_ops,
+ 					V4L2_CID_RED_BALANCE, 0, 3, 1, 1);
+ 	sd->blue_balance = v4l2_ctrl_new_std(hdl, &sd_ctrl_ops,
+-					V4L2_CID_RED_BALANCE, 0, 3, 1, 1);
++					V4L2_CID_BLUE_BALANCE, 0, 3, 1, 1);
+ 
+ 	gspca_dev->autogain = v4l2_ctrl_new_std(hdl, &sd_ctrl_ops,
+ 					V4L2_CID_AUTOGAIN, 0, 1, 1, 1);
+From 4b961180ef275035b1538317ffd0e21e80e63e77 Mon Sep 17 00:00:00 2001
+From: Ben Hutchings <ben@decadent.org.uk>
+Date: Sun, 19 Aug 2012 19:32:27 -0300
+Subject: media: rc: ite-cir: Initialise ite_dev::rdev earlier
+
+From: Ben Hutchings <ben@decadent.org.uk>
+
+commit 4b961180ef275035b1538317ffd0e21e80e63e77 upstream.
+
+ite_dev::rdev is currently initialised in ite_probe() after
+rc_register_device() returns.  If a newly registered device is opened
+quickly enough, we may enable interrupts and try to use ite_dev::rdev
+before it has been initialised.  Move it up to the earliest point we
+can, right after calling rc_allocate_device().
+
+Reported-and-tested-by: YunQiang Su <wzssyqa@gmail.com>
+
+Signed-off-by: Ben Hutchings <ben@decadent.org.uk>
+Signed-off-by: Mauro Carvalho Chehab <mchehab@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/media/rc/ite-cir.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/media/rc/ite-cir.c
++++ b/drivers/media/rc/ite-cir.c
+@@ -1473,6 +1473,7 @@ static int ite_probe(struct pnp_dev *pde
+ 	rdev = rc_allocate_device();
+ 	if (!rdev)
+ 		goto failure;
++	itdev->rdev = rdev;
+ 
+ 	ret = -ENODEV;
+ 
+@@ -1604,7 +1605,6 @@ static int ite_probe(struct pnp_dev *pde
+ 	if (ret)
+ 		goto failure3;
+ 
+-	itdev->rdev = rdev;
+ 	ite_pr(KERN_NOTICE, "driver has been successfully loaded\n");
+ 
+ 	return 0;
+From c10c2aab634a3c61c46b98875988b2f53040bc9c Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Tue, 7 Aug 2012 19:42:44 +0100
+Subject: mfd: 88pm860x: Move _IO resources out of ioport_ioresource
+
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+
+commit c10c2aab634a3c61c46b98875988b2f53040bc9c upstream.
+
+The removal of mach/io.h from most ARM platforms also set the range of
+valid IO ports to be empty for most platforms when previously any 32
+bit integer had been valid. This makes it impossible to add IO resources
+as the added range is smaller than that of the root resource for IO ports.
+
+Since we're not really using IO memory at all fix this by defining our
+own root resource outside the normal tree and make that the parent of
+all IO resources. This also ensures we won't conflict with read IO ports
+if we ever run on a platform which happens to use them.
+
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Tested-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Samuel Ortiz <sameo@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/mfd/88pm860x-core.c |   92 ++++++++++++++++++++++++++++++--------------
+ 1 file changed, 63 insertions(+), 29 deletions(-)
+
+--- a/drivers/mfd/88pm860x-core.c
++++ b/drivers/mfd/88pm860x-core.c
+@@ -21,40 +21,73 @@
+ 
+ #define INT_STATUS_NUM			3
+ 
++static struct resource io_parent = {
++	.start = 0,
++	.end   = 0xffffffff,
++	.flags = IORESOURCE_IO,
++};
++
+ static struct resource bk_resources[] __devinitdata = {
+-	{PM8606_BACKLIGHT1, PM8606_BACKLIGHT1, "backlight-0", IORESOURCE_IO,},
+-	{PM8606_BACKLIGHT2, PM8606_BACKLIGHT2, "backlight-1", IORESOURCE_IO,},
+-	{PM8606_BACKLIGHT3, PM8606_BACKLIGHT3, "backlight-2", IORESOURCE_IO,},
++	{PM8606_BACKLIGHT1, PM8606_BACKLIGHT1, "backlight-0", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_BACKLIGHT2, PM8606_BACKLIGHT2, "backlight-1", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_BACKLIGHT3, PM8606_BACKLIGHT3, "backlight-2", IORESOURCE_IO,
++	 &io_parent,},
+ };
+ 
+ static struct resource led_resources[] __devinitdata = {
+-	{PM8606_LED1_RED,   PM8606_LED1_RED,   "led0-red",   IORESOURCE_IO,},
+-	{PM8606_LED1_GREEN, PM8606_LED1_GREEN, "led0-green", IORESOURCE_IO,},
+-	{PM8606_LED1_BLUE,  PM8606_LED1_BLUE,  "led0-blue",  IORESOURCE_IO,},
+-	{PM8606_LED2_RED,   PM8606_LED2_RED,   "led1-red",   IORESOURCE_IO,},
+-	{PM8606_LED2_GREEN, PM8606_LED2_GREEN, "led1-green", IORESOURCE_IO,},
+-	{PM8606_LED2_BLUE,  PM8606_LED2_BLUE,  "led1-blue",  IORESOURCE_IO,},
++	{PM8606_LED1_RED,   PM8606_LED1_RED,   "led0-red",   IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_LED1_GREEN, PM8606_LED1_GREEN, "led0-green", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_LED1_BLUE,  PM8606_LED1_BLUE,  "led0-blue",  IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_LED2_RED,   PM8606_LED2_RED,   "led1-red",   IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_LED2_GREEN, PM8606_LED2_GREEN, "led1-green", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8606_LED2_BLUE,  PM8606_LED2_BLUE,  "led1-blue",  IORESOURCE_IO,
++	 &io_parent,},
+ };
+ 
+ static struct resource regulator_resources[] __devinitdata = {
+-	{PM8607_ID_BUCK1, PM8607_ID_BUCK1, "buck-1", IORESOURCE_IO,},
+-	{PM8607_ID_BUCK2, PM8607_ID_BUCK2, "buck-2", IORESOURCE_IO,},
+-	{PM8607_ID_BUCK3, PM8607_ID_BUCK3, "buck-3", IORESOURCE_IO,},
+-	{PM8607_ID_LDO1,  PM8607_ID_LDO1,  "ldo-01", IORESOURCE_IO,},
+-	{PM8607_ID_LDO2,  PM8607_ID_LDO2,  "ldo-02", IORESOURCE_IO,},
+-	{PM8607_ID_LDO3,  PM8607_ID_LDO3,  "ldo-03", IORESOURCE_IO,},
+-	{PM8607_ID_LDO4,  PM8607_ID_LDO4,  "ldo-04", IORESOURCE_IO,},
+-	{PM8607_ID_LDO5,  PM8607_ID_LDO5,  "ldo-05", IORESOURCE_IO,},
+-	{PM8607_ID_LDO6,  PM8607_ID_LDO6,  "ldo-06", IORESOURCE_IO,},
+-	{PM8607_ID_LDO7,  PM8607_ID_LDO7,  "ldo-07", IORESOURCE_IO,},
+-	{PM8607_ID_LDO8,  PM8607_ID_LDO8,  "ldo-08", IORESOURCE_IO,},
+-	{PM8607_ID_LDO9,  PM8607_ID_LDO9,  "ldo-09", IORESOURCE_IO,},
+-	{PM8607_ID_LDO10, PM8607_ID_LDO10, "ldo-10", IORESOURCE_IO,},
+-	{PM8607_ID_LDO11, PM8607_ID_LDO11, "ldo-11", IORESOURCE_IO,},
+-	{PM8607_ID_LDO12, PM8607_ID_LDO12, "ldo-12", IORESOURCE_IO,},
+-	{PM8607_ID_LDO13, PM8607_ID_LDO13, "ldo-13", IORESOURCE_IO,},
+-	{PM8607_ID_LDO14, PM8607_ID_LDO14, "ldo-14", IORESOURCE_IO,},
+-	{PM8607_ID_LDO15, PM8607_ID_LDO15, "ldo-15", IORESOURCE_IO,},
++	{PM8607_ID_BUCK1, PM8607_ID_BUCK1, "buck-1", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_BUCK2, PM8607_ID_BUCK2, "buck-2", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_BUCK3, PM8607_ID_BUCK3, "buck-3", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO1,  PM8607_ID_LDO1,  "ldo-01", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO2,  PM8607_ID_LDO2,  "ldo-02", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO3,  PM8607_ID_LDO3,  "ldo-03", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO4,  PM8607_ID_LDO4,  "ldo-04", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO5,  PM8607_ID_LDO5,  "ldo-05", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO6,  PM8607_ID_LDO6,  "ldo-06", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO7,  PM8607_ID_LDO7,  "ldo-07", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO8,  PM8607_ID_LDO8,  "ldo-08", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO9,  PM8607_ID_LDO9,  "ldo-09", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO10, PM8607_ID_LDO10, "ldo-10", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO11, PM8607_ID_LDO11, "ldo-11", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO12, PM8607_ID_LDO12, "ldo-12", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO13, PM8607_ID_LDO13, "ldo-13", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO14, PM8607_ID_LDO14, "ldo-14", IORESOURCE_IO,
++	 &io_parent,},
++	{PM8607_ID_LDO15, PM8607_ID_LDO15, "ldo-15", IORESOURCE_IO,
++	 &io_parent,},
+ };
+ 
+ static struct resource touch_resources[] __devinitdata = {
+@@ -91,11 +124,12 @@ static struct resource charger_resources
+ };
+ 
+ static struct resource preg_resources[] __devinitdata = {
+-	{PM8606_ID_PREG,  PM8606_ID_PREG,  "preg",   IORESOURCE_IO,},
++	{PM8606_ID_PREG,  PM8606_ID_PREG,  "preg",   IORESOURCE_IO,
++	 &io_parent,},
+ };
+ 
+ static struct resource rtc_resources[] __devinitdata = {
+-	{PM8607_IRQ_RTC, PM8607_IRQ_RTC, "rtc", IORESOURCE_IRQ,},
++	{PM8607_IRQ_RTC, PM8607_IRQ_RTC, "rtc", IORESOURCE_IRQ, &io_parent,},
+ };
+ 
+ static struct mfd_cell bk_devs[] = {
+From bee6e1fa617b1fb7f6f91033428410e05f5ab0ed Mon Sep 17 00:00:00 2001
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+Date: Tue, 7 Aug 2012 19:42:43 +0100
+Subject: mfd: max8925: Move _IO resources out of ioport_ioresource
+
+From: Mark Brown <broonie@opensource.wolfsonmicro.com>
+
+commit bee6e1fa617b1fb7f6f91033428410e05f5ab0ed upstream.
+
+The removal of mach/io.h from most ARM platforms also set the range of
+valid IO ports to be empty for most platforms when previously any 32
+bit integer had been valid. This makes it impossible to add IO resources
+as the added range is smaller than that of the root resource for IO ports.
+
+Since we're not really using IO memory at all fix this by defining our
+own root resource outside the normal tree and make that the parent of
+all IO resources. This also ensures we won't conflict with read IO ports
+if we ever run on a platform which happens to use them.
+
+Signed-off-by: Mark Brown <broonie@opensource.wolfsonmicro.com
+Acked-by: Arnd Bergmann <arnd@arndb.de>
+Acked-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Tested-by: Haojian Zhuang <haojian.zhuang@gmail.com>
+Signed-off-by: Samuel Ortiz <sameo@linux.intel.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/mfd/max8925-core.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/drivers/mfd/max8925-core.c
++++ b/drivers/mfd/max8925-core.c
+@@ -18,12 +18,19 @@
+ #include <linux/mfd/core.h>
+ #include <linux/mfd/max8925.h>
+ 
++static struct resource io_parent = {
++	.start = 0,
++	.end   = 0xffffffff,
++	.flags = IORESOURCE_IO,
++};
++
+ static struct resource backlight_resources[] = {
+ 	{
+ 		.name	= "max8925-backlight",
+ 		.start	= MAX8925_WLED_MODE_CNTL,
+ 		.end	= MAX8925_WLED_CNTL,
+ 		.flags	= IORESOURCE_IO,
++		.parent = &io_parent,
+ 	},
+ };
+ 
+@@ -42,6 +49,7 @@ static struct resource touch_resources[]
+ 		.start	= MAX8925_TSC_IRQ,
+ 		.end	= MAX8925_ADC_RES_END,
+ 		.flags	= IORESOURCE_IO,
++		.parent = &io_parent,
+ 	},
+ };
+ 
+@@ -60,6 +68,7 @@ static struct resource power_supply_reso
+ 		.start	= MAX8925_CHG_IRQ1,
+ 		.end	= MAX8925_CHG_IRQ1_MASK,
+ 		.flags	= IORESOURCE_IO,
++		.parent = &io_parent,
+ 	},
+ };
+ 
+@@ -118,6 +127,7 @@ static struct mfd_cell onkey_devs[] = {
+ 	.start	= MAX8925_##_start,		\
+ 	.end	= MAX8925_##_end,		\
+ 	.flags	= IORESOURCE_IO,		\
++	.parent = &io_parent,			\
+ }
+ 
+ static struct resource regulator_resources[] = {
+From 9957423f035c2071f6d1c5d2f095cdafbeb25ad7 Mon Sep 17 00:00:00 2001
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+Date: Thu, 4 Oct 2012 17:11:13 -0700
+Subject: mn10300: only add -mmem-funcs to KBUILD_CFLAGS if gcc supports it
+
+From: Geert Uytterhoeven <geert@linux-m68k.org>
+
+commit 9957423f035c2071f6d1c5d2f095cdafbeb25ad7 upstream.
+
+It seems the current (gcc 4.6.3) no longer provides this so make it
+conditional.
+
+As reported by Tony before, the mn10300 architecture cross-compiles with
+gcc-4.6.3 if -mmem-funcs is not added to KBUILD_CFLAGS.
+
+Reported-by: Tony Breeds <tony@bakeyournoodle.com>
+Signed-off-by: Geert Uytterhoeven <geert@linux-m68k.org>
+Cc: David Howells <dhowells@redhat.com>
+Cc: Koichi Yasutake <yasutake.koichi@jp.panasonic.com>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/mn10300/Makefile |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/mn10300/Makefile
++++ b/arch/mn10300/Makefile
+@@ -26,7 +26,7 @@ CHECKFLAGS	+=
+ PROCESSOR	:= unset
+ UNIT		:= unset
+ 
+-KBUILD_CFLAGS	+= -mam33 -mmem-funcs -DCPU=AM33
++KBUILD_CFLAGS	+= -mam33 -DCPU=AM33 $(call cc-option,-mmem-funcs,)
+ KBUILD_AFLAGS	+= -mam33 -DCPU=AM33
+ 
+ ifeq ($(CONFIG_MN10300_CURRENT_IN_E2),y)
+From dccdd11a3449d39d0e3fdf376f13cf2eabab41b8 Mon Sep 17 00:00:00 2001
+From: Tao Hou <hotforest@gmail.com>
+Date: Mon, 1 Oct 2012 16:42:43 +0000
+Subject: net: ethernet: davinci_cpdma: decrease the desc count when cleaning up the remaining packets
+
+
+From: Tao Hou <hotforest@gmail.com>
+
+[ Upstream commit ffb5ba90017505a19e238e986e6d33f09e4df765 ]
+
+chan->count is used by rx channel. If the desc count is not updated by
+the clean up loop in cpdma_chan_stop, the value written to the rxfree
+register in cpdma_chan_start will be incorrect.
+
+Signed-off-by: Tao Hou <hotforest@gmail.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+---
+ drivers/net/ethernet/ti/davinci_cpdma.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/net/ethernet/ti/davinci_cpdma.c
++++ b/drivers/net/ethernet/ti/davinci_cpdma.c
+@@ -863,6 +863,7 @@ int cpdma_chan_stop(struct cpdma_chan *c
+ 
+ 		next_dma = desc_read(desc, hw_next);
+ 		chan->head = desc_from_phys(pool, next_dma);
++		chan->count--;
+ 		chan->stats.teardown_dequeue++;
+ 
+ 		/* issue callback without locks held */
+From 1965f66e7db08d1ebccd24a59043eba826cc1ce8 Mon Sep 17 00:00:00 2001
+From: Yinghai Lu <yinghai@kernel.org>
+Date: Mon, 10 Sep 2012 17:19:33 -0700
+Subject: PCI: Check P2P bridge for invalid secondary/subordinate range
+
+From: Yinghai Lu <yinghai@kernel.org>
+
+commit 1965f66e7db08d1ebccd24a59043eba826cc1ce8 upstream.
+
+For bridges with "secondary > subordinate", i.e., invalid bus number
+apertures, we don't enumerate anything behind the bridge unless the
+user specified "pci=assign-busses".
+
+This patch makes us automatically try to reassign the downstream bus
+numbers in this case (just for that bridge, not for all bridges as
+"pci=assign-busses" does).
+
+We don't discover all the devices on the Intel DP43BF motherboard
+without this change (or "pci=assign-busses") because its BIOS configures
+a bridge as:
+
+    pci 0000:00:1e.0: PCI bridge to [bus 20-08] (subtractive decode)
+
+[bhelgaas: changelog, change message to dev_info]
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=18412
+Bugzilla: https://bugzilla.redhat.com/show_bug.cgi?id=625754
+Reported-by: Brian C. Huffman <bhuffman@graze.net>
+Reported-by: VL <vl.homutov@gmail.com>
+Tested-by: VL <vl.homutov@gmail.com>
+Signed-off-by: Yinghai Lu <yinghai@kernel.org>
+Signed-off-by: Bjorn Helgaas <bhelgaas@google.com>
+
+---
+ drivers/pci/probe.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -729,8 +729,10 @@ int __devinit pci_scan_bridge(struct pci
+ 
+ 	/* Check if setup is sensible at all */
+ 	if (!pass &&
+-	    (primary != bus->number || secondary <= bus->number)) {
+-		dev_dbg(&dev->dev, "bus configuration invalid, reconfiguring\n");
++	    (primary != bus->number || secondary <= bus->number ||
++	     secondary > subordinate)) {
++		dev_info(&dev->dev, "bridge configuration invalid ([bus %02x-%02x]), reconfiguring\n",
++			 secondary, subordinate);
+ 		broken = 1;
+ 	}
+ 
+From 997a031107ec962967ce36db9bc500f1fad491c1 Mon Sep 17 00:00:00 2001
+From: Feng Hong <hongfeng@marvell.com>
+Date: Wed, 19 Sep 2012 14:16:00 +0200
+Subject: PM / Sleep: use resume event when call dpm_resume_early
+
+From: Feng Hong <hongfeng@marvell.com>
+
+commit 997a031107ec962967ce36db9bc500f1fad491c1 upstream.
+
+When dpm_suspend_noirq fail, state is PMSG_SUSPEND,
+should change to PMSG_RESUME when dpm_resume_early is called
+
+Signed-off-by: Feng Hong <hongfeng@marvell.com>
+Signed-off-by: Raul Xiong <xjian@marvell.com>
+Signed-off-by: Neil Zhang <zhangwm@marvell.com>
+Signed-off-by: Rafael J. Wysocki <rjw@sisk.pl>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/base/power/main.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/base/power/main.c
++++ b/drivers/base/power/main.c
+@@ -996,7 +996,7 @@ int dpm_suspend_end(pm_message_t state)
+ 
+ 	error = dpm_suspend_noirq(state);
+ 	if (error) {
+-		dpm_resume_early(state);
++		dpm_resume_early(resume_event(state));
+ 		return error;
+ 	}
+ 
+From 1e38b7140185e384da216aff66a711df09b5afc9 Mon Sep 17 00:00:00 2001
+From: Gavin Shan <shangw@linux.vnet.ibm.com>
+Date: Mon, 17 Sep 2012 04:34:28 +0000
+Subject: powerpc/eeh: Fix crash on converting OF node to edev
+
+From: Gavin Shan <shangw@linux.vnet.ibm.com>
+
+commit 1e38b7140185e384da216aff66a711df09b5afc9 upstream.
+
+The kernel crash was reported by Alexy. He was testing some feature
+with private kernel, in which Alexy added some code in pci_pm_reset()
+to read the CSR after writting it. The bug could be reproduced on
+Fiber Channel card (Fibre Channel: Emulex Corporation Saturn-X:
+LightPulse Fibre Channel Host Adapter (rev 03)) by the following
+commands.
+
+	# echo 1 > /sys/devices/pci0004:01/0004:01:00.0/reset
+	# rmmod lpfc
+	# modprobe lpfc
+
+The history behind the test case is that those additional config
+space reading operations in pci_pm_reset() would cause EEH error,
+but we didn't detect EEH error until "modprobe lpfc". For the case,
+all the PCI devices on PCI bus (0004:01) were removed and added after
+PE reset. Then the EEH devices would be figured out again based on
+the OF nodes. Unfortunately, there were some child OF nodes under
+PCI device (0004:01:00.0), but they didn't have attached PCI_DN since
+they're invisible from PCI domain. However, we were still trying to
+convert OF node to EEH device without checking on the attached PCI_DN.
+Eventually, it caused the kernel crash as follows:
+
+Unable to handle kernel paging request for data at address 0x00000030
+Faulting instruction address: 0xc00000000004d888
+cpu 0x0: Vector: 300 (Data Access) at [c000000fc797b950]
+    pc: c00000000004d888: .eeh_add_device_tree_early+0x78/0x140
+    lr: c00000000004d880: .eeh_add_device_tree_early+0x70/0x140
+    sp: c000000fc797bbd0
+   msr: 8000000000009032
+   dar: 30
+ dsisr: 40000000
+  current = 0xc000000fc78d9f70
+  paca    = 0xc00000000edb0000   softe: 0        irq_happened: 0x00
+    pid   = 2951, comm = eehd
+enter ? for help
+[c000000fc797bc50] c00000000004d848 .eeh_add_device_tree_early+0x38/0x140
+[c000000fc797bcd0] c00000000004d848 .eeh_add_device_tree_early+0x38/0x140
+[c000000fc797bd50] c000000000051b54 .pcibios_add_pci_devices+0x34/0x190
+[c000000fc797bde0] c00000000004fb10 .eeh_reset_device+0x100/0x160
+[c000000fc797be70] c0000000000502dc .eeh_handle_event+0x19c/0x300
+[c000000fc797bf00] c000000000050570 .eeh_event_handler+0x130/0x1a0
+[c000000fc797bf90] c000000000020138 .kernel_thread+0x54/0x70
+
+The patch changes of_node_to_eeh_dev() and just returns NULL if the
+passed OF node doesn't have attached PCI_DN.
+
+Reported-by: Alexey Kardashevskiy <aik@ozlabs.ru>
+Signed-off-by: Gavin Shan <shangw@linux.vnet.ibm.com>
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/powerpc/include/asm/pci-bridge.h |    8 ++++++++
+ arch/powerpc/platforms/pseries/eeh.c  |    2 +-
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/arch/powerpc/include/asm/pci-bridge.h
++++ b/arch/powerpc/include/asm/pci-bridge.h
+@@ -182,6 +182,14 @@ static inline int pci_device_from_OF_nod
+ #if defined(CONFIG_EEH)
+ static inline struct eeh_dev *of_node_to_eeh_dev(struct device_node *dn)
+ {
++	/*
++	 * For those OF nodes whose parent isn't PCI bridge, they
++	 * don't have PCI_DN actually. So we have to skip them for
++	 * any EEH operations.
++	 */
++	if (!dn || !PCI_DN(dn))
++		return NULL;
++
+ 	return PCI_DN(dn)->edev;
+ }
+ #endif
+--- a/arch/powerpc/platforms/pseries/eeh.c
++++ b/arch/powerpc/platforms/pseries/eeh.c
+@@ -1029,7 +1029,7 @@ static void eeh_add_device_early(struct
+ {
+ 	struct pci_controller *phb;
+ 
+-	if (!dn || !of_node_to_eeh_dev(dn))
++	if (!of_node_to_eeh_dev(dn))
+ 		return;
+ 	phb = of_node_to_eeh_dev(dn)->phb;
+ 
+From c8adfeccee01ce3de6a7d14fcd4e3be02e27f03c Mon Sep 17 00:00:00 2001
+From: Nishanth Aravamudan <nacc@linux.vnet.ibm.com>
+Date: Mon, 1 Oct 2012 14:59:13 +0000
+Subject: powerpc: Fix VMX fix for memcpy case
+
+From: Nishanth Aravamudan <nacc@linux.vnet.ibm.com>
+
+commit c8adfeccee01ce3de6a7d14fcd4e3be02e27f03c upstream.
+
+In 2fae7cdb60240e2e2d9b378afbf6d9fcce8a3890 ("powerpc: Fix VMX in
+interrupt check in POWER7 copy loops"), Anton inadvertently
+introduced a regression for memcpy on POWER7 machines. copyuser and
+memcpy diverge slightly in their use of cr1 (copyuser doesn't use it,
+but memcpy does) and you end up clobbering that register with your fix.
+That results in (taken from an FC18 kernel):
+
+[   18.824604] Unrecoverable VMX/Altivec Unavailable Exception f20 at c000000000052f40
+[   18.824618] Oops: Unrecoverable VMX/Altivec Unavailable Exception, sig: 6 [#1]
+[   18.824623] SMP NR_CPUS=1024 NUMA pSeries
+[   18.824633] Modules linked in: tg3(+) be2net(+) cxgb4(+) ipr(+) sunrpc xts lrw gf128mul dm_crypt dm_round_robin dm_multipath linear raid10 raid456 async_raid6_recov async_memcpy async_pq raid6_pq async_xor xor async_tx raid1 raid0 scsi_dh_rdac scsi_dh_hp_sw scsi_dh_emc scsi_dh_alua squashfs cramfs
+[   18.824705] NIP: c000000000052f40 LR: c00000000020b874 CTR: 0000000000000512
+[   18.824709] REGS: c000001f1fef7790 TRAP: 0f20   Not tainted  (3.6.0-0.rc6.git0.2.fc18.ppc64)
+[   18.824713] MSR: 8000000000009032 <SF,EE,ME,IR,DR,RI>  CR: 4802802e  XER: 20000010
+[   18.824726] SOFTE: 0
+[   18.824728] CFAR: 0000000000000f20
+[   18.824731] TASK = c000000fa7128400[0] 'swapper/24' THREAD: c000000fa7480000 CPU: 24
+GPR00: 00000000ffffffc0 c000001f1fef7a10 c00000000164edc0 c000000f9b9a8120
+GPR04: c000000f9b9a8124 0000000000001438 0000000000000060 03ffffff064657ee
+GPR08: 0000000080000000 0000000000000010 0000000000000020 0000000000000030
+GPR12: 0000000028028022 c00000000ff25400 0000000000000001 0000000000000000
+GPR16: 0000000000000000 7fffffffffffffff c0000000016b2180 c00000000156a500
+GPR20: c000000f968c7a90 c0000000131c31d8 c000001f1fef4000 c000000001561d00
+GPR24: 000000000000000a 0000000000000000 0000000000000001 0000000000000012
+GPR28: c000000fa5c04f80 00000000000008bc c0000000015c0a28 000000000000022e
+[   18.824792] NIP [c000000000052f40] .memcpy_power7+0x5a0/0x7c4
+[   18.824797] LR [c00000000020b874] .pcpu_free_area+0x174/0x2d0
+[   18.824800] Call Trace:
+[   18.824803] [c000001f1fef7a10] [c000000000052c14] .memcpy_power7+0x274/0x7c4 (unreliable)
+[   18.824809] [c000001f1fef7b10] [c00000000020b874] .pcpu_free_area+0x174/0x2d0
+[   18.824813] [c000001f1fef7bb0] [c00000000020ba88] .free_percpu+0xb8/0x1b0
+[   18.824819] [c000001f1fef7c50] [c00000000043d144] .throtl_pd_exit+0x94/0xd0
+[   18.824824] [c000001f1fef7cf0] [c00000000043acf8] .blkg_free+0x88/0xe0
+[   18.824829] [c000001f1fef7d90] [c00000000018c048] .rcu_process_callbacks+0x2e8/0x8a0
+[   18.824835] [c000001f1fef7e90] [c0000000000a8ce8] .__do_softirq+0x158/0x4d0
+[   18.824840] [c000001f1fef7f90] [c000000000025ecc] .call_do_softirq+0x14/0x24
+[   18.824845] [c000000fa7483650] [c000000000010e80] .do_softirq+0x160/0x1a0
+[   18.824850] [c000000fa74836f0] [c0000000000a94a4] .irq_exit+0xf4/0x120
+[   18.824854] [c000000fa7483780] [c000000000020c44] .timer_interrupt+0x154/0x4d0
+[   18.824859] [c000000fa7483830] [c000000000003be0] decrementer_common+0x160/0x180
+[   18.824866] --- Exception: 901 at .plpar_hcall_norets+0x84/0xd4
+[   18.824866]     LR = .check_and_cede_processor+0x48/0x80
+[   18.824871] [c000000fa7483b20] [c00000000007f018] .check_and_cede_processor+0x18/0x80 (unreliable)
+[   18.824877] [c000000fa7483b90] [c00000000007f104] .dedicated_cede_loop+0x84/0x150
+[   18.824883] [c000000fa7483c50] [c0000000006bc030] .cpuidle_enter+0x30/0x50
+[   18.824887] [c000000fa7483cc0] [c0000000006bc9f4] .cpuidle_idle_call+0x104/0x720
+[   18.824892] [c000000fa7483d80] [c000000000070af8] .pSeries_idle+0x18/0x40
+[   18.824897] [c000000fa7483df0] [c000000000019084] .cpu_idle+0x1a4/0x380
+[   18.824902] [c000000fa7483ec0] [c0000000008a4c18] .start_secondary+0x520/0x528
+[   18.824907] [c000000fa7483f90] [c0000000000093f0] .start_secondary_prolog+0x10/0x14
+[   18.824911] Instruction dump:
+[   18.824914] 38840008 90030000 90e30004 38630008 7ca62850 7cc300d0 78c7e102 7cf01120
+[   18.824923] 78c60660 39200010 39400020 39600030 <7e00200c> 7c0020ce 38840010 409f001c
+[   18.824935] ---[ end trace 0bb95124affaaa45 ]---
+[   18.825046] Unrecoverable VMX/Altivec Unavailable Exception f20 at c000000000052d08
+
+I believe the right fix is to make memcpy match usercopy and not use
+cr1.
+
+Signed-off-by: Nishanth Aravamudan <nacc@us.ibm.com>
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/powerpc/lib/memcpy_power7.S |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/powerpc/lib/memcpy_power7.S
++++ b/arch/powerpc/lib/memcpy_power7.S
+@@ -239,8 +239,8 @@ _GLOBAL(memcpy_power7)
+ 	ori	r9,r9,1		/* stream=1 */
+ 
+ 	srdi	r7,r5,7		/* length in cachelines, capped at 0x3FF */
+-	cmpldi	cr1,r7,0x3FF
+-	ble	cr1,1f
++	cmpldi	r7,0x3FF
++	ble	1f
+ 	li	r7,0x3FF
+ 1:	lis	r0,0x0E00	/* depth=7 */
+ 	sldi	r7,r7,7
+From d900bd7366463fd96a907b2c212242e2b68b27d8 Mon Sep 17 00:00:00 2001
+From: Anton Blanchard <anton@samba.org>
+Date: Wed, 3 Oct 2012 18:57:10 +0000
+Subject: powerpc/iommu: Fix multiple issues with IOMMU pools code
+
+From: Anton Blanchard <anton@samba.org>
+
+commit d900bd7366463fd96a907b2c212242e2b68b27d8 upstream.
+
+There are a number of issues in the recent IOMMU pools code:
+
+- On a preempt kernel we might switch CPUs in the middle of building
+  a scatter gather list. When this happens the handle hint passed in
+  no longer falls within the local CPU's pool. Check for this and
+  fall back to the pool hint.
+
+- We were missing a spin_unlock/spin_lock in one spot where we
+  switch pools.
+
+- We need to provide locking around dart_tlb_invalidate_all and
+  dart_tlb_invalidate_one now that the global lock is gone.
+
+Reported-by: Alexander Graf <agraf@suse.de>
+Signed-off-by: Anton Blanchard <anton@samba.org>
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/powerpc/kernel/iommu.c      |    5 ++++-
+ arch/powerpc/sysdev/dart_iommu.c |   12 ++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+--- a/arch/powerpc/kernel/iommu.c
++++ b/arch/powerpc/kernel/iommu.c
+@@ -215,7 +215,8 @@ static unsigned long iommu_range_alloc(s
+ 	spin_lock_irqsave(&(pool->lock), flags);
+ 
+ again:
+-	if ((pass == 0) && handle && *handle)
++	if ((pass == 0) && handle && *handle &&
++	    (*handle >= pool->start) && (*handle < pool->end))
+ 		start = *handle;
+ 	else
+ 		start = pool->hint;
+@@ -236,7 +237,9 @@ again:
+ 		 * but on second pass, start at 0 in pool 0.
+ 		 */
+ 		if ((start & mask) >= limit || pass > 0) {
++			spin_unlock(&(pool->lock));
+ 			pool = &(tbl->pools[0]);
++			spin_lock(&(pool->lock));
+ 			start = pool->start;
+ 		} else {
+ 			start &= mask;
+--- a/arch/powerpc/sysdev/dart_iommu.c
++++ b/arch/powerpc/sysdev/dart_iommu.c
+@@ -74,11 +74,16 @@ static int dart_is_u4;
+ 
+ #define DBG(...)
+ 
++static DEFINE_SPINLOCK(invalidate_lock);
++
+ static inline void dart_tlb_invalidate_all(void)
+ {
+ 	unsigned long l = 0;
+ 	unsigned int reg, inv_bit;
+ 	unsigned long limit;
++	unsigned long flags;
++
++	spin_lock_irqsave(&invalidate_lock, flags);
+ 
+ 	DBG("dart: flush\n");
+ 
+@@ -111,12 +116,17 @@ retry:
+ 			panic("DART: TLB did not flush after waiting a long "
+ 			      "time. Buggy U3 ?");
+ 	}
++
++	spin_unlock_irqrestore(&invalidate_lock, flags);
+ }
+ 
+ static inline void dart_tlb_invalidate_one(unsigned long bus_rpn)
+ {
+ 	unsigned int reg;
+ 	unsigned int l, limit;
++	unsigned long flags;
++
++	spin_lock_irqsave(&invalidate_lock, flags);
+ 
+ 	reg = DART_CNTL_U4_ENABLE | DART_CNTL_U4_IONE |
+ 		(bus_rpn & DART_CNTL_U4_IONE_MASK);
+@@ -138,6 +148,8 @@ wait_more:
+ 			panic("DART: TLB did not flush after waiting a long "
+ 			      "time. Buggy U4 ?");
+ 	}
++
++	spin_unlock_irqrestore(&invalidate_lock, flags);
+ }
+ 
+ static void dart_flush(struct iommu_table *tbl)
+From 7c4a6106d6451fc03c491e61df37c044505d843a Mon Sep 17 00:00:00 2001
+From: Alexandre Bounine <alexandre.bounine@idt.com>
+Date: Thu, 4 Oct 2012 17:15:48 -0700
+Subject: rapidio/rionet: fix multicast packet transmit logic
+
+From: Alexandre Bounine <alexandre.bounine@idt.com>
+
+commit 7c4a6106d6451fc03c491e61df37c044505d843a upstream.
+
+Fix multicast packet transmit logic to account for repetitive transmission
+of single skb:
+- correct check for available buffers (this bug may produce NULL pointer
+  crash dump in case of heavy traffic);
+- update skb user count (incorrect user counter causes a warning dump from
+  net_tx_action routine during multicast transfers in systems with three or
+  more rionet participants).
+
+Signed-off-by: Alexandre Bounine <alexandre.bounine@idt.com>
+Cc: Matt Porter <mporter@kernel.crashing.org>
+Cc: David S. Miller <davem@davemloft.net>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/net/rionet.c |   20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/rionet.c
++++ b/drivers/net/rionet.c
+@@ -79,6 +79,7 @@ static int rionet_capable = 1;
+  * on system trade-offs.
+  */
+ static struct rio_dev **rionet_active;
++static int nact;	/* total number of active rionet peers */
+ 
+ #define is_rionet_capable(src_ops, dst_ops)			\
+ 			((src_ops & RIO_SRC_OPS_DATA_MSG) &&	\
+@@ -175,6 +176,7 @@ static int rionet_start_xmit(struct sk_b
+ 	struct ethhdr *eth = (struct ethhdr *)skb->data;
+ 	u16 destid;
+ 	unsigned long flags;
++	int add_num = 1;
+ 
+ 	local_irq_save(flags);
+ 	if (!spin_trylock(&rnet->tx_lock)) {
+@@ -182,7 +184,10 @@ static int rionet_start_xmit(struct sk_b
+ 		return NETDEV_TX_LOCKED;
+ 	}
+ 
+-	if ((rnet->tx_cnt + 1) > RIONET_TX_RING_SIZE) {
++	if (is_multicast_ether_addr(eth->h_dest))
++		add_num = nact;
++
++	if ((rnet->tx_cnt + add_num) > RIONET_TX_RING_SIZE) {
+ 		netif_stop_queue(ndev);
+ 		spin_unlock_irqrestore(&rnet->tx_lock, flags);
+ 		printk(KERN_ERR "%s: BUG! Tx Ring full when queue awake!\n",
+@@ -191,11 +196,16 @@ static int rionet_start_xmit(struct sk_b
+ 	}
+ 
+ 	if (is_multicast_ether_addr(eth->h_dest)) {
++		int count = 0;
+ 		for (i = 0; i < RIO_MAX_ROUTE_ENTRIES(rnet->mport->sys_size);
+ 				i++)
+-			if (rionet_active[i])
++			if (rionet_active[i]) {
+ 				rionet_queue_tx_msg(skb, ndev,
+ 						    rionet_active[i]);
++				if (count)
++					atomic_inc(&skb->users);
++				count++;
++			}
+ 	} else if (RIONET_MAC_MATCH(eth->h_dest)) {
+ 		destid = RIONET_GET_DESTID(eth->h_dest);
+ 		if (rionet_active[destid])
+@@ -220,14 +230,17 @@ static void rionet_dbell_event(struct ri
+ 	if (info == RIONET_DOORBELL_JOIN) {
+ 		if (!rionet_active[sid]) {
+ 			list_for_each_entry(peer, &rionet_peers, node) {
+-				if (peer->rdev->destid == sid)
++				if (peer->rdev->destid == sid) {
+ 					rionet_active[sid] = peer->rdev;
++					nact++;
++				}
+ 			}
+ 			rio_mport_send_doorbell(mport, sid,
+ 						RIONET_DOORBELL_JOIN);
+ 		}
+ 	} else if (info == RIONET_DOORBELL_LEAVE) {
+ 		rionet_active[sid] = NULL;
++		nact--;
+ 	} else {
+ 		if (netif_msg_intr(rnet))
+ 			printk(KERN_WARNING "%s: unhandled doorbell\n",
+@@ -523,6 +536,7 @@ static int rionet_probe(struct rio_dev *
+ 
+ 		rc = rionet_setup_netdev(rdev->net->hport, ndev);
+ 		rionet_check = 1;
++		nact = 0;
+ 	}
+ 
+ 	/*
+From d22019778cd9ea04c1dadf7bf453920d5288f8d9 Mon Sep 17 00:00:00 2001
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:29 +0200
+Subject: SCSI: zfcp: Adapt to new FC_PORTSPEED semantics
+
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+
+commit d22019778cd9ea04c1dadf7bf453920d5288f8d9 upstream.
+
+Commit a9277e7783651d4e0a849f7988340b1c1cf748a4
+"[SCSI] scsi_transport_fc: Getting FC Port Speed in sync with FC-GS"
+changed the semantics of FC_PORTSPEED defines to
+FDMI port attributes of FC-HBA/SM-HBA
+which is different from the previous bit reversed
+Report Port Speed Capabilities (RPSC) ELS of FC-GS/FC-LS.
+
+Zfcp showed "10 Gbit" instead of "4 Gbit" for supported_speeds.
+It now uses explicit bit conversion as the other LLDs already
+do, in order to be independent of the kernel bit semantics.
+See also http://marc.info/?l=linux-scsi&m=134452926830730&w=2
+
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Reviewed-by: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_fsf.c |   34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_fsf.c
++++ b/drivers/s390/scsi/zfcp_fsf.c
+@@ -437,6 +437,34 @@ void zfcp_fsf_req_dismiss_all(struct zfc
+ 	}
+ }
+ 
++#define ZFCP_FSF_PORTSPEED_1GBIT	(1 <<  0)
++#define ZFCP_FSF_PORTSPEED_2GBIT	(1 <<  1)
++#define ZFCP_FSF_PORTSPEED_4GBIT	(1 <<  2)
++#define ZFCP_FSF_PORTSPEED_10GBIT	(1 <<  3)
++#define ZFCP_FSF_PORTSPEED_8GBIT	(1 <<  4)
++#define ZFCP_FSF_PORTSPEED_16GBIT	(1 <<  5)
++#define ZFCP_FSF_PORTSPEED_NOT_NEGOTIATED (1 << 15)
++
++static u32 zfcp_fsf_convert_portspeed(u32 fsf_speed)
++{
++	u32 fdmi_speed = 0;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_1GBIT)
++		fdmi_speed |= FC_PORTSPEED_1GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_2GBIT)
++		fdmi_speed |= FC_PORTSPEED_2GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_4GBIT)
++		fdmi_speed |= FC_PORTSPEED_4GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_10GBIT)
++		fdmi_speed |= FC_PORTSPEED_10GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_8GBIT)
++		fdmi_speed |= FC_PORTSPEED_8GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_16GBIT)
++		fdmi_speed |= FC_PORTSPEED_16GBIT;
++	if (fsf_speed & ZFCP_FSF_PORTSPEED_NOT_NEGOTIATED)
++		fdmi_speed |= FC_PORTSPEED_NOT_NEGOTIATED;
++	return fdmi_speed;
++}
++
+ static int zfcp_fsf_exchange_config_evaluate(struct zfcp_fsf_req *req)
+ {
+ 	struct fsf_qtcb_bottom_config *bottom = &req->qtcb->bottom.config;
+@@ -456,7 +484,8 @@ static int zfcp_fsf_exchange_config_eval
+ 	fc_host_port_name(shost) = nsp->fl_wwpn;
+ 	fc_host_node_name(shost) = nsp->fl_wwnn;
+ 	fc_host_port_id(shost) = ntoh24(bottom->s_id);
+-	fc_host_speed(shost) = bottom->fc_link_speed;
++	fc_host_speed(shost) =
++		zfcp_fsf_convert_portspeed(bottom->fc_link_speed);
+ 	fc_host_supported_classes(shost) = FC_COS_CLASS2 | FC_COS_CLASS3;
+ 
+ 	adapter->hydra_version = bottom->adapter_type;
+@@ -580,7 +609,8 @@ static void zfcp_fsf_exchange_port_evalu
+ 	} else
+ 		fc_host_permanent_port_name(shost) = fc_host_port_name(shost);
+ 	fc_host_maxframe_size(shost) = bottom->maximum_frame_size;
+-	fc_host_supported_speeds(shost) = bottom->supported_speed;
++	fc_host_supported_speeds(shost) =
++		zfcp_fsf_convert_portspeed(bottom->supported_speed);
+ 	memcpy(fc_host_supported_fc4s(shost), bottom->supported_fc4_types,
+ 	       FC_FC4_LIST_SIZE);
+ 	memcpy(fc_host_active_fc4s(shost), bottom->active_fc4_types,
+From 01e60527f0a49b3d7df603010bd6079bb4b6cf07 Mon Sep 17 00:00:00 2001
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:31 +0200
+Subject: SCSI: zfcp: Bounds checking for deferred error trace
+
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+
+commit 01e60527f0a49b3d7df603010bd6079bb4b6cf07 upstream.
+
+The pl vector has scount elements, i.e. pl[scount-1] is the last valid
+element. For maximum sized requests, payload->counter == scount after
+the last loop iteration. Therefore, do bounds checking first (with
+boolean shortcut) to not access the invalid element pl[scount].
+
+Do not trust the maximum sbale->scount value from the HBA
+but ensure we won't access the pl vector out of our allocated bounds.
+While at it, clean up scoping and prevent unnecessary memset.
+
+Minor fix for 86a9668a8d29ea711613e1cb37efa68e7c4db564
+"[SCSI] zfcp: support for hardware data router"
+
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Reviewed-by: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_dbf.c  |    2 +-
+ drivers/s390/scsi/zfcp_qdio.c |   16 ++++++++++------
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_dbf.c
++++ b/drivers/s390/scsi/zfcp_dbf.c
+@@ -191,7 +191,7 @@ void zfcp_dbf_hba_def_err(struct zfcp_ad
+ 	length = min((u16)sizeof(struct qdio_buffer),
+ 		     (u16)ZFCP_DBF_PAY_MAX_REC);
+ 
+-	while ((char *)pl[payload->counter] && payload->counter < scount) {
++	while (payload->counter < scount && (char *)pl[payload->counter]) {
+ 		memcpy(payload->data, (char *)pl[payload->counter], length);
+ 		debug_event(dbf->pay, 1, payload, zfcp_dbf_plen(length));
+ 		payload->counter++;
+--- a/drivers/s390/scsi/zfcp_qdio.c
++++ b/drivers/s390/scsi/zfcp_qdio.c
+@@ -102,18 +102,22 @@ static void zfcp_qdio_int_resp(struct cc
+ {
+ 	struct zfcp_qdio *qdio = (struct zfcp_qdio *) parm;
+ 	struct zfcp_adapter *adapter = qdio->adapter;
+-	struct qdio_buffer_element *sbale;
+ 	int sbal_no, sbal_idx;
+-	void *pl[ZFCP_QDIO_MAX_SBALS_PER_REQ + 1];
+-	u64 req_id;
+-	u8 scount;
+ 
+ 	if (unlikely(qdio_err)) {
+-		memset(pl, 0, ZFCP_QDIO_MAX_SBALS_PER_REQ * sizeof(void *));
+ 		if (zfcp_adapter_multi_buffer_active(adapter)) {
++			void *pl[ZFCP_QDIO_MAX_SBALS_PER_REQ + 1];
++			struct qdio_buffer_element *sbale;
++			u64 req_id;
++			u8 scount;
++
++			memset(pl, 0,
++			       ZFCP_QDIO_MAX_SBALS_PER_REQ * sizeof(void *));
+ 			sbale = qdio->res_q[idx]->element;
+ 			req_id = (u64) sbale->addr;
+-			scount = sbale->scount + 1; /* incl. signaling SBAL */
++			scount = min(sbale->scount + 1,
++				     ZFCP_QDIO_MAX_SBALS_PER_REQ + 1);
++				     /* incl. signaling SBAL */
+ 
+ 			for (sbal_no = 0; sbal_no < scount; sbal_no++) {
+ 				sbal_idx = (idx + sbal_no) %
+From cb45214960bc989af8b911ebd77da541c797717d Mon Sep 17 00:00:00 2001
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:32 +0200
+Subject: SCSI: zfcp: Do not wakeup while suspended
+
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+
+commit cb45214960bc989af8b911ebd77da541c797717d upstream.
+
+If the mapping of FCP device bus ID and corresponding subchannel
+is modified while the Linux image is suspended, the resume of FCP
+devices can fail. During resume, zfcp gets callbacks from cio regarding
+the modified subchannels but they can be arbitrarily mixed with the
+restore/resume callback. Since the cio callbacks would trigger
+adapter recovery, zfcp could wakeup before the resume callback.
+Therefore, ignore the cio callbacks regarding subchannels while
+being suspended. We can safely do so, since zfcp does not deal itself
+with subchannels. For problem determination purposes, we still trace the
+ignored callback events.
+
+The following kernel messages could be seen on resume:
+
+kernel: <WWPN>: parent <FCP device bus ID> should not be sleeping
+
+As part of adapter reopen recovery, zfcp performs auto port scanning
+which can erroneously try to register new remote ports with
+scsi_transport_fc and the device core code complains about the parent
+(adapter) still sleeping.
+
+kernel: zfcp.3dff9c: <FCP device bus ID>:\
+ Setting up the QDIO connection to the FCP adapter failed
+<last kernel message repeated 3 more times>
+kernel: zfcp.574d43: <FCP device bus ID>:\
+ ERP cannot recover an error on the FCP device
+
+In such cases, the adapter gave up recovery and remained blocked along
+with its child objects: remote ports and LUNs/scsi devices. Even the
+adapter shutdown as part of giving up recovery failed because the ccw
+device state remained disconnected. Later, the corresponding remote
+ports ran into dev_loss_tmo. As a result, the LUNs were erroneously
+not available again after resume.
+
+Even a manually triggered adapter recovery (e.g. sysfs attribute
+failed, or device offline/online via sysfs) could not recover the
+adapter due to the remaining disconnected state of the corresponding
+ccw device.
+
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_ccw.c |   73 +++++++++++++++++++++++++++++++++++++------
+ drivers/s390/scsi/zfcp_dbf.c |   20 +++++++++++
+ drivers/s390/scsi/zfcp_dbf.h |    1 
+ drivers/s390/scsi/zfcp_def.h |    1 
+ drivers/s390/scsi/zfcp_ext.h |    1 
+ 5 files changed, 86 insertions(+), 10 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_ccw.c
++++ b/drivers/s390/scsi/zfcp_ccw.c
+@@ -39,17 +39,23 @@ void zfcp_ccw_adapter_put(struct zfcp_ad
+ 	spin_unlock_irqrestore(&zfcp_ccw_adapter_ref_lock, flags);
+ }
+ 
+-static int zfcp_ccw_activate(struct ccw_device *cdev)
+-
++/**
++ * zfcp_ccw_activate - activate adapter and wait for it to finish
++ * @cdev: pointer to belonging ccw device
++ * @clear: Status flags to clear.
++ * @tag: s390dbf trace record tag
++ */
++static int zfcp_ccw_activate(struct ccw_device *cdev, int clear, char *tag)
+ {
+ 	struct zfcp_adapter *adapter = zfcp_ccw_adapter_by_cdev(cdev);
+ 
+ 	if (!adapter)
+ 		return 0;
+ 
++	zfcp_erp_clear_adapter_status(adapter, clear);
+ 	zfcp_erp_set_adapter_status(adapter, ZFCP_STATUS_COMMON_RUNNING);
+ 	zfcp_erp_adapter_reopen(adapter, ZFCP_STATUS_COMMON_ERP_FAILED,
+-				"ccresu2");
++				tag);
+ 	zfcp_erp_wait(adapter);
+ 	flush_work(&adapter->scan_work);
+ 
+@@ -164,26 +170,29 @@ static int zfcp_ccw_set_online(struct cc
+ 	BUG_ON(!zfcp_reqlist_isempty(adapter->req_list));
+ 	adapter->req_no = 0;
+ 
+-	zfcp_ccw_activate(cdev);
++	zfcp_ccw_activate(cdev, 0, "ccsonl1");
+ 	zfcp_ccw_adapter_put(adapter);
+ 	return 0;
+ }
+ 
+ /**
+- * zfcp_ccw_set_offline - set_offline function of zfcp driver
++ * zfcp_ccw_offline_sync - shut down adapter and wait for it to finish
+  * @cdev: pointer to belonging ccw device
++ * @set: Status flags to set.
++ * @tag: s390dbf trace record tag
+  *
+  * This function gets called by the common i/o layer and sets an adapter
+  * into state offline.
+  */
+-static int zfcp_ccw_set_offline(struct ccw_device *cdev)
++static int zfcp_ccw_offline_sync(struct ccw_device *cdev, int set, char *tag)
+ {
+ 	struct zfcp_adapter *adapter = zfcp_ccw_adapter_by_cdev(cdev);
+ 
+ 	if (!adapter)
+ 		return 0;
+ 
+-	zfcp_erp_adapter_shutdown(adapter, 0, "ccsoff1");
++	zfcp_erp_set_adapter_status(adapter, set);
++	zfcp_erp_adapter_shutdown(adapter, 0, tag);
+ 	zfcp_erp_wait(adapter);
+ 
+ 	zfcp_ccw_adapter_put(adapter);
+@@ -191,6 +200,18 @@ static int zfcp_ccw_set_offline(struct c
+ }
+ 
+ /**
++ * zfcp_ccw_set_offline - set_offline function of zfcp driver
++ * @cdev: pointer to belonging ccw device
++ *
++ * This function gets called by the common i/o layer and sets an adapter
++ * into state offline.
++ */
++static int zfcp_ccw_set_offline(struct ccw_device *cdev)
++{
++	return zfcp_ccw_offline_sync(cdev, 0, "ccsoff1");
++}
++
++/**
+  * zfcp_ccw_notify - ccw notify function
+  * @cdev: pointer to belonging ccw device
+  * @event: indicates if adapter was detached or attached
+@@ -207,6 +228,11 @@ static int zfcp_ccw_notify(struct ccw_de
+ 
+ 	switch (event) {
+ 	case CIO_GONE:
++		if (atomic_read(&adapter->status) &
++		    ZFCP_STATUS_ADAPTER_SUSPENDED) { /* notification ignore */
++			zfcp_dbf_hba_basic("ccnigo1", adapter);
++			break;
++		}
+ 		dev_warn(&cdev->dev, "The FCP device has been detached\n");
+ 		zfcp_erp_adapter_shutdown(adapter, 0, "ccnoti1");
+ 		break;
+@@ -216,6 +242,11 @@ static int zfcp_ccw_notify(struct ccw_de
+ 		zfcp_erp_adapter_shutdown(adapter, 0, "ccnoti2");
+ 		break;
+ 	case CIO_OPER:
++		if (atomic_read(&adapter->status) &
++		    ZFCP_STATUS_ADAPTER_SUSPENDED) { /* notification ignore */
++			zfcp_dbf_hba_basic("ccniop1", adapter);
++			break;
++		}
+ 		dev_info(&cdev->dev, "The FCP device is operational again\n");
+ 		zfcp_erp_set_adapter_status(adapter,
+ 					    ZFCP_STATUS_COMMON_RUNNING);
+@@ -251,6 +282,28 @@ static void zfcp_ccw_shutdown(struct ccw
+ 	zfcp_ccw_adapter_put(adapter);
+ }
+ 
++static int zfcp_ccw_suspend(struct ccw_device *cdev)
++{
++	zfcp_ccw_offline_sync(cdev, ZFCP_STATUS_ADAPTER_SUSPENDED, "ccsusp1");
++	return 0;
++}
++
++static int zfcp_ccw_thaw(struct ccw_device *cdev)
++{
++	/* trace records for thaw and final shutdown during suspend
++	   can only be found in system dump until the end of suspend
++	   but not after resume because it's based on the memory image
++	   right after the very first suspend (freeze) callback */
++	zfcp_ccw_activate(cdev, 0, "ccthaw1");
++	return 0;
++}
++
++static int zfcp_ccw_resume(struct ccw_device *cdev)
++{
++	zfcp_ccw_activate(cdev, ZFCP_STATUS_ADAPTER_SUSPENDED, "ccresu1");
++	return 0;
++}
++
+ struct ccw_driver zfcp_ccw_driver = {
+ 	.driver = {
+ 		.owner	= THIS_MODULE,
+@@ -263,7 +316,7 @@ struct ccw_driver zfcp_ccw_driver = {
+ 	.set_offline = zfcp_ccw_set_offline,
+ 	.notify      = zfcp_ccw_notify,
+ 	.shutdown    = zfcp_ccw_shutdown,
+-	.freeze      = zfcp_ccw_set_offline,
+-	.thaw	     = zfcp_ccw_activate,
+-	.restore     = zfcp_ccw_activate,
++	.freeze      = zfcp_ccw_suspend,
++	.thaw	     = zfcp_ccw_thaw,
++	.restore     = zfcp_ccw_resume,
+ };
+--- a/drivers/s390/scsi/zfcp_dbf.c
++++ b/drivers/s390/scsi/zfcp_dbf.c
+@@ -200,6 +200,26 @@ void zfcp_dbf_hba_def_err(struct zfcp_ad
+ 	spin_unlock_irqrestore(&dbf->pay_lock, flags);
+ }
+ 
++/**
++ * zfcp_dbf_hba_basic - trace event for basic adapter events
++ * @adapter: pointer to struct zfcp_adapter
++ */
++void zfcp_dbf_hba_basic(char *tag, struct zfcp_adapter *adapter)
++{
++	struct zfcp_dbf *dbf = adapter->dbf;
++	struct zfcp_dbf_hba *rec = &dbf->hba_buf;
++	unsigned long flags;
++
++	spin_lock_irqsave(&dbf->hba_lock, flags);
++	memset(rec, 0, sizeof(*rec));
++
++	memcpy(rec->tag, tag, ZFCP_DBF_TAG_LEN);
++	rec->id = ZFCP_DBF_HBA_BASIC;
++
++	debug_event(dbf->hba, 1, rec, sizeof(*rec));
++	spin_unlock_irqrestore(&dbf->hba_lock, flags);
++}
++
+ static void zfcp_dbf_set_common(struct zfcp_dbf_rec *rec,
+ 				struct zfcp_adapter *adapter,
+ 				struct zfcp_port *port,
+--- a/drivers/s390/scsi/zfcp_dbf.h
++++ b/drivers/s390/scsi/zfcp_dbf.h
+@@ -154,6 +154,7 @@ enum zfcp_dbf_hba_id {
+ 	ZFCP_DBF_HBA_RES	= 1,
+ 	ZFCP_DBF_HBA_USS	= 2,
+ 	ZFCP_DBF_HBA_BIT	= 3,
++	ZFCP_DBF_HBA_BASIC	= 4,
+ };
+ 
+ /**
+--- a/drivers/s390/scsi/zfcp_def.h
++++ b/drivers/s390/scsi/zfcp_def.h
+@@ -77,6 +77,7 @@ struct zfcp_reqlist;
+ #define ZFCP_STATUS_ADAPTER_SIOSL_ISSUED	0x00000004
+ #define ZFCP_STATUS_ADAPTER_XCONFIG_OK		0x00000008
+ #define ZFCP_STATUS_ADAPTER_HOST_CON_INIT	0x00000010
++#define ZFCP_STATUS_ADAPTER_SUSPENDED		0x00000040
+ #define ZFCP_STATUS_ADAPTER_ERP_PENDING		0x00000100
+ #define ZFCP_STATUS_ADAPTER_LINK_UNPLUGGED	0x00000200
+ #define ZFCP_STATUS_ADAPTER_DATA_DIV_ENABLED	0x00000400
+--- a/drivers/s390/scsi/zfcp_ext.h
++++ b/drivers/s390/scsi/zfcp_ext.h
+@@ -54,6 +54,7 @@ extern void zfcp_dbf_hba_fsf_res(char *,
+ extern void zfcp_dbf_hba_bit_err(char *, struct zfcp_fsf_req *);
+ extern void zfcp_dbf_hba_berr(struct zfcp_dbf *, struct zfcp_fsf_req *);
+ extern void zfcp_dbf_hba_def_err(struct zfcp_adapter *, u64, u16, void **);
++extern void zfcp_dbf_hba_basic(char *, struct zfcp_adapter *);
+ extern void zfcp_dbf_san_req(char *, struct zfcp_fsf_req *, u32);
+ extern void zfcp_dbf_san_res(char *, struct zfcp_fsf_req *);
+ extern void zfcp_dbf_san_in_els(char *, struct zfcp_fsf_req *);
+From 0100998dbfe6dfcd90a6e912ca7ed6f255d48f25 Mon Sep 17 00:00:00 2001
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:30 +0200
+Subject: SCSI: zfcp: Make trace record tags unique
+
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+
+commit 0100998dbfe6dfcd90a6e912ca7ed6f255d48f25 upstream.
+
+Duplicate fssrh_2 from a54ca0f62f953898b05549391ac2a8a4dad6482b
+"[SCSI] zfcp: Redesign of the debug tracing for HBA records."
+complicates distinction of generic status read response from
+local link up.
+Duplicate fsscth1 from 2c55b750a884b86dea8b4cc5f15e1484cc47a25c
+"[SCSI] zfcp: Redesign of the debug tracing for SAN records."
+complicates distinction of good common transport response from
+invalid port handle.
+
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Reviewed-by: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_fsf.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_fsf.c
++++ b/drivers/s390/scsi/zfcp_fsf.c
+@@ -219,7 +219,7 @@ static void zfcp_fsf_status_read_handler
+ 		return;
+ 	}
+ 
+-	zfcp_dbf_hba_fsf_uss("fssrh_2", req);
++	zfcp_dbf_hba_fsf_uss("fssrh_4", req);
+ 
+ 	switch (sr_buf->status_type) {
+ 	case FSF_STATUS_READ_PORT_CLOSED:
+@@ -915,7 +915,7 @@ static void zfcp_fsf_send_ct_handler(str
+ 
+ 	switch (header->fsf_status) {
+         case FSF_GOOD:
+-		zfcp_dbf_san_res("fsscth1", req);
++		zfcp_dbf_san_res("fsscth2", req);
+ 		ct->status = 0;
+ 		break;
+         case FSF_SERVICE_CLASS_NOT_SUPPORTED:
+From d436de8ce25f53a8a880a931886821f632247943 Mon Sep 17 00:00:00 2001
+From: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:36 +0200
+Subject: SCSI: zfcp: only access zfcp_scsi_dev for valid scsi_device
+
+From: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+
+commit d436de8ce25f53a8a880a931886821f632247943 upstream.
+
+__scsi_remove_device (e.g. due to dev_loss_tmo) calls
+zfcp_scsi_slave_destroy which in turn sends a close LUN FSF request to
+the adapter. After 30 seconds without response,
+zfcp_erp_timeout_handler kicks the ERP thread failing the close LUN
+ERP action. zfcp_erp_wait in zfcp_erp_lun_shutdown_wait and thus
+zfcp_scsi_slave_destroy returns and then scsi_device is no longer
+valid. Sometime later the response to the close LUN FSF request may
+finally come in. However, commit
+b62a8d9b45b971a67a0f8413338c230e3117dff5
+"[SCSI] zfcp: Use SCSI device data zfcp_scsi_dev instead of zfcp_unit"
+introduced a number of attempts to unconditionally access struct
+zfcp_scsi_dev through struct scsi_device causing a use-after-free.
+This leads to an Oops due to kernel page fault in one of:
+zfcp_fsf_abort_fcp_command_handler, zfcp_fsf_open_lun_handler,
+zfcp_fsf_close_lun_handler, zfcp_fsf_req_trace,
+zfcp_fsf_fcp_handler_common.
+Move dereferencing of zfcp private data zfcp_scsi_dev allocated in
+scsi_device via scsi_transport_reserve_device after the check for
+potentially aborted FSF request and thus no longer valid scsi_device.
+Only then assign sdev_to_zfcp(sdev) to the local auto variable struct
+zfcp_scsi_dev *zfcp_sdev.
+
+Signed-off-by: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_fsf.c |   19 ++++++++++++++-----
+ 1 file changed, 14 insertions(+), 5 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_fsf.c
++++ b/drivers/s390/scsi/zfcp_fsf.c
+@@ -801,12 +801,14 @@ out:
+ static void zfcp_fsf_abort_fcp_command_handler(struct zfcp_fsf_req *req)
+ {
+ 	struct scsi_device *sdev = req->data;
+-	struct zfcp_scsi_dev *zfcp_sdev = sdev_to_zfcp(sdev);
++	struct zfcp_scsi_dev *zfcp_sdev;
+ 	union fsf_status_qual *fsq = &req->qtcb->header.fsf_status_qual;
+ 
+ 	if (req->status & ZFCP_STATUS_FSFREQ_ERROR)
+ 		return;
+ 
++	zfcp_sdev = sdev_to_zfcp(sdev);
++
+ 	switch (req->qtcb->header.fsf_status) {
+ 	case FSF_PORT_HANDLE_NOT_VALID:
+ 		if (fsq->word[0] == fsq->word[1]) {
+@@ -1769,13 +1771,15 @@ static void zfcp_fsf_open_lun_handler(st
+ {
+ 	struct zfcp_adapter *adapter = req->adapter;
+ 	struct scsi_device *sdev = req->data;
+-	struct zfcp_scsi_dev *zfcp_sdev = sdev_to_zfcp(sdev);
++	struct zfcp_scsi_dev *zfcp_sdev;
+ 	struct fsf_qtcb_header *header = &req->qtcb->header;
+ 	struct fsf_qtcb_bottom_support *bottom = &req->qtcb->bottom.support;
+ 
+ 	if (req->status & ZFCP_STATUS_FSFREQ_ERROR)
+ 		return;
+ 
++	zfcp_sdev = sdev_to_zfcp(sdev);
++
+ 	atomic_clear_mask(ZFCP_STATUS_COMMON_ACCESS_DENIED |
+ 			  ZFCP_STATUS_COMMON_ACCESS_BOXED |
+ 			  ZFCP_STATUS_LUN_SHARED |
+@@ -1886,11 +1890,13 @@ out:
+ static void zfcp_fsf_close_lun_handler(struct zfcp_fsf_req *req)
+ {
+ 	struct scsi_device *sdev = req->data;
+-	struct zfcp_scsi_dev *zfcp_sdev = sdev_to_zfcp(sdev);
++	struct zfcp_scsi_dev *zfcp_sdev;
+ 
+ 	if (req->status & ZFCP_STATUS_FSFREQ_ERROR)
+ 		return;
+ 
++	zfcp_sdev = sdev_to_zfcp(sdev);
++
+ 	switch (req->qtcb->header.fsf_status) {
+ 	case FSF_PORT_HANDLE_NOT_VALID:
+ 		zfcp_erp_adapter_reopen(zfcp_sdev->port->adapter, 0, "fscuh_1");
+@@ -1980,7 +1986,7 @@ static void zfcp_fsf_req_trace(struct zf
+ {
+ 	struct fsf_qual_latency_info *lat_in;
+ 	struct latency_cont *lat = NULL;
+-	struct zfcp_scsi_dev *zfcp_sdev = sdev_to_zfcp(scsi->device);
++	struct zfcp_scsi_dev *zfcp_sdev;
+ 	struct zfcp_blk_drv_data blktrc;
+ 	int ticks = req->adapter->timer_ticks;
+ 
+@@ -1995,6 +2001,7 @@ static void zfcp_fsf_req_trace(struct zf
+ 
+ 	if (req->adapter->adapter_features & FSF_FEATURE_MEASUREMENT_DATA &&
+ 	    !(req->status & ZFCP_STATUS_FSFREQ_ERROR)) {
++		zfcp_sdev = sdev_to_zfcp(scsi->device);
+ 		blktrc.flags |= ZFCP_BLK_LAT_VALID;
+ 		blktrc.channel_lat = lat_in->channel_lat * ticks;
+ 		blktrc.fabric_lat = lat_in->fabric_lat * ticks;
+@@ -2032,12 +2039,14 @@ static void zfcp_fsf_fcp_handler_common(
+ {
+ 	struct scsi_cmnd *scmnd = req->data;
+ 	struct scsi_device *sdev = scmnd->device;
+-	struct zfcp_scsi_dev *zfcp_sdev = sdev_to_zfcp(sdev);
++	struct zfcp_scsi_dev *zfcp_sdev;
+ 	struct fsf_qtcb_header *header = &req->qtcb->header;
+ 
+ 	if (unlikely(req->status & ZFCP_STATUS_FSFREQ_ERROR))
+ 		return;
+ 
++	zfcp_sdev = sdev_to_zfcp(sdev);
++
+ 	switch (header->fsf_status) {
+ 	case FSF_HANDLE_MISMATCH:
+ 	case FSF_PORT_HANDLE_NOT_VALID:
+From ca579c9f136af4274ccfd1bcaee7f38a29a0e2e9 Mon Sep 17 00:00:00 2001
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+Date: Tue, 4 Sep 2012 15:23:33 +0200
+Subject: SCSI: zfcp: remove invalid reference to list iterator variable
+
+From: Julia Lawall <Julia.Lawall@lip6.fr>
+
+commit ca579c9f136af4274ccfd1bcaee7f38a29a0e2e9 upstream.
+
+If list_for_each_entry, etc complete a traversal of the list, the iterator
+variable ends up pointing to an address at an offset from the list head,
+and not a meaningful structure.  Thus this value should not be used after
+the end of the iterator.  Replace port->adapter->scsi_host by
+adapter->scsi_host.
+
+This problem was found using Coccinelle (http://coccinelle.lip6.fr/).
+
+Oversight in upsteam commit of v2.6.37
+a1ca48319a9aa1c5b57ce142f538e76050bb8972
+"[SCSI] zfcp: Move ACL/CFDC code to zfcp_cfdc.c"
+which merged the content of zfcp_erp_port_access_changed().
+
+Signed-off-by: Julia Lawall <Julia.Lawall@lip6.fr>
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Reviewed-by: Martin Peschke <mpeschke@linux.vnet.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_cfdc.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/s390/scsi/zfcp_cfdc.c
++++ b/drivers/s390/scsi/zfcp_cfdc.c
+@@ -293,7 +293,7 @@ void zfcp_cfdc_adapter_access_changed(st
+ 	}
+ 	read_unlock_irqrestore(&adapter->port_list_lock, flags);
+ 
+-	shost_for_each_device(sdev, port->adapter->scsi_host) {
++	shost_for_each_device(sdev, adapter->scsi_host) {
+ 		zfcp_sdev = sdev_to_zfcp(sdev);
+ 		status = atomic_read(&zfcp_sdev->status);
+ 		if ((status & ZFCP_STATUS_COMMON_ACCESS_DENIED) ||
+From d99b601b63386f3395dc26a699ae703a273d9982 Mon Sep 17 00:00:00 2001
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+Date: Tue, 4 Sep 2012 15:23:34 +0200
+Subject: SCSI: zfcp: restore refcount check on port_remove
+
+From: Steffen Maier <maier@linux.vnet.ibm.com>
+
+commit d99b601b63386f3395dc26a699ae703a273d9982 upstream.
+
+Upstream commit f3450c7b917201bb49d67032e9f60d5125675d6a
+"[SCSI] zfcp: Replace local reference counting with common kref"
+accidentally dropped a reference count check before tearing down
+zfcp_ports that are potentially in use by zfcp_units.
+Even remote ports in use can be removed causing
+unreachable garbage objects zfcp_ports with zfcp_units.
+Thus units won't come back even after a manual port_rescan.
+The kref of zfcp_port->dev.kobj is already used by the driver core.
+We cannot re-use it to track the number of zfcp_units.
+Re-introduce our own counter for units per port
+and check on port_remove.
+
+Signed-off-by: Steffen Maier <maier@linux.vnet.ibm.com>
+Reviewed-by: Heiko Carstens <heiko.carstens@de.ibm.com>
+Signed-off-by: James Bottomley <JBottomley@Parallels.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/s390/scsi/zfcp_aux.c   |    1 +
+ drivers/s390/scsi/zfcp_def.h   |    1 +
+ drivers/s390/scsi/zfcp_ext.h   |    1 +
+ drivers/s390/scsi/zfcp_sysfs.c |   18 ++++++++++++++++--
+ drivers/s390/scsi/zfcp_unit.c  |   36 ++++++++++++++++++++++++++----------
+ 5 files changed, 45 insertions(+), 12 deletions(-)
+
+--- a/drivers/s390/scsi/zfcp_aux.c
++++ b/drivers/s390/scsi/zfcp_aux.c
+@@ -519,6 +519,7 @@ struct zfcp_port *zfcp_port_enqueue(stru
+ 
+ 	rwlock_init(&port->unit_list_lock);
+ 	INIT_LIST_HEAD(&port->unit_list);
++	atomic_set(&port->units, 0);
+ 
+ 	INIT_WORK(&port->gid_pn_work, zfcp_fc_port_did_lookup);
+ 	INIT_WORK(&port->test_link_work, zfcp_fc_link_test_work);
+--- a/drivers/s390/scsi/zfcp_def.h
++++ b/drivers/s390/scsi/zfcp_def.h
+@@ -205,6 +205,7 @@ struct zfcp_port {
+ 	struct zfcp_adapter    *adapter;       /* adapter used to access port */
+ 	struct list_head	unit_list;	/* head of logical unit list */
+ 	rwlock_t		unit_list_lock; /* unit list lock */
++	atomic_t		units;	       /* zfcp_unit count */
+ 	atomic_t	       status;	       /* status of this remote port */
+ 	u64		       wwnn;	       /* WWNN if known */
+ 	u64		       wwpn;	       /* WWPN */
+--- a/drivers/s390/scsi/zfcp_ext.h
++++ b/drivers/s390/scsi/zfcp_ext.h
+@@ -159,6 +159,7 @@ extern void zfcp_scsi_dif_sense_error(st
+ extern struct attribute_group zfcp_sysfs_unit_attrs;
+ extern struct attribute_group zfcp_sysfs_adapter_attrs;
+ extern struct attribute_group zfcp_sysfs_port_attrs;
++extern struct mutex zfcp_sysfs_port_units_mutex;
+ extern struct device_attribute *zfcp_sysfs_sdev_attrs[];
+ extern struct device_attribute *zfcp_sysfs_shost_attrs[];
+ 
+--- a/drivers/s390/scsi/zfcp_sysfs.c
++++ b/drivers/s390/scsi/zfcp_sysfs.c
+@@ -227,6 +227,8 @@ static ssize_t zfcp_sysfs_port_rescan_st
+ static ZFCP_DEV_ATTR(adapter, port_rescan, S_IWUSR, NULL,
+ 		     zfcp_sysfs_port_rescan_store);
+ 
++DEFINE_MUTEX(zfcp_sysfs_port_units_mutex);
++
+ static ssize_t zfcp_sysfs_port_remove_store(struct device *dev,
+ 					    struct device_attribute *attr,
+ 					    const char *buf, size_t count)
+@@ -249,6 +251,16 @@ static ssize_t zfcp_sysfs_port_remove_st
+ 	else
+ 		retval = 0;
+ 
++	mutex_lock(&zfcp_sysfs_port_units_mutex);
++	if (atomic_read(&port->units) > 0) {
++		retval = -EBUSY;
++		mutex_unlock(&zfcp_sysfs_port_units_mutex);
++		goto out;
++	}
++	/* port is about to be removed, so no more unit_add */
++	atomic_set(&port->units, -1);
++	mutex_unlock(&zfcp_sysfs_port_units_mutex);
++
+ 	write_lock_irq(&adapter->port_list_lock);
+ 	list_del(&port->list);
+ 	write_unlock_irq(&adapter->port_list_lock);
+@@ -289,12 +301,14 @@ static ssize_t zfcp_sysfs_unit_add_store
+ {
+ 	struct zfcp_port *port = container_of(dev, struct zfcp_port, dev);
+ 	u64 fcp_lun;
++	int retval;
+ 
+ 	if (strict_strtoull(buf, 0, (unsigned long long *) &fcp_lun))
+ 		return -EINVAL;
+ 
+-	if (zfcp_unit_add(port, fcp_lun))
+-		return -EINVAL;
++	retval = zfcp_unit_add(port, fcp_lun);
++	if (retval)
++		return retval;
+ 
+ 	return count;
+ }
+--- a/drivers/s390/scsi/zfcp_unit.c
++++ b/drivers/s390/scsi/zfcp_unit.c
+@@ -104,7 +104,7 @@ static void zfcp_unit_release(struct dev
+ {
+ 	struct zfcp_unit *unit = container_of(dev, struct zfcp_unit, dev);
+ 
+-	put_device(&unit->port->dev);
++	atomic_dec(&unit->port->units);
+ 	kfree(unit);
+ }
+ 
+@@ -119,16 +119,27 @@ static void zfcp_unit_release(struct dev
+ int zfcp_unit_add(struct zfcp_port *port, u64 fcp_lun)
+ {
+ 	struct zfcp_unit *unit;
++	int retval = 0;
++
++	mutex_lock(&zfcp_sysfs_port_units_mutex);
++	if (atomic_read(&port->units) == -1) {
++		/* port is already gone */
++		retval = -ENODEV;
++		goto out;
++	}
+ 
+ 	unit = zfcp_unit_find(port, fcp_lun);
+ 	if (unit) {
+ 		put_device(&unit->dev);
+-		return -EEXIST;
++		retval = -EEXIST;
++		goto out;
+ 	}
+ 
+ 	unit = kzalloc(sizeof(struct zfcp_unit), GFP_KERNEL);
+-	if (!unit)
+-		return -ENOMEM;
++	if (!unit) {
++		retval = -ENOMEM;
++		goto out;
++	}
+ 
+ 	unit->port = port;
+ 	unit->fcp_lun = fcp_lun;
+@@ -139,28 +150,33 @@ int zfcp_unit_add(struct zfcp_port *port
+ 	if (dev_set_name(&unit->dev, "0x%016llx",
+ 			 (unsigned long long) fcp_lun)) {
+ 		kfree(unit);
+-		return -ENOMEM;
++		retval = -ENOMEM;
++		goto out;
+ 	}
+ 
+-	get_device(&port->dev);
+-
+ 	if (device_register(&unit->dev)) {
+ 		put_device(&unit->dev);
+-		return -ENOMEM;
++		retval = -ENOMEM;
++		goto out;
+ 	}
+ 
+ 	if (sysfs_create_group(&unit->dev.kobj, &zfcp_sysfs_unit_attrs)) {
+ 		device_unregister(&unit->dev);
+-		return -EINVAL;
++		retval = -EINVAL;
++		goto out;
+ 	}
+ 
++	atomic_inc(&port->units); /* under zfcp_sysfs_port_units_mutex ! */
++
+ 	write_lock_irq(&port->unit_list_lock);
+ 	list_add_tail(&unit->list, &port->unit_list);
+ 	write_unlock_irq(&port->unit_list_lock);
+ 
+ 	zfcp_unit_scsi_scan(unit);
+ 
+-	return 0;
++out:
++	mutex_unlock(&zfcp_sysfs_port_units_mutex);
++	return retval;
+ }
+ 
+ /**
+From 947ca1856a7e60aa6d20536785e6a42dff25aa6e Mon Sep 17 00:00:00 2001
+From: Michael Wang <wangyun@linux.vnet.ibm.com>
+Date: Wed, 5 Sep 2012 10:33:18 +0800
+Subject: slab: fix the DEADLOCK issue on l3 alien lock
+
+From: Michael Wang <wangyun@linux.vnet.ibm.com>
+
+commit 947ca1856a7e60aa6d20536785e6a42dff25aa6e upstream.
+
+DEADLOCK will be report while running a kernel with NUMA and LOCKDEP enabled,
+the process of this fake report is:
+
+	   kmem_cache_free()	//free obj in cachep
+	-> cache_free_alien()	//acquire cachep's l3 alien lock
+	-> __drain_alien_cache()
+	-> free_block()
+	-> slab_destroy()
+	-> kmem_cache_free()	//free slab in cachep->slabp_cache
+	-> cache_free_alien()	//acquire cachep->slabp_cache's l3 alien lock
+
+Since the cachep and cachep->slabp_cache's l3 alien are in the same lock class,
+fake report generated.
+
+This should not happen since we already have init_lock_keys() which will
+reassign the lock class for both l3 list and l3 alien.
+
+However, init_lock_keys() was invoked at a wrong position which is before we
+invoke enable_cpucache() on each cache.
+
+Since until set slab_state to be FULL, we won't invoke enable_cpucache()
+on caches to build their l3 alien while creating them, so although we invoked
+init_lock_keys(), the l3 alien lock class won't change since we don't have
+them until invoked enable_cpucache() later.
+
+This patch will invoke init_lock_keys() after we done enable_cpucache()
+instead of before to avoid the fake DEADLOCK report.
+
+Michael traced the problem back to a commit in release 3.0.0:
+
+commit 30765b92ada267c5395fc788623cb15233276f5c
+Author: Peter Zijlstra <peterz@infradead.org>
+Date:   Thu Jul 28 23:22:56 2011 +0200
+
+    slab, lockdep: Annotate the locks before using them
+
+    Fernando found we hit the regular OFF_SLAB 'recursion' before we
+    annotate the locks, cure this.
+
+    The relevant portion of the stack-trace:
+
+    > [    0.000000]  [<c085e24f>] rt_spin_lock+0x50/0x56
+    > [    0.000000]  [<c04fb406>] __cache_free+0x43/0xc3
+    > [    0.000000]  [<c04fb23f>] kmem_cache_free+0x6c/0xdc
+    > [    0.000000]  [<c04fb2fe>] slab_destroy+0x4f/0x53
+    > [    0.000000]  [<c04fb396>] free_block+0x94/0xc1
+    > [    0.000000]  [<c04fc551>] do_tune_cpucache+0x10b/0x2bb
+    > [    0.000000]  [<c04fc8dc>] enable_cpucache+0x7b/0xa7
+    > [    0.000000]  [<c0bd9d3c>] kmem_cache_init_late+0x1f/0x61
+    > [    0.000000]  [<c0bba687>] start_kernel+0x24c/0x363
+    > [    0.000000]  [<c0bba0ba>] i386_start_kernel+0xa9/0xaf
+
+    Reported-by: Fernando Lopez-Lezcano <nando@ccrma.Stanford.EDU>
+    Acked-by: Pekka Enberg <penberg@kernel.org>
+    Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+    Link: http://lkml.kernel.org/r/1311888176.2617.379.camel@laptop
+    Signed-off-by: Ingo Molnar <mingo@elte.hu>
+
+The commit moved init_lock_keys() before we build up the alien, so we
+failed to reclass it.
+
+Acked-by: Christoph Lameter <cl@linux.com>
+Tested-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Signed-off-by: Michael Wang <wangyun@linux.vnet.ibm.com>
+Signed-off-by: Pekka Enberg <penberg@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ mm/slab.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/mm/slab.c
++++ b/mm/slab.c
+@@ -1781,9 +1781,6 @@ void __init kmem_cache_init_late(void)
+ 
+ 	slab_state = UP;
+ 
+-	/* Annotate slab for lockdep -- annotate the malloc caches */
+-	init_lock_keys();
+-
+ 	/* 6) resize the head arrays to their final sizes */
+ 	mutex_lock(&slab_mutex);
+ 	list_for_each_entry(cachep, &slab_caches, list)
+@@ -1791,6 +1788,9 @@ void __init kmem_cache_init_late(void)
+ 			BUG();
+ 	mutex_unlock(&slab_mutex);
+ 
++	/* Annotate slab for lockdep -- annotate the malloc caches */
++	init_lock_keys();
++
+ 	/* Done! */
+ 	slab_state = FULL;
+ 
+From 959d1af8cffc8fd38ed53e8be1cf4ab8782f9c00 Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj@kernel.org>
+Date: Fri, 3 Aug 2012 10:30:45 -0700
+Subject: workqueue: add missing smp_wmb() in process_one_work()
+
+From: Tejun Heo <tj@kernel.org>
+
+commit 959d1af8cffc8fd38ed53e8be1cf4ab8782f9c00 upstream.
+
+WORK_STRUCT_PENDING is used to claim ownership of a work item and
+process_one_work() releases it before starting execution.  When
+someone else grabs PENDING, all pre-release updates to the work item
+should be visible and all updates made by the new owner should happen
+afterwards.
+
+Grabbing PENDING uses test_and_set_bit() and thus has a full barrier;
+however, clearing doesn't have a matching wmb.  Given the preceding
+spin_unlock and use of clear_bit, I don't believe this can be a
+problem on an actual machine and there hasn't been any related report
+but it still is theretically possible for clear_pending to permeate
+upwards and happen before work->entry update.
+
+Add an explicit smp_wmb() before work_clear_pending().
+
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Cc: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ kernel/workqueue.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -2073,7 +2073,9 @@ __acquires(&gcwq->lock)
+ 
+ 	spin_unlock_irq(&gcwq->lock);
+ 
++	smp_wmb();	/* paired with test_and_set_bit(PENDING) */
+ 	work_clear_pending(work);
++
+ 	lock_map_acquire_read(&cwq->wq->lockdep_map);
+ 	lock_map_acquire(&lockdep_map);
+ 	trace_workqueue_execute_start(work);
+From 3aa62497594430ea522050b75c033f71f2c60ee6 Mon Sep 17 00:00:00 2001
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+Date: Tue, 18 Sep 2012 10:40:00 -0700
+Subject: workqueue: fix possible stall on try_to_grab_pending() of a delayed work item
+
+From: Lai Jiangshan <laijs@cn.fujitsu.com>
+
+commit 3aa62497594430ea522050b75c033f71f2c60ee6 upstream.
+
+Currently, when try_to_grab_pending() grabs a delayed work item, it
+leaves its linked work items alone on the delayed_works.  The linked
+work items are always NO_COLOR and will cause future
+cwq_activate_first_delayed() increase cwq->nr_active incorrectly, and
+may cause the whole cwq to stall.  For example,
+
+state: cwq->max_active = 1, cwq->nr_active = 1
+       one work in cwq->pool, many in cwq->delayed_works.
+
+step1: try_to_grab_pending() removes a work item from delayed_works
+       but leaves its NO_COLOR linked work items on it.
+
+step2: Later on, cwq_activate_first_delayed() activates the linked
+       work item increasing ->nr_active.
+
+step3: cwq->nr_active = 1, but all activated work items of the cwq are
+       NO_COLOR.  When they finish, cwq->nr_active will not be
+       decreased due to NO_COLOR, and no further work items will be
+       activated from cwq->delayed_works. the cwq stalls.
+
+Fix it by ensuring the target work item is activated before stealing
+PENDING in try_to_grab_pending().  This ensures that all the linked
+work items are activated without incorrectly bumping cwq->nr_active.
+
+tj: Updated comment and description.
+
+Signed-off-by: Lai Jiangshan <laijs@cn.fujitsu.com>
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ kernel/workqueue.c |   25 ++++++++++++++++++++++---
+ 1 file changed, 22 insertions(+), 3 deletions(-)
+
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -1927,10 +1927,9 @@ static void move_linked_works(struct wor
+ 		*nextp = n;
+ }
+ 
+-static void cwq_activate_first_delayed(struct cpu_workqueue_struct *cwq)
++static void cwq_activate_delayed_work(struct work_struct *work)
+ {
+-	struct work_struct *work = list_first_entry(&cwq->delayed_works,
+-						    struct work_struct, entry);
++	struct cpu_workqueue_struct *cwq = get_work_cwq(work);
+ 
+ 	trace_workqueue_activate_work(work);
+ 	move_linked_works(work, &cwq->pool->worklist, NULL);
+@@ -1938,6 +1937,14 @@ static void cwq_activate_first_delayed(s
+ 	cwq->nr_active++;
+ }
+ 
++static void cwq_activate_first_delayed(struct cpu_workqueue_struct *cwq)
++{
++	struct work_struct *work = list_first_entry(&cwq->delayed_works,
++						    struct work_struct, entry);
++
++	cwq_activate_delayed_work(work);
++}
++
+ /**
+  * cwq_dec_nr_in_flight - decrement cwq's nr_in_flight
+  * @cwq: cwq of interest
+@@ -2846,6 +2853,18 @@ static int try_to_grab_pending(struct wo
+ 		smp_rmb();
+ 		if (gcwq == get_work_gcwq(work)) {
+ 			debug_work_deactivate(work);
++
++			/*
++			 * A delayed work item cannot be grabbed directly
++			 * because it might have linked NO_COLOR work items
++			 * which, if left on the delayed_list, will confuse
++			 * cwq->nr_active management later on and cause
++			 * stall.  Make sure the work item is activated
++			 * before grabbing.
++			 */
++			if (*work_data_bits(work) & WORK_STRUCT_DELAYED)
++				cwq_activate_delayed_work(work);
++
+ 			list_del_init(&work->entry);
+ 			cwq_dec_nr_in_flight(get_work_cwq(work),
+ 				get_work_color(work),

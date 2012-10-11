@@ -1,0 +1,34 @@
+From 10934b412eb30fa815bad392b120eb9b83fe4ab5 Mon Sep 17 00:00:00 2001
+From: Knut Petersen <Knut_Petersen@t-online.de>
+Date: Mon, 19 Mar 2012 13:31:24 +0100
+Subject: [PATCH] Fix DVB-S regression caused by a missing initialization
+
+commit 7e0722215a510921cbb73ab4c37477d4dcb91bf8 killed
+struct dvb_frontend_parameters and introduced bool re_tune
+instead, but the patch missed that re_tune needs an
+initialization here (previously the same effect was
+reached by the params = NULL).
+
+This patch fixes broken DVB-S support for the Hauppauge
+WinTV Nova HD-S2 and similar hardware in kernel 3.3.
+
+Signed-off-by: Knut Petersen <Knut_Petersen@t-online.de>
+---
+ drivers/media/dvb/dvb-core/dvb_frontend.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/media/dvb/dvb-core/dvb_frontend.c b/drivers/media/dvb/dvb-core/dvb_frontend.c
+index fbbe545..a9602e0 100644
+--- a/drivers/media/dvb/dvb-core/dvb_frontend.c
++++ b/drivers/media/dvb/dvb-core/dvb_frontend.c
+@@ -650,6 +650,7 @@ restart:
+ 			switch (algo) {
+ 			case DVBFE_ALGO_HW:
+ 				dprintk("%s: Frontend ALGO = DVBFE_ALGO_HW\n", __func__);
++				re_tune = false;
+ 
+ 				if (fepriv->state & FESTATE_RETUNE) {
+ 					dprintk("%s: Retune requested, FESTATE_RETUNE\n", __func__);
+-- 
+1.7.9.2
+

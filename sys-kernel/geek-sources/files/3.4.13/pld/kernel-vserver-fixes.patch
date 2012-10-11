@@ -1,0 +1,50 @@
+Missing header for routes patch, caused vs2.3 route.h mixing
+--- a/net/ipv4/netfilter/nf_nat_core.c~	2008-01-24 23:58:37.000000000 +0100
++++ a/net/ipv4/netfilter/nf_nat_core.c	2008-03-30 21:00:19.349593833 +0200
+@@ -15,6 +15,7 @@
+ #include <net/checksum.h>
+ #include <net/icmp.h>
+ #include <net/ip.h>
++#include <net/route.h>
+ #include <net/tcp.h>  /* For tcp_prot in getorigdst */
+ #include <linux/icmp.h>
+ #include <linux/udp.h>
+--- linux-2.6.33/arch/x86/kernel/process.c~	2010-02-24 19:52:17.000000000 +0100
++++ linux-2.6.33/arch/x86/kernel/process.c	2010-02-25 23:44:56.487156216 +0100
+@@ -110,8 +110,8 @@
+ 	board = dmi_get_system_info(DMI_BOARD_NAME);
+ 
+ 	printk(KERN_CONT "\n");
+-	printk(KERN_DEFAULT "Pid: %d, comm: %.20s %s %s %.*s",
+-		current->pid, current->comm, print_tainted(),
++	printk(KERN_DEFAULT "Pid: %d, xid: #%u, comm: %.20s %s %s %.*s",
++		current->pid, current->xid, current->comm, print_tainted(),
+ 		init_utsname()->release,
+ 		(int)strcspn(init_utsname()->version, " "),
+ 		init_utsname()->version);
+--- linux-2.6.31/arch/x86/kernel/dumpstack.c~	2009-09-16 08:32:02.000000000 +0200
++++ linux-2.6.31/arch/x86/kernel/dumpstack.c	2009-09-17 21:58:13.778791960 +0200
+@@ -180,8 +180,8 @@
+ 	unsigned long stack;
+ 
+ 	bp = stack_frame(current, NULL);
+-	printk("Pid: %d, comm: %.20s %s %s %.*s\n",
+-		current->pid, current->comm, print_tainted(),
++	printk("Pid: %d, comm: %.20s xid: #%u %s %s %.*s\n",
++		current->pid, current->comm, current->xid, print_tainted(),
+ 		init_utsname()->release,
+ 		(int)strcspn(init_utsname()->version, " "),
+ 		init_utsname()->version);
+
+
+--- linux-3.3/fs/proc/base.c~	2012-03-19 21:44:42.000000000 +0100
++++ linux-3.3/fs/proc/base.c	2012-03-21 12:25:28.051092423 +0100
+@@ -568,6 +568,8 @@
+ 				 struct task_struct *task,
+ 				 int hide_pid_min)
+ {
++	if (vx_check(0, VS_WATCH_P))
++		return true;
+ 	if (pid->hide_pid < hide_pid_min)
+ 		return true;
+ 	if (in_group_p(pid->pid_gid))

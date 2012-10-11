@@ -1,0 +1,55 @@
+From 9ed326951806c424b42dcf2e1125e25a98fb13d1 Mon Sep 17 00:00:00 2001
+From: Jiri Kosina <jkosina@suse.cz>
+Date: Fri, 20 Apr 2012 12:15:44 +0200
+Subject: HID: multitouch: Add support for Baanto touchscreen
+
+From: Jiri Kosina <jkosina@suse.cz>
+
+commit 9ed326951806c424b42dcf2e1125e25a98fb13d1 upstream.
+
+Reported-by: Tvrtko Ursulin <tvrtko.ursulin@onelan.co.uk>
+Tested-by: Tvrtko Ursulin <tvrtko.ursulin@onelan.co.uk>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/hid/hid-core.c       |    1 +
+ drivers/hid/hid-ids.h        |    3 +++
+ drivers/hid/hid-multitouch.c |    4 ++++
+ 3 files changed, 8 insertions(+)
+
+--- a/drivers/hid/hid-core.c
++++ b/drivers/hid/hid-core.c
+@@ -1391,6 +1391,7 @@ static const struct hid_device_id hid_ha
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUS, USB_DEVICE_ID_ASUS_T91MT) },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_ASUS, USB_DEVICE_ID_ASUSTEK_MULTITOUCH_YFO) },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_BELKIN, USB_DEVICE_ID_FLIP_KVM) },
++	{ HID_USB_DEVICE(USB_VENDOR_ID_BAANTO, USB_DEVICE_ID_BAANTO_MT_190W2), },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_BTC, USB_DEVICE_ID_BTC_EMPREX_REMOTE) },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_BTC, USB_DEVICE_ID_BTC_EMPREX_REMOTE_2) },
+ 	{ HID_USB_DEVICE(USB_VENDOR_ID_CANDO, USB_DEVICE_ID_CANDO_PIXCIR_MULTI_TOUCH) },
+--- a/drivers/hid/hid-ids.h
++++ b/drivers/hid/hid-ids.h
+@@ -160,6 +160,9 @@
+ #define USB_VENDOR_ID_AVERMEDIA		0x07ca
+ #define USB_DEVICE_ID_AVER_FM_MR800	0xb800
+ 
++#define USB_VENDOR_ID_BAANTO		0x2453
++#define USB_DEVICE_ID_BAANTO_MT_190W2	0x0100
++
+ #define USB_VENDOR_ID_BELKIN		0x050d
+ #define USB_DEVICE_ID_FLIP_KVM		0x3201
+ 
+--- a/drivers/hid/hid-multitouch.c
++++ b/drivers/hid/hid-multitouch.c
+@@ -783,6 +783,10 @@ static const struct hid_device_id mt_dev
+ 		HID_USB_DEVICE(USB_VENDOR_ID_ATMEL,
+ 			USB_DEVICE_ID_ATMEL_MXT_DIGITIZER) },
+ 
++	/* Baanto multitouch devices */
++	{ .driver_data = MT_CLS_DEFAULT,
++		HID_USB_DEVICE(USB_VENDOR_ID_BAANTO,
++			USB_DEVICE_ID_BAANTO_MT_190W2) },
+ 	/* Cando panels */
+ 	{ .driver_data = MT_CLS_DUAL_INRANGE_CONTACTNUMBER,
+ 		HID_USB_DEVICE(USB_VENDOR_ID_CANDO,

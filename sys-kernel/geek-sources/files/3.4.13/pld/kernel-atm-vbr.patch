@@ -1,0 +1,162 @@
+Index: linux/include/linux/atm.h
+===================================================================
+RCS file: /afs/cmf/project/cvsroot/linux/include/linux/atm.h,v
+retrieving revision 1.2
+diff -u -r1.2 atm.h
+--- linux/include/linux/atm.h	12 Feb 2003 20:56:33 -0000	1.2
++++ linux/include/linux/atm.h	9 Apr 2003 12:08:38 -0000
+@@ -72,7 +72,7 @@
+ 			    /* connection identifier range; socket must be
+ 			       bound or connected */
+ #define SO_ATMQOS	__SO_ENCODE(SOL_ATM,2,struct atm_qos)
+-			    /* Quality of Service setting */
++			    /* Quality of Service setting (with vbr support) */
+ #define SO_ATMSAP	__SO_ENCODE(SOL_ATM,3,struct atm_sap)
+ 			    /* Service Access Point */
+ #define SO_ATMPVC	__SO_ENCODE(SOL_ATM,4,struct sockaddr_atmpvc)
+@@ -127,9 +127,11 @@
+ #define ATM_NONE	0		/* no traffic */
+ #define ATM_UBR		1
+ #define ATM_CBR		2
+-#define ATM_VBR		3
++#define ATM_VBR_NRT	3
++#define ATM_VBR		ATM_VBR_NRT	/* for backward compatibility */
+ #define ATM_ABR		4
+ #define ATM_ANYCLASS	5		/* compatible with everything */
++#define ATM_VBR_RT	6
+ 
+ #define ATM_MAX_PCR	-1		/* maximum available PCR */
+ 
+@@ -140,6 +142,11 @@
+ 	int		min_pcr;	/* minimum PCR in cells per second */
+ 	int		max_cdv;	/* maximum CDV in microseconds */
+ 	int		max_sdu;	/* maximum SDU in bytes */
++
++	/* extra params for VBR */
++	int		scr;		/* sustained rate in cells per second */
++	int		mbs;		/* maximum burst size (MBS) in cells */
++
+         /* extra params for ABR */
+         unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
+         unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
+@@ -243,4 +251,37 @@
+ };
+ 
+ typedef unsigned short atm_backend_t;
++struct atm_trafprm_compat {
++	unsigned char	traffic_class;	/* traffic class (ATM_UBR, ...) */
++	int		max_pcr;	/* maximum PCR in cells per second */
++	int		pcr;		/* desired PCR in cells per second */
++	int		min_pcr;	/* minimum PCR in cells per second */
++	int		max_cdv;	/* maximum CDV in microseconds */
++	int		max_sdu;	/* maximum SDU in bytes */
++        /* extra params for ABR */
++        unsigned int 	icr;         	/* Initial Cell Rate (24-bit) */
++        unsigned int	tbe;		/* Transient Buffer Exposure (24-bit) */ 
++        unsigned int 	frtt : 24;	/* Fixed Round Trip Time (24-bit) */
++        unsigned int 	rif  : 4;       /* Rate Increment Factor (4-bit) */
++        unsigned int 	rdf  : 4;       /* Rate Decrease Factor (4-bit) */
++        unsigned int nrm_pres  :1;      /* nrm present bit */
++        unsigned int trm_pres  :1;     	/* rm present bit */
++        unsigned int adtf_pres :1;     	/* adtf present bit */
++        unsigned int cdf_pres  :1;    	/* cdf present bit*/
++        unsigned int nrm       :3;     	/* Max # of Cells for each forward RM cell (3-bit) */
++        unsigned int trm       :3;    	/* Time between forward RM cells (3-bit) */    
++	unsigned int adtf      :10;     /* ACR Decrease Time Factor (10-bit) */
++	unsigned int cdf       :3;      /* Cutoff Decrease Factor (3-bit) */
++        unsigned int spare     :9;      /* spare bits */ 
++};
++
++struct atm_qos_compat {
++	struct atm_trafprm_compat txtp;	/* parameters in TX direction */
++	struct atm_trafprm_compat rxtp __ATM_API_ALIGN;
++					/* parameters in RX direction */
++	unsigned char aal __ATM_API_ALIGN;
++};
++
++#define SO_ATMQOS_COMPAT __SO_ENCODE(SOL_ATM,2,struct atm_qos_compat)
++			    /* Quality of Service setting (no vbr support) */
+ #endif
+Index: linux/net/atm/common.c
+===================================================================
+RCS file: /afs/cmf/project/cvsroot/linux/net/atm/common.c,v
+retrieving revision 1.13
+diff -u -r1.13 common.c
+--- linux/net/atm/common.c	17 Mar 2003 16:13:12 -0000	1.13
++++ linux/net/atm/common.c	9 Apr 2003 12:10:28 -0000
+@@ -1085,6 +1085,43 @@
+ 
+ 	vcc = ATM_SD(sock);
+ 	switch (optname) {
++		case SO_ATMQOS_COMPAT:
++			{
++				struct atm_qos_compat qos_compat;
++				struct atm_qos qos;
++
++				if (copy_from_user(&qos_compat,optval,sizeof(qos_compat)))
++					return -EFAULT;
++
++				/* convert old atm_qos to new atm_qos */
++				qos.aal = qos_compat.aal;
++				qos.rxtp.traffic_class = qos_compat.rxtp.traffic_class;
++				qos.rxtp.max_pcr = qos_compat.rxtp.max_pcr;
++				qos.rxtp.pcr = qos_compat.rxtp.pcr;
++				qos.rxtp.min_pcr = qos_compat.rxtp.min_pcr;
++				qos.rxtp.max_cdv = qos_compat.rxtp.max_cdv;
++				qos.rxtp.max_sdu = qos_compat.rxtp.max_sdu;
++				qos.rxtp.scr = 0;
++				qos.rxtp.mbs = 0;
++				qos.txtp.traffic_class = qos_compat.txtp.traffic_class;
++				qos.txtp.max_pcr = qos_compat.txtp.max_pcr;
++				qos.txtp.pcr = qos_compat.txtp.pcr;
++				qos.txtp.min_pcr = qos_compat.txtp.min_pcr;
++				qos.txtp.max_cdv = qos_compat.txtp.max_cdv;
++				qos.txtp.max_sdu = qos_compat.txtp.max_sdu;
++				qos.txtp.scr = 0;
++				qos.txtp.mbs = 0;
++
++				error = check_qos(&qos);
++				if (error) return error;
++				if (sock->state == SS_CONNECTED)
++					return atm_change_qos(vcc,&qos);
++				if (sock->state != SS_UNCONNECTED)
++					return -EBADFD;
++				vcc->qos = qos;
++				set_bit(ATM_VF_HASQOS,&vcc->flags);
++				return 0;
++			}
+ 	case SO_ATMQOS:
+ 	{
+ 		struct atm_qos qos;
+@@ -1132,6 +1169,31 @@
+ 
+ 	vcc = ATM_SD(sock);
+ 	switch (optname) {
++		case SO_ATMQOS_COMPAT:
++			{
++				struct atm_qos_compat qos_compat;
++
++				if (!test_bit(ATM_VF_HASQOS,&vcc->flags))
++					return -EINVAL;
++
++				/* convert new atm_qos to old atm_qos */
++				qos_compat.aal = vcc->qos.aal;
++				qos_compat.rxtp.traffic_class = vcc->qos.rxtp.traffic_class;
++				qos_compat.rxtp.max_pcr = vcc->qos.rxtp.max_pcr;
++				qos_compat.rxtp.pcr = vcc->qos.rxtp.pcr;
++				qos_compat.rxtp.min_pcr = vcc->qos.rxtp.min_pcr;
++				qos_compat.rxtp.max_cdv = vcc->qos.rxtp.max_cdv;
++				qos_compat.rxtp.max_sdu = vcc->qos.rxtp.max_sdu;
++				qos_compat.txtp.traffic_class = vcc->qos.txtp.traffic_class;
++				qos_compat.txtp.max_pcr = vcc->qos.txtp.max_pcr;
++				qos_compat.txtp.pcr = vcc->qos.txtp.pcr;
++				qos_compat.txtp.min_pcr = vcc->qos.txtp.min_pcr;
++				qos_compat.txtp.max_cdv = vcc->qos.txtp.max_cdv;
++				qos_compat.txtp.max_sdu = vcc->qos.txtp.max_sdu;
++
++				return copy_to_user(optval,&qos_compat,sizeof(qos_compat)) ?
++				    -EFAULT : 0;
++			}
+ 	case SO_ATMQOS:
+ 		if (!test_bit(ATM_VF_HASQOS,&vcc->flags))
+ 			return -EINVAL;
