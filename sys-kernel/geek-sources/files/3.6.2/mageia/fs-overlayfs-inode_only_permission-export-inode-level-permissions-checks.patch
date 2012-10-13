@@ -1,0 +1,102 @@
+commit d73e24584a37cfb05a78c2d322ea2fb5a13b7126
+Author: Andy Whitcroft <apw@canonical.com>
+Date:   Tue May 1 16:17:51 2012 +0100
+
+    UBUNTU: ubuntu: overlayfs -- inode_only_permission: export inode level permissions checks
+    
+    We need to be able to check inode permissions (but not filesystem implied
+    permissions) for stackable filesystems.  Now that permissions involve
+    checking with the security LSM, cgroups and basic inode permissions it is
+    easy to miss a key permission check and introduce a security vunerability.
+    Expose a new interface for these checks.
+    
+    Signed-off-by: Andy Whitcroft <apw@canonical.com>
+    Signed-off-by: Miklos Szeredi <mszeredi@suse.cz>
+
+diff --git a/fs/namei.c b/fs/namei.c
+index 7d69419..c69ce96 100644
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -315,6 +315,36 @@ static inline int do_inode_permission(struct inode *inode, int mask)
+ }
+ 
+ /**
++ * inode_only_permission  -  check access rights to a given inode only
++ * @inode:	inode to check permissions on
++ * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC, ...)
++ *
++ * Uses to check read/write/execute permissions on an inode directly, we do
++ * not check filesystem permissions.
++ */
++int inode_only_permission(struct inode *inode, int mask)
++{
++	int retval;
++
++	/*
++	 * Nobody gets write access to an immutable file.
++	 */
++	if (unlikely(mask & MAY_WRITE) && IS_IMMUTABLE(inode))
++		return -EACCES;
++
++	retval = do_inode_permission(inode, mask);
++	if (retval)
++		return retval;
++
++	retval = devcgroup_inode_permission(inode, mask);
++	if (retval)
++		return retval;
++
++	return security_inode_permission(inode, mask);
++}
++EXPORT_SYMBOL(inode_only_permission);
++
++/**
+  * inode_permission  -  check for access rights to a given inode
+  * @inode:	inode to check permission on
+  * @mask:	right to check for (%MAY_READ, %MAY_WRITE, %MAY_EXEC, ...)
+@@ -328,8 +358,6 @@ static inline int do_inode_permission(struct inode *inode, int mask)
+  */
+ int inode_permission(struct inode *inode, int mask)
+ {
+-	int retval;
+-
+ 	if (unlikely(mask & MAY_WRITE)) {
+ 		umode_t mode = inode->i_mode;
+ 
+@@ -339,23 +367,9 @@ int inode_permission(struct inode *inode, int mask)
+ 		if (IS_RDONLY(inode) &&
+ 		    (S_ISREG(mode) || S_ISDIR(mode) || S_ISLNK(mode)))
+ 			return -EROFS;
+-
+-		/*
+-		 * Nobody gets write access to an immutable file.
+-		 */
+-		if (IS_IMMUTABLE(inode))
+-			return -EACCES;
+ 	}
+ 
+-	retval = do_inode_permission(inode, mask);
+-	if (retval)
+-		return retval;
+-
+-	retval = devcgroup_inode_permission(inode, mask);
+-	if (retval)
+-		return retval;
+-
+-	return security_inode_permission(inode, mask);
++	return inode_only_permission(inode, mask);
+ }
+ 
+ /**
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 49b86cf..e99bb48 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -2263,6 +2263,7 @@ extern sector_t bmap(struct inode *, sector_t);
+ #endif
+ extern int notify_change(struct dentry *, struct iattr *);
+ extern int inode_permission(struct inode *, int);
++extern int inode_only_permission(struct inode *, int);
+ extern int generic_permission(struct inode *, int);
+ 
+ static inline bool execute_ok(struct inode *inode)

@@ -1,0 +1,73 @@
+From: Anthony G. Basile <blueness@gentoo.org>
+
+Removed deprecated NIPQUAD macro in favor of %pI4.
+See bug #346333.
+
+---
+From: Gordon Malm <gengor@gentoo.org>
+
+This is a reworked version of the original
+*_selinux-avc_audit-log-curr_ip.patch carried in earlier releases of
+hardened-sources.
+
+Dropping the patch, or simply fixing the #ifdef of the original patch
+could break automated logging setups so this route was necessary.
+
+Suggestions for improving the help text are welcome.
+
+The original patch's description is still accurate and included below.
+
+---
+Provides support for a new field ipaddr within the SELinux
+AVC audit log, relying in task_struct->curr_ip (ipv4 only)
+provided by grSecurity patch to be applied before.
+
+Signed-off-by: Lorenzo Hernandez Garcia-Hierro <lorenzo@gnu.org>
+---
+
+diff -Naur a/grsecurity/Kconfig b/grsecurity/Kconfig
+--- a/grsecurity/Kconfig	2011-04-17 19:25:54.000000000 -0400
++++ b/grsecurity/Kconfig	2011-04-17 19:32:53.000000000 -0400
+@@ -918,6 +918,27 @@
+ menu "Logging Options"
+ depends on GRKERNSEC
+ 
++config GRKERNSEC_SELINUX_AVC_LOG_IPADDR
++	def_bool n
++	prompt "Add source IP address to SELinux AVC log messages"
++	depends on GRKERNSEC && SECURITY_SELINUX
++	help
++	  If you say Y here, a new field "ipaddr=" will be added to many SELinux
++	  AVC log messages.  The value of this field in any given message
++	  represents the source IP address of the remote machine/user that created
++	  the offending process.
++
++	  This information is sourced from task_struct->curr_ip provided by
++	  grsecurity's GRKERNSEC top-level configuration option.  One limitation
++	  is that only IPv4 is supported.
++
++	  In many instances SELinux AVC log messages already log a superior level
++	  of information that also includes source port and destination ip/port.
++	  Additionally, SELinux's AVC log code supports IPv6.
++
++	  However, grsecurity's task_struct->curr_ip will sometimes (often?) 
++	  provide the offender's IP address where stock SELinux logging fails to.
++
+ config GRKERNSEC_FLOODTIME
+ 	int "Seconds in between log messages (minimum)"
+ 	default 10
+diff -Naur a/security/selinux/avc.c b/security/selinux/avc.c
+--- a/security/selinux/avc.c	2011-04-17 19:04:47.000000000 -0400
++++ b/security/selinux/avc.c	2011-04-17 19:32:53.000000000 -0400
+@@ -133,6 +133,11 @@
+ 	char *scontext;
+ 	u32 scontext_len;
+ 
++#ifdef CONFIG_GRKERNSEC_SELINUX_AVC_LOG_IPADDR
++	if (current->signal->curr_ip)
++		audit_log_format(ab, "ipaddr=%pI4 ", &current->signal->curr_ip);
++#endif
++
+ 	rc = security_sid_to_context(ssid, &scontext, &scontext_len);
+ 	if (rc)
+ 		audit_log_format(ab, "ssid=%d", ssid);
