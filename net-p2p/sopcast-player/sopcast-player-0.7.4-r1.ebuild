@@ -6,7 +6,7 @@ EAPI=3
 
 DESCRIPTION="Плейър за p2p онлайн телевизия чрез sopcast приставка."
 HOMEPAGE=""
-SRC_URI="ftp://calculate.linuxmaniac.net/pub/downloads/sopcast-player-0.7.4-r1.tar.xz"
+SRC_URI="ftp://calculate-linuxmaniac.tk/pub/downloads/sopcast-player-0.7.4-r1.tar.xz"
 
 LICENSE=""
 SLOT="unstable"

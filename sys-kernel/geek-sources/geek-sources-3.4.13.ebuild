@@ -14,7 +14,7 @@ ck_ver="${KMV}-ck3"
 imq_ver="3.3"
 #rt_ver="${PV}-rt18"
 rt_ver="3.4.11-rt19"
-OVERRIDE_vserver_src="http://vserver.13thfloor.at/Experimental/patch-3.4.11-vs2.3.3.8.diff"
+vserver_ver="3.4.11-vs2.3.3.8"
 
 SUPPORTED_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice imq mageia pardus -pld rt suse uksm vserver"
 

@@ -1,0 +1,59 @@
+https://bugzilla.kernel.org/show_bug.cgi?id=44991
+
+https://bugzilla.kernel.org/attachment.cgi?id=77561
+
+
+diff --git a/drivers/mfd/lpc_ich.c b/drivers/mfd/lpc_ich.c
+index 027cc8f..7cac95b 100644
+--- a/drivers/mfd/lpc_ich.c
++++ b/drivers/mfd/lpc_ich.c
+@@ -704,7 +704,8 @@ static int __devinit lpc_ich_init_gpio(struct pci_dev *dev,
+ 	res = &gpio_ich_res[ICH_RES_GPE0];
+ 	res->start = base_addr + ACPIBASE_GPE_OFF;
+ 	res->end = base_addr + ACPIBASE_GPE_END;
+-	ret = acpi_check_resource_conflict(res);
++	//ret = acpi_check_resource_conflict(res);
++	ret = 0;
+ 	if (ret) {
+ 		/*
+ 		 * This isn't fatal for the GPIO, but we have to make sure that
+@@ -740,7 +741,8 @@ gpe0_done:
+ 		break;
+ 	}
+ 
+-	ret = acpi_check_resource_conflict(res);
++	//ret = acpi_check_resource_conflict(res);
++	ret = 0;
+ 	if (ret) {
+ 		/* this isn't necessarily fatal for the GPIO */
+ 		acpi_conflict = true;
+@@ -780,7 +782,8 @@ static int __devinit lpc_ich_init_wdt(struct pci_dev *dev,
+ 	res = wdt_io_res(ICH_RES_IO_TCO);
+ 	res->start = base_addr + ACPIBASE_TCO_OFF;
+ 	res->end = base_addr + ACPIBASE_TCO_END;
+-	ret = acpi_check_resource_conflict(res);
++	//ret = acpi_check_resource_conflict(res);
++	ret = 0;
+ 	if (ret) {
+ 		acpi_conflict = true;
+ 		goto wdt_done;
+@@ -789,7 +792,8 @@ static int __devinit lpc_ich_init_wdt(struct pci_dev *dev,
+ 	res = wdt_io_res(ICH_RES_IO_SMI);
+ 	res->start = base_addr + ACPIBASE_SMI_OFF;
+ 	res->end = base_addr + ACPIBASE_SMI_END;
+-	ret = acpi_check_resource_conflict(res);
++	//ret = acpi_check_resource_conflict(res);
++	ret = 0;
+ 	if (ret) {
+ 		acpi_conflict = true;
+ 		goto wdt_done;
+@@ -813,7 +817,8 @@ static int __devinit lpc_ich_init_wdt(struct pci_dev *dev,
+ 		res = wdt_mem_res(ICH_RES_MEM_GCS);
+ 		res->start = base_addr + ACPIBASE_GCS_OFF;
+ 		res->end = base_addr + ACPIBASE_GCS_END;
+-		ret = acpi_check_resource_conflict(res);
++		//ret = acpi_check_resource_conflict(res);
++		ret = 0;
+ 		if (ret) {
+ 			acpi_conflict = true;
+ 			goto wdt_done;
