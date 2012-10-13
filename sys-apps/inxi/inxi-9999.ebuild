@@ -8,7 +8,7 @@ HOMEPAGE="http://code.google.com/p/inxi/"
 SRC_URI="http://smxi.org/inxi"
 
 LICENSE="GPL-3"
-SLOT="0"
+SLOT="боклук"
 KEYWORDS="amd64 x86"
 
 DEPEND="

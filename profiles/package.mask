@@ -1,1 +1,4 @@
-=sys-apps/kmod-5
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20121013 16:04
+# Коментар: Използвайте sys-apps/inxi-9999-r1
+=sys-apps/inxi-9999
