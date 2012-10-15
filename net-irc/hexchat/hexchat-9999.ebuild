@@ -41,13 +41,13 @@ pkg_setup() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}"/${PN}-2.9.1-input-box.patch \
-		"${FILESDIR}"/${PN}-2.8.8-cflags.patch
+#	epatch  "${FILESDIR}"/${PN}-2.9.1-input-box.patch \
+#		"${FILESDIR}"/${PN}-2.8.8-cflags.patch
 
 	# use $libdir/hexchat/plugins as the plugin directory
 	if [[ $(get_libdir) != "lib" ]] ; then
 		sed -e 's:${prefix}/lib/hexchat:${libdir}/hexchat:' \
-			-i configure.in || die 'sed failed'
+			-i configure.ac || die 'sed failed'
 	fi
 
 	# QA: remove deprecated line from desktop file
