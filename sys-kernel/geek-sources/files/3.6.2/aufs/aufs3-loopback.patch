@@ -1,4 +1,4 @@
-aufs3.x-rcN loopback patch
+aufs3.6 loopback patch
 
 diff --git a/drivers/block/loop.c b/drivers/block/loop.c
 index 3bba655..bc9351f 100644

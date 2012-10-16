@@ -13,11 +13,11 @@ ck_ver="${KMV}-ck1"
 reiser4_ver="3.5.3"
 OVERRIDE_reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${reiser4_ver}.patch.gz"
 #rt_ver="${PV}-rt13"
-rt_ver="3.4.11-rt19"
+rt_ver="3.4.13-rt21"
 OVERRIDE_rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/3.4/patch-${rt_ver}.patch.xz"
 vserver_ver="3.5.5-vs2.3.4.3"
 
-SUPPORTED_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice mageia reiser4 rt suse uksm zfs"
+SUPPORTED_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice mageia reiser4 rt suse uksm vserver zfs"
 
 inherit kernel-geek
 

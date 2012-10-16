@@ -28,6 +28,7 @@
 # Send separate patches upstream if you find a problem...
 ########################################################
 #patches.kernel.org/patch-3.6.1
+#patches.kernel.org/patch-3.6.1-2
 
 ########################################################
 # Build fixes that apply to the vanilla kernel too.
@@ -40,6 +41,7 @@
 #patches.rpmify/geode-depends-on-x86_32
 #patches.rpmify/ubifs-remove-DATE-TIME.patch
 #patches.rpmify/chipidea-clean-up-dependencies
+#patches.rpmify/x86-kbuild-archscripts-depends-on-scripts_basic
 
 ########################################################
 # kABI consistency patches

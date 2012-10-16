@@ -8,13 +8,13 @@ DEBLOB_AVAILABLE="1"
 
 KMV="$(echo $PV | cut -f 1-2 -d .)"
 
-rt_ver="${PV}-rt1"
+ck_ver="${KMV}-ck1"
+rt_ver="3.6.1-rt1"
 vserver_ver="3.6-vs2.3.4.3-noxfs-nocow"
 #vserver_ver="3.6-vs2.3.4.3-noxfs"
 
 #SUPPORTED_FEATURES="aufs bfq bld branding ck deblob fbcondecor fedora grsecurity ice mageia reiser4 rt suse uksm vserver zfs"
-#SUPPORTED_FEATURES="aufs bfq branding deblob fbcondecor fedora grsecurity ice mageia rt suse vserver"
-SUPPORTED_FEATURES="aufs bfq branding deblob fedora mageia suse"
+SUPPORTED_FEATURES="aufs bfq branding ck deblob fbcondecor fedora grsecurity ice mageia rt suse uksm vserver"
 
 inherit kernel-geek
 

@@ -1,3 +1,4 @@
+
 ### BRANCH APPLY ###
 
 linux-2.6-makefile-after_link.patch
@@ -13,12 +14,16 @@ vmbugon-warnon.patch
 #
 # ARM
 #
+linux-3.6-arm-build-fixup.patch
 #arm-omap-dt-compat.patch
 #arm-smsc-support-reading-mac-address-from-device-tree.patch
 arm-tegra-nvec-kconfig.patch
 arm-tegra-usb-no-reset-linux33.patch
 #arm-beagle-usb-init.patch
 #arm-omap-drm-register.patch
+
+arm-smdk310-regulator-fix.patch
+arm-origen-regulator-fix.patch
 
 #
 # bugfixes to drivers and filesystems
@@ -127,7 +132,7 @@ scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
 weird-root-dentry-name-debug.patch
 
 #Highbank clock functions
-# highbank-export-clock-functions.patch
+#highbank-export-clock-functions.patch
 
 #selinux ptrace child permissions
 selinux-apply-different-permission-to-ptrace-child.patch
@@ -136,7 +141,5 @@ efifb-skip-DMI-checks-if-bootloader-knows.patch
 
 #rhbz 857324
 net-tcp-bz857324.patch
-
-3.6.2-stable-queue.patch
 
 # END OF PATCH APPLICATIONS

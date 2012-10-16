@@ -34,7 +34,7 @@ SUBLEVEL="${3}"
 KMV="${1}.${2}"
 
 # ebuild default values setup settings
-EXTRAVERSION="-calculate"
+EXTRAVERSION="-geek"
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
 SLOT="${PV}"
@@ -77,7 +77,7 @@ rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver
 xenomai_src="http://download.gna.org/xenomai/stable/xenomai-${xenomai_ver/KVM/$KMV}.tar.bz2"
 
 # VServer
-vserver_src="http://vserver.13thfloor.at/Experimental/patch-${PV}-vs${vserver_ver}.diff"
+vserver_src="http://vserver.13thfloor.at/Experimental/patch-${vserver_ver}.diff"
 
 featureKnown() {
 	local feature="${1/-/}"
@@ -400,7 +400,7 @@ And may the Force be with you…"
 					ApplyPatch "${FILESDIR}/${PV}/grsecurity/patch_list" "GrSecurity patches - ${grsecurity_url}";
 					;;
 				ice)
-					ApplyPatch "${FILESDIR}/tuxonice-kernel-${PV}.patch.xz" "TuxOnIce - ${ice_url}";
+					ApplyPatch "${FILESDIR}/${PV}/tuxonice-kernel-${PV}.patch.xz" "TuxOnIce - ${ice_url}";
 					;;
 				imq)
 					ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}";
@@ -427,7 +427,7 @@ And may the Force be with you…"
 					ApplyPatch "${FILESDIR}/${PV}/uksm/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
 					;;
 				vserver)
-					ApplyPatch "${DISTDIR}/patch-${PV}-vs${vserver_ver}.diff" "VServer - ${vserver_url}";
+					ApplyPatch "${DISTDIR}/patch-${vserver_ver}.diff" "VServer - ${vserver_url}";
 					;;
 				zfs)
 					ApplyPatch "$FILESDIR/${PV}/zfs/patch_list" "zfs - ${zfs_url}";
@@ -437,9 +437,11 @@ And may the Force be with you…"
 		fi;
 	done;
 
-	ApplyPatch "${FILESDIR}/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41";
-
-	((${PATCHLEVEL} < 6)) && ApplyPatch "${FILESDIR}/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991";
+	# Fixes
+	ApplyPatch "${FILESDIR}/fixes/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41";
+	((${PATCHLEVEL} < 6)) && ApplyPatch "${FILESDIR}/fixes/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991";
+	ApplyPatch "${FILESDIR}/fixes/gpio-ich_share_ownership_of_GPIO_groups_3.6.patch" "gpio-ich: Share ownership of GPIO groups http://git.kernel.org/?p=linux/kernel/git/torvalds/linux.git;a=patch;h=4f600ada70beeb1dfe08e11e871bf31015aa0a3d";
+	ApplyPatch "${FILESDIR}/fixes/zram_pagealloc_fix.patch" "zram pagealloc fix http://code.google.com/p/compcache/issues/detail?id=102"
 
 ### END OF PATCH APPLICATIONS ###
 
