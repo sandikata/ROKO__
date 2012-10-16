@@ -2,3 +2,8 @@
 # Дата: 20121013 16:04
 # Коментар: Използвайте sys-apps/inxi-9999-r1
 =sys-apps/inxi-9999
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20121016 19:27
+# Коментар: Бета
+=x11-drivers/nvidia-drivers-310.14

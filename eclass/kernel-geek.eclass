@@ -34,7 +34,7 @@ SUBLEVEL="${3}"
 KMV="${1}.${2}"
 
 # ebuild default values setup settings
-EXTRAVERSION="-geek"
+EXTRAVERSION="-calculate"
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
 SLOT="${PV}"
