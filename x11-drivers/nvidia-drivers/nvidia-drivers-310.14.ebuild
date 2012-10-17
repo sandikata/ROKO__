@@ -267,12 +267,12 @@ src_install() {
 			/usr/$(get_libdir)/opengl/nvidia/extensions
 
 		# XvMC driver
-		dolib.a ${NV_X11}/libXvMCNVIDIA.a || \
-			die "failed to install libXvMCNVIDIA.so"
-		donvidia ${NV_X11}/libXvMCNVIDIA.so ${NV_SOVER}
-		dosym libXvMCNVIDIA.so.${NV_SOVER} \
-			/usr/$(get_libdir)/libXvMCNVIDIA_dynamic.so.1 || \
-			die "failed to create libXvMCNVIDIA_dynamic.so symlink"
+#		dolib.a ${NV_X11}/libXvMCNVIDIA.a || \
+#			die "failed to install libXvMCNVIDIA.so"
+#		donvidia ${NV_X11}/libXvMCNVIDIA.so ${NV_SOVER}
+#		dosym libXvMCNVIDIA.so.${NV_SOVER} \
+#			/usr/$(get_libdir)/libXvMCNVIDIA_dynamic.so.1 || \
+#			die "failed to create libXvMCNVIDIA_dynamic.so symlink"
 	fi
 
 	# OpenCL ICD for NVIDIA
