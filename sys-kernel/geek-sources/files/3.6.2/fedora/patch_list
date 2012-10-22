@@ -124,6 +124,8 @@ lis3-improve-handling-of-null-rate.patch
 
 ips-noirq.patch
 
+i82975x-edac-fix.patch
+
 power-x86-destdir.patch
 
 #rhbz 754518

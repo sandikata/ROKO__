@@ -1,0 +1,51 @@
+From 7819d1c70eb6a57e43554d86e10b39d1e106ed65 Mon Sep 17 00:00:00 2001
+From: Takashi Iwai <tiwai@suse.de>
+Date: Wed, 10 Oct 2012 08:41:42 +0200
+Subject: ALSA: hda - Add missing hda_gen_spec to struct via_spec
+
+From: Takashi Iwai <tiwai@suse.de>
+
+commit 7819d1c70eb6a57e43554d86e10b39d1e106ed65 upstream.
+
+The commit [4b527b65 ALSA: hda - limit internal mic boost for Asus
+X202E] introduced the use of auto-parser code, but it forgot to add
+struct hda_gen_spec at the head of codec->spec which the auto-parser
+assumes silently.  Without this record, it may result in memory
+corruption.
+
+This patch adds the missing piece.
+
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ sound/pci/hda/patch_via.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/sound/pci/hda/patch_via.c
++++ b/sound/pci/hda/patch_via.c
+@@ -118,6 +118,8 @@ enum {
+ };
+ 
+ struct via_spec {
++	struct hda_gen_spec gen;
++
+ 	/* codec parameterization */
+ 	const struct snd_kcontrol_new *mixers[6];
+ 	unsigned int num_mixers;
+@@ -246,6 +248,7 @@ static struct via_spec * via_new_spec(st
+ 	/* VT1708BCE & VT1708S are almost same */
+ 	if (spec->codec_type == VT1708BCE)
+ 		spec->codec_type = VT1708S;
++	snd_hda_gen_init(&spec->gen);
+ 	return spec;
+ }
+ 
+@@ -1628,6 +1631,7 @@ static void via_free(struct hda_codec *c
+ 	vt1708_stop_hp_work(spec);
+ 	kfree(spec->bind_cap_vol);
+ 	kfree(spec->bind_cap_sw);
++	snd_hda_gen_free(&spec->gen);
+ 	kfree(spec);
+ }
+ 

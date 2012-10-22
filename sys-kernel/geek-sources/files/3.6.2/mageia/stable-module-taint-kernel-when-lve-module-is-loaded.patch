@@ -1,0 +1,36 @@
+From c99af3752bb52ba3aece5315279a57a477edfaf1 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg59@srcf.ucam.org>
+Date: Fri, 22 Jun 2012 13:49:31 -0400
+Subject: module: taint kernel when lve module is loaded
+
+From: Matthew Garrett <mjg59@srcf.ucam.org>
+
+commit c99af3752bb52ba3aece5315279a57a477edfaf1 upstream.
+
+Cloudlinux have a product called lve that includes a kernel module. This
+was previously GPLed but is now under a proprietary license, but the
+module continues to declare MODULE_LICENSE("GPL") and makes use of some
+EXPORT_SYMBOL_GPL symbols. Forcibly taint it in order to avoid this.
+
+Signed-off-by: Matthew Garrett <mjg59@srcf.ucam.org>
+Cc: Alex Lyashkov <umka@cloudlinux.com>
+Signed-off-by: Rusty Russell <rusty@rustcorp.com.au>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ kernel/module.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -2730,6 +2730,10 @@ static int check_module_license_and_vers
+ 	if (strcmp(mod->name, "driverloader") == 0)
+ 		add_taint_module(mod, TAINT_PROPRIETARY_MODULE);
+ 
++	/* lve claims to be GPL but upstream won't provide source */
++	if (strcmp(mod->name, "lve") == 0)
++		add_taint_module(mod, TAINT_PROPRIETARY_MODULE);
++
+ #ifdef CONFIG_MODVERSIONS
+ 	if ((mod->num_syms && !mod->crcs)
+ 	    || (mod->num_gpl_syms && !mod->gpl_crcs)

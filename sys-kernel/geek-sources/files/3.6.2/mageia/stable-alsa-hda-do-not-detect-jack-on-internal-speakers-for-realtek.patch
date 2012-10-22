@@ -1,0 +1,33 @@
+From f7f4b2322bf7b8c5929b7eb5a667091f32592580 Mon Sep 17 00:00:00 2001
+From: David Henningsson <david.henningsson@canonical.com>
+Date: Wed, 10 Oct 2012 16:32:09 +0200
+Subject: ALSA: hda - do not detect jack on internal speakers for Realtek
+
+From: David Henningsson <david.henningsson@canonical.com>
+
+commit f7f4b2322bf7b8c5929b7eb5a667091f32592580 upstream.
+
+This caused the internal speaker to mute itself because it was
+present, which happened after powersave.
+It was found on Dell XPS 15 (L502x), ALC665.
+
+Reported-by: Da Fox <da.fox.mail@gmail.com>
+Signed-off-by: David Henningsson <david.henningsson@canonical.com>
+Signed-off-by: Takashi Iwai <tiwai@suse.de>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ sound/pci/hda/patch_realtek.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/sound/pci/hda/patch_realtek.c
++++ b/sound/pci/hda/patch_realtek.c
+@@ -611,6 +611,8 @@ static void alc_line_automute(struct hda
+ {
+ 	struct alc_spec *spec = codec->spec;
+ 
++	if (spec->autocfg.line_out_type == AUTO_PIN_SPEAKER_OUT)
++		return;
+ 	/* check LO jack only when it's different from HP */
+ 	if (spec->autocfg.line_out_pins[0] == spec->autocfg.hp_pins[0])
+ 		return;

@@ -1,0 +1,41 @@
+From 49999ab27eab6289a8e4f450e148bdab521361b2 Mon Sep 17 00:00:00 2001
+From: Ian Kent <raven@themaw.net>
+Date: Thu, 11 Oct 2012 08:00:33 +0800
+Subject: autofs4 - fix reset pending flag on mount fail
+
+From: Ian Kent <raven@themaw.net>
+
+commit 49999ab27eab6289a8e4f450e148bdab521361b2 upstream.
+
+In autofs4_d_automount(), if a mount fail occurs the AUTOFS_INF_PENDING
+mount pending flag is not cleared.
+
+One effect of this is when using the "browse" option, directory entry
+attributes show up with all "?"s due to the incorrect callback and
+subsequent failure return (when in fact no callback should be made).
+
+Signed-off-by: Ian Kent <ikent@redhat.com>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/autofs4/root.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/fs/autofs4/root.c
++++ b/fs/autofs4/root.c
+@@ -392,10 +392,12 @@ static struct vfsmount *autofs4_d_automo
+ 		ino->flags |= AUTOFS_INF_PENDING;
+ 		spin_unlock(&sbi->fs_lock);
+ 		status = autofs4_mount_wait(dentry);
+-		if (status)
+-			return ERR_PTR(status);
+ 		spin_lock(&sbi->fs_lock);
+ 		ino->flags &= ~AUTOFS_INF_PENDING;
++		if (status) {
++			spin_unlock(&sbi->fs_lock);
++			return ERR_PTR(status);
++		}
+ 	}
+ done:
+ 	if (!(ino->flags & AUTOFS_INF_EXPIRING)) {

@@ -1,0 +1,48 @@
+From 303a7ce92064c285a04c870f2dc0192fdb2968cb Mon Sep 17 00:00:00 2001
+From: Stanislav Kinsbursky <skinsbursky@parallels.com>
+Date: Tue, 18 Sep 2012 13:37:18 +0400
+Subject: lockd: use rpc client's cl_nodename for id encoding
+
+From: Stanislav Kinsbursky <skinsbursky@parallels.com>
+
+commit 303a7ce92064c285a04c870f2dc0192fdb2968cb upstream.
+
+Taking hostname from uts namespace if not safe, because this cuold be
+performind during umount operation on child reaper death. And in this case
+current->nsproxy is NULL already.
+
+Signed-off-by: Stanislav Kinsbursky <skinsbursky@parallels.com>
+Signed-off-by: Trond Myklebust <Trond.Myklebust@netapp.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/lockd/mon.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/fs/lockd/mon.c
++++ b/fs/lockd/mon.c
+@@ -42,6 +42,7 @@ struct nsm_args {
+ 	u32			proc;
+ 
+ 	char			*mon_name;
++	char			*nodename;
+ };
+ 
+ struct nsm_res {
+@@ -141,6 +142,7 @@ static int nsm_mon_unmon(struct nsm_hand
+ 		.vers		= 3,
+ 		.proc		= NLMPROC_NSM_NOTIFY,
+ 		.mon_name	= nsm->sm_mon_name,
++		.nodename	= utsname()->nodename,
+ 	};
+ 	struct rpc_message msg = {
+ 		.rpc_argp	= &args,
+@@ -477,7 +479,7 @@ static void encode_my_id(struct xdr_stre
+ {
+ 	__be32 *p;
+ 
+-	encode_nsm_string(xdr, utsname()->nodename);
++	encode_nsm_string(xdr, argp->nodename);
+ 	p = xdr_reserve_space(xdr, 4 + 4 + 4);
+ 	*p++ = cpu_to_be32(argp->prog);
+ 	*p++ = cpu_to_be32(argp->vers);

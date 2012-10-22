@@ -1,0 +1,126 @@
+From 17b572e82032bc246324ce136696656b66d4e3f1 Mon Sep 17 00:00:00 2001
+From: Jason Wessel <jason.wessel@windriver.com>
+Date: Sun, 26 Aug 2012 22:37:03 -0500
+Subject: kdb,vt_console: Fix missed data due to pager overruns
+
+From: Jason Wessel <jason.wessel@windriver.com>
+
+commit 17b572e82032bc246324ce136696656b66d4e3f1 upstream.
+
+It is possible to miss data when using the kdb pager.  The kdb pager
+does not pay attention to the maximum column constraint of the screen
+or serial terminal.  This result is not incrementing the shown lines
+correctly and the pager will print more lines that fit on the screen.
+Obviously that is less than useful when using a VGA console where you
+cannot scroll back.
+
+The pager will now look at the kdb_buffer string to see how many
+characters are printed.  It might not be perfect considering you can
+output ASCII that might move the cursor position, but it is a
+substantially better approximation for viewing dmesg and trace logs.
+
+This also means that the vt screen needs to set the kdb COLUMNS
+variable.
+
+Signed-off-by: Jason Wessel <jason.wessel@windriver.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/tty/vt/vt.c       |   13 +++++++++++++
+ kernel/debug/kdb/kdb_io.c |   33 ++++++++++++++++++++++++++++-----
+ 2 files changed, 41 insertions(+), 5 deletions(-)
+
+--- a/drivers/tty/vt/vt.c
++++ b/drivers/tty/vt/vt.c
+@@ -3475,6 +3475,19 @@ int con_debug_enter(struct vc_data *vc)
+ 			kdb_set(2, setargs);
+ 		}
+ 	}
++	if (vc->vc_cols < 999) {
++		int colcount;
++		char cols[4];
++		const char *setargs[3] = {
++			"set",
++			"COLUMNS",
++			cols,
++		};
++		if (kdbgetintenv(setargs[0], &colcount)) {
++			snprintf(cols, 4, "%i", vc->vc_cols);
++			kdb_set(2, setargs);
++		}
++	}
+ #endif /* CONFIG_KGDB_KDB */
+ 	return ret;
+ }
+--- a/kernel/debug/kdb/kdb_io.c
++++ b/kernel/debug/kdb/kdb_io.c
+@@ -552,6 +552,7 @@ int vkdb_printf(const char *fmt, va_list
+ {
+ 	int diag;
+ 	int linecount;
++	int colcount;
+ 	int logging, saved_loglevel = 0;
+ 	int saved_trap_printk;
+ 	int got_printf_lock = 0;
+@@ -584,6 +585,10 @@ int vkdb_printf(const char *fmt, va_list
+ 	if (diag || linecount <= 1)
+ 		linecount = 24;
+ 
++	diag = kdbgetintenv("COLUMNS", &colcount);
++	if (diag || colcount <= 1)
++		colcount = 80;
++
+ 	diag = kdbgetintenv("LOGGING", &logging);
+ 	if (diag)
+ 		logging = 0;
+@@ -690,7 +695,7 @@ kdb_printit:
+ 		gdbstub_msg_write(kdb_buffer, retlen);
+ 	} else {
+ 		if (dbg_io_ops && !dbg_io_ops->is_console) {
+-			len = strlen(kdb_buffer);
++			len = retlen;
+ 			cp = kdb_buffer;
+ 			while (len--) {
+ 				dbg_io_ops->write_char(*cp);
+@@ -709,11 +714,29 @@ kdb_printit:
+ 		printk(KERN_INFO "%s", kdb_buffer);
+ 	}
+ 
+-	if (KDB_STATE(PAGER) && strchr(kdb_buffer, '\n'))
+-		kdb_nextline++;
++	if (KDB_STATE(PAGER)) {
++		/*
++		 * Check printed string to decide how to bump the
++		 * kdb_nextline to control when the more prompt should
++		 * show up.
++		 */
++		int got = 0;
++		len = retlen;
++		while (len--) {
++			if (kdb_buffer[len] == '\n') {
++				kdb_nextline++;
++				got = 0;
++			} else if (kdb_buffer[len] == '\r') {
++				got = 0;
++			} else {
++				got++;
++			}
++		}
++		kdb_nextline += got / (colcount + 1);
++	}
+ 
+ 	/* check for having reached the LINES number of printed lines */
+-	if (kdb_nextline == linecount) {
++	if (kdb_nextline >= linecount) {
+ 		char buf1[16] = "";
+ 
+ 		/* Watch out for recursion here.  Any routine that calls
+@@ -765,7 +788,7 @@ kdb_printit:
+ 			kdb_grepping_flag = 0;
+ 			kdb_printf("\n");
+ 		} else if (buf1[0] == ' ') {
+-			kdb_printf("\n");
++			kdb_printf("\r");
+ 			suspend_grep = 1; /* for this recursion */
+ 		} else if (buf1[0] == '\n') {
+ 			kdb_nextline = linecount - 1;

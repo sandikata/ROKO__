@@ -1,0 +1,48 @@
+From dc182549d439f60c332bf74d7f220a1bccf37da6 Mon Sep 17 00:00:00 2001
+From: Peng Tao <bergwolf@gmail.com>
+Date: Fri, 24 Aug 2012 00:27:49 +0800
+Subject: NFS41: fix error of setting blocklayoutdriver
+
+From: Peng Tao <bergwolf@gmail.com>
+
+commit dc182549d439f60c332bf74d7f220a1bccf37da6 upstream.
+
+After commit e38eb650 (NFS: set_pnfs_layoutdriver() from
+nfs4_proc_fsinfo()), set_pnfs_layoutdriver() is called inside
+nfs4_proc_fsinfo(), but pnfs_blksize is not set. It causes setting
+blocklayoutdriver failure and pnfsblock mount failure.
+
+Signed-off-by: Peng Tao <tao.peng@emc.com>
+Signed-off-by: Trond Myklebust <Trond.Myklebust@netapp.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/nfs/client.c   |    1 -
+ fs/nfs/nfs4proc.c |    5 ++++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+--- a/fs/nfs/client.c
++++ b/fs/nfs/client.c
+@@ -855,7 +855,6 @@ static void nfs_server_set_fsinfo(struct
+ 	if (server->wsize > NFS_MAX_FILE_IO_SIZE)
+ 		server->wsize = NFS_MAX_FILE_IO_SIZE;
+ 	server->wpages = (server->wsize + PAGE_CACHE_SIZE - 1) >> PAGE_CACHE_SHIFT;
+-	server->pnfs_blksize = fsinfo->blksize;
+ 
+ 	server->wtmult = nfs_block_bits(fsinfo->wtmult, NULL);
+ 
+--- a/fs/nfs/nfs4proc.c
++++ b/fs/nfs/nfs4proc.c
+@@ -3362,8 +3362,11 @@ static int nfs4_proc_fsinfo(struct nfs_s
+ 
+ 	nfs_fattr_init(fsinfo->fattr);
+ 	error = nfs4_do_fsinfo(server, fhandle, fsinfo);
+-	if (error == 0)
++	if (error == 0) {
++		/* block layout checks this! */
++		server->pnfs_blksize = fsinfo->blksize;
+ 		set_pnfs_layoutdriver(server, fhandle, fsinfo->layouttype);
++	}
+ 
+ 	return error;
+ }

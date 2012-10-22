@@ -77,7 +77,7 @@ msgid "show this help message and exit"
 msgstr "покажи тази помощ и излез"
 
 msgid "call method"
-msgstr ""
+msgstr "метод за повикване"
 
 msgid "language for translation"
 msgstr "Език за превод"
@@ -86,7 +86,7 @@ msgid "port number"
 msgstr "Номер на порт"
 
 msgid "destination host"
-msgstr ""
+msgstr "хост"
 
 msgid "post a request on the server for the certificate to be signed"
 msgstr "Искане на сървъра да бъде подписан сертификат"
@@ -176,19 +176,19 @@ msgid "Process killed"
 msgstr "Процесът е убит"
 
 msgid "PID not found for this session!"
-msgstr ""
+msgstr "PID не е намерен за тази сесия!"
 
 msgid "The server gets PID errors"
-msgstr ""
+msgstr "Сървърът получава PID грешки"
 
 msgid "No methods available"
 msgstr "Няма налични методи"
 
 msgid "You can execute:"
-msgstr ""
+msgstr "Можете да изпълните:"
 
 msgid "use"
-msgstr ""
+msgstr "употреба"
 
 msgid "Process not found"
 msgstr "Процесът не съществува"
@@ -197,7 +197,7 @@ msgid "Time"
 msgstr "Време"
 
 msgid "Failed to clear the cache! "
-msgstr ""
+msgstr "Неуспех при изчистване на кеша! "
 
 msgid "yes"
 msgstr "да"
@@ -209,193 +209,193 @@ msgid "auto"
 msgstr "авто"
 
 msgid "Method not found: "
-msgstr ""
+msgstr "Методът не е намерен: "
 
 msgid "the server sent pid = "
-msgstr ""
+msgstr "сървърът изпрати PID = "
 
 msgid "The process does not exist or does not belong to your session"
-msgstr ""
+msgstr "Процесът не съществува или не принадлежи към вашата сесия"
 
 #, python-format
 msgid "Task error by %s"
-msgstr ""
+msgstr "Грешка задача от %s"
 
 msgid "fields CN and L in the CA certificate are incorrect!"
-msgstr ""
+msgstr "Полета CN и L на CA сертификата са неверни!"
 
 msgid "This certificate has been revoked!"
-msgstr ""
+msgstr "Този сертификат е бил анулиран"
 
 msgid "Serial"
-msgstr ""
+msgstr "Сериен"
 
 msgid "Revoke date"
-msgstr ""
+msgstr "Дата на анулиране"
 
 msgid "CRL added"
-msgstr ""
+msgstr "CRL добавен"
 
 msgid "CA certificate deleted from the list of user trusted certificates"
-msgstr ""
+msgstr "CA сертификатът е премахнат от списъка с потребителски надеждни сертификати"
 
 msgid "CA certificate deleted from the list of system trusted certificates"
-msgstr ""
+msgstr "CA сертификатът е премахнат от списъка с надеждни сертификати"
 
 msgid "No access to the file!"
-msgstr ""
+msgstr "Няма достъп до файла!"
 
 msgid "Failed to obtain certificate data!"
-msgstr ""
+msgstr "Неуспешно получаване на сертификат за данни!"
 
 #, python-format
 msgid "%s: permission denied"
-msgstr ""
+msgstr "%s: Отказан Достъп"
 
 msgid "SID Deleted!"
-msgstr ""
+msgstr "SID премахнат!"
 
 msgid "SID deletion error"
-msgstr ""
+msgstr "SID грешка при изтриване"
 
 msgid "Session non registered on the server!"
-msgstr ""
+msgstr "Сесията не е регистрирана на сървъра!"
 
 msgid "Session information: "
-msgstr ""
+msgstr "Информация за сесията: "
 
 #, python-format
 msgid "Session number: %s"
-msgstr ""
+msgstr "Номер на сесията: %s"
 
 #, python-format
 msgid "Certificate number: %s"
-msgstr ""
+msgstr "Номер на сертификата: %s"
 
 #, python-format
 msgid "Certificate issued on %s"
-msgstr ""
+msgstr "Удостоверение, издадено на %s"
 
 msgid "Access Forbidden!"
-msgstr ""
+msgstr "Достъп Забранен!"
 
 msgid "Active sessions on the server: "
-msgstr ""
+msgstr "Активни сесии на сървъра: "
 
 msgid "No active sessions on the server"
-msgstr ""
+msgstr "Няма активни сесии на сървъра"
 
 msgid "Error clearing the session cache"
-msgstr ""
+msgstr "Грешка при изчистване на сесиен кеш"
 
 msgid "Session cache cleared"
-msgstr ""
+msgstr "Сесиен кеш изчистен"
 
 #, python-format
 msgid "client uses certificate %s"
-msgstr ""
+msgstr "клиентът използва сертификата %s"
 
 msgid "You can generate a new certificate using --gen-cert-by and --get-cert-from"
-msgstr ""
+msgstr "Можете да генерирате нов сертификат като използвате --gen-cert-by и --get-cert-from"
 
 msgid "Certificate not sent!"
-msgstr ""
+msgstr "Сертификатът не е изпратен!"
 
 #, python-format
 msgid " Your certifitate ID = %d"
-msgstr ""
+msgstr "Вашия сертификат ID = %d"
 
 msgid "The certificate has expired"
-msgstr ""
+msgstr "Сертификатът е с изтекъл срок"
 
 #, python-format
 msgid "The certificate expires after %d days"
-msgstr ""
+msgstr "Сертификатът изпича след %d дни"
 
 msgid " New Session"
-msgstr ""
+msgstr "Нова Сесия"
 
 msgid " Old Session"
-msgstr ""
+msgstr "Стара Сесия"
 
 #, python-format
 msgid " Your session ID = %s"
-msgstr ""
+msgstr "Вашия сесиен ID = %s"
 
 msgid "You have already sent a signature request for the certificate."
-msgstr ""
+msgstr "Вече сте изпратили заявка за подпис на сертификат."
 
 #, python-format
 msgid "Request ID = %s"
-msgstr ""
+msgstr "Заявка ID = %s"
 
 msgid "Send a new request? y/[n]: "
-msgstr ""
+msgstr "Изпрати нова заявка? y/[n]: "
 
 msgid "connecting..."
-msgstr ""
+msgstr "Свързване..."
 
 msgid "Closing. Connection error."
-msgstr ""
+msgstr "Изключване. Грешка при свързване."
 
 #, python-format
 msgid "Error: %s"
-msgstr ""
+msgstr "Грешка: %s"
 
 msgid "private key and request now exist"
 msgstr ""
 
 msgid "Create a new private key and request? y/[n]: "
-msgstr ""
+msgstr "Създаване на нов частен ключ и заявка? y/[n]: "
 
 msgid "This server has not signed the certificate!"
-msgstr ""
+msgstr "Този сървър не е подписал сертификат!"
 
 #, python-format
 msgid "Your request ID = %s"
-msgstr ""
+msgstr "Вашата заявка ID = %s"
 
 msgid "To sign the certificate in the server use command"
-msgstr ""
+msgstr "За да подпишете сертификатът в сървъра използвайте команда"
 
 #, python-format
 msgid "Request not sent or file %s deleted"
-msgstr ""
+msgstr "Заявката не е изпратена или файла %s е изтрит"
 
 #, python-format
 msgid "Request %s not found on the client's side"
-msgstr ""
+msgstr "Заявка %s не е открита на клиента"
 
 msgid "Request to sign is rejected!"
-msgstr ""
+msgstr "Подпис заявката е отхвърлена!"
 
 msgid "Signature request not reviewed yet."
-msgstr ""
+msgstr "Подпис заявката не е разгледана."
 
 msgid "Signature request not matching earlier data."
-msgstr ""
+msgstr "Подпис заявката не съответства на по-ранни данни."
 
 msgid "The request was sent from another IP."
-msgstr ""
+msgstr "Заявката е изпратена от друг IP."
 
 #, python-format
 msgid "Certificate saved. Your certificate ID: %s"
-msgstr ""
+msgstr "Сертификатът е запазен. Вашият сертификат ID: %s"
 
 msgid "Field \"CN\" not found in the certificate!"
-msgstr ""
+msgstr "Поле \"CN\" не е намерено в сертификата!" 
 
 msgid "filename = "
-msgstr ""
+msgstr "Име на файла = "
 
 msgid "Certificate added"
-msgstr ""
+msgstr "Сертификат добавен"
 
 msgid "A file with CA certificates now exists"
-msgstr ""
+msgstr "Файл със CA сертификат сега съществува"
 
 msgid "You do not have a certificate. Use --gen-cert-by HOST to generate a new request or --get-cert-from HOST to get a new certificate from the server."
-msgstr ""
+msgstr "Вие нямате сертификат. Използвайте --gen-cert-by HOST за да генерирате ново искане или --get-cert-from HOST за да получите нов сертификат от сървъра."
 
 msgid "Password: "
 msgstr "Парола: "
@@ -404,7 +404,7 @@ msgid "Certificate not found on the client’s side"
 msgstr "Сертификатът не съществува на клиентската страна"
 
 msgid "Failed to open the file"
-msgstr ""
+msgstr "Неуспех при отваряне на файла"
 
 msgid "Invalid server certificate"
 msgstr "Невалиден сървърен сертификат"
@@ -417,16 +417,16 @@ msgstr "Грешка. Сертификатът не е добавен в дов�
 
 #, python-format
 msgid "Fingerprint = %s"
-msgstr ""
+msgstr "Пръстови отпечатъци = %s"
 
 msgid "Serial Number = "
 msgstr "Сериен Номер = "
 
 msgid "Issuer"
-msgstr ""
+msgstr "Издател"
 
 msgid "Subject"
-msgstr ""
+msgstr "Предмет="
 
 msgid "Add the CA certificate to trusted? y/[n]:"
 msgstr "Добави CA сертификата в доверени? y/[n]:"

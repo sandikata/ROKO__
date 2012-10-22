@@ -11,9 +11,9 @@ Signed-off-by: Go Taniguchi <go@turbolinux.co.jp>
 
 --- a/drivers/pci/probe.c
 +++ b/drivers/pci/probe.c
-@@ -697,6 +697,9 @@ int __devinit pci_scan_bridge(struct pci
- 		if (child->subordinate > max)
- 			max = child->subordinate;
+@@ -775,6 +775,9 @@ int __devinit pci_scan_bridge(struct pci
+ 		if (child->busn_res.end > max)
+ 			max = child->busn_res.end;
  	} else {
 +#ifdef CONFIG_X86
 +		extern int pcibios_last_bus;
@@ -21,7 +21,7 @@ Signed-off-by: Go Taniguchi <go@turbolinux.co.jp>
  		/*
  		 * We need to assign a number to this bus which we always
  		 * do in the second pass.
-@@ -717,6 +720,10 @@ int __devinit pci_scan_bridge(struct pci
+@@ -795,6 +798,10 @@ int __devinit pci_scan_bridge(struct pci
  		/* Clear errors */
  		pci_write_config_word(dev, PCI_STATUS, 0xffff);
  

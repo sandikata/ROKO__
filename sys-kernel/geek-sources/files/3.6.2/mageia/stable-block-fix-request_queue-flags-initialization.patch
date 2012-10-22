@@ -1,0 +1,38 @@
+From 60ea8226cbd5c8301f9a39edc574ddabcb8150e0 Mon Sep 17 00:00:00 2001
+From: Tejun Heo <tj@kernel.org>
+Date: Thu, 20 Sep 2012 14:09:30 -0700
+Subject: block: fix request_queue->flags initialization
+
+From: Tejun Heo <tj@kernel.org>
+
+commit 60ea8226cbd5c8301f9a39edc574ddabcb8150e0 upstream.
+
+A queue newly allocated with blk_alloc_queue_node() has only
+QUEUE_FLAG_BYPASS set.  For request-based drivers,
+blk_init_allocated_queue() is called and q->queue_flags is overwritten
+with QUEUE_FLAG_DEFAULT which doesn't include BYPASS even though the
+initial bypass is still in effect.
+
+In blk_init_allocated_queue(), or QUEUE_FLAG_DEFAULT to q->queue_flags
+instead of overwriting.
+
+Signed-off-by: Tejun Heo <tj@kernel.org>
+Acked-by: Vivek Goyal <vgoyal@redhat.com>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ block/blk-core.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -696,7 +696,7 @@ blk_init_allocated_queue(struct request_
+ 	q->request_fn		= rfn;
+ 	q->prep_rq_fn		= NULL;
+ 	q->unprep_rq_fn		= NULL;
+-	q->queue_flags		= QUEUE_FLAG_DEFAULT;
++	q->queue_flags		|= QUEUE_FLAG_DEFAULT;
+ 
+ 	/* Override internal queue lock with supplied lock pointer */
+ 	if (lock)

@@ -1,0 +1,58 @@
+From 3ce9e53e788881da0d5f3912f80e0dd6b501f304 Mon Sep 17 00:00:00 2001
+From: Michal Marek <mmarek@suse.cz>
+Date: Mon, 15 Oct 2012 21:16:56 +0200
+Subject: kbuild: Fix accidental revert in commit fe04ddf
+
+From: Michal Marek <mmarek@suse.cz>
+
+commit 3ce9e53e788881da0d5f3912f80e0dd6b501f304 upstream.
+
+Commit fe04ddf7c291 ("kbuild: Do not package /boot and /lib in make
+tar-pkg") accidentally reverted two previous kbuild commits.  I don't
+know what I was thinking.
+
+This brings back changes made by commits 24cc7fb69a5b ("x86/kbuild:
+archscripts depends on scripts_basic") and c1c1a59e37da ("firmware: fix
+directory creation rule matching with make 3.80")
+
+Reported-by: Jan Beulich <JBeulich@suse.com>
+Signed-off-by: Michal Marek <mmarek@suse.cz>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ arch/x86/Makefile       |    2 +-
+ scripts/Makefile.fwinst |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/arch/x86/Makefile
++++ b/arch/x86/Makefile
+@@ -142,7 +142,7 @@ KBUILD_CFLAGS += $(call cc-option,-mno-a
+ KBUILD_CFLAGS += $(mflags-y)
+ KBUILD_AFLAGS += $(mflags-y)
+ 
+-archscripts:
++archscripts: scripts_basic
+ 	$(Q)$(MAKE) $(build)=arch/x86/tools relocs
+ 
+ ###
+--- a/scripts/Makefile.fwinst
++++ b/scripts/Makefile.fwinst
+@@ -27,7 +27,7 @@ endif
+ installed-mod-fw := $(addprefix $(INSTALL_FW_PATH)/,$(mod-fw))
+ 
+ installed-fw := $(addprefix $(INSTALL_FW_PATH)/,$(fw-shipped-all))
+-installed-fw-dirs := $(sort $(dir $(installed-fw))) $(INSTALL_FW_PATH)/.
++installed-fw-dirs := $(sort $(dir $(installed-fw))) $(INSTALL_FW_PATH)/./
+ 
+ # Workaround for make < 3.81, where .SECONDEXPANSION doesn't work.
+ PHONY += $(INSTALL_FW_PATH)/$$(%) install-all-dirs
+@@ -42,7 +42,7 @@ quiet_cmd_install = INSTALL $(subst $(sr
+ $(installed-fw-dirs):
+ 	$(call cmd,mkdir)
+ 
+-$(installed-fw): $(INSTALL_FW_PATH)/%: $(obj)/% | $$(dir $(INSTALL_FW_PATH)/%)
++$(installed-fw): $(INSTALL_FW_PATH)/%: $(obj)/% | $(INSTALL_FW_PATH)/$$(dir %)
+ 	$(call cmd,install)
+ 
+ PHONY +=  __fw_install __fw_modinst FORCE

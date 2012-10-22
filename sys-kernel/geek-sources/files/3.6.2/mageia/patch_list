@@ -14,6 +14,59 @@
 ###
 ### Stable Queue
 ###
+stable-arm-vfp-fix-saving-d16-d31-vfp-registers-on-v6-kernels.patch
+stable-pnfsblock-fix-partial-page-buffer-wirte.patch
+stable-nfs41-fix-error-of-setting-blocklayoutdriver.patch
+stable-nfs-remove-bad-delegations-during-open-recovery.patch
+stable-nfsd4-don-t-pin-clientids-to-pseudoflavors.patch
+stable-nfsd4-fix-nfs4-stateid-leak.patch
+stable-nfsd-pass-null-terminated-buf-to-kstrtouint.patch
+stable-lockd-per-net-nsm-client-creation-and-destruction-helpers-introduced.patch
+stable-lockd-use-rpc-client-s-cl_nodename-for-id-encoding.patch
+stable-lockd-create-and-use-per-net-nsm-rpc-clients-on-mon-unmon-requests.patch
+stable-acpi-ec-make-the-gpe-storm-threshold-a-module-parameter.patch
+stable-acpi-ec-add-a-quirk-for-clevo-m720t-m730t-laptop.patch
+stable-alsa-hda-add-missing-hda_gen_spec-to-struct-via_spec.patch
+stable-alsa-hda-do-not-detect-jack-on-internal-speakers-for-realtek.patch
+stable-alsa-hda-fix-memory-leaks-at-error-path-in-patch_cirrus.c.patch
+stable-mips-kgdb-fix-recursive-page-fault-with-config_kprobes.patch
+stable-tmpfs-ceph-gfs2-isofs-reiserfs-xfs-fix-fh_len-checking.patch
+stable-iscsi-target-correctly-set-0xffffffff-field-within-iscsi_op_reject-pdu.patch
+stable-iscsit-remove-incorrect-unlock-in-iscsit_build_sendtargets_resp.patch
+stable-iscsi-target-add-explicit-set-of-cache_dynamic_acls-1-for-tpg-demo-mode.patch
+stable-iscsi-target-bump-defaults-for-nopin_timeout-nopin_response_timeout-values.patch
+stable-scsi-storvsc-account-for-in-transit-packets-in-the-reset-path.patch
+stable-scsi-scsi_debug-fix-off-by-one-bug-when-unmapping-region.patch
+stable-scsi-virtio-scsi-initialize-scatterlist-structure.patch
+stable-arm-7541-1-add-arm-errata-775420-workaround.patch
+stable-arm-omap-counter-add-locking-to-read_persistent_clock.patch
+stable-firewire-cdev-fix-user-memory-corruption-i386-userland-on-amd64-kernel.patch
+stable-sunrpc-ensure-that-the-tcp-socket-is-closed-when-in-close_wait.patch
+stable-target-support-zero-allocation-length-in-inquiry.patch
+stable-target-fix-truncation-of-mode-data-support-zero-allocation-length.patch
+stable-target-fix-return-code-in-target_core_init_configfs-error-path.patch
+stable-target-file-re-enable-optional-fd_buffered_io-1-operation.patch
+stable-qla2xxx-fix-endianness-of-task-management-response-code.patch
+stable-vfio-move-pci-intx-eventfd-setting-earlier.patch
+stable-vfio-fix-pci-intx-disable-consistency.patch
+stable-xen-pv-on-hvm-kexec-add-quirk-for-xen-3.4-and-shutdown-watches.patch
+stable-xen-bootup-allow-read-write-_cr8-pvops-call.patch
+stable-xen-bootup-allow-read_tscp-call-for-xen-pv-guests.patch
+stable-block-fix-request_queue-flags-initialization.patch
+stable-autofs4-fix-reset-pending-flag-on-mount-fail.patch
+stable-module-taint-kernel-when-lve-module-is-loaded.patch
+stable-video-udlfb-fix-line-counting-in-fb_write.patch
+stable-viafb-don-t-touch-clock-state-on-olpc-xo-1.5.patch
+stable-timekeeping-cast-raw_interval-to-u64-to-avoid-shift-overflow.patch
+stable-timers-fix-endless-looping-between-cascade-and-internal_add_timer.patch
+stable-nohz-fix-one-jiffy-count-too-far-in-idle-cputime.patch
+stable-ath9k-use-ieee80211_free_txskb.patch
+stable-mac80211-use-ieee80211_free_txskb-to-fix-possible-skb-leaks.patch
+stable-md-raid10-use-correct-limit-variable.patch
+stable-kdb-vt_console-fix-missed-data-due-to-pager-overruns.patch
+stable-pktgen-fix-crash-when-generating-ipv6-packets.patch
+stable-mips-ath79-fix-cpu-ddr-frequency-calculation-for-srif-plls.patch
+stable-kbuild-fix-accidental-revert-in-commit-fe04ddf.patch
 
 ###
 ### Arch x86
@@ -46,7 +99,7 @@ x86-increase-default-minimum-vmalloc-area-by-64MB-to-192MB.patch
 ### PCI core
 ###
 
-#pci-pciprobe-CardBusNo.patch
+pci-pciprobe-CardBusNo.patch
 
 # http://lkml.org/lkml/2008/9/12/52
 pci-add-ALI-M5229-ide-compatibility-mode-quirk.patch
@@ -79,7 +132,7 @@ acpi-processor-M720SR-limit-to-C2.patch
 
 # Blacklist acpi video for devices that must use shuttle-wmi
 # for backlight because of buggy BIOS
-acpi-video-add-blacklist-to-use-vendor-driver.patch
+# BROKEN: need adaption for new blacklisting: acpi-video-add-blacklist-to-use-vendor-driver.patch
 
 ###
 ### Block
@@ -121,20 +174,20 @@ block-floppy-disable-pnp-modalias.patch
 ### File-system
 ###
 
-# overlayfs patches "liberated" from ubuntu-quantal git repo
-#fs-overlayfs.patch
-#fs-overlayfs-add-statfs-support.patch
-#fs-overlayfs-implement-show_options.patch
-#fs-overlayfs-limit-filesystem-stacking-depth.patch
-#fs-overlayfs-fix-possible-leak-in-ovl_new_inode.patch
-#fs-overlayfs-create-new-inode-in-ovl_link.patch
-#fs-overlayfs-switch-to-use-inode_only_permissions.patch
-#fs-overlayfs-copy-up-i_uid-i_gid-from-the-underlying-inode.patch
-#fs-overlayfs-vfs-introduce-clone_private_mount.patch
-#fs-overlayfs-inode_only_permission-export-inode-level-permissions-checks.patch
-#fs-overlayfs-vfs-pass-struct-path-to-__dentry_open.patch
-#fs-overlayfs-vfs-add-i_op-open.patch
-#fs-overlayfs-vfs-export-do_splice_direct.patch
+# updated overlayfs patches from opensuse
+fs-ovl01-vfs-add-i_op-dentry_open.patch
+fs-ovl02-vfs-export-do_splice_direct-to-modules.patch
+fs-ovl03-vfs-introduce-clone_private_mount.patch
+fs-ovl04-overlay-filesystem.patch
+fs-ovl05-overlayfs-add-statfs-support.patch
+fs-ovl06-overlayfs-implement-show_options.patch
+fs-ovl07-overlay-overlay-filesystem-documentation.patch
+fs-ovl08-fs-limit-filesystem-stacking-depth.patch
+fs-ovl09-overlayfs-fix-possible-leak-in-ovl_new_inode.patch
+fs-ovl10-overlayfs-create-new-inode-in-ovl_link.patch
+fs-ovl11-vfs-export-__inode_permission-to-modules.patch
+fs-ovl12-ovl-switch-to-__inode_permission.patch
+fs-ovl13-overlayfs-copy-up-i_uid-i_gid-from-the-underlying-in.patch
 
 ###
 ### FireWire
@@ -161,6 +214,7 @@ gpu-drm-mach64-2.6.37-buildfix.patch
 gpu-drm-mach64-3.0-buildfix.patch
 gpu-drm-mach64-include-module.h.patch
 gpu-drm-mach64-3.3-buildfix.patch
+gpu-drm-mach64-3.6-buildfix.patch
 
 ###
 ### Hardware Monitoring
@@ -193,10 +247,11 @@ kbuild-compress-kernel-modules-on-installation.patch
 net-sis190-fix-list-usage.patch
 
 # netfilter IFWLOG support
-#net-netfilter-IFWLOG.patch
-#net-netfilter-IFWLOG-mdv.patch
-#net-netfilter-IFWLOG-2.6.35-buildfix.patch
-#net-netfilter-IFWLOG-2.6.37-buildfix.patch
+net-netfilter-IFWLOG.patch
+net-netfilter-IFWLOG-mdv.patch
+net-netfilter-IFWLOG-2.6.35-buildfix.patch
+net-netfilter-IFWLOG-2.6.37-buildfix.patch
+net-ipv4-netfilter-ipt_IFWLOG-3.6-buildfix.patch
 
 # netfilter psd support
 net-netfilter-psd.patch
@@ -337,10 +392,7 @@ smack-unionfs-deadlock-fix.patch
 ###
 ### ARM
 ###
-kbuild_firmware_install.patch
 
 ###
 ### Tools
 ###
-tools-perf-fix-strerror_r-usage.patch
-

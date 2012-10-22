@@ -7,7 +7,7 @@ instead of UNKNOWN currently used would be better.
 
 Signed-off-by: Herton Ronaldo Krzesinski <herton@mandriva.com.br>
 
-[ rebased for 3.4.3 /tmb ]
+[ rebased for 3.6.2 /tmb ]
 Signed-off-by: Thomas Backlund <tmb@mageia.org>
 
  drivers/char/agp/intel-agp.c |    1 +
@@ -15,21 +15,21 @@ Signed-off-by: Thomas Backlund <tmb@mageia.org>
  drivers/char/agp/intel-gtt.c |    2 ++
  files changed, 4 insertions(+)
 
-diff -Nurp linux-3.4.3/drivers/char/agp/intel-agp.c linux-3.4.3-Q57/drivers/char/agp/intel-agp.c
---- linux-3.4.3/drivers/char/agp/intel-agp.c	2012-06-20 20:35:18.957195160 +0300
-+++ linux-3.4.3-Q57/drivers/char/agp/intel-agp.c	2012-06-20 20:39:06.378874215 +0300
-@@ -901,6 +901,7 @@ static struct pci_device_id agp_intel_pc
+diff -Nurp linux-3.6.2/drivers/char/agp/intel-agp.c linux-3.6.2-Q57/drivers/char/agp/intel-agp.c
+--- linux-3.6.2/drivers/char/agp/intel-agp.c	2012-10-01 02:47:46.000000000 +0300
++++ linux-3.6.2-Q57/drivers/char/agp/intel-agp.c	2012-10-17 21:11:54.670852063 +0300
+@@ -902,6 +902,7 @@ static struct pci_device_id agp_intel_pc
  	ID(PCI_DEVICE_ID_INTEL_IRONLAKE_D2_HB),
  	ID(PCI_DEVICE_ID_INTEL_IRONLAKE_M_HB),
  	ID(PCI_DEVICE_ID_INTEL_IRONLAKE_MA_HB),
 +	ID(PCI_DEVICE_ID_INTEL_IRONLAKE_UNKNOWN),
  	ID(PCI_DEVICE_ID_INTEL_IRONLAKE_MC2_HB),
- 	ID(PCI_DEVICE_ID_INTEL_SANDYBRIDGE_HB),
- 	ID(PCI_DEVICE_ID_INTEL_SANDYBRIDGE_M_HB),
-diff -Nurp linux-3.4.3/drivers/char/agp/intel-agp.h linux-3.4.3-Q57/drivers/char/agp/intel-agp.h
---- linux-3.4.3/drivers/char/agp/intel-agp.h	2012-06-20 20:35:18.957195160 +0300
-+++ linux-3.4.3-Q57/drivers/char/agp/intel-agp.h	2012-06-20 20:39:06.378874215 +0300
-@@ -215,6 +215,7 @@
+ 	{ }
+ };
+diff -Nurp linux-3.6.2/drivers/char/agp/intel-agp.h linux-3.6.2-Q57/drivers/char/agp/intel-agp.h
+--- linux-3.6.2/drivers/char/agp/intel-agp.h	2012-10-01 02:47:46.000000000 +0300
++++ linux-3.6.2-Q57/drivers/char/agp/intel-agp.h	2012-10-17 21:11:54.670852063 +0300
+@@ -217,6 +217,7 @@
  #define PCI_DEVICE_ID_INTEL_IRONLAKE_D_IG	    0x0042
  #define PCI_DEVICE_ID_INTEL_IRONLAKE_M_HB	    0x0044
  #define PCI_DEVICE_ID_INTEL_IRONLAKE_MA_HB	    0x0062
@@ -37,10 +37,10 @@ diff -Nurp linux-3.4.3/drivers/char/agp/intel-agp.h linux-3.4.3-Q57/drivers/char
  #define PCI_DEVICE_ID_INTEL_IRONLAKE_MC2_HB    0x006a
  #define PCI_DEVICE_ID_INTEL_IRONLAKE_M_IG	    0x0046
  #define PCI_DEVICE_ID_INTEL_SANDYBRIDGE_HB		0x0100  /* Desktop */
-diff -Nurp linux-3.4.3/drivers/char/agp/intel-gtt.c linux-3.4.3-Q57/drivers/char/agp/intel-gtt.c
---- linux-3.4.3/drivers/char/agp/intel-gtt.c	2012-05-21 01:29:13.000000000 +0300
-+++ linux-3.4.3-Q57/drivers/char/agp/intel-gtt.c	2012-06-20 20:39:06.378874215 +0300
-@@ -1432,6 +1432,8 @@ static const struct intel_gtt_driver_des
+diff -Nurp linux-3.6.2/drivers/char/agp/intel-gtt.c linux-3.6.2-Q57/drivers/char/agp/intel-gtt.c
+--- linux-3.6.2/drivers/char/agp/intel-gtt.c	2012-10-01 02:47:46.000000000 +0300
++++ linux-3.6.2-Q57/drivers/char/agp/intel-gtt.c	2012-10-17 21:11:54.671852121 +0300
+@@ -1501,6 +1501,8 @@ static const struct intel_gtt_driver_des
  		&g4x_gtt_driver },
  	{ PCI_DEVICE_ID_INTEL_IRONLAKE_D_IG,
  	    "HD Graphics", &ironlake_gtt_driver },

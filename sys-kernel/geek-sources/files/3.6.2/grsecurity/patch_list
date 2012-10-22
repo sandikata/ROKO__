@@ -1,6 +1,6 @@
 
 2400_kcopy-patch-for-infiniband-driver.patch
-4420_grsecurity-2.9.1-3.6.1-201210111929.patch
+4420_grsecurity-2.9.1-3.6.2-201210151829.patch
 4430_grsec-remove-localversion-grsec.patch
 4435_grsec-mute-warnings.patch
 4440_grsec-remove-protected-paths.patch

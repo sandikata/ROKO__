@@ -1,0 +1,43 @@
+From 6938867edba929a65a167a97581231e76aeb10b4 Mon Sep 17 00:00:00 2001
+From: Bryan Schumaker <bjschuma@netapp.com>
+Date: Wed, 26 Sep 2012 15:25:52 -0400
+Subject: NFS: Remove bad delegations during open recovery
+
+From: Bryan Schumaker <bjschuma@netapp.com>
+
+commit 6938867edba929a65a167a97581231e76aeb10b4 upstream.
+
+I put the client into an open recovery loop by:
+	Client: Open file
+		read half
+	Server: Expire client (echo 0 > /sys/kernel/debug/nfsd/forget_clients)
+	Client: Drop vm cache (echo 3 > /proc/sys/vm/drop_caches)
+		finish reading file
+
+This causes a loop because the client never updates the nfs4_state after
+discovering that the delegation is invalid.  This means it will keep
+trying to read using the bad delegation rather than attempting to re-open
+the file.
+
+Signed-off-by: Bryan Schumaker <bjschuma@netapp.com>
+Signed-off-by: Trond Myklebust <Trond.Myklebust@netapp.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/nfs/nfs4proc.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/fs/nfs/nfs4proc.c
++++ b/fs/nfs/nfs4proc.c
+@@ -1774,7 +1774,11 @@ static void nfs41_clear_delegation_state
+ 		 * informs us the stateid is unrecognized. */
+ 		if (status != -NFS4ERR_BAD_STATEID)
+ 			nfs41_free_stateid(server, stateid);
++		nfs_remove_bad_delegation(state->inode);
+ 
++		write_seqlock(&state->seqlock);
++		nfs4_stateid_copy(&state->stateid, &state->open_stateid);
++		write_sequnlock(&state->seqlock);
+ 		clear_bit(NFS_DELEGATED_STATE, &state->flags);
+ 	}
+ }

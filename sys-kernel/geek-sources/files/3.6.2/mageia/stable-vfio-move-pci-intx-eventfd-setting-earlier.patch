@@ -1,0 +1,47 @@
+From 9dbdfd23b7638d054f3b0e70c64dfb9f297f2a9f Mon Sep 17 00:00:00 2001
+From: Alex Williamson <alex.williamson@redhat.com>
+Date: Wed, 10 Oct 2012 09:10:32 -0600
+Subject: vfio: Move PCI INTx eventfd setting earlier
+
+From: Alex Williamson <alex.williamson@redhat.com>
+
+commit 9dbdfd23b7638d054f3b0e70c64dfb9f297f2a9f upstream.
+
+We need to be ready to recieve an interrupt as soon as we call
+request_irq, so our eventfd context setting needs to be moved
+earlier.  Without this, an interrupt from our device or one
+sharing the interrupt line can pass a NULL into eventfd_signal
+and oops.
+
+Signed-off-by: Alex Williamson <alex.williamson@redhat.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/vfio/pci/vfio_pci_intrs.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/vfio/pci/vfio_pci_intrs.c
++++ b/drivers/vfio/pci/vfio_pci_intrs.c
+@@ -400,19 +400,20 @@ static int vfio_intx_set_signal(struct v
+ 		return PTR_ERR(trigger);
+ 	}
+ 
++	vdev->ctx[0].trigger = trigger;
++
+ 	if (!vdev->pci_2_3)
+ 		irqflags = 0;
+ 
+ 	ret = request_irq(pdev->irq, vfio_intx_handler,
+ 			  irqflags, vdev->ctx[0].name, vdev);
+ 	if (ret) {
++		vdev->ctx[0].trigger = NULL;
+ 		kfree(vdev->ctx[0].name);
+ 		eventfd_ctx_put(trigger);
+ 		return ret;
+ 	}
+ 
+-	vdev->ctx[0].trigger = trigger;
+-
+ 	/*
+ 	 * INTx disable will stick across the new irq setup,
+ 	 * disable_irq won't.

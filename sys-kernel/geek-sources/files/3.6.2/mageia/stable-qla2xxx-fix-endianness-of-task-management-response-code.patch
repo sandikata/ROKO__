@@ -1,0 +1,39 @@
+From e4b11b89f9039ca97b2ed1b6efeb6749fbdeb252 Mon Sep 17 00:00:00 2001
+From: Roland Dreier <roland@purestorage.com>
+Date: Tue, 18 Sep 2012 15:10:56 -0700
+Subject: qla2xxx: Fix endianness of task management response code
+
+From: Roland Dreier <roland@purestorage.com>
+
+commit e4b11b89f9039ca97b2ed1b6efeb6749fbdeb252 upstream.
+
+The qla2xxx firmware actually expects the task management response
+code in a CTIO IOCB with SCSI status mode 1 to be in little-endian
+byte order, ie the response code should be the first byte in the
+sense_data[] array.  The old code erroneously byte-swapped the
+response code, which puts it in the wrong place on the wire and leads
+to initiators thinking every task management request succeeds (since
+they see 0 in the byte where they look for the response code).
+
+Signed-off-by: Roland Dreier <roland@purestorage.com>
+Cc: Chad Dupuis <chad.dupuis@qlogic.com>
+Cc: Arun Easi <arun.easi@qlogic.com>
+Acked-by: Saurav Kashyap <saurav.kashyap@qlogic.com>
+Signed-off-by: Nicholas Bellinger <nab@linux-iscsi.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/scsi/qla2xxx/qla_target.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/scsi/qla2xxx/qla_target.c
++++ b/drivers/scsi/qla2xxx/qla_target.c
+@@ -1403,7 +1403,7 @@ static void qlt_24xx_send_task_mgmt_ctio
+ 	ctio->u.status1.scsi_status =
+ 	    __constant_cpu_to_le16(SS_RESPONSE_INFO_LEN_VALID);
+ 	ctio->u.status1.response_len = __constant_cpu_to_le16(8);
+-	((uint32_t *)ctio->u.status1.sense_data)[0] = cpu_to_be32(resp_code);
++	ctio->u.status1.sense_data[0] = resp_code;
+ 
+ 	qla2x00_start_iocbs(ha, ha->req);
+ }
