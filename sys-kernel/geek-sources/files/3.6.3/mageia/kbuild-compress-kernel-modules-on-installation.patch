@@ -1,0 +1,137 @@
+================================
+Signed-off-by: Steve Brokenshire <sbrokenshire@xestia.co.uk>
+[Rediffed for 2.6.31.3, defaulted to y and compress with -9 /Thomas]
+Signed-off-by: Thomas Backlund <tmb@mandriva.org>
+
+diff -Nurp linux-2.6.31/Documentation/kbuild/modules.txt linux-2.6.31.compress/Documentation/kbuild/modules.txt
+--- linux-2.6.31/Documentation/kbuild/modules.txt	2009-09-10 01:13:59.000000000 +0300
++++ linux-2.6.31.compress/Documentation/kbuild/modules.txt	2009-10-09 14:17:49.335619817 +0300
+@@ -123,6 +123,13 @@ executed to make module versioning work.
+ 		Install the external module(s). The default location is
+ 		/lib/modules/<kernel_release>/extra/, but a prefix may
+ 		be added with INSTALL_MOD_PATH (discussed in section 5).
++		If MODULES_COMPRESS is set when the modules_install target is
++		run then the module is compressed after it has been
++		copied to /lib/modules/<kernel-version>. Compressed modules
++		using the default gzip compression format will require
++		module-init-tools installed with --zlib-enabled.
++		Any options set in MODULE_COMPRESS_OPTIONS will be
++		passed to the selected compression format.
+ 
+ 	clean
+ 		Remove all generated files in the module directory only.
+diff -Nurp linux-2.6.31/init/Kconfig linux-2.6.31.compress/init/Kconfig
+--- linux-2.6.31/init/Kconfig	2009-09-10 01:13:59.000000000 +0300
++++ linux-2.6.31.compress/init/Kconfig	2009-10-09 14:19:01.812591181 +0300
+@@ -1161,6 +1161,64 @@ config MODULE_FORCE_UNLOAD
+ 	  rmmod).  This is mainly for kernel developers and desperate users.
+ 	  If unsure, say N.
+ 
++config MODULE_COMPRESS
++	bool "Compress kernel modules on installation"
++	depends on MODULES
++	default y
++	help
++	  This option compresses the kernel modules when 'make
++	  modules_install' is run.
++
++	  The modules will be compressed into the selected compression 
++	  format with gzip being the default compression format.
++
++	  When a kernel module is installed from outside of the main kernel
++	  source and uses the Kbuild system for installing modules then that
++	  kernel module will also be compressed when it is installed.
++
++	  When running mkinitrd you will find that an error message
++	  appears saying that it cannot find a certain kernel module.
++	  As a workaround, unset CONFIG_MODULE_COMPRESS, build the modules
++	  and install them, run mkinitrd and create the initrd image, place
++	  the initrd image in the correct place for booting, set
++	  CONFIG_MODULE_COMPRESS and then install the modules again.
++
++	  This option requires the module-init-tools package to be 
++	  configured with --enable-zlib (if using gzip which is the
++	  default compression format).
++
++	  If unsure, say Y.
++
++config MODULE_COMPRESS_OPTIONS
++	string "Compression format command line options"
++	depends on MODULE_COMPRESS
++	default "-9"
++	help
++	  This option specifies the command line options to be used for
++	  the selected compression format.
++
++	  Please refer to the selected compression format's documentation
++	  on which options should be used.
++
++	  If unsure, leave this option blank.
++
++choice
++	prompt "Kernel module compression format"
++	depends on MODULE_COMPRESS
++	default MODULE_COMPRESS_GZIP
++
++config MODULE_COMPRESS_GZIP
++	bool "gzip compression"
++	help
++	  Compresses the kernel modules using the gzip (GNU zip) 
++	  compression format.
++
++	  This option requires gzip to be installed.
++
++	  If unsure, leave this option selected.
++
++endchoice
++
+ config MODVERSIONS
+ 	bool "Module versioning support"
+ 	help
+diff -Nurp linux-2.6.31/scripts/Makefile.modinst linux-2.6.31.compress/scripts/Makefile.modinst
+--- linux-2.6.31/scripts/Makefile.modinst	2009-09-10 01:13:59.000000000 +0300
++++ linux-2.6.31.compress/scripts/Makefile.modinst	2009-10-09 14:17:49.337619404 +0300
+@@ -5,6 +5,7 @@
+ PHONY := __modinst
+ __modinst:
+ 
++include include/config/auto.conf
+ include scripts/Kbuild.include
+ 
+ #
+@@ -16,8 +17,21 @@ PHONY += $(modules)
+ __modinst: $(modules)
+ 	@:
+ 
+-quiet_cmd_modules_install = INSTALL $@
+-      cmd_modules_install = mkdir -p $(2); cp $@ $(2) ; $(mod_strip_cmd) $(2)/$(notdir $@)
++ifeq ($(CONFIG_MODULE_COMPRESS_OPTIONS), "")
++else
++ MODCOMPOPT = $(shell echo -n $(CONFIG_MODULE_COMPRESS_OPTIONS))
++endif
++
++quiet_cmd_modules_install = INSTALL  $@
++      cmd_modules_install = mkdir -p $(2); \
++				cp $@ $(2) ; \
++				$(mod_strip_cmd) $(2)/$(notdir $@)
++
++quiet_cmd_modules_compress_gzip = COMPRESS $@
++      cmd_modules_compress_gzip = gzip $(MODCOMPOPT) -c \
++				 $(2)/$(@F) \
++				 > $(2)/$(@F).gz; \
++				 rm $(2)/$(@F)
+ 
+ # Modules built outside the kernel source tree go into extra by default
+ INSTALL_MOD_DIR ?= extra
+@@ -26,8 +40,11 @@ ext-mod-dir = $(INSTALL_MOD_DIR)$(subst 
+ modinst_dir = $(if $(KBUILD_EXTMOD),$(ext-mod-dir),kernel/$(@D))
+ 
+ $(modules):
++
+ 	$(call cmd,modules_install,$(MODLIB)/$(modinst_dir))
+ 
++	$(if $(CONFIG_MODULE_COMPRESS_GZIP), \
++		$(call cmd,modules_compress_gzip,$(MODLIB)/$(modinst_dir)))
+ 
+ # Declare the contents of the .PHONY variable as phony.  We keep that
+ # information in a variable se we can use it in if_changed and friends.

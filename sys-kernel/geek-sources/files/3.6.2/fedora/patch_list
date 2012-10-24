@@ -144,4 +144,13 @@ efifb-skip-DMI-checks-if-bootloader-knows.patch
 #rhbz 857324
 net-tcp-bz857324.patch
 
+#rhbz 770484
+iwlwifi-fix-6000-ch-switch.patch
+
+#rhbz 862168
+mac80211_local_deauth_v3.6.patch
+
+#rhbz 866013
+mac80211-connect-with-HT20-if-HT40-is-not-permitted.patch
+
 # END OF PATCH APPLICATIONS

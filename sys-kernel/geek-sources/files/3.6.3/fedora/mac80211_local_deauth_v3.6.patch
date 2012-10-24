@@ -1,0 +1,66 @@
+diff --git a/include/net/cfg80211.h b/include/net/cfg80211.h
+index 3d254e1..f10553c 100644
+--- a/include/net/cfg80211.h
++++ b/include/net/cfg80211.h
+@@ -1217,6 +1217,7 @@ struct cfg80211_deauth_request {
+ 	const u8 *ie;
+ 	size_t ie_len;
+ 	u16 reason_code;
++	bool local_state_change;
+ };
+ 
+ /**
+diff --git a/net/mac80211/mlme.c b/net/mac80211/mlme.c
+index f76b833..08343c2 100644
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -3457,6 +3457,7 @@ int ieee80211_mgd_deauth(struct ieee80211_sub_if_data *sdata,
+ {
+ 	struct ieee80211_if_managed *ifmgd = &sdata->u.mgd;
+ 	u8 frame_buf[DEAUTH_DISASSOC_LEN];
++	bool tx = !req->local_state_change;
+ 
+ 	mutex_lock(&ifmgd->mtx);
+ 
+@@ -3473,12 +3474,11 @@ int ieee80211_mgd_deauth(struct ieee80211_sub_if_data *sdata,
+ 	if (ifmgd->associated &&
+ 	    ether_addr_equal(ifmgd->associated->bssid, req->bssid))
+ 		ieee80211_set_disassoc(sdata, IEEE80211_STYPE_DEAUTH,
+-				       req->reason_code, true, frame_buf);
++				       req->reason_code, tx, frame_buf);
+ 	else
+ 		ieee80211_send_deauth_disassoc(sdata, req->bssid,
+ 					       IEEE80211_STYPE_DEAUTH,
+-					       req->reason_code, true,
+-					       frame_buf);
++					       req->reason_code, tx, frame_buf);
+ 	mutex_unlock(&ifmgd->mtx);
+ 
+ 	__cfg80211_send_deauth(sdata->dev, frame_buf, DEAUTH_DISASSOC_LEN);
+diff --git a/net/wireless/mlme.c b/net/wireless/mlme.c
+index 1cdb1d5..0877efb 100644
+--- a/net/wireless/mlme.c
++++ b/net/wireless/mlme.c
+@@ -457,21 +457,11 @@ int __cfg80211_mlme_deauth(struct cfg80211_registered_device *rdev,
+ 		.reason_code = reason,
+ 		.ie = ie,
+ 		.ie_len = ie_len,
++		.local_state_change = local_state_change,
+ 	};
+ 
+ 	ASSERT_WDEV_LOCK(wdev);
+ 
+-	if (local_state_change) {
+-		if (wdev->current_bss &&
+-		    ether_addr_equal(wdev->current_bss->pub.bssid, bssid)) {
+-			cfg80211_unhold_bss(wdev->current_bss);
+-			cfg80211_put_bss(&wdev->current_bss->pub);
+-			wdev->current_bss = NULL;
+-		}
+-
+-		return 0;
+-	}
+-
+ 	return rdev->ops->deauth(&rdev->wiphy, dev, &req);
+ }
+ 

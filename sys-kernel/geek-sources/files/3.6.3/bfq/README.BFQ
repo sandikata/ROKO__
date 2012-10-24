@@ -1,0 +1,162 @@
+Budget Fair Queueing I/O Scheduler
+==================================
+
+This patchset introduces BFQ-v5 into Linux 3.6.0.
+For further information: http://algo.ing.unimo.it/people/paolo/disk_sched/.
+
+The overall diffstat is the following:
+
+ block/Kconfig.iosched         |   26 +
+ block/Makefile                |    1 +
+ block/bfq-cgroup.c            |  833 ++++++++++++++++++++++++++++
+ block/bfq-ioc.c               |   34 ++
+ block/bfq-iosched.c           | 2999 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ block/bfq-sched.c             | 1070 ++++++++++++++++++++++++++++++++++++
+ block/bfq.h                   |  599 ++++++++++++++++++++
+ include/linux/cgroup_subsys.h |    6 +
+ 8 files changed, 5568 insertions(+)
+
+CHANGELOG
+
+v5:
+- Added an heuristic that, if the tunable raising_max_time is set to
+  0, automatically computes the duration of the weight raising
+  according to the estimated peak rate of the device. This enables
+  flash-based devices to reach maximum throughput as soon as possible,
+  without sacrificing latency.
+
+v4:
+- Throughput-boosting for flash-based devices: improved version of commits
+  a68bbdd and f7d7b7a, which boosts the throughput while still preserving
+  latency guarantees for interactive and soft real-time applications.
+- Better identification of NCQ-capable disks: port of commit e459dd0.
+
+v3-r4:
+- Bugfixes
+  * Removed an important memory leak: under some circumstances the process references
+    to a queue were not decremented correctly, which prevented unused shared bfq_queue
+    to be correctly deallocated.
+  * Fixed various errors related to hierarchical scheduling:
+	* Removed an error causing tasks to be attached to the bfqio cgroup
+	  controller even when BFQ was not the active scheduler
+	* Corrected wrong update of the budgets from the leaf to the root upon
+	  forced selection of a service tree or a bfq_queue
+	* Fixed the way how active leaf entities are moved to the root group before
+	  the group entity is deactivated when a cgroup is destroyed
+- Throughput-boosting improvement for cooperating queues: close detection is now based
+  on a fixed threshold instead of the queue's average seek. This is a port of one of
+  the changes in the CFQ commit 3dde36d by Corrado Zoccolo.
+
+v3-r3:
+- Bugfix: removed an important error causing occasional kernel panics when
+  moving a process to a new cgroup. The panic occurred if:
+  1) the queue associated to the process was idle when the process was moved
+     and
+  2) a new disk request was inserted into the queue just after the move.
+- Further latency improvement through a better treatment of low-bandwidth
+  async queues.
+
+v3-r2:
+- Bugfix: added a forgotten condition that prevents weights of low-bw async
+  queues from being raised when low_latency is off.
+- Latency improvement: low-bw async queues are now better identified.
+
+v3-r1:
+- Fixed an important request-dispatch bug causing occasional IO hangs.
+- Added a new mechanism to reduce the latency of low-bw async queues.
+  This reduces the latency of also the sync queues synchronized with
+  the above async queues.
+- Fixed a minor bug in iocontext locking (port of commits 9b50902 and 3181faa
+  from CFQ).
+
+v3:
+
+- Improved low-latency mechanisms, including a more accurate criterion to
+  distinguish between greedy-but-seeky and soft real-time applications.
+  Interactive applications now enjoy noticeably lower latencies.
+
+- Switch to the simpler one-request-dispatch-at-a-time scheme as in CFQ.
+
+- Ported cooperating-queues merging from CFQ (6d048f5, 1afba04,
+  d9e7620, a36e71f, 04dc6e7, 26a2ac0, 3ac6c9f, f2d1f0a, 83096eb,
+  2e46e8b, df5fe3e, b3b6d04, e6c5bc7, c0324a0, f04a642, 8682e1f,
+  b9d8f4c, 2f7a2d8, ae54abe, e9ce335, 39c01b2, d02a2c0, c10b61f).
+  Contributed by Arianna Avanzini. Queues of processes performing IO
+  on interleaved, yet contiguous disk zones are merged to boost the
+  throughput. Some little optimizations to get a more stable throughput
+  have been added to the original CFQ version.
+
+- Added static fallback queue for extreme OOM conditions (porting of
+  CFQ commits d5036d7, 6118b70, b706f64, 32f2e80). Port contributed by
+  Francesco Allertsen.
+
+- Ported CFQ commits b0b78f8, 40bb54d, 30996f4, dddb745, ad5ebd2, cf7c25c;
+  mainly code cleanup and fix of minor bugs. Port contributed by
+  Francesco Allertsen.
+
+v2:
+
+- An issue that may cause little throughput loss on fast disks has been solved.
+  BFQ-v1 and CFQ may suffer from this problem.
+- The disk-idling timeout has been better tuned to further file latency
+  (especially for the idle- or light-loaded-disk scenarios).
+- One of the parameters of the low-latency heuristics has been tuned a little
+  bit more, so as to reduce the probability that a disk-bound process may
+  hamper the reduction of the latency of interactive and soft real-time
+  applications.
+
+  - Same low-latency guarantees with and without NCQ.
+
+  - Latency for interactive applications about halved with respect to BFQ-v1.
+
+  - When the low_latency tunable is set, also soft real-time applications
+    now enjoy reduced latency.
+
+  - A very little minimum bandwidth is now guaranteed to the
+    Idle IO-scheduling class also when the other classes are
+    backlogged, just to prevent them from starving.
+
+v1:
+
+This is a new version of BFQ with respect to the versions you can
+find on Fabio's site: http://feanor.sssup.it/~fabio/linux/bfq.
+Here is what we changed with respect to the previous versions:
+
+1) re-tuned the budget feedback mechanism: it is now slighlty more
+biased toward assigning high budgets, to boost the aggregated
+throughput more, and more quickly as new processes are started
+
+2) introduced more tolerance toward seeky queues (I verified that the
+phenomenona described below used to occurr systematically):
+
+   2a: if a queue is expired after having received very little
+       service, then it is not punished as a seeky queue, even if it
+       occurred to consume that little service too slowly; the
+       rationale is that, if the new active queue has been served for
+       a too short time interval, then its possible sequential
+       accesses may not yet prevail on the initial latencies for
+       moving the disk head on the first sector requested
+
+   2b: the waiting time (disk idling) of a queue detected as seeky as
+       a function of the position of the requests it issued is reduced
+       to a very low value only after the queue has consumed a minimum
+       fraction of the assigned budget; this prevents processes
+       generating (partly) seeky workloads from being too ill-treated
+
+   2c: if a queue has consumed 'enough' budget upon a budget timeout, then,
+       even if it did not consume all of its budget, that queue is not punished
+       as any seeky queue; the rationale is that, depending on the disk zones,
+       a queue may be served at a lower rate than the estimated peak rate.
+
+   Changes 2a and 2b have been critical in lowering latencies, whereas
+   change 2c, in addition to change 1, helped a lot increase the disk
+   throughput.
+
+3) slightly changed the peak rate estimator: a low-pass filter is now
+used instead of just keeping the highest rate sampled; the rationale
+is that the peak rate of a disk should be quite stable, so the filter
+should converge more or less smoothly to the right value; it seemed to
+correctly catch the peak rate with all disks we used
+
+4) added the low latency mechanism described in detail in
+http://algo.ing.unimo.it/people/paolo/disk_sched/description.php.

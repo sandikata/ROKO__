@@ -258,8 +258,9 @@ net-netfilter-psd.patch
 net-netfilter-psd-mdv.patch
 net-netfilter-psd-2.6.35-buildfix.patch
 
-# temp fix for mga #144
-# DISABLED: net-wireless-ath9k-testfix.patch
+# add Atheros AR8161/8165 PCI-E Gigabit support (#7853)
+net-ethernet-atheros-alx-add-new-QCA-ethernet-driver-which-supercedes-atl.patch
+net-ethernet-atheros-alx-remove-atl1c-devices.patch
 
 ###
 ### Platform drivers

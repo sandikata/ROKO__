@@ -9,7 +9,7 @@ DEBLOB_AVAILABLE="1"
 KMV="$(echo $PV | cut -f 1-2 -d .)"
 
 ck_ver="${KMV}-ck1"
-rt_ver="3.6.1-rt1"
+rt_ver="${PV}-rt4"
 vserver_ver="3.6-vs2.3.4.3-noxfs-nocow"
 #vserver_ver="3.6-vs2.3.4.3-noxfs"
 

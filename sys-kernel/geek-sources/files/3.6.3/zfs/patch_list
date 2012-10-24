@@ -1,0 +1,5 @@
+# http://blog.mthode.org/gentoo-hardened-zfs-rootfs-with-dm-cryptluks/
+
+# http://dev.gentoo.org/~ryao/dist/linux-3.6.2-zfs-builtin.patch.xz
+# http://forums.gentoo.org/viewtopic.php?p=7165886#7165886
+linux-3.6.3-zfs-builtin.patch.xz
