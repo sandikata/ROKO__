@@ -80,7 +80,7 @@ src_install() {
 
 	# install plugin development header
 	insinto /usr/include/hexchat
-	doins src/common/xchat-plugin.h
+	doins src/common/hexchat-plugin.h
 
 	dodoc ChangeLog README*
 
