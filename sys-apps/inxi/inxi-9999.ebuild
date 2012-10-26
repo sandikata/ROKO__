@@ -2,14 +2,15 @@
 # Автор: Росен Александров - sandikata@yandex.ru - roko@jabber.calculate-linux.org - Freenode - ROKO__
 # $Header: $
 EAPI=3
-IUSE="+zsh-completion"
-DESCRIPTION="Програма за извличане на подробна информация за системата."
+inherit eutils subversion
+DESCRIPTION="A full featured system information script"
 HOMEPAGE="http://code.google.com/p/inxi/"
-SRC_URI="http://smxi.org/inxi"
+ESVN_REPO_URI="http://inxi.googlecode.com/svn"
+ESVN_PROJECT="inxi"
 
 LICENSE="GPL-3"
-SLOT="боклук"
-KEYWORDS="amd64 x86"
+SLOT="current"
+KEYWORDS=""
 
 DEPEND="
 	x11-apps/mesa-progs
@@ -19,20 +20,12 @@ DEPEND="
 "
 RDEPEND="${DEPEND}"
 
-src_unpack() {
-	cp "${DISTDIR}"/inxi ${PN} || die
-}
-
 src_install() {
-	dobin ${PN} || die
+	dobin "${WORKDIR}"/"${PN}"-"${PV}"/trunk/inxi
+	doman "${WORKDIR}"/"${PN}"-"${PV}"/trunk/inxi.1
+        elog "To view a short or full system information."
+        elog "inxi -b for short information / inxi -F for full information"
+	elog "inxi also provide and verbose show levels '-v1 to -v7'"
+        elog "inxi -h for help"
+        echo
 }
-
-pkg_postinst() {
-	distutils_pkg_postinst
-	elog "За да видите кратка или пълна информация за системата."
-	elog "inxi -b за кратка и inxi -F за пълна информация."
-	elog "inxi -h за да видите допълнителните опции."
-	echo
-}
-
-
