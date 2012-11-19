@@ -24,6 +24,6 @@ src_install() {
 	dodir  /var/cache/malmon/infected
 	dodir  /etc/malmon
 	cp  conf/* "${D}"/etc/malmon
-	ewarn "Edit the config file /etc/malmon/malmon.conf"
+	ewarn "Edit the config file /etc/malmon/malmon.conf /etc/malmon/exclude.list /etc/malmon/back.list"
 	elog "Run the daemon: /usr/sbin/malmon"
 }
