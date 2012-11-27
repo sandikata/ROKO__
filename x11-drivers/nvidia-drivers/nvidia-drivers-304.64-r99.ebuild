@@ -1,6 +1,6 @@
 # Copyright 1999-2012 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/x11-drivers/nvidia-drivers/nvidia-drivers-304.60.ebuild,v 1.1 2012/10/19 06:07:13 cardoe Exp $
+# $Header: /var/cvsroot/gentoo-x86/x11-drivers/nvidia-drivers/nvidia-drivers-304.64.ebuild,v 1.2 2012/11/18 11:18:17 ago Exp $
 
 EAPI=4
 
@@ -21,7 +21,7 @@ SRC_URI="x86? ( ftp://download.nvidia.com/XFree86/Linux-x86/${PV}/${X86_NV_PACKA
 
 LICENSE="NVIDIA"
 SLOT="0"
-KEYWORDS="-* ~amd64 ~x86 ~amd64-fbsd ~x86-fbsd"
+KEYWORDS="-* amd64 x86 ~amd64-fbsd ~x86-fbsd"
 IUSE="acpi multilib kernel_FreeBSD kernel_linux pax_kernel +tools +X"
 RESTRICT="strip"
 EMULTILIB_PKG="true"
@@ -130,10 +130,7 @@ src_unpack() {
 
 src_prepare() {
 	# Please add a brief description for every added patch
-        if kernel_is 3 7; then
-                epatch "${FILESDIR}"/uapi-patch.patch
-                epatch "${FILESDIR}"/nvreserved.patch
-        fi
+
 	if use kernel_linux; then
 		if kernel_is lt 2 6 9 ; then
 			eerror "You must build this against 2.6.9 or higher kernels."
@@ -149,6 +146,7 @@ src_prepare() {
 		ewarn "need support with these patches, contact the PaX team."
 	    epatch "${FILESDIR}"/nvidia-drivers-pax-const.patch
 	    epatch "${FILESDIR}"/nvidia-drivers-pax-usercopy.patch
+	    epatch "${FILESDIR}"/nvidia-drivers-304.64-3.7.patch
 	fi
 
 	cat <<- EOF > "${S}"/nvidia.icd
@@ -157,6 +155,7 @@ src_prepare() {
 
 	# Allow user patches so they can support RC kernels and whatever else
 	epatch_user
+	            epatch "${FILESDIR}"/nvidia-drivers-304.64-3.7.patch
 }
 
 src_compile() {
@@ -270,12 +269,12 @@ src_install() {
 			/usr/$(get_libdir)/opengl/nvidia/extensions
 
 		# XvMC driver
-#		dolib.a ${NV_X11}/libXvMCNVIDIA.a || \
-#			die "failed to install libXvMCNVIDIA.so"
-#		donvidia ${NV_X11}/libXvMCNVIDIA.so ${NV_SOVER}
-#		dosym libXvMCNVIDIA.so.${NV_SOVER} \
-#			/usr/$(get_libdir)/libXvMCNVIDIA_dynamic.so.1 || \
-#			die "failed to create libXvMCNVIDIA_dynamic.so symlink"
+		dolib.a ${NV_X11}/libXvMCNVIDIA.a || \
+			die "failed to install libXvMCNVIDIA.so"
+		donvidia ${NV_X11}/libXvMCNVIDIA.so ${NV_SOVER}
+		dosym libXvMCNVIDIA.so.${NV_SOVER} \
+			/usr/$(get_libdir)/libXvMCNVIDIA_dynamic.so.1 || \
+			die "failed to create libXvMCNVIDIA_dynamic.so symlink"
 	fi
 
 	# OpenCL ICD for NVIDIA
