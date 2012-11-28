@@ -10,7 +10,7 @@ SRC_URI=""
 
 LICENSE=""
 SLOT="current"
-KEYWORDS="amd64 ~x86"
+KEYWORDS="amd64 x86"
 IUSE=""
 
 DEPEND=""

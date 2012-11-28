@@ -1,6 +1,0 @@
-aufs001.patch
-aufs3-base.patch
-aufs3-kbuild.patch
-aufs3-loopback.patch
-aufs3-proc_map.patch
-aufs3-standalone.patch

@@ -26,7 +26,7 @@ HOMEPAGE="http://zfsonlinux.org/"
 
 LICENSE="BSD-2 CDDL MIT"
 SLOT="0"
-IUSE="custom-cflags test-suite static-libs prefix"
+IUSE="custom-cflags test-suite static-libs prefix kernel-builtin"
 RESTRICT="test"
 
 COMMON_DEPEND="

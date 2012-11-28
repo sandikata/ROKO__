@@ -12,10 +12,12 @@
     <flag name='bld'>Alternate CPU load distribution technique for Linux kernel scheduler.</flag>
     <flag name='backports'>Use backports patches.</flag>
     <flag name='branding'>Enable Gentoo specific branding.</flag>
+    <flag name='build'>Build kernel.</flag>
     <flag name='ck'>Enable Con Kolivas' high performance patchset.</flag>
+    <flag name='debian'>Use Debian kernel patches.</flag>
     <flag name='deblob'>Remove binary blobs from kernel sources to provide libre license compliance.</flag>
-    <flag name='fbcondecor'>Use Spock's fbsplash patch.</flag>
     <flag name='fedora'>Use Fedora kernel patches.</flag>
+    <flag name='genpatches'>Use Gentoo kernel patches.</flag>
     <flag name='grsecurity'>Use grsecurity patches.</flag>
     <flag name='ice'>Use TuxOnIce patches.</flag>
     <flag name='imq'>Use Intermediate Queueing Device patches.</flag>
@@ -25,6 +27,7 @@
     <flag name='reiser4'>Use Reiser4 FS patches.</flag>
     <flag name='rt'>Use Ingo Molnar's realtime preempt patches.</flag>
     <flag name='suse'>Use OpenSuSE patches.</flag>
+    <flag name='symlink'>Force kernel ebuilds to automatically update the /usr/src/linux symlink</flag>
     <flag name='uksm'>Use Ultra Kernel Samepage Merging patches.</flag>
     <flag name='vserver'>VServer provides virtualization for GNU/Linux systems.</flag>
     <flag name='zfs'>The native Linux kernel port of the ZFS filesystem.</flag>

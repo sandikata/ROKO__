@@ -1,0 +1,76 @@
+From: jbeulich@novell.com
+Subject: make /proc/cpuinfo track CPU speed
+Patch-mainline: obsolete
+
+--- head.orig/arch/x86/kernel/acpi/processor_extcntl_xen.c	2012-04-11 17:03:00.000000000 +0200
++++ head/arch/x86/kernel/acpi/processor_extcntl_xen.c	2012-04-11 17:05:41.000000000 +0200
+@@ -27,7 +27,7 @@
+ #include <linux/acpi.h>
+ #include <linux/pm.h>
+ #include <linux/cpu.h>
+-
++#include <linux/export.h>
+ #include <linux/cpufreq.h>
+ #include <acpi/processor.h>
+ #include <asm/hypercall.h>
+@@ -280,3 +280,22 @@ static int __init init_extcntl(void)
+ 	return 0;
+ }
+ arch_initcall(init_extcntl);
++
++unsigned int cpufreq_quick_get(unsigned int cpu)
++{
++	xen_platform_op_t op;
++
++	op.cmd = XENPF_get_cpu_freq;
++	op.u.get_cpu_freq.vcpu = cpu;
++	return HYPERVISOR_platform_op(&op) == 0 ? op.u.get_cpu_freq.freq : 0;
++}
++
++unsigned int cpufreq_quick_get_max(unsigned int cpu)
++{
++	xen_platform_op_t op;
++
++	op.cmd = XENPF_get_cpu_freq_max;
++	op.u.get_cpu_freq.vcpu = cpu;
++	return HYPERVISOR_platform_op(&op) == 0 ? op.u.get_cpu_freq.freq : 0;
++}
++EXPORT_SYMBOL(cpufreq_quick_get_max);
+--- head.orig/include/linux/cpufreq.h	2012-05-21 00:29:13.000000000 +0200
++++ head/include/linux/cpufreq.h	2012-04-11 17:05:49.000000000 +0200
+@@ -323,7 +323,7 @@ static inline unsigned int cpufreq_get(u
+ #endif
+ 
+ /* query the last known CPU freq (in kHz). If zero, cpufreq couldn't detect it */
+-#ifdef CONFIG_CPU_FREQ
++#if defined(CONFIG_CPU_FREQ) || defined(CONFIG_PROCESSOR_EXTERNAL_CONTROL)
+ unsigned int cpufreq_quick_get(unsigned int cpu);
+ unsigned int cpufreq_quick_get_max(unsigned int cpu);
+ #else
+--- head.orig/include/xen/interface/platform.h	2012-10-23 16:01:24.000000000 +0200
++++ head/include/xen/interface/platform.h	2012-10-31 12:17:57.000000000 +0100
+@@ -518,6 +518,16 @@ struct xenpf_core_parking {
+ typedef struct xenpf_core_parking xenpf_core_parking_t;
+ DEFINE_XEN_GUEST_HANDLE(xenpf_core_parking_t);
+ 
++#define XENPF_get_cpu_freq        ('N' << 24)
++#define XENPF_get_cpu_freq_min    (XENPF_get_cpu_freq + 1)
++#define XENPF_get_cpu_freq_max    (XENPF_get_cpu_freq_min + 1)
++struct xenpf_get_cpu_freq {
++    /* IN variables */
++    uint32_t vcpu;
++    /* OUT variables */
++    uint32_t freq; /* in kHz */
++};
++
+ /*
+  * ` enum neg_errnoval
+  * ` HYPERVISOR_platform_op(const struct xen_platform_op*);
+@@ -544,6 +554,7 @@ struct xen_platform_op {
+ 		struct xenpf_cpu_hotadd        cpu_add;
+ 		struct xenpf_mem_hotadd        mem_add;
+ 		struct xenpf_core_parking      core_parking;
++		struct xenpf_get_cpu_freq      get_cpu_freq;
+ 		uint8_t                        pad[128];
+ 	} u;
+ };

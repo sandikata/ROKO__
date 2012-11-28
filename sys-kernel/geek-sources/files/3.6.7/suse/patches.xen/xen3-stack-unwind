@@ -1,0 +1,105 @@
+Subject: DWARF2 EH-frame based stack unwinding
+From: jbeulich@novell.com
+Patch-mainline: no
+
+This includes reverting f1883f86dea84fe47a71a39fc1afccc005915ed8.
+
+Update Jan 17 2009 jeffm:
+- Something in 2.6.29-rc1 tweaked the frame pointer code somehow, so I fixed
+  that up.
+Update Jul 02 2010 jbeulich:
+- fix after upstream commit 9e565292270a2d55524be38835104c564ac8f795
+Update Sep 15 2011 jbeulich:
+- add support for DW_CFA_def_cfa_expression (needed by x86-64)
+Update Aug 01 2012 jbeulich:
+- mark unwind section start/end symbols as always relative
+
+Automatically created from "patches.suse/stack-unwind" by xen-port-patches.py
+
+--- head.orig/arch/x86/kernel/entry_32-xen.S	2012-10-31 11:26:01.000000000 +0100
++++ head/arch/x86/kernel/entry_32-xen.S	2012-10-31 12:11:14.000000000 +0100
+@@ -1241,6 +1241,41 @@ END(fixup_4gb_segment)
+  */
+ 	.popsection
+ 
++#ifdef CONFIG_STACK_UNWIND
++ENTRY(arch_unwind_init_running)
++	CFI_STARTPROC
++	movl	4(%esp), %edx
++	movl	(%esp), %ecx
++	leal	4(%esp), %eax
++	movl	%ebx, PT_EBX(%edx)
++	xorl	%ebx, %ebx
++	movl	%ebx, PT_ECX(%edx)
++	movl	%ebx, PT_EDX(%edx)
++	movl	%esi, PT_ESI(%edx)
++	movl	%edi, PT_EDI(%edx)
++	movl	%ebp, PT_EBP(%edx)
++	movl	%ebx, PT_EAX(%edx)
++	movl	$__USER_DS, PT_DS(%edx)
++	movl	$__USER_DS, PT_ES(%edx)
++	movl	$__KERNEL_PERCPU, PT_FS(%edx)
++	movl	$__KERNEL_STACK_CANARY, PT_GS(%edx)
++	movl	%eax, PT_OLDESP(%edx)
++	movl	16(%esp), %eax
++	movl	%ebx, PT_ORIG_EAX(%edx)
++	movl	%ecx, PT_EIP(%edx)
++	movl	12(%esp), %ecx
++	movl	$__KERNEL_CS, PT_CS(%edx)
++	movl	%eax, 12(%esp)
++	movl	8(%esp), %eax
++	movl	%ecx, 8(%esp)
++	movl	%ebx, PT_EFLAGS(%edx)
++	movl	PT_EBX(%edx), %ebx
++	movl	$__KERNEL_DS, PT_OLDSS(%edx)
++	jmpl	*%eax
++	CFI_ENDPROC
++ENDPROC(arch_unwind_init_running)
++#endif
++
+ #ifdef CONFIG_FUNCTION_TRACER
+ #ifdef CONFIG_DYNAMIC_FTRACE
+ 
+--- head.orig/arch/x86/kernel/entry_64-xen.S	2012-10-30 14:02:02.000000000 +0100
++++ head/arch/x86/kernel/entry_64-xen.S	2012-10-31 12:11:15.000000000 +0100
+@@ -1273,6 +1273,40 @@ ENTRY(call_softirq)
+ 	CFI_ENDPROC
+ END(call_softirq)
+ 
++#ifdef CONFIG_STACK_UNWIND
++ENTRY(arch_unwind_init_running)
++	CFI_STARTPROC
++	movq	%r15, R15(%rdi)
++	movq	%r14, R14(%rdi)
++	xchgq	%rsi, %rdx
++	movq	%r13, R13(%rdi)
++	movq	%r12, R12(%rdi)
++	xorl	%eax, %eax
++	movq	%rbp, RBP(%rdi)
++	movq	%rbx, RBX(%rdi)
++	movq	(%rsp), %r9
++	xchgq	%rdx, %rcx
++	movq	%rax, R11(%rdi)
++	movq	%rax, R10(%rdi)
++	movq	%rax, R9(%rdi)
++	movq	%rax, R8(%rdi)
++	movq	%rax, RAX(%rdi)
++	movq	%rax, RCX(%rdi)
++	movq	%rax, RDX(%rdi)
++	movq	%rax, RSI(%rdi)
++	movq	%rax, RDI(%rdi)
++	movq	%rax, ORIG_RAX(%rdi)
++	movq	%r9, RIP(%rdi)
++	leaq	8(%rsp), %r9
++	movq	$__KERNEL_CS, CS(%rdi)
++	movq	%rax, EFLAGS(%rdi)
++	movq	%r9, RSP(%rdi)
++	movq	$__KERNEL_DS, SS(%rdi)
++	jmpq	*%rcx
++	CFI_ENDPROC
++END(arch_unwind_init_running)
++#endif
++
+ /*
+  * Some functions should be protected against kprobes
+  */
