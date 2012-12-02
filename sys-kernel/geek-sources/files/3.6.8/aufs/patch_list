@@ -1,0 +1,6 @@
+aufs3-3.6-20121127.patch
+aufs3-base-3.6-20121127.patch
+aufs3-kbuild-3.6-20121127.patch
+aufs3-loopback-3.6-20121127.patch
+aufs3-proc_map-3.6-20121127.patch
+aufs3-standalone-3.6-20121127.patch

@@ -1,0 +1,11 @@
+--- linux-3.5.0-0.rc0.git3.1.fc18.armv7hl/drivers/mmc/host/sdhci-tegra.c.orig	2012-05-23 06:59:19.797302757 -0500
++++ linux-3.5.0-0.rc0.git3.1.fc18.armv7hl/drivers/mmc/host/sdhci-tegra.c	2012-05-22 15:26:07.154823359 -0500
+@@ -190,7 +190,7 @@
+ #endif
+ 	{}
+ };
+-MODULE_DEVICE_TABLE(of, sdhci_dt_ids);
++MODULE_DEVICE_TABLE(of, sdhci_tegra_dt_match);
+ 
+ static struct tegra_sdhci_platform_data * __devinit sdhci_tegra_dt_parse_pdata(
+ 						struct platform_device *pdev)
