@@ -6,7 +6,8 @@ EAPI="2"
 
 DESCRIPTION="Includes Ambiance and Radiance themes"
 HOMEPAGE="http://www.ubuntu.com"
-SRC_URI="mirror://ubuntu/pool/main/l/${PN}/${PN}_${PV}.tar.gz"
+#SRC_URI="mirror://ubuntu/pool/main/l/${PN}/${PN}_${PV}.tar.gz"
+SRC_URI="https://launchpad.net/ubuntu/+archive/primary/+files/light-themes_0.1.8.4.tar.gz"
 
 LICENSE="CCPL-Attribution-ShareAlike-3.0"
 SLOT="0"
