@@ -1,0 +1,33 @@
+# Pardus Kernel Patches
+
+#cpupower-fix-linking.patch
+
+# Add Realtek PCIE card reader driver (#16463)
+add-realtek-pcie-card-reader-driver.patch
+realtek-pcie-card-reader-driver-cleanup.patch
+
+# Blacklist 2 Lenovo in acer-wmi (#15967)
+0001-Add-Lenovo-Ideapad-S12-to-acer-blacklist.patch
+
+# hid-apple: Invert Fn+F? behaviour on apple keyboards
+#invert-hidapple-fnkey-behaviour.patch
+
+# lmpcm_usb: Logitech lmpcm_usb driver
+#linux-2.6-add-lmpcm_usb-driver.patch
+
+# Add RF kill switch drivers for Fujitsu Amilo M7400 and M7440
+#                 http://fsam7440.sourceforge.net
+#                 http://www.zwobble.de
+#linux-2.6-add-fujitsu-amilo-74xx-rfkill-drivers.patch
+
+# Pardus Logo Enhancements
+logo.patch
+logo-vga16.patch
+logo-mono.patch
+
+# Fallback to vesa 640x480x16 on undefined video mode number (Fixes #7117)
+#vesa_fallback_on_fail.patch
+
+# Add new device ID for Atheros 3012 bluetooth device to load the correct firmware
+#new-btusb-id-for-asus_ux31.patch
+

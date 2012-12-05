@@ -1,0 +1,31 @@
+From 331ae4962b975246944ea039697a8f1cadce42bb Mon Sep 17 00:00:00 2001
+From: Al Viro <viro@ZenIV.linux.org.uk>
+Date: Wed, 18 Jul 2012 09:31:36 +0100
+Subject: ext4: fix duplicated mnt_drop_write call in EXT4_IOC_MOVE_EXT
+
+From: Al Viro <viro@ZenIV.linux.org.uk>
+
+commit 331ae4962b975246944ea039697a8f1cadce42bb upstream.
+
+Caused, AFAICS, by mismerge in commit ff9cb1c4eead ("Merge branch
+'for_linus' into for_linus_merged")
+
+Signed-off-by: Al Viro <viro@zeniv.linux.org.uk>
+Cc: Theodore Ts'o <tytso@mit.edu>
+Signed-off-by: Linus Torvalds <torvalds@linux-foundation.org>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ fs/ext4/ioctl.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/fs/ext4/ioctl.c
++++ b/fs/ext4/ioctl.c
+@@ -261,7 +261,6 @@ group_extend_out:
+ 		err = ext4_move_extents(filp, donor_filp, me.orig_start,
+ 					me.donor_start, me.len, &me.moved_len);
+ 		mnt_drop_write_file(filp);
+-		mnt_drop_write(filp->f_path.mnt);
+ 
+ 		if (copy_to_user((struct move_extent __user *)arg,
+ 				 &me, sizeof(me)))

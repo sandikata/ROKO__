@@ -14,8 +14,7 @@ OVERRIDE_reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x
 rt_ver="3.6.7-rt18"
 vserver_ver="3.6.6-vs2.3.4.3.3-donotuse"
 
-#SUPPORTED_FEATURES="aufs bfq bld branding ck deblob fedora genpatches grsecurity ice mageia reiser4 rt suse uksm vserver zfs"
-SUPPORTED_FEATURES="aufs bfq branding -build ck debian deblob fedora genpatches grsecurity ice mageia reiser4 rt suse symlink uksm vserver zfs"
+SUPPORTED_FEATURES="aufs bfq branding -build ck debian deblob fedora genpatches grsecurity ice mageia reiser4 rifs rt suse symlink uksm vserver zfs"
 
 inherit kernel-geek
 

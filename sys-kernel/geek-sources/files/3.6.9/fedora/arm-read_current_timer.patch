@@ -1,0 +1,39 @@
+read_current_timer is used in the get_cycles() function when
+ARM_ARCH_TIMER is set, and that function can be inlined into
+driver modules, so we should export the function to avoid
+errors like
+
+ERROR: "read_current_timer" [drivers/video/udlfb.ko] undefined!
+ERROR: "read_current_timer" [crypto/tcrypt.ko] undefined!
+
+Signed-off-by: Arnd Bergmann <arnd@xxxxxxxx>
+Cc: Shinya Kuribayashi <shinya.kuribayashi.px@xxxxxxxxxxx>
+Cc: Stephen Boyd <sboyd@xxxxxxxxxxxxxx>
+Cc: Will Deacon <will.deacon@xxxxxxx>
+Cc: Russell King <rmk+kernel@xxxxxxxxxxxxxxxx>
+---
+ arch/arm/kernel/arch_timer.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/kernel/arch_timer.c b/arch/arm/kernel/arch_timer.c
+index cf25880..6327d1f 100644
+--- a/arch/arm/kernel/arch_timer.c
++++ b/arch/arm/kernel/arch_timer.c
+@@ -14,6 +14,7 @@
+ #include <linux/device.h>
+ #include <linux/smp.h>
+ #include <linux/cpu.h>
++#include <linux/export.h>
+ #include <linux/jiffies.h>
+ #include <linux/clockchips.h>
+ #include <linux/interrupt.h>
+@@ -232,6 +233,7 @@ int read_current_timer(unsigned long *timer_val)
+ 	*timer_val = arch_counter_get_cntpct();
+ 	return 0;
+ }
++EXPORT_SYMBOL_GPL(read_current_timer);
+ 
+ static struct clocksource clocksource_counter = {
+ 	.name	= "arch_sys_counter",
+-- 
+1.7.10

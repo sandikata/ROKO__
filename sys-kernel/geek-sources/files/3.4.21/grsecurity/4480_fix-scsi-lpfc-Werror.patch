@@ -1,0 +1,23 @@
+Fix compile time error in drivers/scsi/lpfc/lpfc_scsi.c
+
+When compiling with hardened gcc-4.5.3 on x86, warnings of unused variable
+‘rc’ are treated as errors causing failure.  This patch supresses the warnings
+and fixes the compile time failure.
+
+X-Gentoo-Bug: 425816
+X-Gentoo-Bug-URL: https://bugs.gentoo.org/show_bug.cgi?id=425816
+Author: gokturk@binghamton.edu
+Reported-by: Dennis Schridde <devurandom@gmx.net>
+Signed-off-by: Anthony G. Basile <basile@opensource.dyc.edu>
+
+--- a/drivers/scsi/lpfc/Makefile	2012-07-20 17:12:36.767906363 -0400
++++ b/drivers/scsi/lpfc/Makefile	2012-07-20 17:13:06.217791507 -0400
+@@ -22,7 +22,7 @@
+ ccflags-$(GCOV) := -fprofile-arcs -ftest-coverage
+ ccflags-$(GCOV) += -O0
+ 
+-ccflags-y += -Werror
++ccflags-y += -Wno-unused -Werror
+ 
+ obj-$(CONFIG_SCSI_LPFC) := lpfc.o
+ 

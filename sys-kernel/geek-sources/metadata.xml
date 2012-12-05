@@ -25,6 +25,7 @@
     <flag name='pardus'>Use Pardus patches.</flag>
     <flag name='pld'>USE PLD-Linux patches.</flag>
     <flag name='reiser4'>Use Reiser4 FS patches.</flag>
+    <flag name='rifs'>Use Rotary Interactivity Favor Scheduler patches.</flag>
     <flag name='rt'>Use Ingo Molnar's realtime preempt patches.</flag>
     <flag name='suse'>Use OpenSuSE patches.</flag>
     <flag name='symlink'>Force kernel ebuilds to automatically update the /usr/src/linux symlink</flag>

@@ -17,7 +17,7 @@ rt_ver="3.4.18-rt29"
 OVERRIDE_rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/3.4/patch-${rt_ver}.patch.xz"
 vserver_ver="3.5.7-vs2.3.4.3"
 
-SUPPORTED_FEATURES="aufs bfq bld branding -build ck deblob fedora genpatches grsecurity ice mageia reiser4 rt suse symlink uksm vserver zfs"
+SUPPORTED_FEATURES="aufs bfq bld branding -build ck deblob fedora genpatches grsecurity ice mageia reiser4 rifs rt suse symlink uksm vserver zfs"
 
 inherit kernel-geek
 

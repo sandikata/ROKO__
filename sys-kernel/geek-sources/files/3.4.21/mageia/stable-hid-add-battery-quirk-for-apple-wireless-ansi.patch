@@ -1,0 +1,32 @@
+From 0c47935c5b5cd4916cf1c1ed4a2894807f7bcc3e Mon Sep 17 00:00:00 2001
+From: Daniel Nicoletti <dantti12@gmail.com>
+Date: Wed, 4 Jul 2012 10:20:31 -0300
+Subject: HID: add battery quirk for Apple Wireless ANSI
+
+From: Daniel Nicoletti <dantti12@gmail.com>
+
+commit 0c47935c5b5cd4916cf1c1ed4a2894807f7bcc3e upstream.
+
+Add USB_DEVICE_ID_APPLE_ALU_WIRELESS_ANSI, to the quirk list since it report
+wrong feature type and wrong percentage range.
+
+Signed-off-by: Daniel Nicoletti <dantti12@gmail.com>
+Signed-off-by: Jiri Kosina <jkosina@suse.cz>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+---
+ drivers/hid/hid-input.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/drivers/hid/hid-input.c
++++ b/drivers/hid/hid-input.c
+@@ -290,6 +290,9 @@ static const struct hid_device_id hid_ba
+ 	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE,
+ 			       USB_DEVICE_ID_APPLE_ALU_WIRELESS_2011_ANSI),
+ 	  HID_BATTERY_QUIRK_PERCENT | HID_BATTERY_QUIRK_FEATURE },
++	{ HID_BLUETOOTH_DEVICE(USB_VENDOR_ID_APPLE,
++		USB_DEVICE_ID_APPLE_ALU_WIRELESS_ANSI),
++	  HID_BATTERY_QUIRK_PERCENT | HID_BATTERY_QUIRK_FEATURE },
+ 	{}
+ };
+ 

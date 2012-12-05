@@ -1,0 +1,5 @@
+1700_correct-bnx2-firware-ver-mips.patch
+2400_kcopy-patch-for-infiniband-driver.patch
+2405_lpfs-build-warnings-debugfs-fix.patch
+2700_dual-channel-mode-vbios-check.patch
+4200_fbcondecor-0.9.6.patch

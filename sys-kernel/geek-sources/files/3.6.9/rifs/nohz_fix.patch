@@ -1,0 +1,21 @@
+--- a/kernel/sched/rifs.c	2012-10-01 10:37:37.693506235 -0700
++++ b/kernel/sched/rifs.c	2012-10-01 10:38:28.318497202 -0700
+@@ -2390,6 +2390,18 @@
+ }
+ #endif
+ 
++#ifdef CONFIG_NO_HZ
++void calc_load_enter_idle(void)
++{
++}
++void update_cpu_load_nohz(void)
++{
++}
++void calc_load_exit_idle(void)
++{
++}
++#endif
++
+ /* This manages tasks that have run out of timeslice during a scheduler_tick */
+ /* 当前队列时钟的控制 */
+ static void task_running_tick(struct rq *rq)

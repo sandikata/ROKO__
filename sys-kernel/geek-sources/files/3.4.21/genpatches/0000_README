@@ -1,0 +1,103 @@
+README
+--------------------------------------------------------------------------
+This patchset is to be the 2.6 series of gentoo-sources.
+It is designed for cross-compatibility, fixes and stability, with performance
+and additional features/driver support being a second.
+
+Unless otherwise stated and marked as such, this kernel should be suitable for
+all environments.
+
+
+Patchset Numbering Scheme
+--------------------------------------------------------------------------
+
+FIXES
+1000-1400	linux-stable
+1400-1500	linux-stable queue
+1500-1700	security
+1700-1800	architecture-related
+1800-1900	mm/scheduling/misc
+1900-2000	filesystems
+2000-2100	networking core
+2100-2200	storage core
+2200-2300	power management (ACPI, APM)
+2300-2400	bus (USB, IEEE1394, PCI, PCMCIA, ...)
+2400-2500	network drivers
+2500-2600	storage drivers
+2600-2700	input
+2700-2900	media (graphics, sound, tv)
+2900-3000	other
+3000-4000	reserved
+
+FEATURES
+4000-4100	network
+4100-4200	storage
+4200-4300	graphics
+4300-4400	filesystem
+4400-4500   security enhancement
+4500-4600   other
+
+Individual Patch Descriptions:
+--------------------------------------------------------------------------
+Patch:  1000_linux-3.4.1.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.1
+
+Patch:  1001_linux-3.4.2.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.2
+
+Patch:  1002_linux-3.4.3.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.3
+
+Patch:  1003_linux-3.4.4.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.4
+
+Patch:  1004_linux-3.4.5.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.5
+
+Patch:  1005_linux-3.4.6.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.6
+
+Patch:  1006_linux-3.4.7.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.7
+
+Patch:  1007_linux-3.4.8.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.8
+
+Patch:  1008_linux-3.4.9.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.9
+
+Patch:  1009_linux-3.4.10.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.10
+
+Patch:  1010_linux-3.4.11.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.4.11
+
+Patch:  1700_correct-bnx2-firware-ver-mips.patch
+From:   https://bugs.gentoo.org/show_bug.cgi?id=424609
+Desc:   Correct firmware version for bnx2 on mips
+
+Patch:  2400_kcopy-patch-for-infiniband-driver.patch
+From:   Alexey Shvetsov <alexxy@gentoo.org>
+Desc:   Zero copy for infiniband psm userspace driver
+
+Patch:  2405_lpfs-build-warnings-debugfs-fix.patch
+From:   http://git.kernel.org/?p=linux/kernel/git/torvalds/linux.git;a=commitdiff_plain;h=0829a19a6142af09eb4f9509cd1d3666270e87bd
+Desc:   Fix build warnings for lpfc when debugfs is not defined. Bug #432604
+
+Patch:  2700_dual-channel-mode-vbios-check.patch
+Desc:   Check VBIOS value for determining LVDS dual channel mode
+
+Patch:  4200_fbcondecor-0.9.6.patch
+From:   http://dev.gentoo.org/~spock
+Desc:   Bootsplash successor by Michal Januszewski ported by Alexxy

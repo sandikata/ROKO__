@@ -1,0 +1,5 @@
+acpi-ec-add-delay-before-write.patch
+gpio-ich_share_ownership_of_GPIO_groups_3.6.patch
+kernel-33-gcc47-0.patch
+module-init-wait-3.6.patch
+module-symbol-waiting-3.6.patch
