@@ -1,0 +1,723 @@
+
+ arch/mips/include/asm/hugetlb.h           |   12 ++++++-
+ arch/mips/kernel/cpu-probe.c              |    1 -
+ arch/mips/kernel/entry.S                  |    7 +++-
+ arch/mips/kernel/scall64-n32.S            |    6 ++--
+ arch/mips/mm/tlb-r4k.c                    |   18 +++-------
+ arch/sparc/boot/piggyback.c               |   12 +++----
+ arch/sparc/kernel/sys32.S                 |    2 +-
+ arch/sparc/kernel/syscalls.S              |   14 ++++++--
+ arch/sparc/kernel/systbls_64.S            |    2 +-
+ drivers/mtd/ubi/wl.c                      |   26 +++++++++------
+ drivers/scsi/megaraid/megaraid_sas.h      |    2 +-
+ drivers/scsi/megaraid/megaraid_sas_base.c |   14 ++++----
+ fs/buffer.c                               |   52 +++++++++++++++++++++++++++++
+ include/linux/kernel.h                    |    7 ++++
+ include/linux/mempolicy.h                 |   16 ---------
+ kernel/modsign_pubkey.c                   |    4 +--
+ kernel/module_signing.c                   |   14 ++++----
+ kernel/watchdog.c                         |    3 ++
+ kernel/workqueue.c                        |    4 +--
+ lib/Makefile                              |    2 +-
+ lib/asn1_decoder.c                        |    2 +-
+ mm/compaction.c                           |   10 +++++-
+ mm/mempolicy.c                            |   22 ------------
+ mm/shmem.c                                |   26 +++++++++------
+ mm/vmscan.c                               |   16 ---------
+ 25 files changed, 167 insertions(+), 127 deletions(-)
+
+diff --git a/arch/mips/include/asm/hugetlb.h b/arch/mips/include/asm/hugetlb.h
+index bd94946..ef99db9 100644
+--- a/arch/mips/include/asm/hugetlb.h
++++ b/arch/mips/include/asm/hugetlb.h
+@@ -95,7 +95,17 @@ static inline int huge_ptep_set_access_flags(struct vm_area_struct *vma,
+ 					     pte_t *ptep, pte_t pte,
+ 					     int dirty)
+ {
+-	return ptep_set_access_flags(vma, addr, ptep, pte, dirty);
++	int changed = !pte_same(*ptep, pte);
++
++	if (changed) {
++		set_pte_at(vma->vm_mm, addr, ptep, pte);
++		/*
++		 * There could be some standard sized pages in there,
++		 * get them all.
++		 */
++		flush_tlb_range(vma, addr, addr + HPAGE_SIZE);
++	}
++	return changed;
+ }
+ 
+ static inline pte_t huge_ptep_get(pte_t *ptep)
+diff --git a/arch/mips/kernel/cpu-probe.c b/arch/mips/kernel/cpu-probe.c
+index b1fb7af..cce3782 100644
+--- a/arch/mips/kernel/cpu-probe.c
++++ b/arch/mips/kernel/cpu-probe.c
+@@ -510,7 +510,6 @@ static inline void cpu_probe_legacy(struct cpuinfo_mips *c, unsigned int cpu)
+ 				c->cputype = CPU_R3000A;
+ 				__cpu_name[cpu] = "R3000A";
+ 			}
+-			break;
+ 		} else {
+ 			c->cputype = CPU_R3000;
+ 			__cpu_name[cpu] = "R3000";
+diff --git a/arch/mips/kernel/entry.S b/arch/mips/kernel/entry.S
+index a6c1332..9b00362 100644
+--- a/arch/mips/kernel/entry.S
++++ b/arch/mips/kernel/entry.S
+@@ -36,6 +36,11 @@ FEXPORT(ret_from_exception)
+ FEXPORT(ret_from_irq)
+ 	LONG_S	s0, TI_REGS($28)
+ FEXPORT(__ret_from_irq)
++/*
++ * We can be coming here from a syscall done in the kernel space,
++ * e.g. a failed kernel_execve().
++ */
++resume_userspace_check:
+ 	LONG_L	t0, PT_STATUS(sp)		# returning to kernel mode?
+ 	andi	t0, t0, KU_USER
+ 	beqz	t0, resume_kernel
+@@ -162,7 +167,7 @@ work_notifysig:				# deal with pending signals and
+ 	move	a0, sp
+ 	li	a1, 0
+ 	jal	do_notify_resume	# a2 already loaded
+-	j	resume_userspace
++	j	resume_userspace_check
+ 
+ FEXPORT(syscall_exit_partial)
+ 	local_irq_disable		# make sure need_resched doesn't
+diff --git a/arch/mips/kernel/scall64-n32.S b/arch/mips/kernel/scall64-n32.S
+index f6ba838..86ec03f 100644
+--- a/arch/mips/kernel/scall64-n32.S
++++ b/arch/mips/kernel/scall64-n32.S
+@@ -397,14 +397,14 @@ EXPORT(sysn32_call_table)
+ 	PTR	sys_timerfd_create
+ 	PTR	compat_sys_timerfd_gettime	/* 6285 */
+ 	PTR	compat_sys_timerfd_settime
+-	PTR	sys_signalfd4
++	PTR	compat_sys_signalfd4
+ 	PTR	sys_eventfd2
+ 	PTR	sys_epoll_create1
+ 	PTR	sys_dup3			/* 6290 */
+ 	PTR	sys_pipe2
+ 	PTR	sys_inotify_init1
+-	PTR	sys_preadv
+-	PTR	sys_pwritev
++	PTR	compat_sys_preadv
++	PTR	compat_sys_pwritev
+ 	PTR	compat_sys_rt_tgsigqueueinfo	/* 6295 */
+ 	PTR	sys_perf_event_open
+ 	PTR	sys_accept4
+diff --git a/arch/mips/mm/tlb-r4k.c b/arch/mips/mm/tlb-r4k.c
+index 4b9b935..88e79ad 100644
+--- a/arch/mips/mm/tlb-r4k.c
++++ b/arch/mips/mm/tlb-r4k.c
+@@ -120,18 +120,11 @@ void local_flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
+ 
+ 	if (cpu_context(cpu, mm) != 0) {
+ 		unsigned long size, flags;
+-		int huge = is_vm_hugetlb_page(vma);
+ 
+ 		ENTER_CRITICAL(flags);
+-		if (huge) {
+-			start = round_down(start, HPAGE_SIZE);
+-			end = round_up(end, HPAGE_SIZE);
+-			size = (end - start) >> HPAGE_SHIFT;
+-		} else {
+-			start = round_down(start, PAGE_SIZE << 1);
+-			end = round_up(end, PAGE_SIZE << 1);
+-			size = (end - start) >> (PAGE_SHIFT + 1);
+-		}
++		start = round_down(start, PAGE_SIZE << 1);
++		end = round_up(end, PAGE_SIZE << 1);
++		size = (end - start) >> (PAGE_SHIFT + 1);
+ 		if (size <= current_cpu_data.tlbsize/2) {
+ 			int oldpid = read_c0_entryhi();
+ 			int newpid = cpu_asid(cpu, mm);
+@@ -140,10 +133,7 @@ void local_flush_tlb_range(struct vm_area_struct *vma, unsigned long start,
+ 				int idx;
+ 
+ 				write_c0_entryhi(start | newpid);
+-				if (huge)
+-					start += HPAGE_SIZE;
+-				else
+-					start += (PAGE_SIZE << 1);
++				start += (PAGE_SIZE << 1);
+ 				mtc0_tlbw_hazard();
+ 				tlb_probe();
+ 				tlb_probe_hazard();
+diff --git a/arch/sparc/boot/piggyback.c b/arch/sparc/boot/piggyback.c
+index c0a798f..bb7c951 100644
+--- a/arch/sparc/boot/piggyback.c
++++ b/arch/sparc/boot/piggyback.c
+@@ -81,18 +81,18 @@ static void usage(void)
+ 
+ static int start_line(const char *line)
+ {
+-	if (strcmp(line + 8, " T _start\n") == 0)
++	if (strcmp(line + 10, " _start\n") == 0)
+ 		return 1;
+-	else if (strcmp(line + 16, " T _start\n") == 0)
++	else if (strcmp(line + 18, " _start\n") == 0)
+ 		return 1;
+ 	return 0;
+ }
+ 
+ static int end_line(const char *line)
+ {
+-	if (strcmp(line + 8, " A _end\n") == 0)
++	if (strcmp(line + 10, " _end\n") == 0)
+ 		return 1;
+-	else if (strcmp (line + 16, " A _end\n") == 0)
++	else if (strcmp (line + 18, " _end\n") == 0)
+ 		return 1;
+ 	return 0;
+ }
+@@ -100,8 +100,8 @@ static int end_line(const char *line)
+ /*
+  * Find address for start and end in System.map.
+  * The file looks like this:
+- * f0004000 T _start
+- * f0379f79 A _end
++ * f0004000 ... _start
++ * f0379f79 ... _end
+  * 1234567890123456
+  * ^coloumn 1
+  * There is support for 64 bit addresses too.
+diff --git a/arch/sparc/kernel/sys32.S b/arch/sparc/kernel/sys32.S
+index 44025f4..8475a47 100644
+--- a/arch/sparc/kernel/sys32.S
++++ b/arch/sparc/kernel/sys32.S
+@@ -47,7 +47,7 @@ STUB:	sra	REG1, 0, REG1; \
+ 	sra	REG4, 0, REG4
+ 
+ SIGN1(sys32_exit, sparc_exit, %o0)
+-SIGN1(sys32_exit_group, sys_exit_group, %o0)
++SIGN1(sys32_exit_group, sparc_exit_group, %o0)
+ SIGN1(sys32_wait4, compat_sys_wait4, %o2)
+ SIGN1(sys32_creat, sys_creat, %o1)
+ SIGN1(sys32_mknod, sys_mknod, %o1)
+diff --git a/arch/sparc/kernel/syscalls.S b/arch/sparc/kernel/syscalls.S
+index 7f5f65d..bf23477 100644
+--- a/arch/sparc/kernel/syscalls.S
++++ b/arch/sparc/kernel/syscalls.S
+@@ -118,10 +118,20 @@ ret_from_syscall:
+ 	ba,pt	%xcc, ret_sys_call
+ 	 ldx	[%sp + PTREGS_OFF + PT_V9_I0], %o0
+ 
++	.globl	sparc_exit_group
++	.type	sparc_exit_group,#function
++sparc_exit_group:
++	sethi	%hi(sys_exit_group), %g7
++	ba,pt	%xcc, 1f
++	 or	%g7, %lo(sys_exit_group), %g7
++	.size	sparc_exit_group,.-sparc_exit_group
++
+ 	.globl	sparc_exit
+ 	.type	sparc_exit,#function
+ sparc_exit:
+-	rdpr	%pstate, %g2
++	sethi	%hi(sys_exit), %g7
++	or	%g7, %lo(sys_exit), %g7
++1:	rdpr	%pstate, %g2
+ 	wrpr	%g2, PSTATE_IE, %pstate
+ 	rdpr	%otherwin, %g1
+ 	rdpr	%cansave, %g3
+@@ -129,7 +139,7 @@ sparc_exit:
+ 	wrpr	%g3, 0x0, %cansave
+ 	wrpr	%g0, 0x0, %otherwin
+ 	wrpr	%g2, 0x0, %pstate
+-	ba,pt	%xcc, sys_exit
++	jmpl	%g7, %g0
+ 	 stb	%g0, [%g6 + TI_WSAVED]
+ 	.size	sparc_exit,.-sparc_exit
+ 
+diff --git a/arch/sparc/kernel/systbls_64.S b/arch/sparc/kernel/systbls_64.S
+index 1c9af9f..017b74a 100644
+--- a/arch/sparc/kernel/systbls_64.S
++++ b/arch/sparc/kernel/systbls_64.S
+@@ -133,7 +133,7 @@ sys_call_table:
+ /*170*/	.word sys_lsetxattr, sys_fsetxattr, sys_getxattr, sys_lgetxattr, sys_getdents
+ 	.word sys_setsid, sys_fchdir, sys_fgetxattr, sys_listxattr, sys_llistxattr
+ /*180*/	.word sys_flistxattr, sys_removexattr, sys_lremovexattr, sys_nis_syscall, sys_ni_syscall
+-	.word sys_setpgid, sys_fremovexattr, sys_tkill, sys_exit_group, sys_newuname
++	.word sys_setpgid, sys_fremovexattr, sys_tkill, sparc_exit_group, sys_newuname
+ /*190*/	.word sys_init_module, sys_sparc64_personality, sys_remap_file_pages, sys_epoll_create, sys_epoll_ctl
+ 	.word sys_epoll_wait, sys_ioprio_set, sys_getppid, sys_nis_syscall, sys_sgetmask
+ /*200*/	.word sys_ssetmask, sys_nis_syscall, sys_newlstat, sys_uselib, sys_nis_syscall
+diff --git a/drivers/mtd/ubi/wl.c b/drivers/mtd/ubi/wl.c
+index da7b449..2144f61 100644
+--- a/drivers/mtd/ubi/wl.c
++++ b/drivers/mtd/ubi/wl.c
+@@ -498,7 +498,7 @@ out:
+  * @ubi: UBI device description object
+  *
+  * This function returns a physical eraseblock in case of success and a
+- * negative error code in case of failure. Might sleep.
++ * negative error code in case of failure.
+  */
+ static int __wl_get_peb(struct ubi_device *ubi)
+ {
+@@ -540,13 +540,6 @@ retry:
+ 	 * ubi_wl_get_peb() after removing e from the pool. */
+ 	prot_queue_add(ubi, e);
+ #endif
+-	err = ubi_self_check_all_ff(ubi, e->pnum, ubi->vid_hdr_aloffset,
+-				    ubi->peb_size - ubi->vid_hdr_aloffset);
+-	if (err) {
+-		ubi_err("new PEB %d does not contain all 0xFF bytes", e->pnum);
+-		return err;
+-	}
+-
+ 	return e->pnum;
+ }
+ 
+@@ -679,17 +672,30 @@ static struct ubi_wl_entry *get_peb_for_wl(struct ubi_device *ubi)
+ #else
+ static struct ubi_wl_entry *get_peb_for_wl(struct ubi_device *ubi)
+ {
+-	return find_wl_entry(ubi, &ubi->free, WL_FREE_MAX_DIFF);
++	struct ubi_wl_entry *e;
++
++	e = find_wl_entry(ubi, &ubi->free, WL_FREE_MAX_DIFF);
++	self_check_in_wl_tree(ubi, e, &ubi->free);
++	rb_erase(&e->u.rb, &ubi->free);
++
++	return e;
+ }
+ 
+ int ubi_wl_get_peb(struct ubi_device *ubi)
+ {
+-	int peb;
++	int peb, err;
+ 
+ 	spin_lock(&ubi->wl_lock);
+ 	peb = __wl_get_peb(ubi);
+ 	spin_unlock(&ubi->wl_lock);
+ 
++	err = ubi_self_check_all_ff(ubi, peb, ubi->vid_hdr_aloffset,
++				    ubi->peb_size - ubi->vid_hdr_aloffset);
++	if (err) {
++		ubi_err("new PEB %d does not contain all 0xFF bytes", peb);
++		return err;
++	}
++
+ 	return peb;
+ }
+ #endif
+diff --git a/drivers/scsi/megaraid/megaraid_sas.h b/drivers/scsi/megaraid/megaraid_sas.h
+index 16b7a72..3b2365c 100644
+--- a/drivers/scsi/megaraid/megaraid_sas.h
++++ b/drivers/scsi/megaraid/megaraid_sas.h
+@@ -1276,7 +1276,7 @@ struct megasas_evt_detail {
+ } __attribute__ ((packed));
+ 
+ struct megasas_aen_event {
+-	struct work_struct hotplug_work;
++	struct delayed_work hotplug_work;
+ 	struct megasas_instance *instance;
+ };
+ 
+diff --git a/drivers/scsi/megaraid/megaraid_sas_base.c b/drivers/scsi/megaraid/megaraid_sas_base.c
+index d2c5366..e4f2baa 100644
+--- a/drivers/scsi/megaraid/megaraid_sas_base.c
++++ b/drivers/scsi/megaraid/megaraid_sas_base.c
+@@ -2060,9 +2060,9 @@ megasas_service_aen(struct megasas_instance *instance, struct megasas_cmd *cmd)
+ 		} else {
+ 			ev->instance = instance;
+ 			instance->ev = ev;
+-			INIT_WORK(&ev->hotplug_work, megasas_aen_polling);
+-			schedule_delayed_work(
+-				(struct delayed_work *)&ev->hotplug_work, 0);
++			INIT_DELAYED_WORK(&ev->hotplug_work,
++					  megasas_aen_polling);
++			schedule_delayed_work(&ev->hotplug_work, 0);
+ 		}
+ 	}
+ }
+@@ -4352,8 +4352,7 @@ megasas_suspend(struct pci_dev *pdev, pm_message_t state)
+ 	/* cancel the delayed work if this work still in queue */
+ 	if (instance->ev != NULL) {
+ 		struct megasas_aen_event *ev = instance->ev;
+-		cancel_delayed_work_sync(
+-			(struct delayed_work *)&ev->hotplug_work);
++		cancel_delayed_work_sync(&ev->hotplug_work);
+ 		instance->ev = NULL;
+ 	}
+ 
+@@ -4545,8 +4544,7 @@ static void __devexit megasas_detach_one(struct pci_dev *pdev)
+ 	/* cancel the delayed work if this work still in queue*/
+ 	if (instance->ev != NULL) {
+ 		struct megasas_aen_event *ev = instance->ev;
+-		cancel_delayed_work_sync(
+-			(struct delayed_work *)&ev->hotplug_work);
++		cancel_delayed_work_sync(&ev->hotplug_work);
+ 		instance->ev = NULL;
+ 	}
+ 
+@@ -5190,7 +5188,7 @@ static void
+ megasas_aen_polling(struct work_struct *work)
+ {
+ 	struct megasas_aen_event *ev =
+-		container_of(work, struct megasas_aen_event, hotplug_work);
++		container_of(work, struct megasas_aen_event, hotplug_work.work);
+ 	struct megasas_instance *instance = ev->instance;
+ 	union megasas_evt_class_locale class_locale;
+ 	struct  Scsi_Host *host;
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 3586fb0..ec0aca8 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -2893,6 +2893,55 @@ static void end_bio_bh_io_sync(struct bio *bio, int err)
+ 	bio_put(bio);
+ }
+ 
++/*
++ * This allows us to do IO even on the odd last sectors
++ * of a device, even if the bh block size is some multiple
++ * of the physical sector size.
++ *
++ * We'll just truncate the bio to the size of the device,
++ * and clear the end of the buffer head manually.
++ *
++ * Truly out-of-range accesses will turn into actual IO
++ * errors, this only handles the "we need to be able to
++ * do IO at the final sector" case.
++ */
++static void guard_bh_eod(int rw, struct bio *bio, struct buffer_head *bh)
++{
++	sector_t maxsector;
++	unsigned bytes;
++
++	maxsector = i_size_read(bio->bi_bdev->bd_inode) >> 9;
++	if (!maxsector)
++		return;
++
++	/*
++	 * If the *whole* IO is past the end of the device,
++	 * let it through, and the IO layer will turn it into
++	 * an EIO.
++	 */
++	if (unlikely(bio->bi_sector >= maxsector))
++		return;
++
++	maxsector -= bio->bi_sector;
++	bytes = bio->bi_size;
++	if (likely((bytes >> 9) <= maxsector))
++		return;
++
++	/* Uhhuh. We've got a bh that straddles the device size! */
++	bytes = maxsector << 9;
++
++	/* Truncate the bio.. */
++	bio->bi_size = bytes;
++	bio->bi_io_vec[0].bv_len = bytes;
++
++	/* ..and clear the end of the buffer for reads */
++	if ((rw & RW_MASK) == READ) {
++		void *kaddr = kmap_atomic(bh->b_page);
++		memset(kaddr + bh_offset(bh) + bytes, 0, bh->b_size - bytes);
++		kunmap_atomic(kaddr);
++	}
++}
++
+ int submit_bh(int rw, struct buffer_head * bh)
+ {
+ 	struct bio *bio;
+@@ -2929,6 +2978,9 @@ int submit_bh(int rw, struct buffer_head * bh)
+ 	bio->bi_end_io = end_bio_bh_io_sync;
+ 	bio->bi_private = bh;
+ 
++	/* Take care of bh's that straddle the end of the device */
++	guard_bh_eod(rw, bio, bh);
++
+ 	bio_get(bio);
+ 	submit_bio(rw, bio);
+ 
+diff --git a/include/linux/kernel.h b/include/linux/kernel.h
+index a123b13..7d8dfc7 100644
+--- a/include/linux/kernel.h
++++ b/include/linux/kernel.h
+@@ -701,6 +701,13 @@ static inline void ftrace_dump(enum ftrace_dump_mode oops_dump_mode) { }
+ #define COMPACTION_BUILD 0
+ #endif
+ 
++/* This helps us to avoid #ifdef CONFIG_SYMBOL_PREFIX */
++#ifdef CONFIG_SYMBOL_PREFIX
++#define SYMBOL_PREFIX CONFIG_SYMBOL_PREFIX
++#else
++#define SYMBOL_PREFIX ""
++#endif
++
+ /* Rebuild everything on CONFIG_FTRACE_MCOUNT_RECORD */
+ #ifdef CONFIG_FTRACE_MCOUNT_RECORD
+ # define REBUILD_DUE_TO_FTRACE_MCOUNT_RECORD
+diff --git a/include/linux/mempolicy.h b/include/linux/mempolicy.h
+index e5ccb9d..dbd2127 100644
+--- a/include/linux/mempolicy.h
++++ b/include/linux/mempolicy.h
+@@ -82,16 +82,6 @@ static inline void mpol_cond_put(struct mempolicy *pol)
+ 		__mpol_put(pol);
+ }
+ 
+-extern struct mempolicy *__mpol_cond_copy(struct mempolicy *tompol,
+-					  struct mempolicy *frompol);
+-static inline struct mempolicy *mpol_cond_copy(struct mempolicy *tompol,
+-						struct mempolicy *frompol)
+-{
+-	if (!frompol)
+-		return frompol;
+-	return __mpol_cond_copy(tompol, frompol);
+-}
+-
+ extern struct mempolicy *__mpol_dup(struct mempolicy *pol);
+ static inline struct mempolicy *mpol_dup(struct mempolicy *pol)
+ {
+@@ -215,12 +205,6 @@ static inline void mpol_cond_put(struct mempolicy *pol)
+ {
+ }
+ 
+-static inline struct mempolicy *mpol_cond_copy(struct mempolicy *to,
+-						struct mempolicy *from)
+-{
+-	return from;
+-}
+-
+ static inline void mpol_get(struct mempolicy *pol)
+ {
+ }
+diff --git a/kernel/modsign_pubkey.c b/kernel/modsign_pubkey.c
+index 4646eb2..767e559 100644
+--- a/kernel/modsign_pubkey.c
++++ b/kernel/modsign_pubkey.c
+@@ -21,10 +21,10 @@ struct key *modsign_keyring;
+ extern __initdata const u8 modsign_certificate_list[];
+ extern __initdata const u8 modsign_certificate_list_end[];
+ asm(".section .init.data,\"aw\"\n"
+-    "modsign_certificate_list:\n"
++    SYMBOL_PREFIX "modsign_certificate_list:\n"
+     ".incbin \"signing_key.x509\"\n"
+     ".incbin \"extra_certificates\"\n"
+-    "modsign_certificate_list_end:"
++    SYMBOL_PREFIX "modsign_certificate_list_end:"
+     );
+ 
+ /*
+diff --git a/kernel/module_signing.c b/kernel/module_signing.c
+index ea1b1df..f2970bd 100644
+--- a/kernel/module_signing.c
++++ b/kernel/module_signing.c
+@@ -27,13 +27,13 @@
+  *	- Information block
+  */
+ struct module_signature {
+-	enum pkey_algo		algo : 8;	/* Public-key crypto algorithm */
+-	enum pkey_hash_algo	hash : 8;	/* Digest algorithm */
+-	enum pkey_id_type	id_type : 8;	/* Key identifier type */
+-	u8			signer_len;	/* Length of signer's name */
+-	u8			key_id_len;	/* Length of key identifier */
+-	u8			__pad[3];
+-	__be32			sig_len;	/* Length of signature data */
++	u8	algo;		/* Public-key crypto algorithm [enum pkey_algo] */
++	u8	hash;		/* Digest algorithm [enum pkey_hash_algo] */
++	u8	id_type;	/* Key identifier type [enum pkey_id_type] */
++	u8	signer_len;	/* Length of signer's name */
++	u8	key_id_len;	/* Length of key identifier */
++	u8	__pad[3];
++	__be32	sig_len;	/* Length of signature data */
+ };
+ 
+ /*
+diff --git a/kernel/watchdog.c b/kernel/watchdog.c
+index dd4b80a..c8c21be 100644
+--- a/kernel/watchdog.c
++++ b/kernel/watchdog.c
+@@ -368,6 +368,9 @@ static void watchdog_disable(unsigned int cpu)
+ {
+ 	struct hrtimer *hrtimer = &__raw_get_cpu_var(watchdog_hrtimer);
+ 
++	if (!watchdog_enabled)
++		return;
++
+ 	watchdog_set_prio(SCHED_NORMAL, 0);
+ 	hrtimer_cancel(hrtimer);
+ 	/* disable the perf event */
+diff --git a/kernel/workqueue.c b/kernel/workqueue.c
+index 084aa47..1dae900 100644
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -1361,8 +1361,8 @@ static void __queue_delayed_work(int cpu, struct workqueue_struct *wq,
+ 
+ 	WARN_ON_ONCE(timer->function != delayed_work_timer_fn ||
+ 		     timer->data != (unsigned long)dwork);
+-	BUG_ON(timer_pending(timer));
+-	BUG_ON(!list_empty(&work->entry));
++	WARN_ON_ONCE(timer_pending(timer));
++	WARN_ON_ONCE(!list_empty(&work->entry));
+ 
+ 	/*
+ 	 * If @delay is 0, queue @dwork->work immediately.  This is for
+diff --git a/lib/Makefile b/lib/Makefile
+index 821a162..a08b791 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -163,7 +163,7 @@ $(obj)/crc32table.h: $(obj)/gen_crc32table
+ #
+ obj-$(CONFIG_OID_REGISTRY) += oid_registry.o
+ 
+-$(obj)/oid_registry.c: $(obj)/oid_registry_data.c
++$(obj)/oid_registry.o: $(obj)/oid_registry_data.c
+ 
+ $(obj)/oid_registry_data.c: $(srctree)/include/linux/oid_registry.h \
+ 			    $(src)/build_OID_registry
+diff --git a/lib/asn1_decoder.c b/lib/asn1_decoder.c
+index de2c8b5..5293d24 100644
+--- a/lib/asn1_decoder.c
++++ b/lib/asn1_decoder.c
+@@ -91,7 +91,7 @@ next_tag:
+ 
+ 	/* Extract the length */
+ 	len = data[dp++];
+-	if (len < 0x7f) {
++	if (len <= 0x7f) {
+ 		dp += len;
+ 		goto next_tag;
+ 	}
+diff --git a/mm/compaction.c b/mm/compaction.c
+index 9eef558..694eaab 100644
+--- a/mm/compaction.c
++++ b/mm/compaction.c
+@@ -713,7 +713,15 @@ static void isolate_freepages(struct zone *zone,
+ 
+ 		/* Found a block suitable for isolating free pages from */
+ 		isolated = 0;
+-		end_pfn = min(pfn + pageblock_nr_pages, zone_end_pfn);
++
++		/*
++		 * As pfn may not start aligned, pfn+pageblock_nr_page
++		 * may cross a MAX_ORDER_NR_PAGES boundary and miss
++		 * a pfn_valid check. Ensure isolate_freepages_block()
++		 * only scans within a pageblock
++		 */
++		end_pfn = ALIGN(pfn + 1, pageblock_nr_pages);
++		end_pfn = min(end_pfn, zone_end_pfn);
+ 		isolated = isolate_freepages_block(cc, pfn, end_pfn,
+ 						   freelist, false);
+ 		nr_freepages += isolated;
+diff --git a/mm/mempolicy.c b/mm/mempolicy.c
+index d04a8a5..4ea600d 100644
+--- a/mm/mempolicy.c
++++ b/mm/mempolicy.c
+@@ -2037,28 +2037,6 @@ struct mempolicy *__mpol_dup(struct mempolicy *old)
+ 	return new;
+ }
+ 
+-/*
+- * If *frompol needs [has] an extra ref, copy *frompol to *tompol ,
+- * eliminate the * MPOL_F_* flags that require conditional ref and
+- * [NOTE!!!] drop the extra ref.  Not safe to reference *frompol directly
+- * after return.  Use the returned value.
+- *
+- * Allows use of a mempolicy for, e.g., multiple allocations with a single
+- * policy lookup, even if the policy needs/has extra ref on lookup.
+- * shmem_readahead needs this.
+- */
+-struct mempolicy *__mpol_cond_copy(struct mempolicy *tompol,
+-						struct mempolicy *frompol)
+-{
+-	if (!mpol_needs_cond_ref(frompol))
+-		return frompol;
+-
+-	*tompol = *frompol;
+-	tompol->flags &= ~MPOL_F_SHARED;	/* copy doesn't need unref */
+-	__mpol_put(frompol);
+-	return tompol;
+-}
+-
+ /* Slow path of a mempolicy comparison */
+ bool __mpol_equal(struct mempolicy *a, struct mempolicy *b)
+ {
+diff --git a/mm/shmem.c b/mm/shmem.c
+index 89341b6..50c5b8f 100644
+--- a/mm/shmem.c
++++ b/mm/shmem.c
+@@ -910,25 +910,29 @@ static struct mempolicy *shmem_get_sbmpol(struct shmem_sb_info *sbinfo)
+ static struct page *shmem_swapin(swp_entry_t swap, gfp_t gfp,
+ 			struct shmem_inode_info *info, pgoff_t index)
+ {
+-	struct mempolicy mpol, *spol;
+ 	struct vm_area_struct pvma;
+-
+-	spol = mpol_cond_copy(&mpol,
+-			mpol_shared_policy_lookup(&info->policy, index));
++	struct page *page;
+ 
+ 	/* Create a pseudo vma that just contains the policy */
+ 	pvma.vm_start = 0;
+ 	/* Bias interleave by inode number to distribute better across nodes */
+ 	pvma.vm_pgoff = index + info->vfs_inode.i_ino;
+ 	pvma.vm_ops = NULL;
+-	pvma.vm_policy = spol;
+-	return swapin_readahead(swap, gfp, &pvma, 0);
++	pvma.vm_policy = mpol_shared_policy_lookup(&info->policy, index);
++
++	page = swapin_readahead(swap, gfp, &pvma, 0);
++
++	/* Drop reference taken by mpol_shared_policy_lookup() */
++	mpol_cond_put(pvma.vm_policy);
++
++	return page;
+ }
+ 
+ static struct page *shmem_alloc_page(gfp_t gfp,
+ 			struct shmem_inode_info *info, pgoff_t index)
+ {
+ 	struct vm_area_struct pvma;
++	struct page *page;
+ 
+ 	/* Create a pseudo vma that just contains the policy */
+ 	pvma.vm_start = 0;
+@@ -937,10 +941,12 @@ static struct page *shmem_alloc_page(gfp_t gfp,
+ 	pvma.vm_ops = NULL;
+ 	pvma.vm_policy = mpol_shared_policy_lookup(&info->policy, index);
+ 
+-	/*
+-	 * alloc_page_vma() will drop the shared policy reference
+-	 */
+-	return alloc_page_vma(gfp, &pvma, 0);
++	page = alloc_page_vma(gfp, &pvma, 0);
++
++	/* Drop reference taken by mpol_shared_policy_lookup() */
++	mpol_cond_put(pvma.vm_policy);
++
++	return page;
+ }
+ #else /* !CONFIG_NUMA */
+ #ifdef CONFIG_TMPFS
+diff --git a/mm/vmscan.c b/mm/vmscan.c
+index 83f4d0e..124bbfe 100644
+--- a/mm/vmscan.c
++++ b/mm/vmscan.c
+@@ -2823,22 +2823,6 @@ out:
+ 			if (!populated_zone(zone))
+ 				continue;
+ 
+-			if (zone->all_unreclaimable &&
+-			    sc.priority != DEF_PRIORITY)
+-				continue;
+-
+-			/* Would compaction fail due to lack of free memory? */
+-			if (COMPACTION_BUILD &&
+-			    compaction_suitable(zone, order) == COMPACT_SKIPPED)
+-				goto loop_again;
+-
+-			/* Confirm the zone is balanced for order-0 */
+-			if (!zone_watermark_ok(zone, 0,
+-					high_wmark_pages(zone), 0, 0)) {
+-				order = sc.order = 0;
+-				goto loop_again;
+-			}
+-
+ 			/* Check if the memory needs to be defragmented. */
+ 			if (zone_watermark_ok(zone, order,
+ 				    low_wmark_pages(zone), *classzone_idx, 0))

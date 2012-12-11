@@ -40,7 +40,7 @@ KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
 SLOT="${PV}"
 
-KNOWN_FEATURES="aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq mageia pardus pld reiser4 rt suse symlink uksm vserver zfs"
+KNOWN_FEATURES="aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse symlink uksm vserver zfs"
 
 SRC_URI="http://www.kernel.org/pub/linux/kernel/v3.0/linux-${KMV}.tar.xz"
 
@@ -139,6 +139,9 @@ featureKnown() {
 			HOMEPAGE="${HOMEPAGE} ${reiser4_url}"
 			SRC_URI="${SRC_URI}
 				reiser4?	( ${reiser4_src} )"
+			;;
+		rifs)	rifs_url="http://code.google.com/p/rifs-scheduler"
+			HOMEPAGE="${HOMEPAGE} ${rifs_url}"
 			;;
 		rt)	rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
 			if [ "${OVERRIDE_rt_src}" != "" ]; then
@@ -305,30 +308,35 @@ kernel-geek_src_prepare() {
 
 ### BRANCH APPLY ###
 
-	config_file="/etc/portage/kernel.conf"
-	if [ -e "$config_file" ]
-	then
+	local _PATCHDIR="/etc/portage/patches" # for user patch
+	local config_file="/etc/portage/kernel.conf"
+	local DEFAULT_GEEKSOURCES_PATCHING_ORDER="vserver bfq ck genpatches grsecurity ice imq reiser4 rifs rt bld uksm aufs mageia fedora suse debian pardus pld zfs branding fix upatch";
+	if [ -e "$config_file" ] ; then
 		source "$config_file"
-		ewarn "GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\""
+		if [ "`echo $GEEKSOURCES_PATCHING_ORDER | tr " " "\n"|sort|tr "\n" " "`" == "`echo $DEFAULT_GEEKSOURCES_PATCHING_ORDER | tr " " "\n"|sort|tr "\n" " "`" ] ; then
+			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from $config_file"
+		else
+			ewarn "Not all USE flag present in GEEKSOURCES_PATCHING_ORDER from $config_file"
+			ewarn "Probably that's the plan. In that case, never mind."
+		fi
+
 	else
-		GEEKSOURCES_PATCHING_ORDER="vserver bfq ck genpatches grsecurity ice imq reiser4 rt bld uksm aufs mageia fedora suse debian pardus pld zfs branding";
+		GEEKSOURCES_PATCHING_ORDER="${DEFAULT_GEEKSOURCES_PATCHING_ORDER}";
 		ewarn "The order of patching is defined in file $config_file with the variable GEEKSOURCES_PATCHING_ORDER is its default value:
 GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"
 You are free to choose any order of patching.
 For example, if you like the alphabetical order of patching you must set the variable:
-echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding ck fedora genpatches grsecurity ice imq mageia pardus pld reiser4 rt suse uksm vserver zfs\"' > $config_file
+echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding ck fedora fix genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse uksm upatch vserver zfs\"' > $config_file
 Otherwise i will use the default value of GEEKSOURCES_PATCHING_ORDER!
 And may the Force be with you…"
 	fi
 
 for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
-	if use_if_iuse "$Current_Patch"; then
-
+	if use_if_iuse $Current_Patch || [[ $Current_Patch == "fix" ]] || [[ $Current_Patch == "upatch" ]] ; then
 		if [ -e "$FILESDIR/${PV}/$Current_Patch/info" ] ; then
 			echo
 			cat "$FILESDIR/${PV}/$Current_Patch/info";
 		fi
-
 		case ${Current_Patch} in
 			aufs)	ApplyPatch "$FILESDIR/${PV}/$Current_Patch/patch_list" "aufs3 - ${aufs_url}";
 				;;
@@ -348,11 +356,18 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				ApplyPatch "${FILESDIR}/linux-3.6.6-colored-printk.patch" "Colored printk"
 				;;
 			ck)	ApplyPatch "$DISTDIR/patch-${ck_ver}.bz2" "Con Kolivas high performance patchset - ${ck_url}";
+				if [ -d "${FILESDIR}/${PV}/$Current_Patch" ] ; then
+					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ] ; then
+						ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "CK Fix";
+					fi
+				fi
 				;;
-			debian)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Debian - ${debian_url}";
+			debian) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Debian - ${debian_url}";
 				#use rt && ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list_rt" "Debian rt - ${debian_url}";
 				;;
-			fedora)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Fedora - ${fedora_url}";
+			fedora) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Fedora - ${fedora_url}";
+				;;
+			fix)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Fixes for current kernel"
 				;;
 			genpatches) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Gentoo patches - ${genpatches_url}";
 				;;
@@ -362,13 +377,15 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				;;
 			imq)	ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}";
 				;;
-			mageia)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Mandriva/Mageia - ${mageia_url}";
+			mageia) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Mandriva/Mageia - ${mageia_url}";
 				;;
 			pardus) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Pardus - ${pardus_url}";
 				;;
 			pld)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "PLD - ${pld_url}";
 				;;
 			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "Reiser4 - ${reiser4_url}";
+				;;
+			rifs)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "RIFS scheduler - ${rifs_url}";
 				;;
 			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}";
 					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ]
@@ -379,6 +396,22 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				;;
 			uksm)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
 				;;
+			upatch) if [ -d "${_PATCHDIR}/${CATEGORY}/${PN}" ] ; then
+					if [ -e "${_PATCHDIR}/${CATEGORY}/${PN}/info" ] ; then
+						echo
+						cat "${_PATCHDIR}/${CATEGORY}/${PN}/info";
+					fi
+					if [ -e "${_PATCHDIR}/${CATEGORY}/${PN}/patch_list" ] ; then
+						ApplyPatch "${_PATCHDIR}/${CATEGORY}/${PN}/patch_list" "Applying user patches"
+					else
+						ewarn "File ${_PATCHDIR}/${CATEGORY}/${PN}/patch_list not found!"
+						ewarn "Try to apply the patches if they are there…"
+						for i in `ls ${_PATCHDIR}/${CATEGORY}/${PN}/*.{patch,gz,bz,bz2,xz,zip,Z} 2> /dev/null`; do
+							ApplyPatch "${i}" "Applying user patches"
+						done
+					fi
+				fi
+				;;
 			vserver) ApplyPatch "${DISTDIR}/patch-${vserver_ver}.diff" "VServer - ${vserver_url}";
 				;;
 			zfs)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "zfs - ${zfs_url}";
@@ -387,23 +420,6 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 	else continue
 	fi;
 done;
-
-	# Fixes
-	ApplyPatch "${FILESDIR}/fixes/acpi-ec-add-delay-before-write.patch" "Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41";
-	# fix for 3.5 kernel
-	((${PATCHLEVEL} < 6)) && ApplyPatch "${FILESDIR}/fixes/lpc_ich_3.5.1.patch" "Oops: lpc_ich: Resource conflict(s) found affecting iTCO_wdt https://bugzilla.kernel.org/show_bug.cgi?id=44991";
-	# CK fixes for 3.6
-	use ck && if [ ${PATCHLEVEL} = 6 ]; then ApplyPatch "${FILESDIR}/fixes/Fix-boot-issue-with-BFS-and-linux-3.6.patch" "http://ck.kolivas.org/patches/bfs/3.0/3.6/Fix boot issue with BFS and linux-3.6.patch"; fi;
-	# fixes for 3.6 kernel
-	((${PATCHLEVEL} < 7)) && ApplyPatch "${FILESDIR}/fixes/zram_pagealloc_fix.patch" "zram pagealloc fix http://code.google.com/p/compcache/issues/detail?id=102";
-	((${PATCHLEVEL} < 7)) && ApplyPatch "${FILESDIR}/fixes/gpio-ich_share_ownership_of_GPIO_groups_3.6.patch" "gpio-ich: Share ownership of GPIO groups http://git.kernel.org/?p=linux/kernel/git/torvalds/linux.git;a=patch;h=4f600ada70beeb1dfe08e11e871bf31015aa0a3d";
-	# fix module initialisation https://bugs.archlinux.org/task/32122
-	((${PATCHLEVEL} < 7)) && ApplyPatch "${FILESDIR}/fixes/module-symbol-waiting-3.6.patch" "Fix module initialisation https://bugs.archlinux.org/task/32122";
-	((${PATCHLEVEL} < 7)) && ApplyPatch "${FILESDIR}/fixes/module-init-wait-3.6.patch" "Fix module initialisation https://bugs.archlinux.org/task/32122";
-	# add gcc 4.7 support for Kconfig and menuconfig
-	ApplyPatch "${FILESDIR}/fixes/kernel-33-gcc47-0.patch" "Fix for kernel-3* and gcc47"
-	# zfs
-	use zfs && ((${PATCHLEVEL} < 7)) && ApplyPatch "${FILESDIR}/fixes/zfs_gpl_blk_queue_flush.patch" "Fix FATAL: modpost: GPL-incompatible module zfs.ko uses GPL-only symbol 'blk_queue_flush'"
 
 ### END OF PATCH APPLICATIONS ###
 

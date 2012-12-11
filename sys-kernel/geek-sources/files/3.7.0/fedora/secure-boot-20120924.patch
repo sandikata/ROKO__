@@ -1,0 +1,726 @@
+From 57c0dbcbafaa724313c672830ff0087f56a84c47 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:40:56 -0400
+Subject: [PATCH 01/14] Secure boot: Add new capability
+
+Secure boot adds certain policy requirements, including that root must not
+be able to do anything that could cause the kernel to execute arbitrary code.
+The simplest way to handle this would seem to be to add a new capability
+and gate various functionality on that. We'll then strip it from the initial
+capability set if required.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ include/linux/capability.h | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/capability.h b/include/linux/capability.h
+index d10b7ed..4345bc8 100644
+--- a/include/linux/capability.h
++++ b/include/linux/capability.h
+@@ -364,7 +364,11 @@ struct cpu_vfs_cap_data {
+ 
+ #define CAP_BLOCK_SUSPEND    36
+ 
+-#define CAP_LAST_CAP         CAP_BLOCK_SUSPEND
++/* Allow things that trivially permit root to modify the running kernel */
++
++#define CAP_COMPROMISE_KERNEL  37
++
++#define CAP_LAST_CAP         CAP_COMPROMISE_KERNEL
+ 
+ #define cap_valid(x) ((x) >= 0 && (x) <= CAP_LAST_CAP)
+ 
+-- 
+1.7.11.4
+
+
+From 95fd8148be46036e20fc64c480104d2a2b454e27 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:40:57 -0400
+Subject: [PATCH 02/14] PCI: Lock down BAR access in secure boot environments
+
+Any hardware that can potentially generate DMA has to be locked down from
+userspace in order to avoid it being possible for an attacker to cause
+arbitrary kernel behaviour. Default to paranoid - in future we can
+potentially relax this for sufficiently IOMMU-isolated devices.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ drivers/pci/pci-sysfs.c | 9 +++++++++
+ drivers/pci/proc.c      | 8 +++++++-
+ drivers/pci/syscall.c   | 2 +-
+ 3 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/pci/pci-sysfs.c b/drivers/pci/pci-sysfs.c
+index 6869009..c03fb85 100644
+--- a/drivers/pci/pci-sysfs.c
++++ b/drivers/pci/pci-sysfs.c
+@@ -542,6 +542,9 @@ pci_write_config(struct file* filp, struct kobject *kobj,
+ 	loff_t init_off = off;
+ 	u8 *data = (u8*) buf;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (off > dev->cfg_size)
+ 		return 0;
+ 	if (off + count > dev->cfg_size) {
+@@ -844,6 +847,9 @@ pci_mmap_resource(struct kobject *kobj, struct bin_attribute *attr,
+ 	resource_size_t start, end;
+ 	int i;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	for (i = 0; i < PCI_ROM_RESOURCE; i++)
+ 		if (res == &pdev->resource[i])
+ 			break;
+@@ -951,6 +957,9 @@ pci_write_resource_io(struct file *filp, struct kobject *kobj,
+ 		      struct bin_attribute *attr, char *buf,
+ 		      loff_t off, size_t count)
+ {
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	return pci_resource_io(filp, kobj, attr, buf, off, count, true);
+ }
+ 
+diff --git a/drivers/pci/proc.c b/drivers/pci/proc.c
+index 27911b5..ac8c9a5 100644
+--- a/drivers/pci/proc.c
++++ b/drivers/pci/proc.c
+@@ -135,6 +135,9 @@ proc_bus_pci_write(struct file *file, const char __user *buf, size_t nbytes, lof
+ 	int size = dp->size;
+ 	int cnt;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (pos >= size)
+ 		return 0;
+ 	if (nbytes >= size)
+@@ -211,6 +214,9 @@ static long proc_bus_pci_ioctl(struct file *file, unsigned int cmd,
+ #endif /* HAVE_PCI_MMAP */
+ 	int ret = 0;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	switch (cmd) {
+ 	case PCIIOC_CONTROLLER:
+ 		ret = pci_domain_nr(dev->bus);
+@@ -251,7 +257,7 @@ static int proc_bus_pci_mmap(struct file *file, struct vm_area_struct *vma)
+ 	struct pci_filp_private *fpriv = file->private_data;
+ 	int i, ret;
+ 
+-	if (!capable(CAP_SYS_RAWIO))
++	if (!capable(CAP_SYS_RAWIO) || !capable(CAP_COMPROMISE_KERNEL))
+ 		return -EPERM;
+ 
+ 	/* Make sure the caller is mapping a real resource for this device */
+diff --git a/drivers/pci/syscall.c b/drivers/pci/syscall.c
+index e1c1ec5..97e785f 100644
+--- a/drivers/pci/syscall.c
++++ b/drivers/pci/syscall.c
+@@ -92,7 +92,7 @@ SYSCALL_DEFINE5(pciconfig_write, unsigned long, bus, unsigned long, dfn,
+ 	u32 dword;
+ 	int err = 0;
+ 
+-	if (!capable(CAP_SYS_ADMIN))
++	if (!capable(CAP_SYS_ADMIN) || !capable(CAP_COMPROMISE_KERNEL))
+ 		return -EPERM;
+ 
+ 	dev = pci_get_bus_and_slot(bus, dfn);
+-- 
+1.7.11.4
+
+
+From 2d23d2726583d79062e58abcc32c7dd027d312aa Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:40:58 -0400
+Subject: [PATCH 03/14] x86: Lock down IO port access in secure boot
+ environments
+
+IO port access would permit users to gain access to PCI configuration
+registers, which in turn (on a lot of hardware) give access to MMIO register
+space. This would potentially permit root to trigger arbitrary DMA, so lock
+it down by default.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ arch/x86/kernel/ioport.c | 4 ++--
+ drivers/char/mem.c       | 3 +++
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/arch/x86/kernel/ioport.c b/arch/x86/kernel/ioport.c
+index 8c96897..a2578c4 100644
+--- a/arch/x86/kernel/ioport.c
++++ b/arch/x86/kernel/ioport.c
+@@ -28,7 +28,7 @@ asmlinkage long sys_ioperm(unsigned long from, unsigned long num, int turn_on)
+ 
+ 	if ((from + num <= from) || (from + num > IO_BITMAP_BITS))
+ 		return -EINVAL;
+-	if (turn_on && !capable(CAP_SYS_RAWIO))
++	if (turn_on && (!capable(CAP_SYS_RAWIO) || !capable(CAP_COMPROMISE_KERNEL)))
+ 		return -EPERM;
+ 
+ 	/*
+@@ -102,7 +102,7 @@ long sys_iopl(unsigned int level, struct pt_regs *regs)
+ 		return -EINVAL;
+ 	/* Trying to gain more privileges? */
+ 	if (level > old) {
+-		if (!capable(CAP_SYS_RAWIO))
++		if (!capable(CAP_SYS_RAWIO) || !capable(CAP_COMPROMISE_KERNEL))
+ 			return -EPERM;
+ 	}
+ 	regs->flags = (regs->flags & ~X86_EFLAGS_IOPL) | (level << 12);
+diff --git a/drivers/char/mem.c b/drivers/char/mem.c
+index e5eedfa..1e0a660 100644
+--- a/drivers/char/mem.c
++++ b/drivers/char/mem.c
+@@ -597,6 +597,9 @@ static ssize_t write_port(struct file *file, const char __user *buf,
+ 	unsigned long i = *ppos;
+ 	const char __user * tmp = buf;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (!access_ok(VERIFY_READ, buf, count))
+ 		return -EFAULT;
+ 	while (count-- > 0 && i < 65536) {
+-- 
+1.7.11.4
+
+
+From e063cb2f3a667d2540682d4bdbef91fdb23b1a84 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:40:59 -0400
+Subject: [PATCH 04/14] ACPI: Limit access to custom_method
+
+It must be impossible for even root to get code executed in kernel context
+under a secure boot environment. custom_method effectively allows arbitrary
+access to system memory, so it needs to have a capability check here.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ drivers/acpi/custom_method.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/acpi/custom_method.c b/drivers/acpi/custom_method.c
+index 5d42c24..247d58b 100644
+--- a/drivers/acpi/custom_method.c
++++ b/drivers/acpi/custom_method.c
+@@ -29,6 +29,9 @@ static ssize_t cm_write(struct file *file, const char __user * user_buf,
+ 	struct acpi_table_header table;
+ 	acpi_status status;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (!(*ppos)) {
+ 		/* parse the table header to get the table length */
+ 		if (count <= sizeof(struct acpi_table_header))
+-- 
+1.7.11.4
+
+
+From a1cccbd084c7355dcb2be7ae2934f168ce9ba9d5 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:00 -0400
+Subject: [PATCH 05/14] asus-wmi: Restrict debugfs interface
+
+We have no way of validating what all of the Asus WMI methods do on a
+given machine, and there's a risk that some will allow hardware state to
+be manipulated in such a way that arbitrary code can be executed in the
+kernel. Add a capability check to prevent that.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ drivers/platform/x86/asus-wmi.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/drivers/platform/x86/asus-wmi.c b/drivers/platform/x86/asus-wmi.c
+index 2eb9fe8..61e055d 100644
+--- a/drivers/platform/x86/asus-wmi.c
++++ b/drivers/platform/x86/asus-wmi.c
+@@ -1523,6 +1523,9 @@ static int show_dsts(struct seq_file *m, void *data)
+ 	int err;
+ 	u32 retval = -1;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	err = asus_wmi_get_devstate(asus, asus->debug.dev_id, &retval);
+ 
+ 	if (err < 0)
+@@ -1539,6 +1542,9 @@ static int show_devs(struct seq_file *m, void *data)
+ 	int err;
+ 	u32 retval = -1;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	err = asus_wmi_set_devstate(asus->debug.dev_id, asus->debug.ctrl_param,
+ 				    &retval);
+ 
+@@ -1563,6 +1569,9 @@ static int show_call(struct seq_file *m, void *data)
+ 	union acpi_object *obj;
+ 	acpi_status status;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	status = wmi_evaluate_method(ASUS_WMI_MGMT_GUID,
+ 				     1, asus->debug.method_id,
+ 				     &input, &output);
+-- 
+1.7.11.4
+
+
+From 1c9e53b626268f82509062751eda14e8572717cf Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:01 -0400
+Subject: [PATCH 06/14] Restrict /dev/mem and /dev/kmem in secure boot setups
+
+Allowing users to write to address space makes it possible for the kernel
+to be subverted. Restrict this when we need to protect the kernel.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ drivers/char/mem.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/drivers/char/mem.c b/drivers/char/mem.c
+index 1e0a660..33eb947 100644
+--- a/drivers/char/mem.c
++++ b/drivers/char/mem.c
+@@ -158,6 +158,9 @@ static ssize_t write_mem(struct file *file, const char __user *buf,
+ 	unsigned long copied;
+ 	void *ptr;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (!valid_phys_addr_range(p, count))
+ 		return -EFAULT;
+ 
+@@ -530,6 +533,9 @@ static ssize_t write_kmem(struct file *file, const char __user *buf,
+ 	char * kbuf; /* k-addr because vwrite() takes vmlist_lock rwlock */
+ 	int err = 0;
+ 
++	if (!capable(CAP_COMPROMISE_KERNEL))
++		return -EPERM;
++
+ 	if (p < (unsigned long) high_memory) {
+ 		unsigned long to_write = min_t(unsigned long, count,
+ 					       (unsigned long)high_memory - p);
+-- 
+1.7.11.4
+
+
+From fbf919bf372b9a7a08bdacac8129d47ced1b1f19 Mon Sep 17 00:00:00 2001
+From: Josh Boyer <jwboyer@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:02 -0400
+Subject: [PATCH 07/14] Secure boot: Add a dummy kernel parameter that will
+ switch on Secure Boot mode
+
+This forcibly drops CAP_COMPROMISE_KERNEL from both cap_permitted and cap_bset
+in the init_cred struct, which everything else inherits from.  This works on
+any machine and can be used to develop even if the box doesn't have UEFI.
+
+Signed-off-by: Josh Boyer <jwboyer@redhat.com>
+---
+ Documentation/kernel-parameters.txt |  7 +++++++
+ kernel/cred.c                       | 17 +++++++++++++++++
+ 2 files changed, 24 insertions(+)
+
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 9b2b8d3..93978d5 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -2562,6 +2562,13 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 			Note: increases power consumption, thus should only be
+ 			enabled if running jitter sensitive (HPC/RT) workloads.
+ 
++	secureboot_enable=
++			[KNL] Enables an emulated UEFI Secure Boot mode.  This
++			locks down various aspects of the kernel guarded by the
++			CAP_COMPROMISE_KERNEL capability.  This includes things
++			like /dev/mem, IO port access, and other areas.  It can
++			be used on non-UEFI machines for testing purposes.
++
+ 	security=	[SECURITY] Choose a security module to enable at boot.
+ 			If this boot parameter is not specified, only the first
+ 			security module asking for security registration will be
+diff --git a/kernel/cred.c b/kernel/cred.c
+index de728ac..7e6e83f 100644
+--- a/kernel/cred.c
++++ b/kernel/cred.c
+@@ -623,6 +623,23 @@ void __init cred_init(void)
+ 				     0, SLAB_HWCACHE_ALIGN|SLAB_PANIC, NULL);
+ }
+ 
++void __init secureboot_enable()
++{
++	pr_info("Secure boot enabled\n");
++	cap_lower((&init_cred)->cap_bset, CAP_COMPROMISE_KERNEL);
++	cap_lower((&init_cred)->cap_permitted, CAP_COMPROMISE_KERNEL);
++}
++
++/* Dummy Secure Boot enable option to fake out UEFI SB=1 */
++static int __init secureboot_enable_opt(char *str)
++{
++	int sb_enable = !!simple_strtol(str, NULL, 0);
++	if (sb_enable)
++		secureboot_enable();
++	return 1;
++}
++__setup("secureboot_enable=", secureboot_enable_opt);
++
+ /**
+  * prepare_kernel_cred - Prepare a set of credentials for a kernel service
+  * @daemon: A userspace daemon to be used as a reference
+-- 
+1.7.11.4
+
+
+From 43ed7865d867ae692e30227d66fa58cdecbd9269 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:03 -0400
+Subject: [PATCH 08/14] efi: Enable secure boot lockdown automatically when
+ enabled in firmware
+
+The firmware has a set of flags that indicate whether secure boot is enabled
+and enforcing. Use them to indicate whether the kernel should lock itself
+down.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ Documentation/x86/zero-page.txt  |  2 ++
+ arch/x86/boot/compressed/eboot.c | 32 ++++++++++++++++++++++++++++++++
+ arch/x86/include/asm/bootparam.h |  3 ++-
+ arch/x86/kernel/setup.c          |  3 +++
+ include/linux/cred.h             |  2 ++
+ 5 files changed, 41 insertions(+), 1 deletion(-)
+
+diff --git a/Documentation/x86/zero-page.txt b/Documentation/x86/zero-page.txt
+index cf5437d..7f9ed48 100644
+--- a/Documentation/x86/zero-page.txt
++++ b/Documentation/x86/zero-page.txt
+@@ -27,6 +27,8 @@ Offset	Proto	Name		Meaning
+ 1E9/001	ALL	eddbuf_entries	Number of entries in eddbuf (below)
+ 1EA/001	ALL	edd_mbr_sig_buf_entries	Number of entries in edd_mbr_sig_buffer
+ 				(below)
++1EB/001	ALL	kbd_status	Numlock is enabled
++1EC/001	ALL	secure_boot	Kernel should enable secure boot lockdowns
+ 290/040	ALL	edd_mbr_sig_buffer EDD MBR signatures
+ 2D0/A00	ALL	e820_map	E820 memory map table
+ 				(array of struct e820entry)
+diff --git a/arch/x86/boot/compressed/eboot.c b/arch/x86/boot/compressed/eboot.c
+index b3e0227..3789356 100644
+--- a/arch/x86/boot/compressed/eboot.c
++++ b/arch/x86/boot/compressed/eboot.c
+@@ -724,6 +724,36 @@ fail:
+ 	return status;
+ }
+ 
++static int get_secure_boot(efi_system_table_t *_table)
++{
++	u8 sb, setup;
++	unsigned long datasize = sizeof(sb);
++	efi_guid_t var_guid = EFI_GLOBAL_VARIABLE_GUID;
++	efi_status_t status;
++
++	status = efi_call_phys5(sys_table->runtime->get_variable,
++				L"SecureBoot", &var_guid, NULL, &datasize, &sb);
++
++	if (status != EFI_SUCCESS)
++		return 0;
++
++	if (sb == 0)
++		return 0;
++
++
++	status = efi_call_phys5(sys_table->runtime->get_variable,
++				L"SetupMode", &var_guid, NULL, &datasize,
++				&setup);
++
++	if (status != EFI_SUCCESS)
++		return 0;
++
++	if (setup == 1)
++		return 0;
++
++	return 1;
++}
++
+ /*
+  * Because the x86 boot code expects to be passed a boot_params we
+  * need to create one ourselves (usually the bootloader would create
+@@ -1018,6 +1048,8 @@ struct boot_params *efi_main(void *handle, efi_system_table_t *_table,
+ 	if (sys_table->hdr.signature != EFI_SYSTEM_TABLE_SIGNATURE)
+ 		goto fail;
+ 
++	boot_params->secure_boot = get_secure_boot(sys_table);
++
+ 	setup_graphics(boot_params);
+ 
+ 	status = efi_call_phys3(sys_table->boottime->allocate_pool,
+diff --git a/arch/x86/include/asm/bootparam.h b/arch/x86/include/asm/bootparam.h
+index 2ad874c..c7338e0 100644
+--- a/arch/x86/include/asm/bootparam.h
++++ b/arch/x86/include/asm/bootparam.h
+@@ -114,7 +114,8 @@ struct boot_params {
+ 	__u8  eddbuf_entries;				/* 0x1e9 */
+ 	__u8  edd_mbr_sig_buf_entries;			/* 0x1ea */
+ 	__u8  kbd_status;				/* 0x1eb */
+-	__u8  _pad6[5];					/* 0x1ec */
++	__u8  secure_boot;				/* 0x1ec */
++	__u8  _pad6[4];					/* 0x1ed */
+ 	struct setup_header hdr;    /* setup header */	/* 0x1f1 */
+ 	__u8  _pad7[0x290-0x1f1-sizeof(struct setup_header)];
+ 	__u32 edd_mbr_sig_buffer[EDD_MBR_SIG_MAX];	/* 0x290 */
+diff --git a/arch/x86/kernel/setup.c b/arch/x86/kernel/setup.c
+index f4b9b80..239bf2a 100644
+--- a/arch/x86/kernel/setup.c
++++ b/arch/x86/kernel/setup.c
+@@ -947,6 +947,9 @@ void __init setup_arch(char **cmdline_p)
+ 
+ 	io_delay_init();
+ 
++	if (boot_params.secure_boot)
++		secureboot_enable();
++
+ 	/*
+ 	 * Parse the ACPI tables for possible boot-time SMP configuration.
+ 	 */
+diff --git a/include/linux/cred.h b/include/linux/cred.h
+index ebbed2c..a24faf1 100644
+--- a/include/linux/cred.h
++++ b/include/linux/cred.h
+@@ -170,6 +170,8 @@ extern int set_security_override_from_ctx(struct cred *, const char *);
+ extern int set_create_files_as(struct cred *, struct inode *);
+ extern void __init cred_init(void);
+ 
++extern void secureboot_enable(void);
++
+ /*
+  * check for validity of credentials
+  */
+-- 
+1.7.11.4
+
+
+From 3acf1ceb5f6f3be9103c9da16ddc24afc6d8b02a Mon Sep 17 00:00:00 2001
+From: Josh Boyer <jwboyer@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:04 -0400
+Subject: [PATCH 09/14] acpi: Ignore acpi_rsdp kernel parameter in a secure
+ boot environment
+
+This option allows userspace to pass the RSDP address to the kernel.  This
+could potentially be used to circumvent the secure boot trust model.
+We ignore the setting if we don't have the CAP_COMPROMISE_KERNEL capability.
+
+Signed-off-by: Josh Boyer <jwboyer@redhat.com>
+---
+ drivers/acpi/osl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/acpi/osl.c b/drivers/acpi/osl.c
+index 9eaf708..f94341b 100644
+--- a/drivers/acpi/osl.c
++++ b/drivers/acpi/osl.c
+@@ -246,7 +246,7 @@ early_param("acpi_rsdp", setup_acpi_rsdp);
+ acpi_physical_address __init acpi_os_get_root_pointer(void)
+ {
+ #ifdef CONFIG_KEXEC
+-	if (acpi_rsdp)
++	if (acpi_rsdp && capable(CAP_COMPROMISE_KERNEL))
+ 		return acpi_rsdp;
+ #endif
+ 
+-- 
+1.7.11.4
+
+
+From 03fb06d272ddc1062e610521c5cfdbe42f251209 Mon Sep 17 00:00:00 2001
+From: Josh Boyer <jwboyer@redhat.com>
+Date: Thu, 20 Sep 2012 10:41:05 -0400
+Subject: [PATCH 10/14] SELinux: define mapping for new Secure Boot capability
+
+Add the name of the new Secure Boot capability.  This allows SELinux
+policies to properly map CAP_COMPROMISE_KERNEL to the appropriate
+capability class.
+
+Signed-off-by: Josh Boyer <jwboyer@redhat.com>
+---
+ security/selinux/include/classmap.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/security/selinux/include/classmap.h b/security/selinux/include/classmap.h
+index df2de54..70e2834 100644
+--- a/security/selinux/include/classmap.h
++++ b/security/selinux/include/classmap.h
+@@ -146,8 +146,8 @@ struct security_class_mapping secclass_map[] = {
+ 	{ "memprotect", { "mmap_zero", NULL } },
+ 	{ "peer", { "recv", NULL } },
+ 	{ "capability2",
+-	  { "mac_override", "mac_admin", "syslog", "wake_alarm", "block_suspend",
+-	    NULL } },
++	  { "mac_override", "mac_admin", "syslog", "wake_alarm",
++	    "block_suspend", "compromise_kernel", NULL } },
+ 	{ "kernel_service", { "use_as_override", "create_files_as", NULL } },
+ 	{ "tun_socket",
+ 	  { COMMON_SOCK_PERMS, NULL } },
+-- 
+1.7.11.4
+
+
+From 0cfaa5ecf01f8eaaa2a84d88b7258a94ac9a1bfe Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Tue, 4 Sep 2012 11:55:13 -0400
+Subject: [PATCH 11/14] kexec: Disable in a secure boot environment
+
+kexec could be used as a vector for a malicious user to use a signed kernel
+to circumvent the secure boot trust model. In the long run we'll want to
+support signed kexec payloads, but for the moment we should just disable
+loading entirely in that situation.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ kernel/kexec.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/kexec.c b/kernel/kexec.c
+index 0668d58..8b976a5 100644
+--- a/kernel/kexec.c
++++ b/kernel/kexec.c
+@@ -944,7 +944,7 @@ SYSCALL_DEFINE4(kexec_load, unsigned long, entry, unsigned long, nr_segments,
+ 	int result;
+ 
+ 	/* We only trust the superuser with rebooting the system. */
+-	if (!capable(CAP_SYS_BOOT))
++	if (!capable(CAP_SYS_BOOT) || !capable(CAP_COMPROMISE_KERNEL))
+ 		return -EPERM;
+ 
+ 	/*
+-- 
+1.7.11.4
+
+
+From 895c46276788b3711aee05a1a1d685eff69d48b9 Mon Sep 17 00:00:00 2001
+From: Josh Boyer <jwboyer@redhat.com>
+Date: Mon, 25 Jun 2012 21:29:46 -0400
+Subject: [PATCH 12/14] Documentation: kernel-parameters.txt remove
+ capability.disable
+
+Remove the documentation for capability.disable.  The code supporting this
+parameter was removed with:
+
+	commit 5915eb53861c5776cfec33ca4fcc1fd20d66dd27
+	Author: Miklos Szeredi <mszeredi@suse.cz>
+	Date:   Thu Jul 3 20:56:05 2008 +0200
+
+    	security: remove dummy module
+
+Signed-off-by: Josh Boyer <jwboyer@redhat.com>
+---
+ Documentation/kernel-parameters.txt | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
+index 93978d5..e3e5f8c 100644
+--- a/Documentation/kernel-parameters.txt
++++ b/Documentation/kernel-parameters.txt
+@@ -446,12 +446,6 @@ bytes respectively. Such letter suffixes can also be entirely omitted.
+ 			possible to determine what the correct size should be.
+ 			This option provides an override for these situations.
+ 
+-	capability.disable=
+-			[SECURITY] Disable capabilities.  This would normally
+-			be used only if an alternative security model is to be
+-			configured.  Potentially dangerous and should only be
+-			used if you are entirely sure of the consequences.
+-
+ 	ccw_timeout_log [S390]
+ 			See Documentation/s390/CommonIO for details.
+ 
+-- 
+1.7.11.4
+
+
+From 294d339c63b0f67a362efaa62713f26d9f496da8 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Thu, 26 Jul 2012 18:00:00 -0400
+Subject: [PATCH 13/14] efi: Build EFI stub with EFI-appropriate options
+
+We can't assume the presence of the red zone while we're still in a boot
+services environment, so we should build with -fno-red-zone to avoid
+problems. Change the size of wchar at the same time to make string handling
+simpler.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+---
+ arch/x86/boot/compressed/Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/x86/boot/compressed/Makefile b/arch/x86/boot/compressed/Makefile
+index e398bb5..8a84501 100644
+--- a/arch/x86/boot/compressed/Makefile
++++ b/arch/x86/boot/compressed/Makefile
+@@ -28,6 +28,9 @@ VMLINUX_OBJS = $(obj)/vmlinux.lds $(obj)/head_$(BITS).o $(obj)/misc.o \
+ 	$(obj)/string.o $(obj)/cmdline.o $(obj)/early_serial_console.o \
+ 	$(obj)/piggy.o
+ 
++$(obj)/eboot.o: KBUILD_CFLAGS += -fshort-wchar -mno-red-zone
++$(obj)/efi_stub_$(BITS).o: KBUILD_CLFAGS += -fshort-wchar -mno-red-zone
++
+ ifeq ($(CONFIG_EFI_STUB), y)
+ 	VMLINUX_OBJS += $(obj)/eboot.o $(obj)/efi_stub_$(BITS).o
+ endif
+-- 
+1.7.11.4
+
+
+From d1a225668878a3339adcd7ce0be256e857360ada Mon Sep 17 00:00:00 2001
+From: Josh Boyer <jwboyer@redhat.com>
+Date: Tue, 26 Jun 2012 16:27:26 -0400
+Subject: [PATCH 14/14] modsign: Reject unsigned modules in a Secure Boot
+ environment
+
+If a machine is booted into a Secure Boot environment, we need to
+protect the trust model.  This requires that all modules be signed
+with a key that is in the kernel's _modsign keyring.  We add a
+capability check and reject modules that are not signed.
+
+Signed-off-by: Josh Boyer <jwboyer@redhat.com>
+---
+ kernel/module.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/module.c b/kernel/module.c
+index de16959..5af69cc 100644
+--- a/kernel/module.c
++++ b/kernel/module.c
+@@ -2463,7 +2463,7 @@ static int module_sig_check(struct load_info *info,
+ 	}
+ 
+ 	/* Not having a signature is only an error if we're strict. */
+-	if (!err && !info->sig_ok && sig_enforce)
++	if (!err && !info->sig_ok && (sig_enforce || !capable(CAP_COMPROMISE_KERNEL)))
+ 		err = -EKEYREJECTED;
+ 	return err;
+ 
+@@ -2475,7 +2475,7 @@ found_marker:
+ 	if (err < 0 && fips_enabled)
+ 		panic("Module verification failed with error %d in FIPS mode\n",
+ 		      err);
+-	if (err == -ENOKEY && !sig_enforce)
++	if (err == -ENOKEY && (!sig_enforce && capable(CAP_COMPROMISE_KERNEL)))
+ 		err = 0;
+ 	return err;
+ }
+-- 
+1.7.11.4
+

@@ -1,0 +1,499 @@
+Update team driver to latest net-next.
+
+Split patches available here:
+http://people.redhat.com/jpirko/f18_team_update_2/
+
+Jiri Pirko (4):
+  netlink: add signed types
+  team: add signed 32-bit team option type
+  team: add per port priority option
+  team: add support for queue override by setting queue_id for port
+
+ drivers/net/team/team.c |  200 ++++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/if_team.h |    7 ++
+ include/net/netlink.h   |   98 +++++++++++++++++++++++
+ 3 files changed, 303 insertions(+), 2 deletions(-)
+
+Signed-off-by: Jiri Pirko <jpirko@redhat.com>
+
+diff --git a/drivers/net/team/team.c b/drivers/net/team/team.c
+index 87707ab..ba10c46 100644
+--- a/drivers/net/team/team.c
++++ b/drivers/net/team/team.c
+@@ -658,6 +658,122 @@ static rx_handler_result_t team_handle_frame(struct sk_buff **pskb)
+ }
+ 
+ 
++/*************************************
++ * Multiqueue Tx port select override
++ *************************************/
++
++static int team_queue_override_init(struct team *team)
++{
++	struct list_head *listarr;
++	unsigned int queue_cnt = team->dev->num_tx_queues - 1;
++	unsigned int i;
++
++	if (!queue_cnt)
++		return 0;
++	listarr = kmalloc(sizeof(struct list_head) * queue_cnt, GFP_KERNEL);
++	if (!listarr)
++		return -ENOMEM;
++	team->qom_lists = listarr;
++	for (i = 0; i < queue_cnt; i++)
++		INIT_LIST_HEAD(listarr++);
++	return 0;
++}
++
++static void team_queue_override_fini(struct team *team)
++{
++	kfree(team->qom_lists);
++}
++
++static struct list_head *__team_get_qom_list(struct team *team, u16 queue_id)
++{
++	return &team->qom_lists[queue_id - 1];
++}
++
++/*
++ * note: already called with rcu_read_lock
++ */
++static bool team_queue_override_transmit(struct team *team, struct sk_buff *skb)
++{
++	struct list_head *qom_list;
++	struct team_port *port;
++
++	if (!team->queue_override_enabled || !skb->queue_mapping)
++		return false;
++	qom_list = __team_get_qom_list(team, skb->queue_mapping);
++	list_for_each_entry_rcu(port, qom_list, qom_list) {
++		if (!team_dev_queue_xmit(team, port, skb))
++			return true;
++	}
++	return false;
++}
++
++static void __team_queue_override_port_del(struct team *team,
++					   struct team_port *port)
++{
++	list_del_rcu(&port->qom_list);
++	synchronize_rcu();
++	INIT_LIST_HEAD(&port->qom_list);
++}
++
++static bool team_queue_override_port_has_gt_prio_than(struct team_port *port,
++						      struct team_port *cur)
++{
++	if (port->priority < cur->priority)
++		return true;
++	if (port->priority > cur->priority)
++		return false;
++	if (port->index < cur->index)
++		return true;
++	return false;
++}
++
++static void __team_queue_override_port_add(struct team *team,
++					   struct team_port *port)
++{
++	struct team_port *cur;
++	struct list_head *qom_list;
++	struct list_head *node;
++
++	if (!port->queue_id || !team_port_enabled(port))
++		return;
++
++	qom_list = __team_get_qom_list(team, port->queue_id);
++	node = qom_list;
++	list_for_each_entry(cur, qom_list, qom_list) {
++		if (team_queue_override_port_has_gt_prio_than(port, cur))
++			break;
++		node = &cur->qom_list;
++	}
++	list_add_tail_rcu(&port->qom_list, node);
++}
++
++static void __team_queue_override_enabled_check(struct team *team)
++{
++	struct team_port *port;
++	bool enabled = false;
++
++	list_for_each_entry(port, &team->port_list, list) {
++		if (!list_empty(&port->qom_list)) {
++			enabled = true;
++			break;
++		}
++	}
++	if (enabled == team->queue_override_enabled)
++		return;
++	netdev_dbg(team->dev, "%s queue override\n",
++		   enabled ? "Enabling" : "Disabling");
++	team->queue_override_enabled = enabled;
++}
++
++static void team_queue_override_port_refresh(struct team *team,
++					     struct team_port *port)
++{
++	__team_queue_override_port_del(team, port);
++	__team_queue_override_port_add(team, port);
++	__team_queue_override_enabled_check(team);
++}
++
++
+ /****************
+  * Port handling
+  ****************/
+@@ -688,6 +804,7 @@ static void team_port_enable(struct team *team,
+ 	hlist_add_head_rcu(&port->hlist,
+ 			   team_port_index_hash(team, port->index));
+ 	team_adjust_ops(team);
++	team_queue_override_port_refresh(team, port);
+ 	if (team->ops.port_enabled)
+ 		team->ops.port_enabled(team, port);
+ }
+@@ -716,6 +833,7 @@ static void team_port_disable(struct team *team,
+ 	hlist_del_rcu(&port->hlist);
+ 	__reconstruct_port_hlist(team, port->index);
+ 	port->index = -1;
++	team_queue_override_port_refresh(team, port);
+ 	__team_adjust_ops(team, team->en_port_count - 1);
+ 	/*
+ 	 * Wait until readers see adjusted ops. This ensures that
+@@ -881,6 +999,7 @@ static int team_port_add(struct team *team, struct net_device *port_dev)
+ 
+ 	port->dev = port_dev;
+ 	port->team = team;
++	INIT_LIST_HEAD(&port->qom_list);
+ 
+ 	port->orig.mtu = port_dev->mtu;
+ 	err = dev_set_mtu(port_dev, dev->mtu);
+@@ -1092,6 +1211,49 @@ static int team_user_linkup_en_option_set(struct team *team,
+ 	return 0;
+ }
+ 
++static int team_priority_option_get(struct team *team,
++				    struct team_gsetter_ctx *ctx)
++{
++	struct team_port *port = ctx->info->port;
++
++	ctx->data.s32_val = port->priority;
++	return 0;
++}
++
++static int team_priority_option_set(struct team *team,
++				    struct team_gsetter_ctx *ctx)
++{
++	struct team_port *port = ctx->info->port;
++
++	port->priority = ctx->data.s32_val;
++	team_queue_override_port_refresh(team, port);
++	return 0;
++}
++
++static int team_queue_id_option_get(struct team *team,
++				    struct team_gsetter_ctx *ctx)
++{
++	struct team_port *port = ctx->info->port;
++
++	ctx->data.u32_val = port->queue_id;
++	return 0;
++}
++
++static int team_queue_id_option_set(struct team *team,
++				    struct team_gsetter_ctx *ctx)
++{
++	struct team_port *port = ctx->info->port;
++
++	if (port->queue_id == ctx->data.u32_val)
++		return 0;
++	if (ctx->data.u32_val >= team->dev->real_num_tx_queues)
++		return -EINVAL;
++	port->queue_id = ctx->data.u32_val;
++	team_queue_override_port_refresh(team, port);
++	return 0;
++}
++
++
+ static const struct team_option team_options[] = {
+ 	{
+ 		.name = "mode",
+@@ -1120,6 +1282,20 @@ static const struct team_option team_options[] = {
+ 		.getter = team_user_linkup_en_option_get,
+ 		.setter = team_user_linkup_en_option_set,
+ 	},
++	{
++		.name = "priority",
++		.type = TEAM_OPTION_TYPE_S32,
++		.per_port = true,
++		.getter = team_priority_option_get,
++		.setter = team_priority_option_set,
++	},
++	{
++		.name = "queue_id",
++		.type = TEAM_OPTION_TYPE_U32,
++		.per_port = true,
++		.getter = team_queue_id_option_get,
++		.setter = team_queue_id_option_set,
++	},
+ };
+ 
+ static struct lock_class_key team_netdev_xmit_lock_key;
+@@ -1155,6 +1331,9 @@ static int team_init(struct net_device *dev)
+ 	for (i = 0; i < TEAM_PORT_HASHENTRIES; i++)
+ 		INIT_HLIST_HEAD(&team->en_port_hlist[i]);
+ 	INIT_LIST_HEAD(&team->port_list);
++	err = team_queue_override_init(team);
++	if (err)
++		goto err_team_queue_override_init;
+ 
+ 	team_adjust_ops(team);
+ 
+@@ -1170,6 +1349,8 @@ static int team_init(struct net_device *dev)
+ 	return 0;
+ 
+ err_options_register:
++	team_queue_override_fini(team);
++err_team_queue_override_init:
+ 	free_percpu(team->pcpu_stats);
+ 
+ 	return err;
+@@ -1187,6 +1368,7 @@ static void team_uninit(struct net_device *dev)
+ 
+ 	__team_change_mode(team, NULL); /* cleanup */
+ 	__team_options_unregister(team, team_options, ARRAY_SIZE(team_options));
++	team_queue_override_fini(team);
+ 	mutex_unlock(&team->lock);
+ }
+ 
+@@ -1216,10 +1398,12 @@ static int team_close(struct net_device *dev)
+ static netdev_tx_t team_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct team *team = netdev_priv(dev);
+-	bool tx_success = false;
++	bool tx_success;
+ 	unsigned int len = skb->len;
+ 
+-	tx_success = team->ops.transmit(team, skb);
++	tx_success = team_queue_override_transmit(team, skb);
++	if (!tx_success)
++		tx_success = team->ops.transmit(team, skb);
+ 	if (tx_success) {
+ 		struct team_pcpu_stats *pcpu_stats;
+ 
+@@ -1787,6 +1971,12 @@ static int team_nl_fill_one_option_get(struct sk_buff *skb, struct team *team,
+ 		    nla_put_flag(skb, TEAM_ATTR_OPTION_DATA))
+ 			goto nest_cancel;
+ 		break;
++	case TEAM_OPTION_TYPE_S32:
++		if (nla_put_u8(skb, TEAM_ATTR_OPTION_TYPE, NLA_S32))
++			goto nest_cancel;
++		if (nla_put_s32(skb, TEAM_ATTR_OPTION_DATA, ctx.data.s32_val))
++			goto nest_cancel;
++		break;
+ 	default:
+ 		BUG();
+ 	}
+@@ -1975,6 +2165,9 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 		case NLA_FLAG:
+ 			opt_type = TEAM_OPTION_TYPE_BOOL;
+ 			break;
++		case NLA_S32:
++			opt_type = TEAM_OPTION_TYPE_S32;
++			break;
+ 		default:
+ 			goto team_put;
+ 		}
+@@ -2031,6 +2224,9 @@ static int team_nl_cmd_options_set(struct sk_buff *skb, struct genl_info *info)
+ 			case TEAM_OPTION_TYPE_BOOL:
+ 				ctx.data.bool_val = attr_data ? true : false;
+ 				break;
++			case TEAM_OPTION_TYPE_S32:
++				ctx.data.s32_val = nla_get_s32(attr_data);
++				break;
+ 			default:
+ 				BUG();
+ 			}
+diff --git a/include/linux/if_team.h b/include/linux/if_team.h
+index 6960fc1..33fcc20 100644
+--- a/include/linux/if_team.h
++++ b/include/linux/if_team.h
+@@ -67,6 +67,9 @@ struct team_port {
+ 	struct netpoll *np;
+ #endif
+ 
++	s32 priority; /* lower number ~ higher priority */
++	u16 queue_id;
++	struct list_head qom_list; /* node in queue override mapping list */
+ 	long mode_priv[0];
+ };
+ 
+@@ -130,6 +133,7 @@ enum team_option_type {
+ 	TEAM_OPTION_TYPE_STRING,
+ 	TEAM_OPTION_TYPE_BINARY,
+ 	TEAM_OPTION_TYPE_BOOL,
++	TEAM_OPTION_TYPE_S32,
+ };
+ 
+ struct team_option_inst_info {
+@@ -146,6 +150,7 @@ struct team_gsetter_ctx {
+ 			u32 len;
+ 		} bin_val;
+ 		bool bool_val;
++		s32 s32_val;
+ 	} data;
+ 	struct team_option_inst_info *info;
+ };
+@@ -197,6 +202,8 @@ struct team {
+ 
+ 	const struct team_mode *mode;
+ 	struct team_mode_ops ops;
++	bool queue_override_enabled;
++	struct list_head *qom_lists; /* array of queue override mapping lists */
+ 	long mode_priv[TEAM_MODE_PRIV_LONGS];
+ };
+ 
+diff --git a/include/net/netlink.h b/include/net/netlink.h
+index 785f37a..09175d5 100644
+--- a/include/net/netlink.h
++++ b/include/net/netlink.h
+@@ -98,6 +98,10 @@
+  *   nla_put_u16(skb, type, value)	add u16 attribute to skb
+  *   nla_put_u32(skb, type, value)	add u32 attribute to skb
+  *   nla_put_u64(skb, type, value)	add u64 attribute to skb
++ *   nla_put_s8(skb, type, value)	add s8 attribute to skb
++ *   nla_put_s16(skb, type, value)	add s16 attribute to skb
++ *   nla_put_s32(skb, type, value)	add s32 attribute to skb
++ *   nla_put_s64(skb, type, value)	add s64 attribute to skb
+  *   nla_put_string(skb, type, str)	add string attribute to skb
+  *   nla_put_flag(skb, type)		add flag attribute to skb
+  *   nla_put_msecs(skb, type, jiffies)	add msecs attribute to skb
+@@ -121,6 +125,10 @@
+  *   nla_get_u16(nla)			get payload for a u16 attribute
+  *   nla_get_u32(nla)			get payload for a u32 attribute
+  *   nla_get_u64(nla)			get payload for a u64 attribute
++ *   nla_get_s8(nla)			get payload for a s8 attribute
++ *   nla_get_s16(nla)			get payload for a s16 attribute
++ *   nla_get_s32(nla)			get payload for a s32 attribute
++ *   nla_get_s64(nla)			get payload for a s64 attribute
+  *   nla_get_flag(nla)			return 1 if flag is true
+  *   nla_get_msecs(nla)			get payload for a msecs attribute
+  *
+@@ -160,6 +168,10 @@ enum {
+ 	NLA_NESTED_COMPAT,
+ 	NLA_NUL_STRING,
+ 	NLA_BINARY,
++	NLA_S8,
++	NLA_S16,
++	NLA_S32,
++	NLA_S64,
+ 	__NLA_TYPE_MAX,
+ };
+ 
+@@ -183,6 +195,8 @@ enum {
+  *    NLA_NESTED_COMPAT    Minimum length of structure payload
+  *    NLA_U8, NLA_U16,
+  *    NLA_U32, NLA_U64,
++ *    NLA_S8, NLA_S16,
++ *    NLA_S32, NLA_S64,
+  *    NLA_MSECS            Leaving the length field zero will verify the
+  *                         given type fits, using it verifies minimum length
+  *                         just like "All other"
+@@ -879,6 +893,50 @@ static inline int nla_put_le64(struct sk_buff *skb, int attrtype, __le64 value)
+ }
+ 
+ /**
++ * nla_put_s8 - Add a s8 netlink attribute to a socket buffer
++ * @skb: socket buffer to add attribute to
++ * @attrtype: attribute type
++ * @value: numeric value
++ */
++static inline int nla_put_s8(struct sk_buff *skb, int attrtype, s8 value)
++{
++	return nla_put(skb, attrtype, sizeof(s8), &value);
++}
++
++/**
++ * nla_put_s16 - Add a s16 netlink attribute to a socket buffer
++ * @skb: socket buffer to add attribute to
++ * @attrtype: attribute type
++ * @value: numeric value
++ */
++static inline int nla_put_s16(struct sk_buff *skb, int attrtype, s16 value)
++{
++	return nla_put(skb, attrtype, sizeof(s16), &value);
++}
++
++/**
++ * nla_put_s32 - Add a s32 netlink attribute to a socket buffer
++ * @skb: socket buffer to add attribute to
++ * @attrtype: attribute type
++ * @value: numeric value
++ */
++static inline int nla_put_s32(struct sk_buff *skb, int attrtype, s32 value)
++{
++	return nla_put(skb, attrtype, sizeof(s32), &value);
++}
++
++/**
++ * nla_put_s64 - Add a s64 netlink attribute to a socket buffer
++ * @skb: socket buffer to add attribute to
++ * @attrtype: attribute type
++ * @value: numeric value
++ */
++static inline int nla_put_s64(struct sk_buff *skb, int attrtype, s64 value)
++{
++	return nla_put(skb, attrtype, sizeof(s64), &value);
++}
++
++/**
+  * nla_put_string - Add a string netlink attribute to a socket buffer
+  * @skb: socket buffer to add attribute to
+  * @attrtype: attribute type
+@@ -994,6 +1052,46 @@ static inline __be64 nla_get_be64(const struct nlattr *nla)
+ }
+ 
+ /**
++ * nla_get_s32 - return payload of s32 attribute
++ * @nla: s32 netlink attribute
++ */
++static inline s32 nla_get_s32(const struct nlattr *nla)
++{
++	return *(s32 *) nla_data(nla);
++}
++
++/**
++ * nla_get_s16 - return payload of s16 attribute
++ * @nla: s16 netlink attribute
++ */
++static inline s16 nla_get_s16(const struct nlattr *nla)
++{
++	return *(s16 *) nla_data(nla);
++}
++
++/**
++ * nla_get_s8 - return payload of s8 attribute
++ * @nla: s8 netlink attribute
++ */
++static inline s8 nla_get_s8(const struct nlattr *nla)
++{
++	return *(s8 *) nla_data(nla);
++}
++
++/**
++ * nla_get_s64 - return payload of s64 attribute
++ * @nla: s64 netlink attribute
++ */
++static inline s64 nla_get_s64(const struct nlattr *nla)
++{
++	s64 tmp;
++
++	nla_memcpy(&tmp, nla, sizeof(tmp));
++
++	return tmp;
++}
++
++/**
+  * nla_get_flag - return payload of flag attribute
+  * @nla: flag netlink attribute
+  */
+
