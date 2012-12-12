@@ -1,4 +1,3 @@
 acpi-ec-add-delay-before-write.patch
 3.7.0-fat.patch
 3.7.0-Fix-DVB-ioctls-failing-if-frontend-open-closed-too-fast.patch
-nouveau_therm_alarms-3.7.patch

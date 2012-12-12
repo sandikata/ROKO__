@@ -1,0 +1,23 @@
+From 1c5a5eda712f004bf3266df60d36144466b5f1f2 Mon Sep 17 00:00:00 2001
+From: Alexandre Rostovtsev <tetromino@gentoo.org>
+Date: Wed, 8 Aug 2012 20:38:43 -0400
+Subject: [PATCH] utils: fix linking failure
+
+https://bugs.gentoo.org/show_bug.cgi?id=430360
+---
+ src/utils/Makefile.am |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/src/utils/Makefile.am b/src/utils/Makefile.am
+index e152373..da1b0cd 100644
+--- a/src/utils/Makefile.am
++++ b/src/utils/Makefile.am
+@@ -20,4 +20,4 @@ libutils_la_CPPFLAGS = \
+ 	-I${top_srcdir}/src/gconf-helpers \
+ 	-I${top_srcdir}/src
+ 
+-libutils_la_LIBADD = $(NMA_LIBS)
++libutils_la_LIBADD = $(NMA_LIBS) -lm
+-- 
+1.7.8.6
+
