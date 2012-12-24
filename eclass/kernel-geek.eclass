@@ -75,12 +75,13 @@ featureKnown() {
 			SRC_URI="${SRC_URI}
 				bld?		( ${bld_src} )"
 			;;
-		ck)	ck_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.bz2"
+		ck)	ck_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
 			if [ "${OVERRIDE_ck_src}" != "" ]; then
 				ck_src="${OVERRIDE_ck_src}"
 			fi
 			ck_url="http://users.on.net/~ckolivas/kernel"
 			HOMEPAGE="${HOMEPAGE} ${ck_url}"
+			DEPEND="${DEPEND} >=app-arch/lrzip-0.614"
 			SRC_URI="${SRC_URI}
 				ck?		( ${ck_src} )"
 			;;
@@ -189,6 +190,7 @@ ExtractApply() {
 	*.gz)  gunzip -dc    < "$patch" | $patch_command ${1+"$@"} ;;
 	*.bz)  bunzip -dc    < "$patch" | $patch_command ${1+"$@"} ;;
 	*.bz2) bunzip2 -dc   < "$patch" | $patch_command ${1+"$@"} ;;
+	*.lrz) lrunzip -dc   < "$patch" | $patch_command ${1+"$@"} ;;
 	*.xz)  xz -dc        < "$patch" | $patch_command ${1+"$@"} ;;
 	*.zip) unzip -d      < "$patch" | $patch_command ${1+"$@"} ;;
 	*.Z)   uncompress -c < "$patch" | $patch_command ${1+"$@"} ;;
@@ -355,7 +357,7 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				ApplyPatch "${FILESDIR}/gentoo-larry-logo-v2.patch" "logo - CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/larry.png";
 				ApplyPatch "${FILESDIR}/linux-3.6.6-colored-printk.patch" "Colored printk"
 				;;
-			ck)	ApplyPatch "$DISTDIR/patch-${ck_ver}.bz2" "Con Kolivas high performance patchset - ${ck_url}";
+			ck)	ApplyPatch "$DISTDIR/patch-${ck_ver/KMV/$KMV}.lrz" "Con Kolivas high performance patchset - ${ck_url}";
 				if [ -d "${FILESDIR}/${PV}/$Current_Patch" ] ; then
 					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ] ; then
 						ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "CK Fix";

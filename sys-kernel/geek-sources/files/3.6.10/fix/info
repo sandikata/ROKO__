@@ -1,5 +1,0 @@
-acpi-ec-add-delay-before-write.patch Oops: ACPI: EC: input buffer is not empty, aborting transaction - 2.6.32 regression https://bugzilla.kernel.org/show_bug.cgi?id=14733#c41
-gpio-ich_share_ownership_of_GPIO_groups_3.6.patch gpio-ich: Share ownership of GPIO groups http://git.kernel.org/?p=linux/kernel/git/torvalds/linux.git;a=patch;h=4f600ada70beeb1dfe08e11e871bf31015aa0a3d
-fix module initialisation https://bugs.archlinux.org/task/32122
-    module-symbol-waiting-3.6.patch
-    module-init-wait-3.6.patch
