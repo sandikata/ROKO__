@@ -1,0 +1,1630 @@
+From cb6f23ee9601297c3c70d0cfe3d77dfde9bd119d Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Fri, 5 Oct 2012 13:54:56 +0800
+Subject: [PATCH 01/17] efi: Add support for a UEFI variable filesystem
+
+The existing EFI variables code only supports variables of up to 1024
+bytes. This limitation existed in version 0.99 of the EFI specification,
+but was removed before any full releases. Since variables can now be
+larger than a single page, sysfs isn't the best interface for this. So,
+instead, let's add a filesystem. Variables can be read, written and
+created, with the first 4 bytes of each variable representing its UEFI
+attributes. The create() method doesn't actually commit to flash since
+zero-length variables can't exist per-spec.
+
+Updates from Jeremy Kerr <jeremy.kerr@canonical.com>.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 384 ++++++++++++++++++++++++++++++++++++++++++++-
+ include/linux/efi.h        |   5 +
+ 2 files changed, 383 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index d10c987..b605c48 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -80,6 +80,10 @@
+ #include <linux/slab.h>
+ #include <linux/pstore.h>
+ 
++#include <linux/fs.h>
++#include <linux/ramfs.h>
++#include <linux/pagemap.h>
++
+ #include <asm/uaccess.h>
+ 
+ #define EFIVARS_VERSION "0.08"
+@@ -91,6 +95,7 @@ MODULE_LICENSE("GPL");
+ MODULE_VERSION(EFIVARS_VERSION);
+ 
+ #define DUMP_NAME_LEN 52
++#define GUID_LEN 37
+ 
+ /*
+  * The maximum size of VariableName + Data = 1024
+@@ -108,7 +113,6 @@ struct efi_variable {
+ 	__u32         Attributes;
+ } __attribute__((packed));
+ 
+-
+ struct efivar_entry {
+ 	struct efivars *efivars;
+ 	struct efi_variable var;
+@@ -122,6 +126,9 @@ struct efivar_attribute {
+ 	ssize_t (*store)(struct efivar_entry *entry, const char *buf, size_t count);
+ };
+ 
++static struct efivars __efivars;
++static struct efivar_operations ops;
++
+ #define PSTORE_EFI_ATTRIBUTES \
+ 	(EFI_VARIABLE_NON_VOLATILE | \
+ 	 EFI_VARIABLE_BOOTSERVICE_ACCESS | \
+@@ -629,14 +636,380 @@ static struct kobj_type efivar_ktype = {
+ 	.default_attrs = def_attrs,
+ };
+ 
+-static struct pstore_info efi_pstore_info;
+-
+ static inline void
+ efivar_unregister(struct efivar_entry *var)
+ {
+ 	kobject_put(&var->kobj);
+ }
+ 
++static int efivarfs_file_open(struct inode *inode, struct file *file)
++{
++	file->private_data = inode->i_private;
++	return 0;
++}
++
++static ssize_t efivarfs_file_write(struct file *file,
++		const char __user *userbuf, size_t count, loff_t *ppos)
++{
++	struct efivar_entry *var = file->private_data;
++	struct efivars *efivars;
++	efi_status_t status;
++	void *data;
++	u32 attributes;
++	struct inode *inode = file->f_mapping->host;
++	int datasize = count - sizeof(attributes);
++
++	if (count < sizeof(attributes))
++		return -EINVAL;
++
++	data = kmalloc(datasize, GFP_KERNEL);
++
++	if (!data)
++		return -ENOMEM;
++
++	efivars = var->efivars;
++
++	if (copy_from_user(&attributes, userbuf, sizeof(attributes))) {
++		count = -EFAULT;
++		goto out;
++	}
++
++	if (attributes & ~(EFI_VARIABLE_MASK)) {
++		count = -EINVAL;
++		goto out;
++	}
++
++	if (copy_from_user(data, userbuf + sizeof(attributes), datasize)) {
++		count = -EFAULT;
++		goto out;
++	}
++
++	if (validate_var(&var->var, data, datasize) == false) {
++		count = -EINVAL;
++		goto out;
++	}
++
++	status = efivars->ops->set_variable(var->var.VariableName,
++					    &var->var.VendorGuid,
++					    attributes, datasize,
++					    data);
++
++	switch (status) {
++	case EFI_SUCCESS:
++		mutex_lock(&inode->i_mutex);
++		i_size_write(inode, count);
++		mutex_unlock(&inode->i_mutex);
++		break;
++	case EFI_INVALID_PARAMETER:
++		count = -EINVAL;
++		break;
++	case EFI_OUT_OF_RESOURCES:
++		count = -ENOSPC;
++		break;
++	case EFI_DEVICE_ERROR:
++		count = -EIO;
++		break;
++	case EFI_WRITE_PROTECTED:
++		count = -EROFS;
++		break;
++	case EFI_SECURITY_VIOLATION:
++		count = -EACCES;
++		break;
++	case EFI_NOT_FOUND:
++		count = -ENOENT;
++		break;
++	default:
++		count = -EINVAL;
++		break;
++	}
++out:
++	kfree(data);
++
++	return count;
++}
++
++static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
++		size_t count, loff_t *ppos)
++{
++	struct efivar_entry *var = file->private_data;
++	struct efivars *efivars = var->efivars;
++	efi_status_t status;
++	unsigned long datasize = 0;
++	u32 attributes;
++	void *data;
++	ssize_t size;
++
++	status = efivars->ops->get_variable(var->var.VariableName,
++					    &var->var.VendorGuid,
++					    &attributes, &datasize, NULL);
++
++	if (status != EFI_BUFFER_TOO_SMALL)
++		return 0;
++
++	data = kmalloc(datasize + 4, GFP_KERNEL);
++
++	if (!data)
++		return 0;
++
++	status = efivars->ops->get_variable(var->var.VariableName,
++					    &var->var.VendorGuid,
++					    &attributes, &datasize,
++					    (data + 4));
++
++	if (status != EFI_SUCCESS)
++		return 0;
++
++	memcpy(data, &attributes, 4);
++	size = simple_read_from_buffer(userbuf, count, ppos,
++					data, datasize + 4);
++	kfree(data);
++
++	return size;
++}
++
++static void efivarfs_evict_inode(struct inode *inode)
++{
++	clear_inode(inode);
++}
++
++static const struct super_operations efivarfs_ops = {
++	.statfs = simple_statfs,
++	.drop_inode = generic_delete_inode,
++	.evict_inode = efivarfs_evict_inode,
++	.show_options = generic_show_options,
++};
++
++static struct super_block *efivarfs_sb;
++
++static const struct inode_operations efivarfs_dir_inode_operations;
++
++static const struct file_operations efivarfs_file_operations = {
++	.open	= efivarfs_file_open,
++	.read	= efivarfs_file_read,
++	.write	= efivarfs_file_write,
++	.llseek	= no_llseek,
++};
++
++static struct inode *efivarfs_get_inode(struct super_block *sb,
++				const struct inode *dir, int mode, dev_t dev)
++{
++	struct inode *inode = new_inode(sb);
++
++	if (inode) {
++		inode->i_ino = get_next_ino();
++		inode->i_uid = inode->i_gid = 0;
++		inode->i_mode = mode;
++		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
++		switch (mode & S_IFMT) {
++		case S_IFREG:
++			inode->i_fop = &efivarfs_file_operations;
++			break;
++		case S_IFDIR:
++			inode->i_op = &efivarfs_dir_inode_operations;
++			inode->i_fop = &simple_dir_operations;
++			inc_nlink(inode);
++			break;
++		}
++	}
++	return inode;
++}
++
++static void efivarfs_hex_to_guid(const char *str, efi_guid_t *guid)
++{
++	guid->b[0] = hex_to_bin(str[6]) << 4 | hex_to_bin(str[7]);
++	guid->b[1] = hex_to_bin(str[4]) << 4 | hex_to_bin(str[5]);
++	guid->b[2] = hex_to_bin(str[2]) << 4 | hex_to_bin(str[3]);
++	guid->b[3] = hex_to_bin(str[0]) << 4 | hex_to_bin(str[1]);
++	guid->b[4] = hex_to_bin(str[11]) << 4 | hex_to_bin(str[12]);
++	guid->b[5] = hex_to_bin(str[9]) << 4 | hex_to_bin(str[10]);
++	guid->b[6] = hex_to_bin(str[16]) << 4 | hex_to_bin(str[17]);
++	guid->b[7] = hex_to_bin(str[14]) << 4 | hex_to_bin(str[15]);
++	guid->b[8] = hex_to_bin(str[19]) << 4 | hex_to_bin(str[20]);
++	guid->b[9] = hex_to_bin(str[21]) << 4 | hex_to_bin(str[22]);
++	guid->b[10] = hex_to_bin(str[24]) << 4 | hex_to_bin(str[25]);
++	guid->b[11] = hex_to_bin(str[26]) << 4 | hex_to_bin(str[27]);
++	guid->b[12] = hex_to_bin(str[28]) << 4 | hex_to_bin(str[29]);
++	guid->b[13] = hex_to_bin(str[30]) << 4 | hex_to_bin(str[31]);
++	guid->b[14] = hex_to_bin(str[32]) << 4 | hex_to_bin(str[33]);
++	guid->b[15] = hex_to_bin(str[34]) << 4 | hex_to_bin(str[35]);
++}
++
++static int efivarfs_create(struct inode *dir, struct dentry *dentry,
++			  umode_t mode, bool excl)
++{
++	struct inode *inode = efivarfs_get_inode(dir->i_sb, dir, mode, 0);
++	struct efivars *efivars = &__efivars;
++	struct efivar_entry *var;
++	int namelen, i = 0, err = 0;
++
++	if (dentry->d_name.len < 38)
++		return -EINVAL;
++
++	if (!inode)
++		return -ENOSPC;
++
++	var = kzalloc(sizeof(struct efivar_entry), GFP_KERNEL);
++
++	if (!var)
++		return -ENOMEM;
++
++	namelen = dentry->d_name.len - GUID_LEN;
++
++	efivarfs_hex_to_guid(dentry->d_name.name + namelen + 1,
++			&var->var.VendorGuid);
++
++	for (i = 0; i < namelen; i++)
++		var->var.VariableName[i] = dentry->d_name.name[i];
++
++	var->var.VariableName[i] = '\0';
++
++	inode->i_private = var;
++	var->efivars = efivars;
++	var->kobj.kset = efivars->kset;
++
++	err = kobject_init_and_add(&var->kobj, &efivar_ktype, NULL, "%s",
++			     dentry->d_name.name);
++	if (err)
++		goto out;
++
++	kobject_uevent(&var->kobj, KOBJ_ADD);
++	spin_lock(&efivars->lock);
++	list_add(&var->list, &efivars->list);
++	spin_unlock(&efivars->lock);
++	d_instantiate(dentry, inode);
++	dget(dentry);
++out:
++	if (err)
++		kfree(var);
++	return err;
++}
++
++static int efivarfs_unlink(struct inode *dir, struct dentry *dentry)
++{
++	struct efivar_entry *var = dentry->d_inode->i_private;
++	struct efivars *efivars = var->efivars;
++	efi_status_t status;
++
++	spin_lock(&efivars->lock);
++
++	status = efivars->ops->set_variable(var->var.VariableName,
++					    &var->var.VendorGuid,
++					    0, 0, NULL);
++
++	if (status == EFI_SUCCESS || status == EFI_NOT_FOUND) {
++		list_del(&var->list);
++		spin_unlock(&efivars->lock);
++		efivar_unregister(var);
++		drop_nlink(dir);
++		dput(dentry);
++		return 0;
++	}
++
++	spin_unlock(&efivars->lock);
++	return -EINVAL;
++};
++
++int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
++{
++	struct inode *inode = NULL;
++	struct dentry *root;
++	struct efivar_entry *entry, *n;
++	struct efivars *efivars = &__efivars;
++	int err;
++
++	efivarfs_sb = sb;
++
++	sb->s_maxbytes          = MAX_LFS_FILESIZE;
++	sb->s_blocksize         = PAGE_CACHE_SIZE;
++	sb->s_blocksize_bits    = PAGE_CACHE_SHIFT;
++	sb->s_magic             = PSTOREFS_MAGIC;
++	sb->s_op                = &efivarfs_ops;
++	sb->s_time_gran         = 1;
++
++	inode = efivarfs_get_inode(sb, NULL, S_IFDIR | 0755, 0);
++	if (!inode) {
++		err = -ENOMEM;
++		goto fail;
++	}
++	inode->i_op = &efivarfs_dir_inode_operations;
++
++	root = d_make_root(inode);
++	sb->s_root = root;
++	if (!root) {
++		err = -ENOMEM;
++		goto fail;
++	}
++
++	list_for_each_entry_safe(entry, n, &efivars->list, list) {
++		struct inode *inode;
++		struct dentry *dentry, *root = efivarfs_sb->s_root;
++		char *name;
++		unsigned long size = 0;
++		int len, i;
++
++		len = utf16_strlen(entry->var.VariableName);
++
++		/* GUID plus trailing NULL */
++		name = kmalloc(len + 38, GFP_ATOMIC);
++
++		for (i = 0; i < len; i++)
++			name[i] = entry->var.VariableName[i] & 0xFF;
++
++		name[len] = '-';
++
++		efi_guid_unparse(&entry->var.VendorGuid, name + len + 1);
++
++		name[len+GUID_LEN] = '\0';
++
++		inode = efivarfs_get_inode(efivarfs_sb, root->d_inode,
++					  S_IFREG | 0644, 0);
++		dentry = d_alloc_name(root, name);
++
++		efivars->ops->get_variable(entry->var.VariableName,
++					   &entry->var.VendorGuid,
++					   &entry->var.Attributes,
++					   &size,
++					   NULL);
++
++		mutex_lock(&inode->i_mutex);
++		inode->i_private = entry;
++		i_size_write(inode, size+4);
++		mutex_unlock(&inode->i_mutex);
++		d_add(dentry, inode);
++	}
++
++	return 0;
++fail:
++	iput(inode);
++	return err;
++}
++
++static struct dentry *efivarfs_mount(struct file_system_type *fs_type,
++				    int flags, const char *dev_name, void *data)
++{
++	return mount_single(fs_type, flags, data, efivarfs_fill_super);
++}
++
++static void efivarfs_kill_sb(struct super_block *sb)
++{
++	kill_litter_super(sb);
++	efivarfs_sb = NULL;
++}
++
++static struct file_system_type efivarfs_type = {
++	.name    = "efivarfs",
++	.mount   = efivarfs_mount,
++	.kill_sb = efivarfs_kill_sb,
++};
++
++static const struct inode_operations efivarfs_dir_inode_operations = {
++	.lookup = simple_lookup,
++	.unlink = efivarfs_unlink,
++	.create = efivarfs_create,
++};
++
++static struct pstore_info efi_pstore_info;
++
+ #ifdef CONFIG_PSTORE
+ 
+ static int efi_pstore_open(struct pstore_info *psi)
+@@ -1198,6 +1571,8 @@ int register_efivars(struct efivars *efivars,
+ 		pstore_register(&efivars->efi_pstore_info);
+ 	}
+ 
++	register_filesystem(&efivarfs_type);
++
+ out:
+ 	kfree(variable_name);
+ 
+@@ -1205,9 +1580,6 @@ out:
+ }
+ EXPORT_SYMBOL_GPL(register_efivars);
+ 
+-static struct efivars __efivars;
+-static struct efivar_operations ops;
+-
+ /*
+  * For now we register the efi subsystem with the firmware subsystem
+  * and the vars subsystem with the efi subsystem.  In the future, it
+diff --git a/include/linux/efi.h b/include/linux/efi.h
+index 8670eb1..b2af157 100644
+--- a/include/linux/efi.h
++++ b/include/linux/efi.h
+@@ -29,7 +29,12 @@
+ #define EFI_UNSUPPORTED		( 3 | (1UL << (BITS_PER_LONG-1)))
+ #define EFI_BAD_BUFFER_SIZE     ( 4 | (1UL << (BITS_PER_LONG-1)))
+ #define EFI_BUFFER_TOO_SMALL	( 5 | (1UL << (BITS_PER_LONG-1)))
++#define EFI_NOT_READY		( 6 | (1UL << (BITS_PER_LONG-1)))
++#define EFI_DEVICE_ERROR	( 7 | (1UL << (BITS_PER_LONG-1)))
++#define EFI_WRITE_PROTECTED	( 8 | (1UL << (BITS_PER_LONG-1)))
++#define EFI_OUT_OF_RESOURCES	( 9 | (1UL << (BITS_PER_LONG-1)))
+ #define EFI_NOT_FOUND		(14 | (1UL << (BITS_PER_LONG-1)))
++#define EFI_SECURITY_VIOLATION	(26 | (1UL << (BITS_PER_LONG-1)))
+ 
+ typedef unsigned long efi_status_t;
+ typedef u8 efi_bool_t;
+-- 
+1.7.12.1
+
+
+From 2fc1dc88e97665c70f203f0132232ea55e8dd7eb Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Fri, 5 Oct 2012 13:54:56 +0800
+Subject: [PATCH 02/17] efi: Handle deletions and size changes in
+ efivarfs_write_file
+
+A write to an efivarfs file will not always result in a variable of
+'count' size after the EFI SetVariable() call. We may have appended to
+the existing data (ie, with the EFI_VARIABLE_APPEND_WRITE attribute), or
+even have deleted the variable (with an authenticated variable update,
+with a zero datasize).
+
+This change re-reads the updated variable from firmware, to check for
+size changes and deletions. In the latter case, we need to drop the
+dentry.
+
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 49 ++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 39 insertions(+), 10 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index b605c48..d7658b4 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -658,6 +658,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 	u32 attributes;
+ 	struct inode *inode = file->f_mapping->host;
+ 	int datasize = count - sizeof(attributes);
++	unsigned long newdatasize;
+ 
+ 	if (count < sizeof(attributes))
+ 		return -EINVAL;
+@@ -696,32 +697,60 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 
+ 	switch (status) {
+ 	case EFI_SUCCESS:
+-		mutex_lock(&inode->i_mutex);
+-		i_size_write(inode, count);
+-		mutex_unlock(&inode->i_mutex);
+ 		break;
+ 	case EFI_INVALID_PARAMETER:
+ 		count = -EINVAL;
+-		break;
++		goto out;
+ 	case EFI_OUT_OF_RESOURCES:
+ 		count = -ENOSPC;
+-		break;
++		goto out;
+ 	case EFI_DEVICE_ERROR:
+ 		count = -EIO;
+-		break;
++		goto out;
+ 	case EFI_WRITE_PROTECTED:
+ 		count = -EROFS;
+-		break;
++		goto out;
+ 	case EFI_SECURITY_VIOLATION:
+ 		count = -EACCES;
+-		break;
++		goto out;
+ 	case EFI_NOT_FOUND:
+ 		count = -ENOENT;
+-		break;
++		goto out;
+ 	default:
+ 		count = -EINVAL;
+-		break;
++		goto out;
+ 	}
++
++	/*
++	 * Writing to the variable may have caused a change in size (which
++	 * could either be an append or an overwrite), or the variable to be
++	 * deleted. Perform a GetVariable() so we can tell what actually
++	 * happened.
++	 */
++	newdatasize = 0;
++	status = efivars->ops->get_variable(var->var.VariableName,
++					    &var->var.VendorGuid,
++					    NULL, &newdatasize,
++					    NULL);
++
++	if (status == EFI_BUFFER_TOO_SMALL) {
++		mutex_lock(&inode->i_mutex);
++		i_size_write(inode, newdatasize + sizeof(attributes));
++		mutex_unlock(&inode->i_mutex);
++
++	} else if (status == EFI_NOT_FOUND) {
++		spin_lock(&efivars->lock);
++		list_del(&var->list);
++		spin_unlock(&efivars->lock);
++		efivar_unregister(var);
++		drop_nlink(inode);
++		dput(file->f_dentry);
++
++	} else {
++		pr_warn("efivarfs: inconsistent EFI variable implementation? "
++				"status = %lx\n", status);
++	}
++
+ out:
+ 	kfree(data);
+ 
+-- 
+1.7.12.1
+
+
+From c98611fc95672862950c9bc4d6a3a4c4453a3c3e Mon Sep 17 00:00:00 2001
+From: "Lee, Chun-Yi" <joeyli.kernel@gmail.com>
+Date: Fri, 5 Oct 2012 13:54:56 +0800
+Subject: [PATCH 03/17] efi: add efivars kobject to efi sysfs folder
+
+UEFI variable filesystem need a new mount point, so this patch add
+efivars kobject to efi_kobj for create a /sys/firmware/efi/efivars
+folder.
+
+Cc: Matthew Garrett <mjg@redhat.com>
+Cc: H. Peter Anvin <hpa@zytor.com>
+Signed-off-by: Lee, Chun-Yi <jlee@suse.com>
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 9 +++++++++
+ include/linux/efi.h        | 1 +
+ 2 files changed, 10 insertions(+)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index d7658b4..6793965 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -1527,6 +1527,7 @@ void unregister_efivars(struct efivars *efivars)
+ 		sysfs_remove_bin_file(&efivars->kset->kobj, efivars->del_var);
+ 	kfree(efivars->new_var);
+ 	kfree(efivars->del_var);
++	kobject_put(efivars->kobject);
+ 	kset_unregister(efivars->kset);
+ }
+ EXPORT_SYMBOL_GPL(unregister_efivars);
+@@ -1558,6 +1559,14 @@ int register_efivars(struct efivars *efivars,
+ 		goto out;
+ 	}
+ 
++	efivars->kobject = kobject_create_and_add("efivars", parent_kobj);
++	if (!efivars->kobject) {
++		pr_err("efivars: Subsystem registration failed.\n");
++		error = -ENOMEM;
++		kset_unregister(efivars->kset);
++		goto out;
++	}
++
+ 	/*
+ 	 * Per EFI spec, the maximum storage allocated for both
+ 	 * the variable name and variable data is 1024 bytes.
+diff --git a/include/linux/efi.h b/include/linux/efi.h
+index b2af157..337aefb 100644
+--- a/include/linux/efi.h
++++ b/include/linux/efi.h
+@@ -662,6 +662,7 @@ struct efivars {
+ 	spinlock_t lock;
+ 	struct list_head list;
+ 	struct kset *kset;
++	struct kobject *kobject;
+ 	struct bin_attribute *new_var, *del_var;
+ 	const struct efivar_operations *ops;
+ 	struct efivar_entry *walk_entry;
+-- 
+1.7.12.1
+
+
+From 8ef5f49da57087022f2031820ceb3b1c6101d76c Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Thu, 4 Oct 2012 09:57:31 +0100
+Subject: [PATCH 04/17] efivarfs: Add documentation for the EFI variable
+ filesystem
+
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ Documentation/filesystems/00-INDEX     |  2 ++
+ Documentation/filesystems/efivarfs.txt | 16 ++++++++++++++++
+ 2 files changed, 18 insertions(+)
+ create mode 100644 Documentation/filesystems/efivarfs.txt
+
+diff --git a/Documentation/filesystems/00-INDEX b/Documentation/filesystems/00-INDEX
+index 8c624a1..7b52ba7 100644
+--- a/Documentation/filesystems/00-INDEX
++++ b/Documentation/filesystems/00-INDEX
+@@ -38,6 +38,8 @@ dnotify_test.c
+ 	- example program for dnotify
+ ecryptfs.txt
+ 	- docs on eCryptfs: stacked cryptographic filesystem for Linux.
++efivarfs.txt
++	- info for the efivarfs filesystem.
+ exofs.txt
+ 	- info, usage, mount options, design about EXOFS.
+ ext2.txt
+diff --git a/Documentation/filesystems/efivarfs.txt b/Documentation/filesystems/efivarfs.txt
+new file mode 100644
+index 0000000..c477af0
+--- /dev/null
++++ b/Documentation/filesystems/efivarfs.txt
+@@ -0,0 +1,16 @@
++
++efivarfs - a (U)EFI variable filesystem
++
++The efivarfs filesystem was created to address the shortcomings of
++using entries in sysfs to maintain EFI variables. The old sysfs EFI
++variables code only supported variables of up to 1024 bytes. This
++limitation existed in version 0.99 of the EFI specification, but was
++removed before any full releases. Since variables can now be larger
++than a single page, sysfs isn't the best interface for this.
++
++Variables can be created, deleted and modified with the efivarfs
++filesystem.
++
++efivarfs is typically mounted like this,
++
++	mount -t efivarfs none /sys/firmware/efi/efivars
+-- 
+1.7.12.1
+
+
+From f69c39248e2f1eebf24f5ee55139602c56d15aec Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 11 Oct 2012 11:32:17 +0100
+Subject: [PATCH 05/17] efivarfs: efivarfs_file_read ensure we free data in
+ error paths
+
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Acked-by: Matthew Garrett <mjg@redhat.com>
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 6793965..b7c9a32 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -766,7 +766,7 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	unsigned long datasize = 0;
+ 	u32 attributes;
+ 	void *data;
+-	ssize_t size;
++	ssize_t size = 0;
+ 
+ 	status = efivars->ops->get_variable(var->var.VariableName,
+ 					    &var->var.VendorGuid,
+@@ -784,13 +784,13 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 					    &var->var.VendorGuid,
+ 					    &attributes, &datasize,
+ 					    (data + 4));
+-
+ 	if (status != EFI_SUCCESS)
+-		return 0;
++		goto out_free;
+ 
+ 	memcpy(data, &attributes, 4);
+ 	size = simple_read_from_buffer(userbuf, count, ppos,
+ 					data, datasize + 4);
++out_free:
+ 	kfree(data);
+ 
+ 	return size;
+-- 
+1.7.12.1
+
+
+From 429136e16c7c43bbebb8b8030203161a2d3fc3ce Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 11 Oct 2012 11:32:18 +0100
+Subject: [PATCH 06/17] efivarfs: efivarfs_create() ensure we drop our
+ reference on inode on error
+
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Acked-by: Matthew Garrett <mjg@redhat.com>
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index b7c9a32..6e5f367 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -866,7 +866,7 @@ static void efivarfs_hex_to_guid(const char *str, efi_guid_t *guid)
+ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 			  umode_t mode, bool excl)
+ {
+-	struct inode *inode = efivarfs_get_inode(dir->i_sb, dir, mode, 0);
++	struct inode *inode;
+ 	struct efivars *efivars = &__efivars;
+ 	struct efivar_entry *var;
+ 	int namelen, i = 0, err = 0;
+@@ -874,13 +874,15 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 	if (dentry->d_name.len < 38)
+ 		return -EINVAL;
+ 
++	inode = efivarfs_get_inode(dir->i_sb, dir, mode, 0);
+ 	if (!inode)
+ 		return -ENOSPC;
+ 
+ 	var = kzalloc(sizeof(struct efivar_entry), GFP_KERNEL);
+-
+-	if (!var)
+-		return -ENOMEM;
++	if (!var) {
++		err = -ENOMEM;
++		goto out;
++	}
+ 
+ 	namelen = dentry->d_name.len - GUID_LEN;
+ 
+@@ -908,8 +910,10 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 	d_instantiate(dentry, inode);
+ 	dget(dentry);
+ out:
+-	if (err)
++	if (err) {
+ 		kfree(var);
++		iput(inode);
++	}
+ 	return err;
+ }
+ 
+-- 
+1.7.12.1
+
+
+From 1a19268e8a4bae43c1feb3f71ee468c6bc70aca6 Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 11 Oct 2012 11:32:19 +0100
+Subject: [PATCH 07/17] efivarfs: efivarfs_fill_super() fix inode reference
+ counts
+
+When d_make_root() fails it will automatically drop the reference
+on the root inode.  We should not be doing so as well.
+
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Acked-by: Matthew Garrett <mjg@redhat.com>
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 16 ++++------------
+ 1 file changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 6e5f367..adfc486 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -948,7 +948,6 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	struct dentry *root;
+ 	struct efivar_entry *entry, *n;
+ 	struct efivars *efivars = &__efivars;
+-	int err;
+ 
+ 	efivarfs_sb = sb;
+ 
+@@ -960,18 +959,14 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	sb->s_time_gran         = 1;
+ 
+ 	inode = efivarfs_get_inode(sb, NULL, S_IFDIR | 0755, 0);
+-	if (!inode) {
+-		err = -ENOMEM;
+-		goto fail;
+-	}
++	if (!inode)
++		return -ENOMEM;
+ 	inode->i_op = &efivarfs_dir_inode_operations;
+ 
+ 	root = d_make_root(inode);
+ 	sb->s_root = root;
+-	if (!root) {
+-		err = -ENOMEM;
+-		goto fail;
+-	}
++	if (!root)
++		return -ENOMEM;
+ 
+ 	list_for_each_entry_safe(entry, n, &efivars->list, list) {
+ 		struct inode *inode;
+@@ -1012,9 +1007,6 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	}
+ 
+ 	return 0;
+-fail:
+-	iput(inode);
+-	return err;
+ }
+ 
+ static struct dentry *efivarfs_mount(struct file_system_type *fs_type,
+-- 
+1.7.12.1
+
+
+From f0d90a4024493aed6fc77ce5cd3b93f278fed9c0 Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 11 Oct 2012 11:32:20 +0100
+Subject: [PATCH 08/17] efivarfs: efivarfs_fill_super() ensure we free our
+ temporary name
+
+d_alloc_name() copies the passed name to new storage, once complete we
+no longer need our name.
+
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Acked-by: Matthew Garrett <mjg@redhat.com>
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index adfc486..36b3dd6 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -992,6 +992,8 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 		inode = efivarfs_get_inode(efivarfs_sb, root->d_inode,
+ 					  S_IFREG | 0644, 0);
+ 		dentry = d_alloc_name(root, name);
++		/* copied by the above to local storage in the dentry. */
++		kfree(name);
+ 
+ 		efivars->ops->get_variable(entry->var.VariableName,
+ 					   &entry->var.VendorGuid,
+-- 
+1.7.12.1
+
+
+From c4cf244c318218153200d0011d8ef0ebcf3146ea Mon Sep 17 00:00:00 2001
+From: Andy Whitcroft <apw@canonical.com>
+Date: Thu, 11 Oct 2012 11:32:21 +0100
+Subject: [PATCH 09/17] efivarfs: efivarfs_fill_super() ensure we clean up
+ correctly on error
+
+Ensure we free both the name and inode on error when building the
+individual variables.
+
+Signed-off-by: Andy Whitcroft <apw@canonical.com>
+Acked-by: Matthew Garrett <mjg@redhat.com>
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 36b3dd6..216086d 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -948,6 +948,7 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	struct dentry *root;
+ 	struct efivar_entry *entry, *n;
+ 	struct efivars *efivars = &__efivars;
++	char *name;
+ 
+ 	efivarfs_sb = sb;
+ 
+@@ -969,16 +970,18 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 		return -ENOMEM;
+ 
+ 	list_for_each_entry_safe(entry, n, &efivars->list, list) {
+-		struct inode *inode;
+ 		struct dentry *dentry, *root = efivarfs_sb->s_root;
+-		char *name;
+ 		unsigned long size = 0;
+ 		int len, i;
+ 
++		inode = NULL;
++
+ 		len = utf16_strlen(entry->var.VariableName);
+ 
+ 		/* GUID plus trailing NULL */
+ 		name = kmalloc(len + 38, GFP_ATOMIC);
++		if (!name)
++			goto fail;
+ 
+ 		for (i = 0; i < len; i++)
+ 			name[i] = entry->var.VariableName[i] & 0xFF;
+@@ -991,7 +994,13 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 
+ 		inode = efivarfs_get_inode(efivarfs_sb, root->d_inode,
+ 					  S_IFREG | 0644, 0);
++		if (!inode)
++			goto fail_name;
++
+ 		dentry = d_alloc_name(root, name);
++		if (!dentry)
++			goto fail_inode;
++
+ 		/* copied by the above to local storage in the dentry. */
+ 		kfree(name);
+ 
+@@ -1009,6 +1018,13 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	}
+ 
+ 	return 0;
++
++fail_inode:
++	iput(inode);
++fail_name:
++	kfree(name);
++fail:
++	return -ENOMEM;
+ }
+ 
+ static struct dentry *efivarfs_mount(struct file_system_type *fs_type,
+-- 
+1.7.12.1
+
+
+From d3b7165568bcb50e4526c3dadda59e43f6681bc0 Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Thu, 11 Oct 2012 21:19:11 +0800
+Subject: [PATCH 10/17] efivarfs: Implement exclusive access for
+ {get,set}_variable
+
+Currently, efivarfs does not enforce exclusion over the get_variable and
+set_variable operations. Section 7.1 of UEFI requires us to only allow a
+single processor to enter {get,set}_variable services at once.
+
+This change acquires the efivars->lock over calls to these operations
+from the efivarfs paths.
+
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 68 +++++++++++++++++++++++++++++-----------------
+ 1 file changed, 43 insertions(+), 25 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 216086d..d478c56 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -690,35 +690,45 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 		goto out;
+ 	}
+ 
++	/*
++	 * The lock here protects the get_variable call, the conditional
++	 * set_variable call, and removal of the variable from the efivars
++	 * list (in the case of an authenticated delete).
++	 */
++	spin_lock(&efivars->lock);
++
+ 	status = efivars->ops->set_variable(var->var.VariableName,
+ 					    &var->var.VendorGuid,
+ 					    attributes, datasize,
+ 					    data);
+ 
+-	switch (status) {
+-	case EFI_SUCCESS:
+-		break;
+-	case EFI_INVALID_PARAMETER:
+-		count = -EINVAL;
+-		goto out;
+-	case EFI_OUT_OF_RESOURCES:
+-		count = -ENOSPC;
+-		goto out;
+-	case EFI_DEVICE_ERROR:
+-		count = -EIO;
+-		goto out;
+-	case EFI_WRITE_PROTECTED:
+-		count = -EROFS;
+-		goto out;
+-	case EFI_SECURITY_VIOLATION:
+-		count = -EACCES;
+-		goto out;
+-	case EFI_NOT_FOUND:
+-		count = -ENOENT;
+-		goto out;
+-	default:
+-		count = -EINVAL;
+-		goto out;
++	if (status != EFI_SUCCESS) {
++		spin_unlock(&efivars->lock);
++		kfree(data);
++
++		switch (status) {
++		case EFI_INVALID_PARAMETER:
++			count = -EINVAL;
++			break;
++		case EFI_OUT_OF_RESOURCES:
++			count = -ENOSPC;
++			break;
++		case EFI_DEVICE_ERROR:
++			count = -EIO;
++			break;
++		case EFI_WRITE_PROTECTED:
++			count = -EROFS;
++			break;
++		case EFI_SECURITY_VIOLATION:
++			count = -EACCES;
++			break;
++		case EFI_NOT_FOUND:
++			count = -ENOENT;
++			break;
++		default:
++			count = -EINVAL;
++		}
++		return count;
+ 	}
+ 
+ 	/*
+@@ -734,12 +744,12 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 					    NULL);
+ 
+ 	if (status == EFI_BUFFER_TOO_SMALL) {
++		spin_unlock(&efivars->lock);
+ 		mutex_lock(&inode->i_mutex);
+ 		i_size_write(inode, newdatasize + sizeof(attributes));
+ 		mutex_unlock(&inode->i_mutex);
+ 
+ 	} else if (status == EFI_NOT_FOUND) {
+-		spin_lock(&efivars->lock);
+ 		list_del(&var->list);
+ 		spin_unlock(&efivars->lock);
+ 		efivar_unregister(var);
+@@ -747,6 +757,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 		dput(file->f_dentry);
+ 
+ 	} else {
++		spin_unlock(&efivars->lock);
+ 		pr_warn("efivarfs: inconsistent EFI variable implementation? "
+ 				"status = %lx\n", status);
+ 	}
+@@ -768,9 +779,11 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	void *data;
+ 	ssize_t size = 0;
+ 
++	spin_lock(&efivars->lock);
+ 	status = efivars->ops->get_variable(var->var.VariableName,
+ 					    &var->var.VendorGuid,
+ 					    &attributes, &datasize, NULL);
++	spin_unlock(&efivars->lock);
+ 
+ 	if (status != EFI_BUFFER_TOO_SMALL)
+ 		return 0;
+@@ -780,10 +793,13 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	if (!data)
+ 		return 0;
+ 
++	spin_lock(&efivars->lock);
+ 	status = efivars->ops->get_variable(var->var.VariableName,
+ 					    &var->var.VendorGuid,
+ 					    &attributes, &datasize,
+ 					    (data + 4));
++	spin_unlock(&efivars->lock);
++
+ 	if (status != EFI_SUCCESS)
+ 		goto out_free;
+ 
+@@ -1004,11 +1020,13 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 		/* copied by the above to local storage in the dentry. */
+ 		kfree(name);
+ 
++		spin_lock(&efivars->lock);
+ 		efivars->ops->get_variable(entry->var.VariableName,
+ 					   &entry->var.VendorGuid,
+ 					   &entry->var.Attributes,
+ 					   &size,
+ 					   NULL);
++		spin_unlock(&efivars->lock);
+ 
+ 		mutex_lock(&inode->i_mutex);
+ 		inode->i_private = entry;
+-- 
+1.7.12.1
+
+
+From 90a462e9cf439a1987e0f9434d1f615addcc1970 Mon Sep 17 00:00:00 2001
+From: Jeremy Kerr <jeremy.kerr@canonical.com>
+Date: Fri, 19 Oct 2012 15:16:45 +0800
+Subject: [PATCH 11/17] efi: Clarify GUID length calculations
+
+At present, the handling of GUIDs in efivar file names isn't consistent.
+We use GUID_LEN in some places, and 38 in others (GUID_LEN plus
+separator), and implicitly use the presence of the trailing NUL.
+
+This change removes the trailing NUL from GUID_LEN, so that we're
+explicitly adding it when required. We also replace magic numbers
+with GUID_LEN, and clarify the comments where appropriate.
+
+We also fix the allocation size in efivar_create_sysfs_entry, where
+we're allocating one byte too much, due to counting the trailing NUL
+twice - once when calculating short_name_size, and once in the kzalloc.
+
+Signed-off-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 33 +++++++++++++++++++++++++--------
+ 1 file changed, 25 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index d478c56..a93e401 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -95,7 +95,12 @@ MODULE_LICENSE("GPL");
+ MODULE_VERSION(EFIVARS_VERSION);
+ 
+ #define DUMP_NAME_LEN 52
+-#define GUID_LEN 37
++
++/*
++ * Length of a GUID string (strlen("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"))
++ * not including trailing NUL
++ */
++#define GUID_LEN 36
+ 
+ /*
+  * The maximum size of VariableName + Data = 1024
+@@ -887,7 +892,11 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 	struct efivar_entry *var;
+ 	int namelen, i = 0, err = 0;
+ 
+-	if (dentry->d_name.len < 38)
++	/*
++	 * We need a GUID, plus at least one letter for the variable name,
++	 * plus the '-' separator
++	 */
++	if (dentry->d_name.len < GUID_LEN + 2)
+ 		return -EINVAL;
+ 
+ 	inode = efivarfs_get_inode(dir->i_sb, dir, mode, 0);
+@@ -900,7 +909,8 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 		goto out;
+ 	}
+ 
+-	namelen = dentry->d_name.len - GUID_LEN;
++	/* length of the variable name itself: remove GUID and separator */
++	namelen = dentry->d_name.len - GUID_LEN - 1;
+ 
+ 	efivarfs_hex_to_guid(dentry->d_name.name + namelen + 1,
+ 			&var->var.VendorGuid);
+@@ -994,8 +1004,8 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 
+ 		len = utf16_strlen(entry->var.VariableName);
+ 
+-		/* GUID plus trailing NULL */
+-		name = kmalloc(len + 38, GFP_ATOMIC);
++		/* name, plus '-', plus GUID, plus NUL*/
++		name = kmalloc(len + 1 + GUID_LEN + 1, GFP_ATOMIC);
+ 		if (!name)
+ 			goto fail;
+ 
+@@ -1006,7 +1016,7 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 
+ 		efi_guid_unparse(&entry->var.VendorGuid, name + len + 1);
+ 
+-		name[len+GUID_LEN] = '\0';
++		name[len+GUID_LEN+1] = '\0';
+ 
+ 		inode = efivarfs_get_inode(efivarfs_sb, root->d_inode,
+ 					  S_IFREG | 0644, 0);
+@@ -1435,11 +1445,18 @@ efivar_create_sysfs_entry(struct efivars *efivars,
+ 			  efi_char16_t *variable_name,
+ 			  efi_guid_t *vendor_guid)
+ {
+-	int i, short_name_size = variable_name_size / sizeof(efi_char16_t) + 38;
++	int i, short_name_size;
+ 	char *short_name;
+ 	struct efivar_entry *new_efivar;
+ 
+-	short_name = kzalloc(short_name_size + 1, GFP_KERNEL);
++	/*
++	 * Length of the variable bytes in ASCII, plus the '-' separator,
++	 * plus the GUID, plus trailing NUL
++	 */
++	short_name_size = variable_name_size / sizeof(efi_char16_t)
++				+ 1 + GUID_LEN + 1;
++
++	short_name = kzalloc(short_name_size, GFP_KERNEL);
+ 	new_efivar = kzalloc(sizeof(struct efivar_entry), GFP_KERNEL);
+ 
+ 	if (!short_name || !new_efivar)  {
+-- 
+1.7.12.1
+
+
+From ecbf90823d85ebb41e68e6be01f476862d184825 Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Tue, 16 Oct 2012 15:58:07 +0100
+Subject: [PATCH 12/17] efivarfs: Return an error if we fail to read a
+ variable
+
+Instead of always returning 0 in efivarfs_file_read(), even when we
+fail to successfully read the variable, convert the EFI status to
+something meaningful and return that to the caller. This way the user
+will have some hint as to why the read failed.
+
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 62 +++++++++++++++++++++++++++-------------------
+ 1 file changed, 36 insertions(+), 26 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index a93e401..277e426 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -653,6 +653,36 @@ static int efivarfs_file_open(struct inode *inode, struct file *file)
+ 	return 0;
+ }
+ 
++static int efi_status_to_err(efi_status_t status)
++{
++	int err;
++
++	switch (status) {
++	case EFI_INVALID_PARAMETER:
++		err = -EINVAL;
++		break;
++	case EFI_OUT_OF_RESOURCES:
++		err = -ENOSPC;
++		break;
++	case EFI_DEVICE_ERROR:
++		err = -EIO;
++		break;
++	case EFI_WRITE_PROTECTED:
++		err = -EROFS;
++		break;
++	case EFI_SECURITY_VIOLATION:
++		err = -EACCES;
++		break;
++	case EFI_NOT_FOUND:
++		err = -ENOENT;
++		break;
++	default:
++		err = -EINVAL;
++	}
++
++	return err;
++}
++
+ static ssize_t efivarfs_file_write(struct file *file,
+ 		const char __user *userbuf, size_t count, loff_t *ppos)
+ {
+@@ -711,29 +741,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 		spin_unlock(&efivars->lock);
+ 		kfree(data);
+ 
+-		switch (status) {
+-		case EFI_INVALID_PARAMETER:
+-			count = -EINVAL;
+-			break;
+-		case EFI_OUT_OF_RESOURCES:
+-			count = -ENOSPC;
+-			break;
+-		case EFI_DEVICE_ERROR:
+-			count = -EIO;
+-			break;
+-		case EFI_WRITE_PROTECTED:
+-			count = -EROFS;
+-			break;
+-		case EFI_SECURITY_VIOLATION:
+-			count = -EACCES;
+-			break;
+-		case EFI_NOT_FOUND:
+-			count = -ENOENT;
+-			break;
+-		default:
+-			count = -EINVAL;
+-		}
+-		return count;
++		return efi_status_to_err(status);
+ 	}
+ 
+ 	/*
+@@ -791,12 +799,12 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	spin_unlock(&efivars->lock);
+ 
+ 	if (status != EFI_BUFFER_TOO_SMALL)
+-		return 0;
++		return efi_status_to_err(status);
+ 
+ 	data = kmalloc(datasize + 4, GFP_KERNEL);
+ 
+ 	if (!data)
+-		return 0;
++		return -ENOMEM;
+ 
+ 	spin_lock(&efivars->lock);
+ 	status = efivars->ops->get_variable(var->var.VariableName,
+@@ -805,8 +813,10 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 					    (data + 4));
+ 	spin_unlock(&efivars->lock);
+ 
+-	if (status != EFI_SUCCESS)
++	if (status != EFI_SUCCESS) {
++		size = efi_status_to_err(status);
+ 		goto out_free;
++	}
+ 
+ 	memcpy(data, &attributes, 4);
+ 	size = simple_read_from_buffer(userbuf, count, ppos,
+-- 
+1.7.12.1
+
+
+From 39210330739b943856ff21b29b4a0804f4e8349f Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Mon, 22 Oct 2012 15:23:29 +0100
+Subject: [PATCH 13/17] efivarfs: Replace magic number with sizeof(attributes)
+
+Seeing "+ 4" littered throughout the functions gets a bit
+confusing. Use "sizeof(attributes)" which clearly explains what
+quantity we're adding.
+
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 277e426..2c04434 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -801,7 +801,7 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	if (status != EFI_BUFFER_TOO_SMALL)
+ 		return efi_status_to_err(status);
+ 
+-	data = kmalloc(datasize + 4, GFP_KERNEL);
++	data = kmalloc(datasize + sizeof(attributes), GFP_KERNEL);
+ 
+ 	if (!data)
+ 		return -ENOMEM;
+@@ -810,7 +810,7 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 	status = efivars->ops->get_variable(var->var.VariableName,
+ 					    &var->var.VendorGuid,
+ 					    &attributes, &datasize,
+-					    (data + 4));
++					    (data + sizeof(attributes)));
+ 	spin_unlock(&efivars->lock);
+ 
+ 	if (status != EFI_SUCCESS) {
+@@ -818,9 +818,9 @@ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+ 		goto out_free;
+ 	}
+ 
+-	memcpy(data, &attributes, 4);
++	memcpy(data, &attributes, sizeof(attributes));
+ 	size = simple_read_from_buffer(userbuf, count, ppos,
+-					data, datasize + 4);
++				       data, datasize + sizeof(attributes));
+ out_free:
+ 	kfree(data);
+ 
+-- 
+1.7.12.1
+
+
+From 5555f0af6294b3675a95a06da23101150644936d Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Mon, 22 Oct 2012 15:51:45 +0100
+Subject: [PATCH 14/17] efivarfs: Add unique magic number
+
+Using pstore's superblock magic number is no doubt going to cause
+problems in the future. Give efivarfs its own magic number.
+
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 2 +-
+ include/uapi/linux/magic.h | 1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 2c04434..3b0cf9a 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -991,7 +991,7 @@ int efivarfs_fill_super(struct super_block *sb, void *data, int silent)
+ 	sb->s_maxbytes          = MAX_LFS_FILESIZE;
+ 	sb->s_blocksize         = PAGE_CACHE_SIZE;
+ 	sb->s_blocksize_bits    = PAGE_CACHE_SHIFT;
+-	sb->s_magic             = PSTOREFS_MAGIC;
++	sb->s_magic             = EFIVARFS_MAGIC;
+ 	sb->s_op                = &efivarfs_ops;
+ 	sb->s_time_gran         = 1;
+ 
+diff --git a/include/uapi/linux/magic.h b/include/uapi/linux/magic.h
+index e15192c..12f68c7 100644
+--- a/include/uapi/linux/magic.h
++++ b/include/uapi/linux/magic.h
+@@ -27,6 +27,7 @@
+ #define ISOFS_SUPER_MAGIC	0x9660
+ #define JFFS2_SUPER_MAGIC	0x72b6
+ #define PSTOREFS_MAGIC		0x6165676C
++#define EFIVARFS_MAGIC		0xde5e81e4
+ 
+ #define MINIX_SUPER_MAGIC	0x137F		/* minix v1 fs, 14 char names */
+ #define MINIX_SUPER_MAGIC2	0x138F		/* minix v1 fs, 30 char names */
+-- 
+1.7.12.1
+
+
+From a42845c67f2386b164d0c5d8220838d7faf5a409 Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Tue, 23 Oct 2012 12:35:43 +0100
+Subject: [PATCH 15/17] efivarfs: Make 'datasize' unsigned long
+
+There's no reason to declare 'datasize' as an int, since the majority
+of the functions it's passed to expect an unsigned long anyway. Plus,
+this way we avoid any sign problems during arithmetic.
+
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 3b0cf9a..6a858d1 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -692,7 +692,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 	void *data;
+ 	u32 attributes;
+ 	struct inode *inode = file->f_mapping->host;
+-	int datasize = count - sizeof(attributes);
++	unsigned long datasize = count - sizeof(attributes);
+ 	unsigned long newdatasize;
+ 
+ 	if (count < sizeof(attributes))
+-- 
+1.7.12.1
+
+
+From a268bdf6d7ce623ea4bdfcf39aa52ed3fbfdfd65 Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Tue, 23 Oct 2012 12:41:03 +0100
+Subject: [PATCH 16/17] efivarfs: Return a consistent error when
+ efivarfs_get_inode() fails
+
+Instead of returning -ENOSPC if efivarfs_get_inode() fails we should
+be returning -ENOMEM, since running out of memory is the only reason
+it can fail.  Furthermore, that's the error value used everywhere else
+in this file. It's also less likely to confuse users that hit this
+error case.
+
+Acked-by: Jeremy Kerr <jeremy.kerr@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 6a858d1..58cec62 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -911,7 +911,7 @@ static int efivarfs_create(struct inode *dir, struct dentry *dentry,
+ 
+ 	inode = efivarfs_get_inode(dir->i_sb, dir, mode, 0);
+ 	if (!inode)
+-		return -ENOSPC;
++		return -ENOMEM;
+ 
+ 	var = kzalloc(sizeof(struct efivar_entry), GFP_KERNEL);
+ 	if (!var) {
+-- 
+1.7.12.1
+
+
+From 9c3136c987175b179c0aa725d76cda156894f918 Mon Sep 17 00:00:00 2001
+From: Matt Fleming <matt.fleming@intel.com>
+Date: Fri, 26 Oct 2012 12:18:53 +0100
+Subject: [PATCH 17/17] efivarfs: Fix return value of efivarfs_file_write()
+
+We're stuffing a variable of type size_t (unsigned) into a ssize_t
+(signed) which, even though both types should be the same number of
+bits, it's just asking for sign issues to be introduced.
+
+Cc: Jeremy Kerr <jeremy.kerr@canonical.com>
+Reported-by: Alan Cox <alan@lxorguk.ukuu.org.uk>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ drivers/firmware/efivars.c | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/drivers/firmware/efivars.c b/drivers/firmware/efivars.c
+index 58cec62..9ac9340 100644
+--- a/drivers/firmware/efivars.c
++++ b/drivers/firmware/efivars.c
+@@ -694,6 +694,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 	struct inode *inode = file->f_mapping->host;
+ 	unsigned long datasize = count - sizeof(attributes);
+ 	unsigned long newdatasize;
++	ssize_t bytes = 0;
+ 
+ 	if (count < sizeof(attributes))
+ 		return -EINVAL;
+@@ -706,22 +707,22 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 	efivars = var->efivars;
+ 
+ 	if (copy_from_user(&attributes, userbuf, sizeof(attributes))) {
+-		count = -EFAULT;
++		bytes = -EFAULT;
+ 		goto out;
+ 	}
+ 
+ 	if (attributes & ~(EFI_VARIABLE_MASK)) {
+-		count = -EINVAL;
++		bytes = -EINVAL;
+ 		goto out;
+ 	}
+ 
+ 	if (copy_from_user(data, userbuf + sizeof(attributes), datasize)) {
+-		count = -EFAULT;
++		bytes = -EFAULT;
+ 		goto out;
+ 	}
+ 
+ 	if (validate_var(&var->var, data, datasize) == false) {
+-		count = -EINVAL;
++		bytes = -EINVAL;
+ 		goto out;
+ 	}
+ 
+@@ -744,6 +745,8 @@ static ssize_t efivarfs_file_write(struct file *file,
+ 		return efi_status_to_err(status);
+ 	}
+ 
++	bytes = count;
++
+ 	/*
+ 	 * Writing to the variable may have caused a change in size (which
+ 	 * could either be an append or an overwrite), or the variable to be
+@@ -778,7 +781,7 @@ static ssize_t efivarfs_file_write(struct file *file,
+ out:
+ 	kfree(data);
+ 
+-	return count;
++	return bytes;
+ }
+ 
+ static ssize_t efivarfs_file_read(struct file *file, char __user *userbuf,
+-- 
+1.7.12.1
+

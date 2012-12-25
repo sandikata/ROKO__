@@ -1,0 +1,19 @@
+From: Anthony G. Basile <blueness@gentoo.org>
+
+We don't want GRSEC's Makefile to change permissions on paths in
+the filesystem.
+
+diff -Naur a/grsecurity/Makefile b/grsecurity/Makefile
+--- a/grsecurity/Makefile	2011-10-19 20:42:50.000000000 -0400
++++ b/grsecurity/Makefile	2011-10-19 20:45:08.000000000 -0400
+@@ -29,10 +29,4 @@
+ ifdef CONFIG_GRKERNSEC_HIDESYM
+ extra-y := grsec_hidesym.o
+ $(obj)/grsec_hidesym.o:
+-	@-chmod -f 500 /boot
+-	@-chmod -f 500 /lib/modules
+-	@-chmod -f 500 /lib64/modules
+-	@-chmod -f 500 /lib32/modules
+-	@-chmod -f 700 .
+-	@echo '  grsec: protected kernel image paths'
+ endif

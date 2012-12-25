@@ -1,0 +1,21 @@
+--- linux-2.6.35/fs/unionfs/commonfops.c.orig	2010-09-29 15:33:46.000000000 +0000
++++ linux-2.6.35/fs/unionfs/commonfops.c	2010-10-02 19:06:52.371808890 +0000
+@@ -16,6 +16,7 @@
+  * published by the Free Software Foundation.
+  */
+ 
++#include <linux/compat.h>
+ #include "union.h"
+ 
+ /*
+@@ -740,9 +741,8 @@ static long do_ioctl(struct file *file,
+ 	if (lower_file->f_op->unlocked_ioctl) {
+ 		err = lower_file->f_op->unlocked_ioctl(lower_file, cmd, arg);
+ #ifdef CONFIG_COMPAT
+-	} else if (lower_file->f_op->ioctl) {
++	} else if (lower_file->f_op->compat_ioctl) {
+ 		err = lower_file->f_op->compat_ioctl(
+-			lower_file->f_path.dentry->d_inode,
+ 			lower_file, cmd, arg);
+ #endif
+ 	}

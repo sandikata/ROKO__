@@ -1,0 +1,5 @@
+acpi-ec-add-delay-before-write.patch
+3.7.0-fat.patch
+3.7.0-Fix-DVB-ioctls-failing-if-frontend-open-closed-too-fast.patch
+kernel-37-gcc47-1.patch
+fix-watchdog-3.7.patch

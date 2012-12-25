@@ -1,0 +1,58 @@
+linux-3.6 with BFS 425 seems not to boot on kvm.
+I use this command to start the VM
+qemu-kvm -smp 3 -m 1G ../virtual/Ubuntu.12.04.qcow2 -kernel
+../tmp-linux-3.6/arch/x86_64/boot/bzImage -append
+"root=/dev/sda1 console=ttyS0" -s
+
+Using gdb to see where the kernel hangs shows following:
+
+(gdb) target remote :1234
+Remote debugging using :1234
+0xffffffff816d2321 in _raw_spin_lock_irq 
+(lock=lock@entry=0xffff88003fc8e440)
+at /home/findus/kernel/linux-3.6-bfs-not-booting/kernel/spinlock.c:152
+152	{
+(gdb) backtrace
+#0  0xffffffff816d2321 in _raw_spin_lock_irq 
+(lock=lock@entry=0xffff88003fc8e440)
+     at /home/findus/kernel/linux-3.6-bfs-not-booting/kernel/spinlock.c:152
+#1  0xffffffff81070d1e in spin_lock_irq (lock=0xffff88003fc8e440)
+     at 
+/home/findus/kernel/linux-3.6-bfs-not-booting/include/linux/spinlock.h:310
+#2  worker_maybe_bind_and_lock (worker=0xffff88003e1c9240, 
+worker=0xffff88003e1c9240)
+     at 
+/home/findus/kernel/linux-3.6-bfs-not-booting/kernel/workqueue.c:1288
+#3  0xffffffff810740fc in idle_worker_rebind (worker=0xffff88003e1c9240)
+     at 
+/home/findus/kernel/linux-3.6-bfs-not-booting/kernel/workqueue.c:1323
+#4  worker_thread (__worker=0xffff88003e1c9240)
+     at 
+/home/findus/kernel/linux-3.6-bfs-not-booting/kernel/workqueue.c:2166
+#5  0xffffffff8107913e in kthread (_create=0xffff88003e1dfc18)
+     at /home/findus/kernel/linux-3.6-bfs-not-booting/kernel/kthread.c:121
+#6  0xffffffff816dc104 in kernel_thread_helper ()
+     at 
+/home/findus/kernel/linux-3.6-bfs-not-booting/arch/x86/kernel/entry_64.S:1216
+#7  0x0000000000000000 in ??
+
+
+This patch fixes the issue:
+
+
+diff -uNr linux-3.6-bfs-not-booting/kernel/sched/bfs.c 
+linux-3.6-bfs/kernel/sched/bfs.c
+--- linux-3.6-bfs-not-booting/kernel/sched/bfs.c	2012-10-17 
+11:33:07.717384503 +0200
++++ linux-3.6-bfs/kernel/sched/bfs.c	2012-10-17 11:25:05.499245945 +0200
+@@ -4654,10 +4654,6 @@
+
+ static void __cond_resched(void)
+ {
+-	/* NOT a real fix but will make voluntary preempt work. 馬鹿な事 */
+-	if (unlikely(system_state != SYSTEM_RUNNING))
+-		return;
+-
+ 	add_preempt_count(PREEMPT_ACTIVE);
+ 	schedule();
+ 	sub_preempt_count(PREEMPT_ACTIVE);

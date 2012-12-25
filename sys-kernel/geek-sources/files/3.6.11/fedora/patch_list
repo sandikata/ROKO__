@@ -1,0 +1,189 @@
+### BRANCH APPLY ###
+
+linux-2.6-makefile-after_link.patch
+
+power-x86-destdir.patch
+
+taint-vbox.patch
+taint-rss.patch
+
+vmbugon-warnon.patch
+
+# Architecture patches
+# x86(-64)
+
+#
+# ARM
+#
+arm-read_current_timer.patch
+arm-fix-omapdrm.patch
+arm-fix_radio_shark.patch
+arm-tegra-nvec-kconfig.patch
+arm-tegra-usb-no-reset-linux33.patch
+arm-tegra-sdhci-module-fix.patch
+arm-highbank-sata-fix.patch
+arm-alignment-faults.patch
+
+#
+# bugfixes to drivers and filesystems
+#
+
+# ext4
+
+# xfs
+
+# btrfs
+
+
+# eCryptfs
+
+# NFSv4
+
+# USB
+
+# WMI
+
+# ACPI
+linux-2.6-defaults-acpi-video.patch
+linux-2.6-acpi-video-dos.patch
+linux-2.6-acpi-debug-infinite-loop.patch
+acpi-sony-nonvs-blacklist.patch
+
+#
+# PCI
+#
+
+#
+# SCSI Bits.
+#
+
+# ACPI
+
+# ALSA
+
+# Networking
+
+# Misc fixes
+# The input layer spews crap no-one cares about.
+linux-2.6-input-kill-stupid-messages.patch
+
+# stop floppy.ko from autoloading during udev...
+die-floppy-die.patch
+
+linux-2.6.30-no-pcspkr-modalias.patch
+
+# Allow to use 480600 baud on 16C950 UARTs
+linux-2.6-serial-460800.patch
+
+# Silence some useless messages that still get printed with 'quiet'
+linux-2.6-silence-noise.patch
+
+# Make fbcon not show the penguins with 'quiet'
+linux-2.6-silence-fbcon-logo.patch
+
+# Changes to upstream defaults.
+
+
+# /dev/crash driver.
+linux-2.6-crash-driver.patch
+
+# Hack e1000e to work on Montevina SDV
+linux-2.6-e1000-ich9-montevina.patch
+
+# crypto/
+
+# Assorted Virt Fixes
+
+# DRM core
+#drm-edid-try-harder-to-fix-up-broken-headers.patch
+drm-vgem.patch
+
+# Nouveau DRM
+
+# Intel DRM
+drm-i915-dp-stfu.patch
+
+linux-2.6-intel-iommu-igfx.patch
+
+# silence the ACPI blacklist code
+linux-2.6-silence-acpi-blacklist.patch
+quite-apm.patch
+
+# Patches headed upstream
+fs-proc-devtree-remove_proc_entry.patch
+
+disable-i8042-check-on-apple-mac.patch
+
+# rhbz#605888
+dmar-disable-when-ricoh-multifunction.patch
+
+efi-dont-map-boot-services-on-32bit.patch
+
+lis3-improve-handling-of-null-rate.patch
+
+ips-noirq.patch
+
+i82975x-edac-fix.patch
+
+#rhbz 754518
+scsi-sd_revalidate_disk-prevent-NULL-ptr-deref.patch
+
+weird-root-dentry-name-debug.patch
+
+#Highbank clock functions
+#highbank-export-clock-functions.patch 
+
+#selinux ptrace child permissions
+selinux-apply-different-permission-to-ptrace-child.patch
+
+efifb-skip-DMI-checks-if-bootloader-knows.patch
+
+#rhbz 857324
+net-tcp-bz857324.patch
+
+#rhbz 869904 869909 CVE-2012-4508
+0001-ext4-ext4_inode_info-diet.patch
+0002-ext4-give-i_aiodio_unwritten-a-more-appropriate-name.patch
+0003-ext4-fix-unwritten-counter-leakage.patch
+0004-ext4-completed_io-locking-cleanup.patch
+0005-ext4-serialize-dio-nonlocked-reads-with-defrag-worke.patch
+0006-ext4-serialize-unlocked-dio-reads-with-truncate.patch
+0007-ext4-endless-truncate-due-to-nonlocked-dio-readers.patch
+0008-ext4-serialize-truncate-with-owerwrite-DIO-workers.patch
+0009-ext4-punch_hole-should-wait-for-DIO-writers.patch
+0010-ext4-fix-ext_remove_space-for-punch_hole-case.patch
+0011-ext4-fix-ext4_flush_completed_IO-wait-semantics.patch
+0012-ext4-serialize-fallocate-with-ext4_convert_unwritten.patch
+
+uprobes-upstream-backport.patch
+
+#rhbz 871078
+USB-EHCI-urb-hcpriv-should-not-be-NULL.patch
+USB-report-submission-of-active-URBs.patch
+
+#rhbz 869341
+smp_irq_move_cleanup_interrupt.patch
+
+#rhbz 812129
+block-fix-a-crash-when-block-device-is.patch
+blockdev-turn-a-rw-semaphore-into-a-percpu-rw-sem.patch
+fs-lock-splice_read-and-splice_write-functions.patch
+
+#rhbz 874791
+Bluetooth-Add-support-for-BCM20702A0.patch
+
+#rhbz CVE-2012-4530 868285 880147
+exec-do-not-leave-bprm-interp-on-stack.patch
+exec-use-eloop-for-max-recursion-depth.patch
+
+#rhbz 869629
+SCSI-mvsas-Fix-oops-when-ata-commond-timeout.patch
+
+#rhbz 851278
+8139cp-set-ring-address-after-enabling-C-mode.patch
+8139cp-re-enable-interrupts-after-tx-timeout.patch
+
+#rhbz 855275
+radeon-evergreen-3.6.9-fixes.mbox
+
+# END OF PATCH APPLICATIONS

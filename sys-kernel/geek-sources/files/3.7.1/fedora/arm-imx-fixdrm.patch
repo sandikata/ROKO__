@@ -1,0 +1,37 @@
+This fixes the following error when building for arm-imx:
+> ERROR: "__clk_get_name" [drivers/staging/imx-drm/ipu-v3/imx-ipu-v3.ko] undefined!
+> make[1]: *** [__modpost] Error 1
+> make: *** [modules] Error 2
+
+There are valid usecases to get the name of a clock, be it for debugging
+purposes or to register a children of a clock like done in this IPU driver.
+Therefore exporting __clk_get_name() and make it available for others makes
+sense.
+
+Reported-by: Peter Robinson <pbrobinson at gmail.com>
+CC: Sascha Hauer <s.hauer at pengutronix.de>
+CC: Mike Turquette <mturquette at linaro.org>
+Signed-off-by: Niels de Vos <ndevos at redhat.com>
+---
+ drivers/clk/clk.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/clk/clk.c b/drivers/clk/clk.c
+index 251e45d..fbe0f3a 100644
+--- a/drivers/clk/clk.c
++++ b/drivers/clk/clk.c
+@@ -259,10 +259,11 @@ late_initcall(clk_disable_unused);
+ 
+ /***    helper functions   ***/
+ 
+-inline const char *__clk_get_name(struct clk *clk)
++const char *__clk_get_name(struct clk *clk)
+ {
+ 	return !clk ? NULL : clk->name;
+ }
++EXPORT_SYMBOL_GPL(__clk_get_name);
+ 
+ inline struct clk_hw *__clk_get_hw(struct clk *clk)
+ {
+-- 
+1.7.11.7
