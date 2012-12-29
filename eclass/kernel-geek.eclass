@@ -15,9 +15,22 @@ EXPORT_FUNCTIONS ApplyPatch src_unpack src_prepare src_compile src_install pkg_p
 # No need to run scanelf/strip on kernel sources/headers (bug #134453).
 RESTRICT="mirror binchecks strip"
 
+: ${LICENSE:="GPL-2"}
+
+# *.gz       -> gunzip -dc    -> app-arch/gzip-1.5
+# *.bz|*.bz2 -> bunzip -dc    -> app-arch/bzip2-1.0.6-r3
+# *.lrz      -> lrunzip -dc   -> app-arch/lrzip-0.614 <- now only for ck
+# *.xz       -> xz -dc        -> app-arch/xz-utils-5.0.4-r1
+# *.zip      -> unzip -d      -> app-arch/unzip-6.0-r3
+# *.Z        -> uncompress -c -> app-arch/gzip-1.5
+
 # Even though xz-utils are in @system, they must still be added to DEPEND; see
 # http://archives.gentoo.org/gentoo-dev/msg_a0d4833eb314d1be5d5802a3b710e0a4.xml
-DEPEND="${DEPEND} app-arch/xz-utils"
+DEPEND="${DEPEND}
+app-arch/bzip2
+app-arch/gzip
+app-arch/unzip
+app-arch/xz-utils"
 
 OLDIFS="$IFS"
 VER="${PV}"
@@ -170,6 +183,7 @@ featureKnown() {
 			;;
 		zfs)	zfs_url="http://zfsonlinux.org"
 			HOMEPAGE="${HOMEPAGE} ${zfs_url}"
+			LICENSE="${LICENSE} GPL-3"
 			RDEPEND="${RDEPEND}
 				zfs?	( sys-fs/zfs[kernel-builtin] )"
 			;;
@@ -187,13 +201,12 @@ ExtractApply() {
 	local patch=$1
 	shift
 	case "$patch" in
-	*.gz)  gunzip -dc    < "$patch" | $patch_command ${1+"$@"} ;;
-	*.bz)  bunzip -dc    < "$patch" | $patch_command ${1+"$@"} ;;
-	*.bz2) bunzip2 -dc   < "$patch" | $patch_command ${1+"$@"} ;;
-	*.lrz) lrunzip -dc   < "$patch" | $patch_command ${1+"$@"} ;;
-	*.xz)  xz -dc        < "$patch" | $patch_command ${1+"$@"} ;;
-	*.zip) unzip -d      < "$patch" | $patch_command ${1+"$@"} ;;
-	*.Z)   uncompress -c < "$patch" | $patch_command ${1+"$@"} ;;
+	*.gz)       gunzip -dc    < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/gzip
+	*.bz|*.bz2) bunzip2 -dc   < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/bzip2
+	*.lrz)      lrunzip -dc   < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/lrzip
+	*.xz)       xz -dc        < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/xz-utils
+	*.zip)      unzip -d      < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/unzip
+	*.Z)        uncompress -c < "$patch" | $patch_command ${1+"$@"} ;; # app-arch/gzip
 	*) $patch_command ${1+"$@"} < "$patch" ;;
 	esac
 }
@@ -210,23 +223,43 @@ Handler() {
 		#exit 1 # why exit ?
 	fi
 	# don't apply patch if it's empty
-	local C=$(wc -l "$patch" | awk '{print $1}')
-	if [ "$C" -gt 9 ]; then
-		# test argument to patch
-		patch_command='patch -p1 --dry-run'
-		if ExtractApply "$patch" &>/dev/null; then
-			# default argument to patch
-			#patch_command='patch -p1 -F1 -s'
-			patch_command='patch -p1 -s'
-			ExtractApply "$patch" &>/dev/null
+	case "$patch" in
+	*.gz|*.bz|*.bz2|*.lrz|*.xz|*.zip|*.Z)
+		if [ -s "$patch" ]; then # !=0
+			patch_command='patch -p1 --dry-run' # test argument to patch
+			if ExtractApply "$patch" &>/dev/null; then
+				# default argument to patch
+				#patch_command='patch -p1 -F1 -s'
+				patch_command='patch -p1 -s'
+				ExtractApply "$patch" &>/dev/null
+			else
+				patch_base_name=$(basename "$patch")
+				ewarn "Skipping patch --> $patch_base_name"
+			fi
 		else
 			patch_base_name=$(basename "$patch")
-			ewarn "Skipping patch --> $patch_base_name"
+			ewarn "Skipping empty patch --> $patch_base_name"
 		fi
-	else
-		patch_base_name=$(basename "$patch")
-		ewarn "Skipping empty patch --> $patch_base_name"
-	fi
+	;;
+	*)
+		local C=$(wc -l "$patch" | awk '{print $1}')
+		if [ "$C" -gt 9 ]; then # 9 lines
+			patch_command='patch -p1 --dry-run' # test argument to patch
+			if ExtractApply "$patch" &>/dev/null; then
+				# default argument to patch
+				#patch_command='patch -p1 -F1 -s'
+				patch_command='patch -p1 -s'
+				ExtractApply "$patch" &>/dev/null
+			else
+				patch_base_name=$(basename "$patch")
+				ewarn "Skipping patch --> $patch_base_name"
+			fi
+		else
+			patch_base_name=$(basename "$patch")
+			ewarn "Skipping empty patch --> $patch_base_name"
+		fi
+	;;
+	esac
 }
 
 # main function
@@ -241,7 +274,7 @@ kernel-geek_ApplyPatch() {
 	case $patch_base_name in
 	patch_list) # list of patches
 		while read -r line
-		do
+			do
 			# skip empty lines
 			[[ -z "$line" ]] && continue
 			# skip comments
