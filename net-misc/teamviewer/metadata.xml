@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <herd>funtoo</herd>
+  <maintainer>
+    <email>golodhrim@funtoo.org</email>
+	<name>Rafael Fernández López</name>
+  </maintainer>
+  <longdescription lang="en">
+	  Teamviewer is a tool to connect to other systems and share the desktop
+	  in an easy way. It incorporates both the client to connect and the
+	  sever to give access to.
+  </longdescription>
+</pkgmetadata>
