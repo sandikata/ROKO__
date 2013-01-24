@@ -31,6 +31,7 @@
     <flag name='symlink'>Force kernel ebuilds to automatically update the /usr/src/linux symlink</flag>
     <flag name='uksm'>Use Ultra Kernel Samepage Merging patches.</flag>
     <flag name='vserver'>VServer provides virtualization for GNU/Linux systems.</flag>
+    <flag name='zen'>Use zen-kernel patches.</flag>
     <flag name='zfs'>The native Linux kernel port of the ZFS filesystem.</flag>
   </use>
 </pkgmetadata>

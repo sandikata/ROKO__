@@ -1,0 +1,21 @@
+diff -urN linux-3.7/net/ipv4/Kconfig zen-yeah-12095/net/ipv4/Kconfig
+--- linux-3.7/net/ipv4/Kconfig	2012-12-11 05:30:57.000000000 +0200
++++ zen-yeah-12095/net/ipv4/Kconfig	2013-01-21 15:31:42.592734780 +0200
+@@ -600,6 +600,9 @@
+ 	config DEFAULT_VEGAS
+ 		bool "Vegas" if TCP_CONG_VEGAS=y
+ 
++	config DEFAULT_YEAH
++		bool "YeAH" if TCP_CONG_YEAH=y
++
+ 	config DEFAULT_VENO
+ 		bool "Veno" if TCP_CONG_VENO=y
+ 
+@@ -625,6 +628,7 @@
+ 	default "htcp" if DEFAULT_HTCP
+ 	default "hybla" if DEFAULT_HYBLA
+ 	default "vegas" if DEFAULT_VEGAS
++	default "yeah" if DEFAULT_YEAH
+ 	default "westwood" if DEFAULT_WESTWOOD
+ 	default "veno" if DEFAULT_VENO
+ 	default "reno" if DEFAULT_RENO

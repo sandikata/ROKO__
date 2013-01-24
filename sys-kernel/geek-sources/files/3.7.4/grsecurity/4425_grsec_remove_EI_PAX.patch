@@ -1,0 +1,19 @@
+From: Anthony G. Basile <blueness@gentoo.org>
+
+Deprecate EI_PAX.
+
+X-Gentoo-Bug: 445600
+X-Gentoo-Bug-URL: https://bugs.gentoo.org/445600
+
+diff -Nuar linux-3.7.1-hardened.orig/security/Kconfig linux-3.7.1-hardened/security/Kconfig
+--- linux-3.7.1-hardened.orig/security/Kconfig	2012-12-26 08:39:29.000000000 -0500
++++ linux-3.7.1-hardened/security/Kconfig	2012-12-26 09:05:44.000000000 -0500
+@@ -263,7 +263,7 @@
+ 
+ config PAX_EI_PAX
+ 	bool 'Use legacy ELF header marking'
+-	default y if GRKERNSEC_CONFIG_AUTO
++	depends on BROKEN
+ 	help
+ 	  Enabling this option will allow you to control PaX features on
+ 	  a per executable basis via the 'chpax' utility available at

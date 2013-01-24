@@ -1,0 +1,43 @@
+From e9b10953edbccd3744e039ffc060ab2692f17856 Mon Sep 17 00:00:00 2001
+From: Matthew Garrett <mjg@redhat.com>
+Date: Fri, 27 Jul 2012 17:20:49 -0400
+Subject: [PATCH 2/2] x86, EFI: Calculate the EFI framebuffer size instead of
+ trusting the firmware
+
+Seth Forshee reported that his system was reporting that the EFI framebuffer
+stretched from 0x90010000-0xb0010000 despite the GPU's BAR only covering
+0x90000000-0x9ffffff. It's safer to calculate this value from the pixel
+stride and screen height (values we already depend on) rather than face
+potential problems with resource allocation later on.
+
+Signed-off-by: Matthew Garrett <mjg@redhat.com>
+Tested-by: Seth Forshee <seth.forshee@canonical.com>
+Signed-off-by: Matt Fleming <matt.fleming@intel.com>
+---
+ arch/x86/boot/compressed/eboot.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/boot/compressed/eboot.c b/arch/x86/boot/compressed/eboot.c
+index bbd83b9..c760e07 100644
+--- a/arch/x86/boot/compressed/eboot.c
++++ b/arch/x86/boot/compressed/eboot.c
+@@ -331,7 +331,6 @@ static efi_status_t setup_gop(struct screen_info *si, efi_guid_t *proto,
+ 	si->lfb_width = width;
+ 	si->lfb_height = height;
+ 	si->lfb_base = fb_base;
+-	si->lfb_size = fb_size;
+ 	si->pages = 1;
+ 
+ 	if (pixel_format == PIXEL_RGB_RESERVED_8BIT_PER_COLOR) {
+@@ -379,6 +378,8 @@ static efi_status_t setup_gop(struct screen_info *si, efi_guid_t *proto,
+ 		si->rsvd_pos = 0;
+ 	}
+ 
++	si->lfb_size = si->lfb_linelength * si->lfb_height;
++
+ 	si->capabilities |= VIDEO_CAPABILITY_SKIP_QUIRKS;
+ 
+ free_handle:
+-- 
+1.7.12.1
+

@@ -1,0 +1,42 @@
+--- ./3rdparty/ndiswrapper/loader.c.orig	2013-01-16 18:13:57.000000000 +0200
++++ ./3rdparty/ndiswrapper/loader.c	2013-01-16 18:57:06.945150278 +0200
+@@ -596,7 +596,7 @@ static struct pci_driver wrap_pci_driver
+ 	.name		= DRIVER_NAME,
+ 	.id_table	= wrap_pci_id_table,
+ 	.probe		= wrap_pnp_start_pci_device,
+-	.remove		= __devexit_p(wrap_pnp_remove_pci_device),
++	.remove		= wrap_pnp_remove_pci_device,
+ 	.suspend	= wrap_pnp_suspend_pci_device,
+ 	.resume		= wrap_pnp_resume_pci_device,
+ };
+@@ -612,7 +612,7 @@ static struct usb_driver wrap_usb_driver
+ 	.name = DRIVER_NAME,
+ 	.id_table = wrap_usb_id_table,
+ 	.probe = wrap_pnp_start_usb_device,
+-	.disconnect = __devexit_p(wrap_pnp_remove_usb_device),
++	.disconnect = wrap_pnp_remove_usb_device,
+ 	.suspend = wrap_pnp_suspend_usb_device,
+ 	.resume = wrap_pnp_resume_usb_device,
+ };
+--- ./3rdparty/ndiswrapper/pnp.c.orig	2013-01-16 18:13:57.000000000 +0200
++++ ./3rdparty/ndiswrapper/pnp.c	2013-01-16 18:56:01.658624102 +0200
+@@ -660,7 +660,7 @@ int wrap_pnp_start_usb_device(struct usb
+ 		return 0;
+ }
+ 
+-void __devexit wrap_pnp_remove_usb_device(struct usb_interface *intf)
++void wrap_pnp_remove_usb_device(struct usb_interface *intf)
+ {
+ 	struct wrap_device *wd;
+ 
+--- ./3rdparty/ndiswrapper/pnp.h.orig	2013-01-16 18:13:57.000000000 +0200
++++ ./3rdparty/ndiswrapper/pnp.h	2013-01-16 18:55:14.241233570 +0200
+@@ -22,7 +22,7 @@
+ 
+ int wrap_pnp_start_pci_device(struct pci_dev *pdev,
+ 			      const struct pci_device_id *ent);
+-void __devexit wrap_pnp_remove_pci_device(struct pci_dev *pdev);
++void wrap_pnp_remove_pci_device(struct pci_dev *pdev);
+ int wrap_pnp_suspend_pci_device(struct pci_dev *pdev, pm_message_t state);
+ int wrap_pnp_resume_pci_device(struct pci_dev *pdev);
+ 

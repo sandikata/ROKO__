@@ -1,0 +1,43 @@
+diff -urN linux-3.7/arch/x86/Kconfig.cpu zen-march-native-12095/arch/x86/Kconfig.cpu
+--- linux-3.7/arch/x86/Kconfig.cpu	2012-12-11 05:30:57.000000000 +0200
++++ zen-march-native-12095/arch/x86/Kconfig.cpu	2013-01-21 12:34:33.038622493 +0200
+@@ -298,6 +298,17 @@
+ 	  This is really intended for distributors who need more
+ 	  generic optimizations.
+ 
++config X86_MARCH_NATIVE
++	bool "Use -march=native cflag (EXPERIMENTAL)"
++	depends on EXPERIMENTAL
++	help
++	  Setting Y here, will result in passing the -march=native and
++	  -mtune=native cflags to GCC while compiling the kernel, which
++	  makes GCC check the CPU capabilities and use the best cflags
++	  for your computer.
++
++	  Set Y here only if you use >=gcc-4.2.0.
++
+ #
+ # Define implied options from the CPU selection here
+ config X86_INTERNODE_CACHE_SHIFT
+diff -urN linux-3.7/arch/x86/Makefile_32.cpu zen-march-native-12095/arch/x86/Makefile_32.cpu
+--- linux-3.7/arch/x86/Makefile_32.cpu	2012-12-11 05:30:57.000000000 +0200
++++ zen-march-native-12095/arch/x86/Makefile_32.cpu	2013-01-21 12:34:33.744613667 +0200
+@@ -10,6 +10,9 @@
+ endif
+ 
+ align := $(cc-option-align)
++ifeq ($(CONFIG_X86_MARCH_NATIVE),y)
++cflags-y			+= -march=native
++else
+ cflags-$(CONFIG_M386)		+= -march=i386
+ cflags-$(CONFIG_M486)		+= -march=i486
+ cflags-$(CONFIG_M586)		+= -march=i586
+@@ -42,6 +45,8 @@
+ # Geode GX1 support
+ cflags-$(CONFIG_MGEODEGX1)	+= -march=pentium-mmx
+ cflags-$(CONFIG_MGEODE_LX)	+= $(call cc-option,-march=geode,-march=pentium-mmx)
++endif
++
+ # add at the end to overwrite eventual tuning options from earlier
+ # cpu entries
+ cflags-$(CONFIG_X86_GENERIC) 	+= $(call tune,generic,$(call tune,i686))

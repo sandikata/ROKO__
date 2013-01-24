@@ -3,4 +3,4 @@ gpio-ich_share_ownership_of_GPIO_groups_3.6.patch gpio-ich: Share ownership of G
 fix module initialisation https://bugs.archlinux.org/task/32122
     module-symbol-waiting-3.6.patch
     module-init-wait-3.6.patch
-kernel-36-gcc47-1.patch Patch source to enable more gcc CPU optimizatons via the make nconfig
+kernel-36-gcc47-1.patch.gz Patch source to enable more gcc CPU optimizatons via the make nconfig http://repo-ck.com/source/gcc_patch/kernel-36-gcc47-1.patch.gz
