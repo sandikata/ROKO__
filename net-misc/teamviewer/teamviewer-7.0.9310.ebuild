@@ -14,7 +14,7 @@ SRC_URI="http://www.teamviewer.com/download/${PN}_linux.tar.gz -> ${P}.tar.gz"
 
 LICENSE="TeamViewerNovember2011"
 SLOT="0"
-KEYWORDS="~*"
+KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 RESTRICT="mirror strip"

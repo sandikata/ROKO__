@@ -1,0 +1,110 @@
+#!/bin/bash
+# vim: set sw=4 sts=4 et :
+
+# Copyright (c) 2006, 2007 Ciaran McCreesh <ciaranm@ciaranm.org>
+#
+# This file is part of the Paludis package manager. Paludis is free software;
+# you can redistribute it and/or modify it under the terms of the GNU General
+# Public License, version 2, as published by the Free Software Foundation.
+#
+# Paludis is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA  02111-1307  USA
+
+export PATH="$(${PALUDIS_EBUILD_DIR}/utils/canonicalise ${PALUDIS_EBUILD_DIR}/utils/ ):${PATH}"
+source ${PALUDIS_EBUILD_DIR}/echo_functions.bash
+
+old_set=$-
+set -a
+for f in ${PALUDIS_BASHRC_FILES}; do
+    [[ -f "${f}" ]] && source "${f}"
+done
+[[ "${old_set}" == *a* ]] || set +a
+
+# If this is tarball sync, we don't need getdelta (at the moment)
+if [[ -z "${PN}" ]]; then
+    unset USE_GETDELTA
+fi
+
+www_size() {
+    HEAD "$1" | sed -n 's/Content-Length: //p'
+    return $?
+}
+
+# check GETDELTA_MIN_SIZE
+if [[ "$USE_GETDELTA" == "yes" ]] && [[ -n "$GETDELTA_MIN_SIZE" ]]; then
+    einfo_unhooked "Feature getdelta requested with minimum size $GETDELTA_MIN_SIZE"
+    _remote_size="$(www_size "$1")"
+    if [[ -n "$_remote_size" ]]; then
+        _local_size=0
+        if [[ -n "${PALUDIS_USE_SAFE_RESUME}" ]]; then
+            if [[ -f "${2}.-PARTIAL-" ]]; then
+                _local_size=$(wrapped_getfsize "${2}.-PARTIAL-")
+                einfo_unhooked "Found partially downloaded file with size $_local_size"
+            fi
+        fi
+        _download_size=$(($_remote_size - $_local_size))
+        einfo_unhooked "Need to download $_download_size bytes"
+        if [[ $_download_size -lt $GETDELTA_MIN_SIZE ]]; then
+            unset USE_GETDELTA
+            einfo_unhooked "Feature getdelta is prohibited"
+        fi
+    fi
+fi
+
+if [[ -n "${PALUDIS_USE_SAFE_RESUME}" ]] ; then
+    if [[ -f "${2}.-PARTIAL-" ]] ; then
+        if [[ $(wrapped_getfsize "${2}".-PARTIAL- ) -ge 4096 ]] ; then
+            einfo_unhooked "Attempting resume using ${2}.-PARTIAL-"
+        else
+            einfo_unhooked "Not attempting resume using ${2}.-PARTIAL- (too small)"
+            echo rm -f "${2}".-PARTIAL-
+            rm -f "${2}".-PARTIAL-
+        fi
+    fi
+
+    if [ "$USE_GETDELTA" == "yes" ]; then
+        echo /usr/bin/getdelta-paludis.sh "${1}" 1>&2
+        if /usr/bin/getdelta-paludis.sh "${1}" ; then
+            echo mv -f "${2}".-PARTIAL- "${2}"
+            mv -f "${2}".-PARTIAL- "${2}" >&/dev/null
+            exit 0
+        else
+            rm -f "${2}"
+            exit 1
+        fi
+    else
+        echo ${WGET_WRAPPER} ${LOCAL_WGET:-wget} ${EXTRA_WGET} -T 30 -t 1 --continue -O "${2}".-PARTIAL- "${1}" 1>&2
+        if ${WGET_WRAPPER} ${LOCAL_WGET:-wget} ${EXTRA_WGET} -T 30 -t 1 --continue -O "${2}".-PARTIAL- "${1}" ; then
+            echo mv -f "${2}".-PARTIAL- "${2}"
+            mv -f "${2}".-PARTIAL- "${2}"
+            exit 0
+        else
+            rm -f "${2}"
+            exit 1
+        fi
+    fi
+else
+    if [ "$USE_GETDELTA" == "yes" ]; then
+        echo /usr/bin/getdelta.sh "${1}" 1>&2
+        if /usr/bin/getdelta.sh "${1}" ; then
+            exit 0
+        else
+            rm -f "${2}"
+            exit 1
+        fi
+    else
+        echo ${WGET_WRAPPER} ${LOCAL_WGET:-wget} ${EXTRA_WGET} -T 30 -t 1 -O "${2}" "${1}" 1>&2
+        if ${WGET_WRAPPER} ${LOCAL_WGET:-wget} ${EXTRA_WGET} -T 30 -t 1 -O "${2}" "${1}" ; then
+            exit 0
+        else
+            rm -f "${2}"
+            exit 1
+        fi
+    fi
+fi
