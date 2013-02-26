@@ -1,0 +1,14 @@
+This is fixed in 3.8, but is too much to backport for now.
+As there's no point in abrt telling us this is broken, we'll just silence it.
+
+--- linux-3.7.7-201.fc18.x86_64/drivers/net/wireless/brcm80211/brcmsmac/main.c~	2013-02-12 11:36:18.787973130 -0500
++++ linux-3.7.7-201.fc18.x86_64/drivers/net/wireless/brcm80211/brcmsmac/main.c	2013-02-12 11:37:02.950969879 -0500
+@@ -7993,8 +7993,6 @@ void brcms_c_wait_for_tx_completion(stru
+ 		if (--timeout == 0)
+ 			break;
+ 	}
+-
+-	WARN_ON_ONCE(timeout == 0);
+ }
+ 
+ void brcms_c_set_beacon_listen_interval(struct brcms_c_info *wlc, u8 interval)

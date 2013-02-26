@@ -1,0 +1,36 @@
+
+This patch adapts for do_munmap -> vm_munmap and
+end_writeback -> clear_inode changes in 3.5 series kernels.
+
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+
+ fs/unionfs/file.c  |    5 ++---
+ fs/unionfs/super.c |    2 +-
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+--- linux/fs/unionfs/file.c.orig	2012-07-27 23:22:56.000000000 +0300
++++ linux/fs/unionfs/file.c	2012-07-28 00:16:03.626198265 +0300
+@@ -156,10 +156,9 @@ static int unionfs_mmap(struct file *fil
+ 			goto out;
+ 		}
+ 		saved_vm_ops = vma->vm_ops;
+-		err = do_munmap(current->mm, vma->vm_start,
+-				vma->vm_end - vma->vm_start);
++		err = vm_munmap(vma->vm_start, vma->vm_end - vma->vm_start);
+ 		if (err) {
+-			printk(KERN_ERR "unionfs: do_munmap failed %d\n", err);
++			printk(KERN_ERR "unionfs: vm_munmap failed %d\n", err);
+ 			goto out;
+ 		}
+ 	}
+--- linux/fs/unionfs/super.c.orig	2012-07-27 23:22:56.000000000 +0300
++++ linux/fs/unionfs/super.c	2012-07-28 00:11:36.423968692 +0300
+@@ -835,7 +835,7 @@ static void unionfs_evict_inode(struct i
+ 	struct unionfs_dir_state *rdstate;
+ 
+ 	truncate_inode_pages(&inode->i_data, 0);
+-	end_writeback(inode);
++	clear_inode(inode);
+ 
+ 	list_for_each_safe(pos, n, &UNIONFS_I(inode)->readdircache) {
+ 		rdstate = list_entry(pos, struct unionfs_dir_state, cache);

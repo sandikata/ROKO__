@@ -1,0 +1,11 @@
+--- a/block/blk-settings.c	2012-11-17 17:35:00.948363401 +0200
++++ b/block/blk-settings.c	2012-11-17 17:35:31.892986646 +0200
+@@ -804,7 +804,7 @@
+ 
+ 	q->flush_flags = flush & (REQ_FLUSH | REQ_FUA);
+ }
+-EXPORT_SYMBOL_GPL(blk_queue_flush);
++EXPORT_SYMBOL(blk_queue_flush);
+ 
+ void blk_queue_flush_queueable(struct request_queue *q, bool queueable)
+ {

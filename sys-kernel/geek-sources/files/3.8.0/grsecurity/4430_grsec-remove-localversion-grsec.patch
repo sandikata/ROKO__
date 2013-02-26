@@ -1,0 +1,9 @@
+From: Kerin Millar <kerframil@gmail.com>
+
+Remove grsecurity's localversion-grsec file as it is inconsistent with
+Gentoo's kernel practices and naming scheme.
+
+--- a/localversion-grsec	2008-02-24 14:26:59.000000000 +0000
++++ b/localversion-grsec	1970-01-01 01:00:00.000000000 +0100
+@@ -1 +0,0 @@
+--grsec

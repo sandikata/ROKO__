@@ -1,0 +1,61 @@
+
+This adapts unionfs to the FD and BITS changes introduced in 3.5.1.
+
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+
+ fs/unionfs/commonfops.c |    4 ++--
+ fs/unionfs/union.h      |   10 +++++-----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+--- linux/fs/unionfs/commonfops.c.orig	2012-08-11 03:12:51.598991830 +0300
++++ linux/fs/unionfs/commonfops.c	2012-08-11 03:15:56.998828078 +0300
+@@ -781,14 +781,14 @@ static int unionfs_ioctl_queryfile(struc
+ 	bstart = dbstart(dentry);
+ 	bend = dbend(dentry);
+ 
+-	FD_ZERO(&branchlist);
++	__FD_ZERO(&branchlist);
+ 
+ 	for (bindex = bstart; bindex <= bend; bindex++) {
+ 		lower_dentry = unionfs_lower_dentry_idx(dentry, bindex);
+ 		if (!lower_dentry)
+ 			continue;
+ 		if (likely(lower_dentry->d_inode))
+-			FD_SET(bindex, &branchlist);
++			__FD_SET(bindex, &branchlist);
+ 		/* purge any lower objects after partial_lookup */
+ 		if (bindex < orig_bstart || bindex > orig_bend) {
+ 			dput(lower_dentry);
+--- linux/fs/unionfs/union.h.orig	2012-08-11 03:02:49.808246089 +0300
++++ linux/fs/unionfs/union.h	2012-08-11 03:07:12.727248064 +0300
+@@ -68,8 +68,8 @@
+ /* restore local copy of FD_SET/ZERO to get it to build with 3.4 */
+ static inline void __FD_SET(unsigned long __fd, __kernel_fd_set *__fdsetp)
+ {
+-       unsigned long __tmp = __fd / __NFDBITS;
+-       unsigned long __rem = __fd % __NFDBITS;
++       unsigned long __tmp = __fd / BITS_PER_LONG;
++       unsigned long __rem = __fd % BITS_PER_LONG;
+        __fdsetp->fds_bits[__tmp] |= (1UL<<__rem);
+ }
+ 
+@@ -78,8 +78,8 @@ static inline void __FD_ZERO(__kernel_fd
+        unsigned long *__tmp = __p->fds_bits;
+        int __i;
+ 
+-       if (__builtin_constant_p(__FDSET_LONGS)) {
+-               switch (__FDSET_LONGS) {
++       if (__builtin_constant_p(__FD_SETSIZE / (8 * sizeof(long)))) {
++               switch (__FD_SETSIZE / (8 * sizeof(long))) {
+                case 16:
+                        __tmp[ 0] = 0; __tmp[ 1] = 0;
+                        __tmp[ 2] = 0; __tmp[ 3] = 0;
+@@ -104,7 +104,7 @@ static inline void __FD_ZERO(__kernel_fd
+                        return;
+                }
+        }
+-       __i = __FDSET_LONGS;
++       __i = __FD_SETSIZE / (8 * sizeof(long));
+        while (__i) {
+                __i--;
+                *__tmp = 0;

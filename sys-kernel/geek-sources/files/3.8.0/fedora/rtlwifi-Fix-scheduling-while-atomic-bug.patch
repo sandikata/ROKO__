@@ -1,0 +1,65 @@
+Kernel commits 41affd5 and 6539306 changed the locking in rtl_lps_leave()
+from a spinlock to a mutex by doing the calls indirectly from a work queue
+to reduce the time that interrupts were disabled. This change was fine for
+most systems; however a scheduling while atomic bug was reported in
+https://bugzilla.redhat.com/show_bug.cgi?id=903881. The backtrace indicates
+that routine rtl_is_special(), which calls rtl_lps_leave() in three places
+was entered in atomic context. These direct calls are replaced by putting a
+request on the appropriate work queue.
+
+Signed-off-by: Larry Finger <Larry.Finger@lwfinger.net>
+Reported-and-tested-by: Nathaniel Doherty <ntdoherty@gmail.com>
+Cc: Nathaniel Doherty <ntdoherty@gmail.com>
+Cc: Stanislaw Gruszka <sgruszka@redhat.com>
+Cc: Stable <stable@vger.kernel.org>
+---
+
+John,
+
+If DaveM will still accept bug fixes for 3.8, please push this one. It
+is unlikely to have any side effects.
+
+Thanks,
+
+Larry
+---
+
+ base.c |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+Index: wireless-testing-new/drivers/net/wireless/rtlwifi/base.c
+===================================================================
+--- wireless-testing-new.orig/drivers/net/wireless/rtlwifi/base.c
++++ wireless-testing-new/drivers/net/wireless/rtlwifi/base.c
+@@ -1004,7 +1004,8 @@ u8 rtl_is_special_data(struct ieee80211_
+ 					 is_tx ? "Tx" : "Rx");
+ 
+ 				if (is_tx) {
+-					rtl_lps_leave(hw);
++					schedule_work(&rtlpriv->
++						      works.lps_leave_work);
+ 					ppsc->last_delaylps_stamp_jiffies =
+ 					    jiffies;
+ 				}
+@@ -1014,7 +1015,7 @@ u8 rtl_is_special_data(struct ieee80211_
+ 		}
+ 	} else if (ETH_P_ARP == ether_type) {
+ 		if (is_tx) {
+-			rtl_lps_leave(hw);
++			schedule_work(&rtlpriv->works.lps_leave_work);
+ 			ppsc->last_delaylps_stamp_jiffies = jiffies;
+ 		}
+ 
+@@ -1024,7 +1025,7 @@ u8 rtl_is_special_data(struct ieee80211_
+ 			 "802.1X %s EAPOL pkt!!\n", is_tx ? "Tx" : "Rx");
+ 
+ 		if (is_tx) {
+-			rtl_lps_leave(hw);
++			schedule_work(&rtlpriv->works.lps_leave_work);
+ 			ppsc->last_delaylps_stamp_jiffies = jiffies;
+ 		}
+ 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-wireless" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-info.html

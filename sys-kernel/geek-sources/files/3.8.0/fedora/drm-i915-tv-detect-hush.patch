@@ -1,0 +1,46 @@
+Obviously this is not upstreamable...
+
+diff -up linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_display.c.jx linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_display.c
+--- linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_display.c.jx	2013-01-30 12:03:28.000000000 -0500
++++ linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_display.c	2013-01-30 12:40:53.177449368 -0500
+@@ -6925,6 +6925,11 @@ intel_modeset_check_state(struct drm_dev
+ 	struct intel_encoder *encoder;
+ 	struct intel_connector *connector;
+ 
++	/* oh hush */
++	extern int i915_in_tv_detect;
++	if (i915_in_tv_detect)
++		return;
++
+ 	list_for_each_entry(connector, &dev->mode_config.connector_list,
+ 			    base.head) {
+ 		/* This also checks the encoder/connector hw state with the
+diff -up linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_tv.c.jx linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_tv.c
+--- linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_tv.c.jx	2012-12-10 22:30:57.000000000 -0500
++++ linux-3.7.5-202.fc18.x86_64/drivers/gpu/drm/i915/intel_tv.c	2013-01-30 12:39:34.318593585 -0500
+@@ -1296,6 +1296,8 @@ static void intel_tv_find_better_format(
+ 		connector->dev->mode_config.tv_mode_property, i);
+ }
+ 
++int i915_in_tv_detect = 0;
++
+ /**
+  * Detect the TV connection.
+  *
+@@ -1314,11 +1316,15 @@ intel_tv_detect(struct drm_connector *co
+ 	if (force) {
+ 		struct intel_load_detect_pipe tmp;
+ 
++		i915_in_tv_detect = 1;
+ 		if (intel_get_load_detect_pipe(connector, &mode, &tmp)) {
+ 			type = intel_tv_detect_type(intel_tv, connector);
+ 			intel_release_load_detect_pipe(connector, &tmp);
+-		} else
++			i915_in_tv_detect = 0;
++		} else {
++			i915_in_tv_detect = 0;
+ 			return connector_status_unknown;
++		}
+ 	} else
+ 		return connector->status;
+ 

@@ -36,22 +36,21 @@ inherit linux-geek
 
 EXPORT_FUNCTIONS src_unpack src_prepare src_compile src_install pkg_postinst
 
-KNOWN_FEATURES="aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse symlink uksm vserver zen zfs"
+KNOWN_USES="aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse symlink uksm vserver zen zfs"
 
 # internal function
 #
-# @FUNCTION: featureKnown
+# @FUNCTION: USEKnown
 # @USAGE:
 # @DESCRIPTION:
-featureKnown() {
-	local feature="${1/-/}"
-	feature="${feature/+/}"
-	[ "${feature}" == "" ] && die "Feature not defined!"
+USEKnown() {
+	local USE=$1
+	[ "${USE}" == "" ] && die "Feature not defined!"
 
-	expr index "${SUPPORTED_FEATURES}" "${feature}" >/dev/null || die "${feature} is not supported in current kernel"
-	expr index "${KNOWN_FEATURES}" "${feature}" >/dev/null || die "${feature} is not known"
-	IUSE="${IUSE} ${feature}"
-	case ${feature} in
+	expr index "${SUPPORTED_USES}" "${USE}" >/dev/null || die "${USE} is not supported in current kernel"
+	expr index "${KNOWN_USES}" "${USE}" >/dev/null || die "${USE} is not known"
+	IUSE="${IUSE} ${USE}"
+	case ${USE} in
 		aufs)	aufs_url="http://aufs.sourceforge.net/"
 			HOMEPAGE="${HOMEPAGE} ${aufs_url}"
 			;;
@@ -82,15 +81,6 @@ featureKnown() {
 			;;
 		debian) debian_url="http://anonscm.debian.org/viewvc/kernel/dists/trunk/linux/debian/patches";
 			HOMEPAGE="${HOMEPAGE} ${debian_url}"
-			;;
-		deblob) deblob_src="http://linux-libre.fsfla.org/pub/linux-libre/releases/LATEST-${KMV}.N/deblob-${KMV} http://linux-libre.fsfla.org/pub/linux-libre/releases/LATEST-${KMV}.N/deblob-check"
-			if [ "${OVERRIDE_deblob_src}" != "" ]; then
-				deblob_src="${OVERRIDE_deblob_src}"
-			fi
-			deblob_url="http://linux-libre.fsfla.org/pub/linux-libre/"
-			HOMEPAGE="${HOMEPAGE} ${deblob_url}"
-			SRC_URI="${SRC_URI}
-				deblob?		( ${deblob_src} )"
 			;;
 		fedora) fedora_url="http://pkgs.fedoraproject.org/gitweb/?p=kernel.git;a=summary";
 			HOMEPAGE="${HOMEPAGE} ${fedora_url}"
@@ -175,8 +165,8 @@ featureKnown() {
 	esac
 }
 
-for I in ${SUPPORTED_FEATURES}; do
-	featureKnown "${I}"
+for I in ${SUPPORTED_USES}; do
+	USEKnown "${I}"
 done
 
 # @FUNCTION: src_unpack
@@ -184,6 +174,34 @@ done
 # @DESCRIPTION:
 geek-sources_src_unpack() {
 	linux-geek_src_unpack
+}
+
+# @FUNCTION: in_iuse
+# @USAGE: <flag>
+# @DESCRIPTION:
+# Determines whether the given flag is in IUSE. Strips IUSE default prefixes
+# as necessary.
+#
+# Note that this function should not be used in the global scope.
+in_iuse() {
+	debug-print-function ${FUNCNAME} "${@}"
+	[[ ${#} -eq 1 ]] || die "Invalid args to ${FUNCNAME}()"
+
+	local flag=${1}
+	local liuse=( ${IUSE} )
+
+	has "${flag}" "${liuse[@]#[+-]}"
+}
+
+# @FUNCTION: use_if_iuse
+# @USAGE: <flag>
+# @DESCRIPTION:
+# Return true if the given flag is in USE and IUSE.
+#
+# Note that this function should not be used in the global scope.
+use_if_iuse() {
+	in_iuse $1 || return 1
+	use $1
 }
 
 # @FUNCTION: src_prepare
@@ -196,38 +214,38 @@ geek-sources_src_prepare() {
 	local _PATCHDIR="/etc/portage/patches" # for user patch
 	local config_file="/etc/portage/kernel.conf"
 	local DEFAULT_GEEKSOURCES_PATCHING_ORDER="vserver bfq ck genpatches grsecurity ice imq reiser4 rifs rt bld uksm aufs mageia fedora suse debian pardus pld zfs branding fix zen upatch";
-	if [ -e "$config_file" ] ; then
-		source "$config_file"
-		if [ "`echo $GEEKSOURCES_PATCHING_ORDER | tr " " "\n"|sort|tr "\n" " "`" == "`echo $DEFAULT_GEEKSOURCES_PATCHING_ORDER | tr " " "\n"|sort|tr "\n" " "`" ] ; then
-			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from $config_file"
+	if [ -e "${config_file}" ] ; then
+		source "${config_file}"
+		if [ "`echo ${GEEKSOURCES_PATCHING_ORDER} | tr " " "\n"|sort|tr "\n" " "`" == "`echo ${DEFAULT_GEEKSOURCES_PATCHING_ORDER} | tr " " "\n"|sort|tr "\n" " "`" ] ; then
+			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from ${config_file}"
 		else
-			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from $config_file"
-			ewarn "Not all USE flag present in GEEKSOURCES_PATCHING_ORDER from $config_file"
-			difference=$(echo "$DEFAULT_GEEKSOURCES_PATCHING_ORDER $GEEKSOURCES_PATCHING_ORDER" | awk '{for(i=1;i<=NF;i++){_a[$i]++}for(i in _a){if(_a[i]==1)print i}}' ORS=" ")
-			ewarn "The following flags are missing: $difference"
+			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from ${config_file}"
+			ewarn "Not all USE flag present in GEEKSOURCES_PATCHING_ORDER from ${config_file}"
+			difference=$(echo "${DEFAULT_GEEKSOURCES_PATCHING_ORDER} ${GEEKSOURCES_PATCHING_ORDER}" | awk '{for(i=1;i<=NF;i++){_a[$i]++}for(i in _a){if(_a[i]==1)print i}}' ORS=" ")
+			ewarn "The following flags are missing: ${difference}"
 			ewarn "Probably that's the plan. In that case, never mind."
 		fi
 	else
 		GEEKSOURCES_PATCHING_ORDER="${DEFAULT_GEEKSOURCES_PATCHING_ORDER}";
-		ewarn "The order of patching is defined in file $config_file with the variable GEEKSOURCES_PATCHING_ORDER is its default value:
+		ewarn "The order of patching is defined in file ${config_file} with the variable GEEKSOURCES_PATCHING_ORDER is its default value:
 GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"
 You are free to choose any order of patching.
 For example, if you like the alphabetical order of patching you must set the variable:
-echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding ck fedora fix genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse uksm upatch vserver zen zfs\"' > $config_file
+echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding ck fedora fix genpatches grsecurity ice imq mageia pardus pld reiser4 rifs rt suse uksm upatch vserver zen zfs\"' > ${config_file}
 Otherwise i will use the default value of GEEKSOURCES_PATCHING_ORDER!
 And may the Force be with you…"
 	fi
 
 for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
-	if use_if_iuse $Current_Patch || [[ $Current_Patch == "fix" ]] || [[ $Current_Patch == "upatch" ]] ; then
-		if [ -e "$FILESDIR/${PV}/$Current_Patch/info" ] ; then
+	if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]] ; then
+		if [ -e "${FILESDIR}/${PV}/${Current_Patch}/info" ] ; then
 			echo
-			cat "$FILESDIR/${PV}/$Current_Patch/info";
+			cat "${FILESDIR}/${PV}/${Current_Patch}/info";
 		fi
-		case ${Current_Patch} in
-			aufs)	ApplyPatch "$FILESDIR/${PV}/$Current_Patch/patch_list" "aufs3 - ${aufs_url}";
+		case "${Current_Patch}" in
+			aufs)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "aufs3 - ${aufs_url}";
 				;;
-			bfq)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}";
+			bfq)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}";
 				;;
 			bld)	echo;
 				cd "${T}";
@@ -242,46 +260,47 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				ApplyPatch "${FILESDIR}/gentoo-larry-logo-v2.patch" "logo - CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/larry.png";
 				ApplyPatch "${FILESDIR}/linux-3.6.6-colored-printk.patch" "Colored printk"
 				;;
-			ck)	ApplyPatch "$DISTDIR/patch-${ck_ver/KMV/$KMV}.lrz" "Con Kolivas high performance patchset - ${ck_url}";
-				if [ -d "${FILESDIR}/${PV}/$Current_Patch" ] ; then
-					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ] ; then
-						ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "CK Fix";
+			ck)	ApplyPatch "${DISTDIR}/patch-${ck_ver/KMV/$KMV}.lrz" "Con Kolivas high performance patchset - ${ck_url}";
+				if [ -d "${FILESDIR}/${PV}/${Current_Patch}" ] ; then
+					if [ -e "${FILESDIR}/${PV}/${Current_Patch}/patch_list" ] ; then
+						ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "CK Fix";
 					fi
 				fi
+				# Comment out EXTRAVERSION added by CK patch:
+				sed -i -e 's/\(^EXTRAVERSION :=.*$\)/# \1/' "Makefile"
 				;;
-			debian) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Debian - ${debian_url}";
-				#use rt && ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list_rt" "Debian rt - ${debian_url}";
+			debian) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Debian - ${debian_url}";
 				;;
-			fedora) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Fedora - ${fedora_url}";
+			fedora) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Fedora - ${fedora_url}";
 				;;
-			fix)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Fixes for current kernel"
+			fix)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Fixes for current kernel"
 				;;
-			genpatches) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Gentoo patches - ${genpatches_url}";
+			genpatches) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Gentoo patches - ${genpatches_url}";
 				;;
-			grsecurity) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "GrSecurity patches - ${grsecurity_url}";
+			grsecurity) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "GrSecurity patches - ${grsecurity_url}";
 				;;
-			ice)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "TuxOnIce - ${ice_url}";
+			ice)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "TuxOnIce - ${ice_url}";
 				;;
 			imq)	ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}";
 				;;
-			mageia) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Mandriva/Mageia - ${mageia_url}";
+			mageia) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Mandriva/Mageia - ${mageia_url}";
 				;;
-			pardus) ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Pardus - ${pardus_url}";
+			pardus) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Pardus - ${pardus_url}";
 				;;
-			pld)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "PLD - ${pld_url}";
+			pld)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "PLD - ${pld_url}";
 				;;
 			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "Reiser4 - ${reiser4_url}";
 				;;
-			rifs)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "RIFS scheduler - ${rifs_url}";
+			rifs)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "RIFS scheduler - ${rifs_url}";
 				;;
 			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}";
 					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ]
 						then ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Debian rt - ${debian_url}";
 					fi
 				;;
-			suse)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "OpenSuSE - ${suse_url}";
+			suse)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "OpenSuSE - ${suse_url}";
 				;;
-			uksm)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
+			uksm)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
 				;;
 			upatch) if [ -d "${_PATCHDIR}/${CATEGORY}/${PN}" ] ; then
 					if [ -e "${_PATCHDIR}/${CATEGORY}/${PN}/info" ] ; then
@@ -301,9 +320,9 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				;;
 			vserver) ApplyPatch "${DISTDIR}/patch-${vserver_ver}.diff" "VServer - ${vserver_url}";
 				;;
-			zen)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "zen-kernel - ${zen_url}";
+			zen)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "zen-kernel - ${zen_url}";
 				;;
-			zfs)	ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "zfs - ${zfs_url}";
+			zfs)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "zfs - ${zfs_url}";
 				;;
 		esac
 	else continue
@@ -311,9 +330,6 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 done;
 
 ### END OF PATCH APPLICATIONS ###
-
-	# Comment out EXTRAVERSION added by CK patch:
-	use ck && sed -i -e 's/\(^EXTRAVERSION :=.*$\)/# \1/' "Makefile"
 
 	linux-geek_src_prepare
 }
@@ -342,8 +358,8 @@ geek-sources_pkg_postinst() {
 	einfo
 	einfo "For more info on this patchset, and how to report problems, see:"
 	for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
-		if use_if_iuse $Current_Patch || [[ $Current_Patch == "fix" ]] || [[ $Current_Patch == "upatch" ]] ; then
-			case ${Current_Patch} in
+		if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]] ; then
+			case "${Current_Patch}" in
 				aufs)	einfo "aufs3 - ${aufs_url}"
 					if ! has_version sys-fs/aufs-util; then
 						ewarn

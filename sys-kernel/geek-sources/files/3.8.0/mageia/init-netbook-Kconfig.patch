@@ -1,0 +1,22 @@
+This patch adds a Kconfig flag so we can easily enable/disable features
+using defconfigs.
+
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+
+---
+ init/Kconfig |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- linux-2.6.38.2-rc1-netbook/init/Kconfig.orig	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38.2-rc1-netbook/init/Kconfig	2011-03-27 01:22:43.534399678 +0200
+@@ -16,6 +16,10 @@ config DEFCONFIG_LIST
+ 	default "$ARCH_DEFCONFIG"
+ 	default "arch/$ARCH/defconfig"
+ 
++config NETBOOK
++	bool
++	default n
++
+ config CONSTRUCTORS
+ 	bool
+ 	depends on !UML

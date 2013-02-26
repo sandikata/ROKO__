@@ -1,0 +1,21 @@
+--- linux-2.6.35/scripts/kconfig/lxdialog/dialog.h.old	2010-09-20 23:10:14.000000000 +0200
++++ linux-2.6.35/scripts/kconfig/lxdialog/dialog.h	2010-09-20 23:10:21.000000000 +0200
+@@ -96,6 +96,18 @@
+ /* error return codes */
+ #define ERRDISPLAYTOOSMALL (KEY_MAX + 1)
+ 
++static inline int
++own_wattrset(WINDOW *win, chtype attr)
++{
++	short n = PAIR_NUMBER(attr);
++	chtype a = attr & ~A_COLOR;
++
++	wattrset(win, a);
++	return wcolor_set(win, n, NULL);
++}
++
++#undef wattrset
++#define wattrset(w,p) own_wattrset(w,p)
+ /*
+  *   Color definitions
+  */

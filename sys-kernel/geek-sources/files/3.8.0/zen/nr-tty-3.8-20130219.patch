@@ -1,0 +1,55 @@
+diff -x .git -urN linux-3.8/drivers/tty/Kconfig zen/drivers/tty/Kconfig
+--- linux-3.8/drivers/tty/Kconfig	2013-02-19 01:58:34.000000000 +0200
++++ zen/drivers/tty/Kconfig	2013-02-19 12:18:31.776527361 +0200
+@@ -64,6 +64,19 @@
+ 	def_bool y
+ 	depends on VT_CONSOLE && PM_SLEEP
+ 
++config NR_TTY_DEVICES
++        int "Maximum tty device number"
++        depends on VT
++        range 12 63
++        default 63
++        ---help---
++          This option is used to change the number of tty devices in /dev.
++          The default value is 63. The lowest number you can set is 12,
++          63 is also the upper limit so we don't overrun the serial
++          consoles.
++
++          If unsure, say 63.
++
+ config HW_CONSOLE
+ 	bool
+ 	depends on VT && !UML
+diff -x .git -urN linux-3.8/include/uapi/linux/vt.h zen/include/uapi/linux/vt.h
+--- linux-3.8/include/uapi/linux/vt.h	2013-02-19 01:58:34.000000000 +0200
++++ zen/include/uapi/linux/vt.h	2013-02-19 12:18:31.776527361 +0200
+@@ -3,12 +3,26 @@
+ 
+ 
+ /*
++ * We will make this definition solely for the purpose of making packages
++ * such as splashutils build, because they can not understand that
++ * NR_TTY_DEVICES is defined in the kernel configuration.
++ */
++#ifndef CONFIG_NR_TTY_DEVICES
++#define CONFIG_NR_TTY_DEVICES 63
++#endif
++
++/*
+  * These constants are also useful for user-level apps (e.g., VC
+  * resizing).
+  */
+ #define MIN_NR_CONSOLES 1       /* must be at least 1 */
+-#define MAX_NR_CONSOLES	63	/* serial lines start at 64 */
+-#define MAX_NR_USER_CONSOLES 63	/* must be root to allocate above this */
++
++/*
++ * NR_TTY_DEVICES:
++ * Value MUST be at least 11 and must never be higher then 63
++ */
++#define MAX_NR_CONSOLES CONFIG_NR_TTY_DEVICES		/* serial lines start above this */
++#define MAX_NR_USER_CONSOLES CONFIG_NR_TTY_DEVICES	/* must be root to allocate above this */
+ 		/* Note: the ioctl VT_GETSTATE does not work for
+ 		   consoles 16 and higher (since it returns a short) */
+ 
