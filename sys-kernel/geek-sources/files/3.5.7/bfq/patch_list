@@ -1,4 +1,0 @@
-# http://algo.ing.unimo.it/people/paolo/disk_sched/patches/3.5.0-v4/
-
-0001-block-cgroups-kconfig-build-bits-for-BFQ-v4-3.5.patch
-0002-block-introduce-the-BFQ-v4-I-O-sched-for-3.5.patch
