@@ -1,0 +1,234 @@
+
+This changes makes the necessary changes to build aufs2.1 as module
+and adapts for unionfs changes to vfs layer.
+
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+
+ fs/aufs/Kconfig          |    2 +-
+ fs/aufs/vfsub.c          |    4 ++--
+ fs/file_table.c          |    2 ++
+ fs/inode.c               |    1 +
+ fs/namei.c               |    3 +++
+ fs/open.c                |    1 +
+ include/linux/splice.h   |    4 ++--
+ security/device_cgroup.c |    1 +
+ security/security.c      |   12 ++++++++++++
+ 9 files changed, 25 insertions(+), 5 deletions(-)
+
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/aufs/Kconfig linux-2.6.38.4.unionfs.aufs2.1.modular/fs/aufs/Kconfig
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/aufs/Kconfig	2011-04-22 13:41:41.684727078 +0300
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/aufs/Kconfig	2011-04-22 13:44:03.584820125 +0300
+@@ -1,5 +1,5 @@
+ config AUFS_FS
+-	bool "Aufs (Advanced multi layered unification filesystem) support"
++	tristate "Aufs (Advanced multi layered unification filesystem) support"
+ 	depends on EXPERIMENTAL
+ 	help
+ 	Aufs is a stackable unification filesystem such as Unionfs,
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/aufs/vfsub.c linux-2.6.38.4.unionfs.aufs2.1.modular/fs/aufs/vfsub.c
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/aufs/vfsub.c	2011-04-22 13:41:41.717727639 +0300
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/aufs/vfsub.c	2011-04-22 13:44:03.612820383 +0300
+@@ -534,7 +534,7 @@ long vfsub_splice_to(struct file *in, lo
+ {
+ 	long err;
+ 
+-	err = do_splice_to(in, ppos, pipe, len, flags);
++	err = vfs_splice_to(in, ppos, pipe, len, flags);
+ 	file_accessed(in);
+ 	if (err >= 0)
+ 		vfsub_update_h_iattr(&in->f_path, /*did*/NULL); /*ignore*/
+@@ -546,7 +546,7 @@ long vfsub_splice_from(struct pipe_inode
+ {
+ 	long err;
+ 
+-	err = do_splice_from(pipe, out, ppos, len, flags);
++	err = vfs_splice_from(pipe, out, ppos, len, flags);
+ 	if (err >= 0)
+ 		vfsub_update_h_iattr(&out->f_path, /*did*/NULL); /*ignore*/
+ 	return err;
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/file_table.c linux-2.6.38.4.unionfs.aufs2.1.modular/fs/file_table.c
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/file_table.c	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/file_table.c	2011-04-22 13:44:03.612820383 +0300
+@@ -393,6 +393,8 @@ void file_sb_list_del(struct file *file)
+ 	}
+ }
+ 
++EXPORT_SYMBOL(file_sb_list_del);
++
+ #ifdef CONFIG_SMP
+ 
+ /*
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/inode.c linux-2.6.38.4.unionfs.aufs2.1.modular/fs/inode.c
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/inode.c	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/inode.c	2011-04-22 13:44:03.613820404 +0300
+@@ -82,6 +82,7 @@ static struct hlist_head *inode_hashtabl
+  * the i_state of an inode while it is in use..
+  */
+ DEFINE_SPINLOCK(inode_lock);
++EXPORT_SYMBOL(inode_lock);
+ 
+ /*
+  * iprune_sem provides exclusion between the kswapd or try_to_free_pages
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/namei.c linux-2.6.38.4.unionfs.aufs2.1.modular/fs/namei.c
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/namei.c	2011-04-22 13:41:41.722727747 +0300
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/namei.c	2011-04-22 13:44:03.614820425 +0300
+@@ -353,6 +353,7 @@ int deny_write_access(struct file * file
+ 
+ 	return 0;
+ }
++EXPORT_SYMBOL(deny_write_access);
+ 
+ /**
+  * path_get - get a reference to a path
+@@ -1848,6 +1849,7 @@ struct dentry *lookup_hash(struct nameid
+ {
+ 	return __lookup_hash(&nd->last, nd->path.dentry, nd);
+ }
++EXPORT_SYMBOL(lookup_hash);
+ 
+ int __lookup_one_len(const char *name, struct qstr *this,
+ 		struct dentry *base, int len)
+@@ -1870,6 +1872,7 @@ int __lookup_one_len(const char *name, s
+ 	this->hash = end_name_hash(hash);
+ 	return 0;
+ }
++EXPORT_SYMBOL(__lookup_one_len);
+ 
+ /**
+  * lookup_one_len - filesystem helper to lookup single pathname component
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/fs/open.c linux-2.6.38.4.unionfs.aufs2.1.modular/fs/open.c
+--- linux-2.6.38.4.unionfs.aufs2.1/fs/open.c	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/fs/open.c	2011-04-22 13:44:03.615820446 +0300
+@@ -60,6 +60,7 @@ int do_truncate(struct dentry *dentry, l
+ 	mutex_unlock(&dentry->d_inode->i_mutex);
+ 	return ret;
+ }
++EXPORT_SYMBOL(do_truncate);
+ 
+ static long do_sys_truncate(const char __user *pathname, loff_t length)
+ {
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/include/linux/splice.h linux-2.6.38.4.unionfs.aufs2.1.modular/include/linux/splice.h
+--- linux-2.6.38.4.unionfs.aufs2.1/include/linux/splice.h	2011-04-22 13:41:41.727727857 +0300
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/include/linux/splice.h	2011-04-22 13:44:03.615820446 +0300
+@@ -94,9 +94,9 @@ extern int splice_grow_spd(struct pipe_i
+ extern void splice_shrink_spd(struct pipe_inode_info *,
+ 				struct splice_pipe_desc *);
+ 
+-extern long do_splice_from(struct pipe_inode_info *pipe, struct file *out,
++extern long vfs_splice_from(struct pipe_inode_info *pipe, struct file *out,
+ 			   loff_t *ppos, size_t len, unsigned int flags);
+-extern long do_splice_to(struct file *in, loff_t *ppos,
++extern long vfs_splice_to(struct file *in, loff_t *ppos,
+ 			 struct pipe_inode_info *pipe, size_t len,
+ 			 unsigned int flags);
+ 
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/security/device_cgroup.c linux-2.6.38.4.unionfs.aufs2.1.modular/security/device_cgroup.c
+--- linux-2.6.38.4.unionfs.aufs2.1/security/device_cgroup.c	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/security/device_cgroup.c	2011-04-22 13:44:03.616820468 +0300
+@@ -515,6 +515,7 @@ found:
+ 
+ 	return -EPERM;
+ }
++EXPORT_SYMBOL(devcgroup_inode_permission);
+ 
+ int devcgroup_inode_mknod(int mode, dev_t dev)
+ {
+diff -Nurp linux-2.6.38.4.unionfs.aufs2.1/security/security.c linux-2.6.38.4.unionfs.aufs2.1.modular/security/security.c
+--- linux-2.6.38.4.unionfs.aufs2.1/security/security.c	2011-04-22 13:36:37.102088231 +0300
++++ linux-2.6.38.4.unionfs.aufs2.1.modular/security/security.c	2011-04-22 13:44:03.616820468 +0300
+@@ -359,6 +359,7 @@ int security_path_mkdir(struct path *dir
+ 		return 0;
+ 	return security_ops->path_mkdir(dir, dentry, mode);
+ }
++EXPORT_SYMBOL(security_path_mkdir);
+ 
+ int security_path_rmdir(struct path *dir, struct dentry *dentry)
+ {
+@@ -366,6 +367,7 @@ int security_path_rmdir(struct path *dir
+ 		return 0;
+ 	return security_ops->path_rmdir(dir, dentry);
+ }
++EXPORT_SYMBOL(security_path_rmdir);
+ 
+ int security_path_unlink(struct path *dir, struct dentry *dentry)
+ {
+@@ -373,6 +375,7 @@ int security_path_unlink(struct path *di
+ 		return 0;
+ 	return security_ops->path_unlink(dir, dentry);
+ }
++EXPORT_SYMBOL(security_path_unlink);
+ 
+ int security_path_symlink(struct path *dir, struct dentry *dentry,
+ 			  const char *old_name)
+@@ -381,6 +384,7 @@ int security_path_symlink(struct path *d
+ 		return 0;
+ 	return security_ops->path_symlink(dir, dentry, old_name);
+ }
++EXPORT_SYMBOL(security_path_symlink);
+ 
+ int security_path_link(struct dentry *old_dentry, struct path *new_dir,
+ 		       struct dentry *new_dentry)
+@@ -389,6 +393,7 @@ int security_path_link(struct dentry *ol
+ 		return 0;
+ 	return security_ops->path_link(old_dentry, new_dir, new_dentry);
+ }
++EXPORT_SYMBOL(security_path_link);
+ 
+ int security_path_rename(struct path *old_dir, struct dentry *old_dentry,
+ 			 struct path *new_dir, struct dentry *new_dentry)
+@@ -399,6 +404,7 @@ int security_path_rename(struct path *ol
+ 	return security_ops->path_rename(old_dir, old_dentry, new_dir,
+ 					 new_dentry);
+ }
++EXPORT_SYMBOL(security_path_rename);
+ 
+ int security_path_truncate(struct path *path)
+ {
+@@ -406,6 +412,7 @@ int security_path_truncate(struct path *
+ 		return 0;
+ 	return security_ops->path_truncate(path);
+ }
++EXPORT_SYMBOL(security_path_truncate);
+ 
+ int security_path_chmod(struct dentry *dentry, struct vfsmount *mnt,
+ 			mode_t mode)
+@@ -414,6 +421,7 @@ int security_path_chmod(struct dentry *d
+ 		return 0;
+ 	return security_ops->path_chmod(dentry, mnt, mode);
+ }
++EXPORT_SYMBOL(security_path_chmod);
+ 
+ int security_path_chown(struct path *path, uid_t uid, gid_t gid)
+ {
+@@ -421,6 +429,7 @@ int security_path_chown(struct path *pat
+ 		return 0;
+ 	return security_ops->path_chown(path, uid, gid);
+ }
++EXPORT_SYMBOL(security_path_chown);
+ 
+ int security_path_chroot(struct path *path)
+ {
+@@ -497,6 +506,7 @@ int security_inode_readlink(struct dentr
+ 		return 0;
+ 	return security_ops->inode_readlink(dentry);
+ }
++EXPORT_SYMBOL(security_inode_readlink);
+ 
+ int security_inode_follow_link(struct dentry *dentry, struct nameidata *nd)
+ {
+@@ -620,6 +630,7 @@ int security_file_permission(struct file
+ 
+ 	return fsnotify_perm(file, mask);
+ }
++EXPORT_SYMBOL(security_file_permission);
+ 
+ int security_file_alloc(struct file *file)
+ {
+@@ -647,6 +658,7 @@ int security_file_mmap(struct file *file
+ 		return ret;
+ 	return ima_file_mmap(file, prot);
+ }
++EXPORT_SYMBOL(security_file_mmap);
+ 
+ int security_file_mprotect(struct vm_area_struct *vma, unsigned long reqprot,
+ 			    unsigned long prot)

@@ -1,0 +1,10 @@
+--- linux-3.7.0-0.rc2.git1.2.fc19.x86_64/arch/arm/kernel/armksyms.c.orig	2012-10-01 00:47:46.000000000 +0100
++++ linux-3.7.0-0.rc2.git1.2.fc19.x86_64/arch/arm/kernel/armksyms.c	2012-10-24 09:06:46.570452677 +0100
+@@ -50,6 +50,7 @@
+ 
+ 	/* platform dependent support */
+ EXPORT_SYMBOL(arm_delay_ops);
++EXPORT_SYMBOL(read_current_timer);
+ 
+ 	/* networking */
+ EXPORT_SYMBOL(csum_partial);

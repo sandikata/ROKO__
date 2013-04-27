@@ -16,9 +16,9 @@ inherit gnome2 python
 # Stolen from git.eclass
 EXPORTED_FUNCTIONS="pkg_setup src_compile src_test src_install"
 case "${EAPI:-0}" in
-    2|3) EXPORTED_FUNCTIONS="${EXPORTED_FUNCTIONS} src_prepare src_configure" ;;
+    2|3|4) EXPORTED_FUNCTIONS="${EXPORTED_FUNCTIONS} src_prepare src_configure" ;;
 	0|1) ;;
-	*) die "Unknown EAPI, Bug eclass maintainers." ;;
+	*) die "Unknown EAPI, bug eclass maintainers." ;;
 esac
 
 EXPORT_FUNCTIONS ${EXPORTED_FUNCTIONS}
@@ -28,13 +28,8 @@ gnome2-python_pkg_setup() {
 }
 
 gnome2-python_src_prepare() {
-	if [ -f py-compile ]; then
-		# disable pyc compiling
-		mv py-compile py-compile.orig
-		ln -s $(type -P true) py-compile
-	fi
-
 	gnome2_src_prepare
+	python_clean_py-compile_files
 	python_copy_sources
 }
 

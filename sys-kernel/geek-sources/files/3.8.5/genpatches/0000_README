@@ -1,0 +1,76 @@
+README
+--------------------------------------------------------------------------
+This patchset is to be the 2.6 series of gentoo-sources.
+It is designed for cross-compatibility, fixes and stability, with performance
+and additional features/driver support being a second.
+
+Unless otherwise stated and marked as such, this kernel should be suitable for
+all environments.
+
+
+Patchset Numbering Scheme
+--------------------------------------------------------------------------
+
+FIXES
+1000-1400	linux-stable
+1400-1500	linux-stable queue
+1500-1700	security
+1700-1800	architecture-related
+1800-1900	mm/scheduling/misc
+1900-2000	filesystems
+2000-2100	networking core
+2100-2200	storage core
+2200-2300	power management (ACPI, APM)
+2300-2400	bus (USB, IEEE1394, PCI, PCMCIA, ...)
+2400-2500	network drivers
+2500-2600	storage drivers
+2600-2700	input
+2700-2900	media (graphics, sound, tv)
+2900-3000	other
+3000-4000	reserved
+
+FEATURES
+4000-4100	network
+4100-4200	storage
+4200-4300	graphics
+4300-4400	filesystem
+4400-4500   security enhancement
+4500-4600   other
+
+Individual Patch Descriptions:
+--------------------------------------------------------------------------
+Patch:  1000_linux-3.8.1.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.8.1
+
+Patch:  1001_linux-3.8.2.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.8.2
+
+Patch:  1002_linux-3.8.3.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.8.3
+
+Patch:  1003_linux-3.8.4.patch
+From:   http://www.kernel.org
+Desc:   Linux 3.8.4
+
+Patch:  1700_enable-thinkpad-micled.patch
+From:   https://bugs.gentoo.org/show_bug.cgi?id=449248
+Desc:   Enable mic mute led in thinkpads
+
+Patch:  1800_memcg-OOM-revert-ZFS-deadlock.patch
+From:   https://bugs.gentoo.org/show_bug.cgi?id=462066
+Desc:   Revert memcg patches that prevent OOM with too many dirty pages.
+
+Patch:  2400_kcopy-patch-for-infiniband-driver.patch
+From:   Alexey Shvetsov <alexxy@gentoo.org>
+Desc:   Zero copy for infiniband psm userspace driver
+
+Patch:  2900_dev-root-proc-mount-fix.patch
+From:   https://bugs.gentoo.org/show_bug.cgi?id=438380
+Desc:   Ensure that /dev/root doesn't appear in /proc/mounts when bootint without an initramfs.
+
+Patch:  4200_fbcondecor-0.9.6.patch
+From:   http://dev.gentoo.org/~spock
+Desc:   Bootsplash successor by Michal Januszewski ported by Jeremy (bug #452574)

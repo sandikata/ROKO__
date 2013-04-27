@@ -1,0 +1,14 @@
+diff -x .git -urN linux-3.8/scripts/mkcompile_h zen/scripts/mkcompile_h
+--- linux-3.8/scripts/mkcompile_h	2013-02-19 01:58:34.000000000 +0200
++++ zen/scripts/mkcompile_h	2013-04-01 12:18:32.275456895 +0300
+@@ -54,8 +54,8 @@
+ fi
+ 
+ UTS_VERSION="#$VERSION"
+-CONFIG_FLAGS=""
+-if [ -n "$SMP" ] ; then CONFIG_FLAGS="SMP"; fi
++CONFIG_FLAGS="ZEN"
++if [ -n "$SMP" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS SMP"; fi
+ if [ -n "$PREEMPT" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS PREEMPT"; fi
+ UTS_VERSION="$UTS_VERSION $CONFIG_FLAGS $TIMESTAMP"
+ 

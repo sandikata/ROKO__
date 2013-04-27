@@ -1,0 +1,731 @@
+From 1f52075d672a9bdd0069b3ea68be266ef5c229bd Mon Sep 17 00:00:00 2001
+From: Alexey Shvetsov <alexxy@gentoo.org>
+Date: Tue, 17 Jan 2012 21:08:49 +0400
+Subject: [PATCH] [kcopy] Add kcopy driver
+
+Add kcopy driver from qlogic to implement zero copy for infiniband psm
+userspace driver
+
+Signed-off-by: Alexey Shvetsov <alexxy@gentoo.org>
+---
+ drivers/char/Kconfig        |    2 +
+ drivers/char/Makefile       |    2 +
+ drivers/char/kcopy/Kconfig  |   17 ++
+ drivers/char/kcopy/Makefile |    4 +
+ drivers/char/kcopy/kcopy.c  |  646 +++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 671 insertions(+)
+ create mode 100644 drivers/char/kcopy/Kconfig
+ create mode 100644 drivers/char/kcopy/Makefile
+ create mode 100644 drivers/char/kcopy/kcopy.c
+
+diff --git a/drivers/char/Kconfig b/drivers/char/Kconfig
+index ee94686..5b81449 100644
+--- a/drivers/char/Kconfig
++++ b/drivers/char/Kconfig
+@@ -6,6 +6,8 @@ menu "Character devices"
+ 
+ source "drivers/tty/Kconfig"
+ 
++source "drivers/char/kcopy/Kconfig"
++
+ config DEVKMEM
+    bool "/dev/kmem virtual device support"
+    default y
+diff --git a/drivers/char/Makefile b/drivers/char/Makefile
+index 0dc5d7c..be519d6 100644
+--- a/drivers/char/Makefile
++++ b/drivers/char/Makefile
+@@ -62,3 +62,5 @@
+ js-rtc-y = rtc.o
+
+ obj-$(CONFIG_TILE_SROM)		+= tile-srom.o
++
++obj-$(CONFIG_KCOPY)		+= kcopy/
+diff --git a/drivers/char/kcopy/Kconfig b/drivers/char/kcopy/Kconfig
+new file mode 100644
+index 0000000..453ae52
+--- /dev/null
++++ b/drivers/char/kcopy/Kconfig
+@@ -0,0 +1,17 @@
++#
++# KCopy character device configuration
++#
++
++menu "KCopy"
++
++config KCOPY
++   tristate "Memory-to-memory copies using kernel assist"
++   default m
++   ---help---
++     High-performance inter-process memory copies.  Can often save a
++     memory copy to shared memory in the application.   Useful at least
++     for MPI applications where the point-to-point nature of vmsplice
++     and pipes can be a limiting factor in performance.
++
++endmenu
++
+diff --git a/drivers/char/kcopy/Makefile b/drivers/char/kcopy/Makefile
+new file mode 100644
+index 0000000..9cb269b
+--- /dev/null
++++ b/drivers/char/kcopy/Makefile
+@@ -0,0 +1,4 @@
++#
++# Makefile for the kernel character device drivers.
++#
++obj-$(CONFIG_KCOPY)    += kcopy.o
+diff --git a/drivers/char/kcopy/kcopy.c b/drivers/char/kcopy/kcopy.c
+new file mode 100644
+index 0000000..a9f915c
+--- /dev/null
++++ b/drivers/char/kcopy/kcopy.c
+@@ -0,0 +1,646 @@
++#include <linux/module.h>
++#include <linux/fs.h>
++#include <linux/cdev.h>
++#include <linux/device.h>
++#include <linux/mutex.h>
++#include <linux/mman.h>
++#include <linux/highmem.h>
++#include <linux/spinlock.h>
++#include <linux/sched.h>
++#include <linux/rbtree.h>
++#include <linux/rcupdate.h>
++#include <linux/uaccess.h>
++#include <linux/slab.h>
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Arthur Jones <arthur.jones@qlogic.com>");
++MODULE_DESCRIPTION("QLogic kcopy driver");
++
++#define KCOPY_ABI      1
++#define KCOPY_MAX_MINORS   64
++
++struct kcopy_device {
++   struct cdev cdev;
++   struct class *class;
++   struct device *devp[KCOPY_MAX_MINORS];
++   dev_t dev;
++
++   struct kcopy_file *kf[KCOPY_MAX_MINORS];
++   struct mutex open_lock;
++};
++
++static struct kcopy_device kcopy_dev;
++
++/* per file data / one of these is shared per minor */
++struct kcopy_file {
++   int count;
++
++   /* pid indexed */
++   struct rb_root live_map_tree;
++
++   struct mutex map_lock;
++};
++
++struct kcopy_map_entry {
++   int    count;
++   struct task_struct *task;
++   pid_t  pid;
++   struct kcopy_file *file; /* file backpointer */
++
++   struct list_head list; /* free map list */
++   struct rb_node   node; /* live map tree */
++};
++
++#define KCOPY_GET_SYSCALL 1
++#define KCOPY_PUT_SYSCALL 2
++#define KCOPY_ABI_SYSCALL 3
++
++struct kcopy_syscall {
++   __u32 tag;
++   pid_t pid;
++   __u64 n;
++   __u64 src;
++   __u64 dst;
++};
++
++static const void __user *kcopy_syscall_src(const struct kcopy_syscall *ks)
++{
++   return (const void __user *) (unsigned long) ks->src;
++}
++
++static void __user *kcopy_syscall_dst(const struct kcopy_syscall *ks)
++{
++   return (void __user *) (unsigned long) ks->dst;
++}
++
++static unsigned long kcopy_syscall_n(const struct kcopy_syscall *ks)
++{
++   return (unsigned long) ks->n;
++}
++
++static struct kcopy_map_entry *kcopy_create_entry(struct kcopy_file *file)
++{
++   struct kcopy_map_entry *kme =
++       kmalloc(sizeof(struct kcopy_map_entry), GFP_KERNEL);
++
++   if (!kme)
++       return NULL;
++
++   kme->count = 1;
++   kme->file = file;
++   kme->task = current;
++   kme->pid = current->tgid;
++   INIT_LIST_HEAD(&kme->list);
++
++   return kme;
++}
++
++static struct kcopy_map_entry *
++kcopy_lookup_pid(struct rb_root *root, pid_t pid)
++{
++   struct rb_node *node = root->rb_node;
++
++   while (node) {
++       struct kcopy_map_entry *kme =
++           container_of(node, struct kcopy_map_entry, node);
++
++       if (pid < kme->pid)
++           node = node->rb_left;
++       else if (pid > kme->pid)
++           node = node->rb_right;
++       else
++           return kme;
++   }
++
++   return NULL;
++}
++
++static int kcopy_insert(struct rb_root *root, struct kcopy_map_entry *kme)
++{
++   struct rb_node **new = &(root->rb_node);
++   struct rb_node *parent = NULL;
++
++   while (*new) {
++       struct kcopy_map_entry *tkme =
++           container_of(*new, struct kcopy_map_entry, node);
++
++       parent = *new;
++       if (kme->pid < tkme->pid)
++           new = &((*new)->rb_left);
++       else if (kme->pid > tkme->pid)
++           new = &((*new)->rb_right);
++       else {
++           printk(KERN_INFO "!!! debugging: bad rb tree !!!\n");
++           return -EINVAL;
++       }
++   }
++
++   rb_link_node(&kme->node, parent, new);
++   rb_insert_color(&kme->node, root);
++
++   return 0;
++}
++
++static int kcopy_open(struct inode *inode, struct file *filp)
++{
++   int ret;
++   const int minor = iminor(inode);
++   struct kcopy_file *kf = NULL;
++   struct kcopy_map_entry *kme;
++   struct kcopy_map_entry *okme;
++
++   if (minor < 0 || minor >= KCOPY_MAX_MINORS)
++       return -ENODEV;
++
++   mutex_lock(&kcopy_dev.open_lock);
++
++   if (!kcopy_dev.kf[minor]) {
++       kf = kmalloc(sizeof(struct kcopy_file), GFP_KERNEL);
++
++       if (!kf) {
++           ret = -ENOMEM;
++           goto bail;
++       }
++
++       kf->count = 1;
++       kf->live_map_tree = RB_ROOT;
++       mutex_init(&kf->map_lock);
++       kcopy_dev.kf[minor] = kf;
++   } else {
++       if (filp->f_flags & O_EXCL) {
++           ret = -EBUSY;
++           goto bail;
++       }
++       kcopy_dev.kf[minor]->count++;
++   }
++
++   kme = kcopy_create_entry(kcopy_dev.kf[minor]);
++   if (!kme) {
++       ret = -ENOMEM;
++       goto err_free_kf;
++   }
++
++   kf = kcopy_dev.kf[minor];
++
++   mutex_lock(&kf->map_lock);
++
++   okme = kcopy_lookup_pid(&kf->live_map_tree, kme->pid);
++   if (okme) {
++       /* pid already exists... */
++       okme->count++;
++       kfree(kme);
++       kme = okme;
++   } else
++       ret = kcopy_insert(&kf->live_map_tree, kme);
++
++   mutex_unlock(&kf->map_lock);
++
++   filp->private_data = kme;
++
++   ret = 0;
++   goto bail;
++
++err_free_kf:
++   if (kf) {
++       kcopy_dev.kf[minor] = NULL;
++       kfree(kf);
++   }
++bail:
++   mutex_unlock(&kcopy_dev.open_lock);
++   return ret;
++}
++
++static int kcopy_flush(struct file *filp, fl_owner_t id)
++{
++   struct kcopy_map_entry *kme = filp->private_data;
++   struct kcopy_file *kf = kme->file;
++
++   if (file_count(filp) == 1) {
++       mutex_lock(&kf->map_lock);
++       kme->count--;
++
++       if (!kme->count) {
++           rb_erase(&kme->node, &kf->live_map_tree);
++           kfree(kme);
++       }
++       mutex_unlock(&kf->map_lock);
++   }
++
++   return 0;
++}
++
++static int kcopy_release(struct inode *inode, struct file *filp)
++{
++   const int minor = iminor(inode);
++
++   mutex_lock(&kcopy_dev.open_lock);
++   kcopy_dev.kf[minor]->count--;
++   if (!kcopy_dev.kf[minor]->count) {
++       kfree(kcopy_dev.kf[minor]);
++       kcopy_dev.kf[minor] = NULL;
++   }
++   mutex_unlock(&kcopy_dev.open_lock);
++
++   return 0;
++}
++
++static void kcopy_put_pages(struct page **pages, int npages)
++{
++   int j;
++
++   for (j = 0; j < npages; j++)
++       put_page(pages[j]);
++}
++
++static int kcopy_validate_task(struct task_struct *p)
++{
++   return p && (uid_eq(current_euid(), task_euid(p)) || uid_eq(current_euid(), task_uid(p)));
++}
++
++static int kcopy_get_pages(struct kcopy_file *kf, pid_t pid,
++              struct page **pages, void __user *addr,
++              int write, size_t npages)
++{
++   int err;
++   struct mm_struct *mm;
++   struct kcopy_map_entry *rkme;
++
++   mutex_lock(&kf->map_lock);
++
++   rkme = kcopy_lookup_pid(&kf->live_map_tree, pid);
++   if (!rkme || !kcopy_validate_task(rkme->task)) {
++       err = -EINVAL;
++       goto bail_unlock;
++   }
++
++   mm = get_task_mm(rkme->task);
++   if (unlikely(!mm)) {
++       err = -ENOMEM;
++       goto bail_unlock;
++   }
++
++   down_read(&mm->mmap_sem);
++   err = get_user_pages(rkme->task, mm,
++                (unsigned long) addr, npages, write, 0,
++                pages, NULL);
++
++   if (err < npages && err > 0) {
++       kcopy_put_pages(pages, err);
++       err = -ENOMEM;
++   } else if (err == npages)
++       err = 0;
++
++   up_read(&mm->mmap_sem);
++
++   mmput(mm);
++
++bail_unlock:
++   mutex_unlock(&kf->map_lock);
++
++   return err;
++}
++
++static unsigned long kcopy_copy_pages_from_user(void __user *src,
++                       struct page **dpages,
++                       unsigned doff,
++                       unsigned long n)
++{
++   struct page *dpage = *dpages;
++   char *daddr = kmap(dpage);
++   int ret = 0;
++
++   while (1) {
++       const unsigned long nleft = PAGE_SIZE - doff;
++       const unsigned long nc = (n < nleft) ? n : nleft;
++
++       /* if (copy_from_user(daddr + doff, src, nc)) { */
++       if (__copy_from_user_nocache(daddr + doff, src, nc)) {
++           ret = -EFAULT;
++           goto bail;
++       }
++
++       n -= nc;
++       if (n == 0)
++           break;
++
++       doff += nc;
++       doff &= ~PAGE_MASK;
++       if (doff == 0) {
++           kunmap(dpage);
++           dpages++;
++           dpage = *dpages;
++           daddr = kmap(dpage);
++       }
++
++       src += nc;
++   }
++
++bail:
++   kunmap(dpage);
++
++   return ret;
++}
++
++static unsigned long kcopy_copy_pages_to_user(void __user *dst,
++                         struct page **spages,
++                         unsigned soff,
++                         unsigned long n)
++{
++   struct page *spage = *spages;
++   const char *saddr = kmap(spage);
++   int ret = 0;
++
++   while (1) {
++       const unsigned long nleft = PAGE_SIZE - soff;
++       const unsigned long nc = (n < nleft) ? n : nleft;
++
++       if (copy_to_user(dst, saddr + soff, nc)) {
++           ret = -EFAULT;
++           goto bail;
++       }
++
++       n -= nc;
++       if (n == 0)
++           break;
++
++       soff += nc;
++       soff &= ~PAGE_MASK;
++       if (soff == 0) {
++           kunmap(spage);
++           spages++;
++           spage = *spages;
++           saddr = kmap(spage);
++       }
++
++       dst += nc;
++   }
++
++bail:
++   kunmap(spage);
++
++   return ret;
++}
++
++static unsigned long kcopy_copy_to_user(void __user *dst,
++                   struct kcopy_file *kf, pid_t pid,
++                   void __user *src,
++                   unsigned long n)
++{
++   struct page **pages;
++   const int pages_len = PAGE_SIZE / sizeof(struct page *);
++   int ret = 0;
++
++   pages = (struct page **) __get_free_page(GFP_KERNEL);
++   if (!pages) {
++       ret = -ENOMEM;
++       goto bail;
++   }
++
++   while (n) {
++       const unsigned long soff = (unsigned long) src & ~PAGE_MASK;
++       const unsigned long spages_left =
++           (soff + n + PAGE_SIZE - 1) >> PAGE_SHIFT;
++       const unsigned long spages_cp =
++           min_t(unsigned long, spages_left, pages_len);
++       const unsigned long sbytes =
++           PAGE_SIZE - soff + (spages_cp - 1) * PAGE_SIZE;
++       const unsigned long nbytes = min_t(unsigned long, sbytes, n);
++
++       ret = kcopy_get_pages(kf, pid, pages, src, 0, spages_cp);
++       if (unlikely(ret))
++           goto bail_free;
++
++       ret = kcopy_copy_pages_to_user(dst, pages, soff, nbytes);
++       kcopy_put_pages(pages, spages_cp);
++       if (ret)
++           goto bail_free;
++       dst = (char *) dst + nbytes;
++       src = (char *) src + nbytes;
++
++       n -= nbytes;
++   }
++
++bail_free:
++   free_page((unsigned long) pages);
++bail:
++   return ret;
++}
++
++static unsigned long kcopy_copy_from_user(const void __user *src,
++                     struct kcopy_file *kf, pid_t pid,
++                     void __user *dst,
++                     unsigned long n)
++{
++   struct page **pages;
++   const int pages_len = PAGE_SIZE / sizeof(struct page *);
++   int ret = 0;
++
++   pages = (struct page **) __get_free_page(GFP_KERNEL);
++   if (!pages) {
++       ret = -ENOMEM;
++       goto bail;
++   }
++
++   while (n) {
++       const unsigned long doff = (unsigned long) dst & ~PAGE_MASK;
++       const unsigned long dpages_left =
++           (doff + n + PAGE_SIZE - 1) >> PAGE_SHIFT;
++       const unsigned long dpages_cp =
++           min_t(unsigned long, dpages_left, pages_len);
++       const unsigned long dbytes =
++           PAGE_SIZE - doff + (dpages_cp - 1) * PAGE_SIZE;
++       const unsigned long nbytes = min_t(unsigned long, dbytes, n);
++
++       ret = kcopy_get_pages(kf, pid, pages, dst, 1, dpages_cp);
++       if (unlikely(ret))
++           goto bail_free;
++
++       ret = kcopy_copy_pages_from_user((void __user *) src,
++                        pages, doff, nbytes);
++       kcopy_put_pages(pages, dpages_cp);
++       if (ret)
++           goto bail_free;
++
++       dst = (char *) dst + nbytes;
++       src = (char *) src + nbytes;
++
++       n -= nbytes;
++   }
++
++bail_free:
++   free_page((unsigned long) pages);
++bail:
++   return ret;
++}
++
++static int kcopy_do_get(struct kcopy_map_entry *kme, pid_t pid,
++           const void __user *src, void __user *dst,
++           unsigned long n)
++{
++   struct kcopy_file *kf = kme->file;
++   int ret = 0;
++
++   if (n == 0) {
++       ret = -EINVAL;
++       goto bail;
++   }
++
++   ret = kcopy_copy_to_user(dst, kf, pid, (void __user *) src, n);
++
++bail:
++   return ret;
++}
++
++static int kcopy_do_put(struct kcopy_map_entry *kme, const void __user *src,
++           pid_t pid, void __user *dst,
++           unsigned long n)
++{
++   struct kcopy_file *kf = kme->file;
++   int ret = 0;
++
++   if (n == 0) {
++       ret = -EINVAL;
++       goto bail;
++   }
++
++   ret = kcopy_copy_from_user(src, kf, pid, (void __user *) dst, n);
++
++bail:
++   return ret;
++}
++
++static int kcopy_do_abi(u32 __user *dst)
++{
++   u32 val = KCOPY_ABI;
++   int err;
++
++   err = put_user(val, dst);
++   if (err)
++       return -EFAULT;
++
++   return 0;
++}
++
++ssize_t kcopy_write(struct file *filp, const char __user *data, size_t cnt,
++           loff_t *o)
++{
++   struct kcopy_map_entry *kme = filp->private_data;
++   struct kcopy_syscall ks;
++   int err = 0;
++   const void __user *src;
++   void __user *dst;
++   unsigned long n;
++
++   if (cnt != sizeof(struct kcopy_syscall)) {
++       err = -EINVAL;
++       goto bail;
++   }
++
++   err = copy_from_user(&ks, data, cnt);
++   if (unlikely(err))
++       goto bail;
++
++   src = kcopy_syscall_src(&ks);
++   dst = kcopy_syscall_dst(&ks);
++   n = kcopy_syscall_n(&ks);
++   if (ks.tag == KCOPY_GET_SYSCALL)
++       err = kcopy_do_get(kme, ks.pid, src, dst, n);
++   else if (ks.tag == KCOPY_PUT_SYSCALL)
++       err = kcopy_do_put(kme, src, ks.pid, dst, n);
++   else if (ks.tag == KCOPY_ABI_SYSCALL)
++       err = kcopy_do_abi(dst);
++   else
++       err = -EINVAL;
++
++bail:
++   return err ? err : cnt;
++}
++
++static const struct file_operations kcopy_fops = {
++   .owner = THIS_MODULE,
++   .open = kcopy_open,
++   .release = kcopy_release,
++   .flush = kcopy_flush,
++   .write = kcopy_write,
++};
++
++static int __init kcopy_init(void)
++{
++   int ret;
++   const char *name = "kcopy";
++   int i;
++   int ninit = 0;
++
++   mutex_init(&kcopy_dev.open_lock);
++
++   ret = alloc_chrdev_region(&kcopy_dev.dev, 0, KCOPY_MAX_MINORS, name);
++   if (ret)
++       goto bail;
++
++   kcopy_dev.class = class_create(THIS_MODULE, (char *) name);
++
++   if (IS_ERR(kcopy_dev.class)) {
++       ret = PTR_ERR(kcopy_dev.class);
++       printk(KERN_ERR "kcopy: Could not create "
++           "device class (err %d)\n", -ret);
++       goto bail_chrdev;
++   }
++
++   cdev_init(&kcopy_dev.cdev, &kcopy_fops);
++   ret = cdev_add(&kcopy_dev.cdev, kcopy_dev.dev, KCOPY_MAX_MINORS);
++   if (ret < 0) {
++       printk(KERN_ERR "kcopy: Could not add cdev (err %d)\n",
++                  -ret);
++       goto bail_class;
++   }
++
++   for (i = 0; i < KCOPY_MAX_MINORS; i++) {
++       char devname[8];
++       const int minor = MINOR(kcopy_dev.dev) + i;
++       const dev_t dev = MKDEV(MAJOR(kcopy_dev.dev), minor);
++
++       snprintf(devname, sizeof(devname), "kcopy%02d", i);
++       kcopy_dev.devp[i] =
++           device_create(kcopy_dev.class, NULL,
++               dev, NULL, devname);
++
++       if (IS_ERR(kcopy_dev.devp[i])) {
++           ret = PTR_ERR(kcopy_dev.devp[i]);
++           printk(KERN_ERR "kcopy: Could not create "
++                  "devp %d (err %d)\n", i, -ret);
++           goto bail_cdev_add;
++       }
++
++       ninit++;
++   }
++
++   ret = 0;
++   goto bail;
++
++bail_cdev_add:
++   for (i = 0; i < ninit; i++)
++       device_unregister(kcopy_dev.devp[i]);
++
++   cdev_del(&kcopy_dev.cdev);
++bail_class:
++   class_destroy(kcopy_dev.class);
++bail_chrdev:
++   unregister_chrdev_region(kcopy_dev.dev, KCOPY_MAX_MINORS);
++bail:
++   return ret;
++}
++
++static void __exit kcopy_fini(void)
++{
++   int i;
++
++   for (i = 0; i < KCOPY_MAX_MINORS; i++)
++       device_unregister(kcopy_dev.devp[i]);
++
++   cdev_del(&kcopy_dev.cdev);
++   class_destroy(kcopy_dev.class);
++   unregister_chrdev_region(kcopy_dev.dev, KCOPY_MAX_MINORS);
++}
++
++module_init(kcopy_init);
++module_exit(kcopy_fini);
+-- 
+1.7.10
+

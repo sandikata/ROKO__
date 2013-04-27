@@ -1,0 +1,23 @@
+--- a/drivers/platform/x86/thinkpad_acpi.c	2013-02-06 08:46:53.546168051 -0500
++++ b/drivers/platform/x86/thinkpad_acpi.c	2013-02-06 08:52:16.846933455 -0500
+@@ -5056,8 +5056,10 @@ static const char * const tpacpi_led_nam
+ 	"tpacpi::unknown_led2",
+ 	"tpacpi::unknown_led3",
+ 	"tpacpi::thinkvantage",
++	"tpacpi::unknown_led4",
++	"tpacpi::micmute",
+ };
+-#define TPACPI_SAFE_LEDS	0x1081U
++#define TPACPI_SAFE_LEDS	0x5081U
+ 
+ static inline bool tpacpi_is_led_restricted(const unsigned int led)
+ {
+@@ -5280,7 +5282,7 @@ static const struct tpacpi_quirk led_use
+ 	{ /* Lenovo */
+ 	  .vendor = PCI_VENDOR_ID_LENOVO,
+ 	  .bios = TPACPI_MATCH_ANY, .ec = TPACPI_MATCH_ANY,
+-	  .quirks = 0x1fffU,
++	  .quirks = 0x5fffU,
+ 	},
+ 	{ /* IBM ThinkPads with no EC version string */
+ 	  .vendor = PCI_VENDOR_ID_IBM,

@@ -1,0 +1,38 @@
+
+Temporary fix for mga #144.
+
+ath9k developers still try to fix it better.
+
+path from ath9k-devel ml
+
+diff -Nurp linux-2.6.38/drivers/net/wireless/ath/ath9k/ar9002_hw.c linux-2.6.38-ath9k/drivers/net/wireless/ath/ath9k/ar9002_hw.c
+--- linux-2.6.38/drivers/net/wireless/ath/ath9k/ar9002_hw.c	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38-ath9k/drivers/net/wireless/ath/ath9k/ar9002_hw.c	2011-06-12 14:22:39.542248976 +0300
+@@ -384,6 +384,7 @@ static void ar9002_hw_configpcipowersave
+ 			}
+ 		}
+ 
++#if 0
+ 		if (AR_SREV_9280(ah) || AR_SREV_9285(ah) || AR_SREV_9287(ah)) {
+ 			/*
+ 			 * Disable bit 6 and 7 before entering D3 to
+@@ -391,6 +392,7 @@ static void ar9002_hw_configpcipowersave
+ 			 */
+ 			val &= ~(AR_WA_BIT6 | AR_WA_BIT7);
+ 		}
++#endif
+ 
+ 		if (AR_SREV_9280(ah))
+ 			val |= AR_WA_BIT22;
+diff -Nurp linux-2.6.38/drivers/net/wireless/ath/ath9k/reg.h linux-2.6.38-ath9k/drivers/net/wireless/ath/ath9k/reg.h
+--- linux-2.6.38/drivers/net/wireless/ath/ath9k/reg.h	2011-03-15 03:20:32.000000000 +0200
++++ linux-2.6.38-ath9k/drivers/net/wireless/ath/ath9k/reg.h	2011-06-12 14:23:38.493553329 +0300
+@@ -704,7 +704,7 @@
+ #define AR_WA_ANALOG_SHIFT              (1 << 20)
+ #define AR_WA_POR_SHORT                 (1 << 21) /* PCI-E Phy reset control */
+ #define AR_WA_BIT22			(1 << 22)
+-#define AR9285_WA_DEFAULT		0x004a050b
++#define AR9285_WA_DEFAULT		0x004a05cb
+ #define AR9280_WA_DEFAULT           	0x0040073b
+ #define AR_WA_DEFAULT               	0x0000073f
+ 

@@ -1,0 +1,106 @@
+
+ fs/unionfs/main.c  |    9 +++------
+ fs/unionfs/union.h |   49 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 2 files changed, 50 insertions(+), 8 deletions(-)
+
+diff -Nurp linux-3.4-unionfs/fs/unionfs/main.c linux-3.4-unionfs-fix/fs/unionfs/main.c
+--- linux-3.4-unionfs/fs/unionfs/main.c	2012-05-26 12:05:59.549405596 +0300
++++ linux-3.4-unionfs-fix/fs/unionfs/main.c	2012-05-26 12:06:31.336655819 +0300
+@@ -599,10 +599,10 @@ static int unionfs_read_super(struct sup
+ 		err = PTR_ERR(inode);
+ 		goto out_dput;
+ 	}
+-	sb->s_root = d_alloc_root(inode);
++	sb->s_root = d_make_root(inode);
+ 	if (unlikely(!sb->s_root)) {
+ 		err = -ENOMEM;
+-		goto out_iput;
++		goto out_dput;
+ 	}
+ 	d_set_d_op(sb->s_root, &unionfs_dops);
+ 
+@@ -636,7 +636,7 @@ static int unionfs_read_super(struct sup
+ 
+ 	/*
+ 	 * No need to call interpose because we already have a positive
+-	 * dentry, which was instantiated by d_alloc_root.  Just need to
++	 * dentry, which was instantiated by d_make_root.  Just need to
+ 	 * d_rehash it.
+ 	 */
+ 	d_rehash(sb->s_root);
+@@ -651,9 +651,6 @@ out_freedpd:
+ 	}
+ 	dput(sb->s_root);
+ 
+-out_iput:
+-	iput(inode);
+-
+ out_dput:
+ 	if (lower_root_info && !IS_ERR(lower_root_info)) {
+ 		for (bindex = lower_root_info->bstart;
+diff -Nurp linux-3.4-unionfs/fs/unionfs/union.h linux-3.4-unionfs-fix/fs/unionfs/union.h
+--- linux-3.4-unionfs/fs/unionfs/union.h	2012-05-26 12:05:59.553405627 +0300
++++ linux-3.4-unionfs-fix/fs/unionfs/union.h	2012-05-26 12:07:17.025015428 +0300
+@@ -48,8 +48,6 @@
+ #include <linux/splice.h>
+ #include <linux/sched.h>
+ 
+-#include <asm/system.h>
+-
+ #include <linux/union_fs.h>
+ 
+ /* the file system name */
+@@ -67,6 +65,53 @@
+ /* minimum time (seconds) required for time-based cache-coherency */
+ #define UNIONFS_MIN_CC_TIME	3
+ 
++/* restore local copy of FD_SET/ZERO to get it to build with 3.4 */
++static inline void __FD_SET(unsigned long __fd, __kernel_fd_set *__fdsetp)
++{
++       unsigned long __tmp = __fd / __NFDBITS;
++       unsigned long __rem = __fd % __NFDBITS;
++       __fdsetp->fds_bits[__tmp] |= (1UL<<__rem);
++}
++
++static inline void __FD_ZERO(__kernel_fd_set *__p)
++{
++       unsigned long *__tmp = __p->fds_bits;
++       int __i;
++
++       if (__builtin_constant_p(__FDSET_LONGS)) {
++               switch (__FDSET_LONGS) {
++               case 16:
++                       __tmp[ 0] = 0; __tmp[ 1] = 0;
++                       __tmp[ 2] = 0; __tmp[ 3] = 0;
++                       __tmp[ 4] = 0; __tmp[ 5] = 0;
++                       __tmp[ 6] = 0; __tmp[ 7] = 0;
++                       __tmp[ 8] = 0; __tmp[ 9] = 0;
++                       __tmp[10] = 0; __tmp[11] = 0;
++                       __tmp[12] = 0; __tmp[13] = 0;
++                       __tmp[14] = 0; __tmp[15] = 0;
++                       return;
++
++               case 8:
++                       __tmp[ 0] = 0; __tmp[ 1] = 0;
++                       __tmp[ 2] = 0; __tmp[ 3] = 0;
++                       __tmp[ 4] = 0; __tmp[ 5] = 0;
++                       __tmp[ 6] = 0; __tmp[ 7] = 0;
++                       return;
++
++               case 4:
++                       __tmp[ 0] = 0; __tmp[ 1] = 0;
++                       __tmp[ 2] = 0; __tmp[ 3] = 0;
++                       return;
++               }
++       }
++       __i = __FDSET_LONGS;
++       while (__i) {
++               __i--;
++               *__tmp = 0;
++               __tmp++;
++       }
++}
++
+ /* Operations vectors defined in specific files. */
+ extern struct file_operations unionfs_main_fops;
+ extern struct file_operations unionfs_dir_fops;

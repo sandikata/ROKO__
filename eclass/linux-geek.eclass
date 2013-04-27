@@ -282,7 +282,11 @@ case "$VERSION" in
 #	fi
 	;;
 	3) if  [ "${SUBLEVEL}" != "0" ]; then
-		ApplyPatch "${DISTDIR}/${pname}" "Update to latest upstream ..."
+		if [[ ${SKIP_UPDATE} == "1" ]] ; then
+			ewarn "Skipping update to latest upstream ..."
+		else
+			ApplyPatch "${DISTDIR}/${pname}" "Update to latest upstream ..."
+		fi
 	fi
 	;;
 esac
@@ -330,10 +334,10 @@ linux-geek_src_prepare() {
 	cd "${WORKDIR}"/linux-"${KV_FULL}"
 	local GENTOOARCH="${ARCH}"
 	unset ARCH
-	ebegin "kernel: >> Running oldconfig..."
+	ebegin "kernel: >> Running oldconfig ..."
 	make oldconfig </dev/null &>/dev/null
 	eend $? "Failed oldconfig"
-	ebegin "kernel: >> Running modules_prepare..."
+	ebegin "kernel: >> Running modules_prepare ..."
 	make modules_prepare &>/dev/null
 	eend $? "Failed modules prepare"
 	ARCH="${GENTOOARCH}"

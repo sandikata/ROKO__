@@ -1,0 +1,22 @@
+commit ad327910c4686f0ad17a771d71e5e38638f71173
+Author: Wu Fengguang <fengguang.wu@intel.com>
+Date:   Fri Jan 18 15:36:56 2013 +0000
+
+    net: asix: ax88772_unbind() can be static
+    
+    Signed-off-by: Fengguang Wu <fengguang.wu@intel.com>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/drivers/net/usb/asix_devices.c b/drivers/net/usb/asix_devices.c
+index 37de7db..2205dbc 100644
+--- a/drivers/net/usb/asix_devices.c
++++ b/drivers/net/usb/asix_devices.c
+@@ -502,7 +502,7 @@ static int ax88772_bind(struct usbnet *dev, struct usb_interface *intf)
+ 	return 0;
+ }
+ 
+-void ax88772_unbind(struct usbnet *dev, struct usb_interface *intf)
++static void ax88772_unbind(struct usbnet *dev, struct usb_interface *intf)
+ {
+ 	if (dev->driver_priv)
+ 		kfree(dev->driver_priv);
