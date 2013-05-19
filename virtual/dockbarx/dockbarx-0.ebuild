@@ -21,7 +21,7 @@ DEPEND="dev-python/pygobject
 	dev-python/gnome-applets-python
 	dev-python/gnome-vfs-python
 	dev-python/libwnck-python
-	dev-libs/keybinder[python]
+	=dev-libs/keybinder-0.2.2[python]
 	dev-python/pyxdg
 	dev-python/python-xlib
 	dockmanager? ( x11-misc/dockmanager )"
