@@ -5,5 +5,4 @@ gentoo-larry-logo-v3.patch
 CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/branding/logo_larry_clut224.gif
 CONFIG_LOGO_LARRY_HEAD_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/branding/logo_larry_head_clut224.gif
 
-
-linux-3.8.6-colored-printk.patch - Colored printk
+linux-3.9-colored-printk.patch - Colored printk patch from zen

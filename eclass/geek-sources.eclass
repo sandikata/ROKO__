@@ -36,7 +36,29 @@ inherit linux-geek
 
 EXPORT_FUNCTIONS src_unpack src_prepare src_compile src_install pkg_postinst
 
-KNOWN_USES="aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq lqx mageia pardus pax pf phc pld reiser4 rifs rt rtai scst suse symlink uksm vserver xenomai zen zfs";
+KNOWN_USES="aufs bfq bld branding build ck deblob fedora gentoo grsec ice lqx mageia pax pf reiser4 rt suse symlink uksm zfs";
+
+SLOT="${PV:-${KMV}/-${VERSION}}"
+
+# @FUNCTION: geek-sources_init_variables
+# @INTERNAL
+# @DESCRIPTION:
+# Internal function initializing all git variables.
+# We define it in function scope so user can define
+# all the variables before and after inherit.
+geek-sources_init_variables() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	: ${GEEK_STORE_DIR:="${PORTAGE_ACTUAL_DISTDIR-${DISTDIR}}/geek"}
+
+	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf"}
+	: ${patch_user_dir="/etc/portage/patches"}
+	: ${cfg_file="/etc/portage/kernel.conf"}
+	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER="pax lqx pf bfq ck gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse zfs branding fix upatch"}
+
+	# Disable the sandbox for this dir
+	addwrite "${GEEK_STORE_DIR}"
+}
 
 # internal function
 #
@@ -45,163 +67,154 @@ KNOWN_USES="aufs bfq bld branding build ck debian deblob fedora genpatches grsec
 # @DESCRIPTION:
 USEKnown() {
 	local USE=$1
-	[ "${USE}" == "" ] && die "Feature not defined!"
+	[ "${USE}" == "" ] && die "${RED}Feature not defined!${NORMAL}"
 
-	expr index "${SUPPORTED_USES}" "${USE}" >/dev/null || die "${USE} is not supported in current kernel"
-	expr index "${KNOWN_USES}" "${USE}" >/dev/null || die "${USE} is not known"
+	expr index "${SUPPORTED_USES}" "${USE}" >/dev/null || die "${RED}${USE}${NORMAL} ${BLUE}is not supported in current kernel${NORMAL}"
+	expr index "${KNOWN_USES}" "${USE}" >/dev/null || die "${RED}${USE}${NORMAL} ${BLUE}is not known${NORMAL}"
 	IUSE="${IUSE} ${USE}"
 	case ${USE} in
-		aufs)	aufs_url="http://aufs.sourceforge.net/"
+		aufs)	aufs_ver=${user_aufs_ver:-$KMV}
+			aufs_def_src="git://git.code.sf.net/p/aufs/aufs3-standalone"
+			aufs_src=${user_aufs_src:-$aufs_def_src}
+			aufs_url="http://aufs.sourceforge.net"
+			aufs_inf="${YELLOW}Another UnionFS - ${aufs_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${aufs_url}"
 			;;
-		bfq)	if [ "${OVERRIDE_bfq_src}" != "" ]; then
-				bfq_src="${OVERRIDE_bfq_src}"
-			fi
+		bfq)	bfq_ver=${user_bfq_ver:-$KMV}
+			bfq_def_src="http://algo.ing.unimo.it/people/paolo/disk_sched/patches"
+			bfq_src=${user_bfq_src:-$bfq_def_src}
 			bfq_url="http://algo.ing.unimo.it/people/paolo/disk_sched/"
+			bfq_inf="${YELLOW}Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${bfq_url}"
 			;;
-		bld)	bld_src="http://bld.googlecode.com/files/bld-${bld_ver/KMV/$KMV}.tar.bz2"
-			if [ "${OVERRIDE_bld_src}" != "" ]; then
-				bld_src="${OVERRIDE_bld_src}"
-			fi
+		bld)	bld_ver=${user_bld_ver:-$KMV}
+			bld_def_src="http://bld.googlecode.com/files/bld-${bld_ver/KMV/$KMV}.tar.bz2"
+			bld_src=${user_bld_src:-$bld_def_src}
 			bld_url="http://code.google.com/p/bld"
+			bld_url="${YELLOW}Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${bld_url}"
 			SRC_URI="${SRC_URI}
 				bld?		( ${bld_src} )"
 			;;
-		ck)	ck_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
-#			if [ "${VERSION}" -eq "3" -o "${PATCHLEVEL}" -eq "8" ]; then
-#				ck_src="http://ck.kolivas.org/patches/3.0/${KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
-#			fi
-			if [ "${OVERRIDE_ck_src}" != "" ]; then
-				ck_src="${OVERRIDE_ck_src}"
-			fi
+		ck)	ck_ver=${user_ck_ver:-$KMV-ck1}
+			ck_def_src="http://mirror.telepoint.bg/gentoo/distfiles/patch-${ck_ver/KMV/$KMV}.bz2"
+#			ck_def_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
+			ck_src=${user_ck_src:-$ck_def_src}
 			ck_url="http://users.on.net/~ckolivas/kernel"
+			ck_inf="${YELLOW}Con Kolivas high performance patchset - ${ck_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${ck_url}"
 			DEPEND="${DEPEND} >=app-arch/lrzip-0.614"
 			SRC_URI="${SRC_URI}
 				ck?		( ${ck_src} )"
 			;;
-		debian) debian_url="http://anonscm.debian.org/viewvc/kernel/dists/trunk/linux/debian/patches";
-			HOMEPAGE="${HOMEPAGE} ${debian_url}"
-			;;
-		fedora) fedora_url="http://pkgs.fedoraproject.org/gitweb/?p=kernel.git;a=summary";
+		fedora)	fedora_ver=${user_fedora_ver:-f19}
+			fedora_def_src="git://pkgs.fedoraproject.org/kernel.git"
+			fedora_src=${user_fedora_src:-$fedora_def_src}
+			fedora_url="http://fedoraproject.org"
+			fedora_inf="${YELLOW}Fedora - ${fedora_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${fedora_url}"
 			;;
-		genpatches) genpatches_url="http://dev.gentoo.org/~mpagano/genpatches";
-			HOMEPAGE="${HOMEPAGE} ${genpatches_url}"
+		gentoo)	gentoo_ver=${user_gentoo_ver:-$KMV}
+			gentoo_def_src="svn://anonsvn.gentoo.org/linux-patches/genpatches-2.6/trunk"
+			gentoo_src=${user_gentoo_src:-$gentoo_def_src}
+			gentoo_url="http://dev.gentoo.org/~mpagano/genpatches"
+			gentoo_inf="${YELLOW}Gentoo patches - ${gentoo_url}${NORMAL}"
+			HOMEPAGE="${HOMEPAGE} ${gentoo_url}"
 			;;
-		grsecurity) grsecurity_url="http://grsecurity.net"
-			HOMEPAGE="${HOMEPAGE} ${grsecurity_url}"
+		grsec)	grsec_ver=${user_grsec_ver:-$KMV}
+			grsec_def_src="git://git.overlays.gentoo.org/proj/hardened-patchset.git"
+			grsec_src=${user_grsec_src:-$grsec_def_src}
+			grsec_url="http://hardened.gentoo.org"
+			grsec_inf="${YELLOW}GrSecurity patches - ${grsec_url}${NORMAL}"
+			HOMEPAGE="${HOMEPAGE} ${grsec_url}"
 			RDEPEND="${RDEPEND}
-				grsecurity?	( >=sys-apps/gradm-2.2.2 )"
+				grsec?	( >=sys-apps/gradm-2.2.2 )"
 			;;
-		ice)	ice_url="http://tuxonice.net"
+		ice)	ice_ver=${user_ice_ver:-$KMV}
+			ice_def_src="https://github.com/NigelCunningham/tuxonice-kernel/compare/vanilla-${ice_ver/KMV/$KMV}...tuxonice-${ice_ver/KMV/$KMV}.diff"
+			ice_src=${user_ice_src:-$ice_def_src}
+			ice_url="http://tuxonice.net"
+			ice_inf="${YELLOW}TuxOnIce - ${ice_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${ice_url}"
 			RDEPEND="${RDEPEND}
 				ice?	( >=sys-apps/tuxonice-userui-1.0
 						( || ( >=sys-power/hibernate-script-2.0 sys-power/pm-utils ) ) )"
 			;;
-		imq)	imq_src="http://www.linuximq.net/patches/patch-imqmq-${imq_ver/KMV/$KMV}.diff.xz"
-			if [ "${OVERRIDE_imq_src}" != "" ]; then
-				imq_src="${OVERRIDE_imq_src}"
-			fi
-			imq_url="http://www.linuximq.net"
-			HOMEPAGE="${HOMEPAGE} ${imq_url}"
-			SRC_URI="${SRC_URI}
-				imq?		( ${imq_src} )"
-			;;
-		lqx)	lqx_src="http://liquorix.net/sources/${lqx_ver/KMV/$KMV}.patch.gz"
-			if [ "${OVERRIDE_lqx_src}" != "" ]; then
-				lqx_src="${OVERRIDE_lqx_src}"
-			fi
+		lqx)	lqx_ver=${user_lqx_ver:-$KMV}
+			lqx_def_src="http://liquorix.net/sources/${lqx_ver/KMV/$KMV}.patch.gz"
+			lqx_src=${user_lqx_src:-$lqx_def_src}
 			lqx_url="http://liquorix.net"
+			lqx_inf="${YELLOW}Liquorix patches - ${lqx_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${lqx_url}"
 			SRC_URI="${SRC_URI}
 				lqx?			( ${lqx_src} )"
 			;;
-		mageia) mageia_url="http://svnweb.mageia.org/packages/cauldron/kernel/current"
+		mageia) mageia_ver=${user_mageia_ver:-$KMV}
+			mageia_def_src="svn://svn.mageia.org/svn/packages/cauldron/kernel"
+			mageia_src=${user_mageia_src:-$mageia_def_src}
+			mageia_url="http://www.mageia.org"
+			mageia_inf="${YELLOW}Mageia - ${mageia_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${mageia_url}"
 			;;
-		pardus) pardus_url="https://svn.pardus.org.tr/pardus/playground/kaan.aksit/2011/kernel/default/kernel"
-			HOMEPAGE="${HOMEPAGE} ${pardus_url}"
-			;;
-		pax)	pax_src="http://grsecurity.net/test/pax-linux-${pax_ver/KMV/$KMV}.patch"
-			if [ "${OVERRIDE_pax_src}" != "" ]; then
-				pax_src="${OVERRIDE_pax_src}"
-			fi
+		pax)	pax_ver=${user_pax_ver:-$KMV}
+			pax_def_src="http://grsecurity.net/test/pax-linux-${pax_ver/KMV/$KMV}.patch"
+			pax_src=${user_pax_src:-$pax_def_src}
 			pax_url="http://pax.grsecurity.net"
+			pax_inf="${YELLOW}PAX patches - ${pax_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${pax_url}"
 			SRC_URI="${SRC_URI}
 				pax?			( ${pax_src} )"
 			;;
-		pf)	pf_src="http://pf.natalenko.name/sources/${KMV}/patch-${pf_ver/KMV/$KMV}.bz2"
-			if [ "${OVERRIDE_pf_src}" != "" ]; then
-				pf_src="${OVERRIDE_pf_src}"
-			fi
+		pf)	pf_ver=${user_pf_ver:-$KMV}
+			pf_def_src="http://pf.natalenko.name/sources/${KMV}/patch-${pf_ver/KMV/$KMV}.bz2"
+			pf_src=${user_pf_src:-$pf_def_src}
 			pf_url="http://pf.natalenko.name"
+			pf_inf="${YELLOW}pf-kernel patches - ${pf_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${pf_url}"
 			SRC_URI="${SRC_URI}
 				pf?			( ${pf_src} )"
 			;;
-		phc)	phc_url="http://www.linux-phc.org"
-			HOMEPAGE="${HOMEPAGE} ${phc_url}"
-			;;
-		pld)	pld_url="http://cvs.pld-linux.org/cgi-bin/viewvc.cgi/cvs/packages/kernel/?pathrev=MAIN"
-			HOMEPAGE="${HOMEPAGE} ${pld_url}"
-			;;
-		reiser4) reiser4_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${reiser4_ver/PV/$PV}.patch.gz"
-			if [ "${OVERRIDE_reiser4_src}" != "" ]; then
-				reiser4_src="${OVERRIDE_reiser4_src}"
-			fi
+		reiser4) reiser4_ver=${user_reiser4_ver:-$KMV}
+			reiser4_def_src="mirror://sourceforge/project/reiser4/reiser4-for-linux-3.x/reiser4-for-${reiser4_ver/PV/$PV}.patch.gz"
+			reiser4_src=${user_reiser4_src:-$reiser4_def_src}
 			reiser4_url="http://sourceforge.net/projects/reiser4"
+			reiser4_inf="${YELLOW}ReiserFS v4 - ${reiser4_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${reiser4_url}"
 			SRC_URI="${SRC_URI}
 				reiser4?	( ${reiser4_src} )"
 			;;
-		rifs)	rifs_url="http://code.google.com/p/rifs-scheduler"
-			HOMEPAGE="${HOMEPAGE} ${rifs_url}"
-			;;
-		rt)	rt_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
-			if [ "${OVERRIDE_rt_src}" != "" ]; then
-				rt_src="${OVERRIDE_rt_src}"
-			fi
+		rt)	rt_ver=${user_rt_ver:-$KMV}
+			rt_def_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
+			rt_src=${user_rt_src:-$rt_def_src}
 			rt_url="http://www.kernel.org/pub/linux/kernel/projects/rt"
+			rt_inf="${YELLOW}Ingo Molnar"\'"s realtime preempt patches - ${rt_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${rt_url}"
 			SRC_URI="${SRC_URI}
 				rt?		( ${rt_src} )"
 			;;
-		rtai)	rtai_url="https://www.rtai.org"
-			HOMEPAGE="${HOMEPAGE} ${rtai_url}"
-			;;
-		scst)	scs_url="http://scst.sourceforge.net"
-			HOMEPAGE="${HOMEPAGE} ${scst_url}"
-			;;
-		suse)	suse_url="http://kernel.opensuse.org/cgit/kernel-source"
+		suse)	suse_ver=${user_suse_ver:-stable}
+			suse_def_src="git://kernel.opensuse.org/kernel-source.git"
+			suse_src=${user_suse_src:-$suse_def_src}
+			suse_url="http://www.opensuse.org"
+			suse_inf="${YELLOW}OpenSuSE - ${suse_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${suse_url}"
 			;;
-		uksm)	uksm_url="http://kerneldedup.org"
+		uksm)	uksm_ver=${user_uksm_ver:-$KMV}
+			uksm_name=${user_uksm_name:-uksm-${uksm_ver}-for-v${KMV}.ge.1}
+			uksm_def_src="http://kerneldedup.org/download/uksm/${uksm_ver}/${uksm_name}.patch"
+			uksm_src=${user_uksm_src:-$uksm_def_src}
+			uksm_url="http://kerneldedup.org"
+			uksm_inf="${YELLOW}Ultra Kernel Samepage Merging - ${uksm_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${uksm_url}"
 			;;
-		vserver) vserver_src="http://vserver.13thfloor.at/Experimental/patch-${vserver_ver}.diff"
-			if [ "${OVERRIDE_vserver_src}" != "" ]; then
-				vserver_src="${OVERRIDE_vserver_src}"
-			fi
-			vserver_url="http://linux-vserver.org"
-			HOMEPAGE="${HOMEPAGE} ${vserver_url}"
-			SRC_URI="${SRC_URI}
-				vserver?	( ${vserver_src} )"
-			;;
-		xenomai) xenomai_src="http://download.gna.org/adeos/patches/v3.x/x86/ipipe-core-${xenomai_ver/KMV/$KMV}-x86-3.patch"
-			xenomai_url="http://www.xenomai.org"
-			HOMEPAGE="${HOMEPAGE} ${xenomai_url}"
-			SRC_URI="${SRC_URI}
-				xenomai?	( ${xenomai_src} )"
-			;;
-		zen)	zen_url="https://github.com/damentz/zen-kernel"
-			HOMEPAGE="${HOMEPAGE} ${zen_url}"
-			;;
-		zfs)	zfs_url="http://zfsonlinux.org"
+		zfs)	spl_ver=${user_spl_ver:-$KMV}
+			spl_def_src="git://github.com/zfsonlinux/spl.git"
+			spl_src=${user_spl_src:-$spl_def_src}
+			zfs_ver=${user_zfs_ver:-$KMV}
+			zfs_def_src="git://github.com/zfsonlinux/zfs.git"
+			zfs_src=${user_zfs_src:-$zfs_def_src}
+			zfs_url="http://zfsonlinux.org"
+			zfs_inf="${YELLOW}Native ZFS on Linux - ${zfs_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${zfs_url}"
 			LICENSE="${LICENSE} GPL-3"
 			RDEPEND="${RDEPEND}
@@ -242,17 +255,281 @@ use_if_iuse() {
 	use $1
 }
 
+# @FUNCTION: get_from_url
+# @USAGE:
+# @DESCRIPTION:
+get_from_url() {
+	local url="$1"
+	local release="$2"
+	shift
+	wget -nd --no-parent --level 1 -r -R "*.html*" --reject "$release" \
+	"$url/$release" > /dev/null 2>&1
+}
+
+# @FUNCTION: git_get_all_branches
+# @USAGE:
+# @DESCRIPTION:
+git_get_all_branches(){
+	for branch in `git branch -a | grep remotes | grep -v HEAD | grep -v master`; do
+		git branch --track ${branch##*/} ${branch} > /dev/null 2>&1
+	done
+}
+
+# @FUNCTION: get_or_bump
+# @USAGE:
+# @DESCRIPTION:
+get_or_bump() {
+	local patch=$1
+	local CSD="${GEEK_STORE_DIR}/${patch}";
+	shift
+	if [ -d ${CSD} ]; then
+		cd "${CSD}"
+		if [ -e ".git" ]; then # git
+			git fetch --all && git pull --all;
+		elif [ -e ".svn" ]; then # subversion
+			svn up
+		fi
+	else
+		case "${patch}" in
+		aufs)	git clone "${aufs_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		fedora)	git clone "${fedora_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		gentoo)	svn co "${gentoo_src}" "${CSD}" > /dev/null 2>&1;;
+		grsec)	git clone "${grsec_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		mageia)	svn co "${mageia_src}" "${CSD}" > /dev/null 2>&1;;
+		suse)	git clone "${suse_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		zfs)	git clone "${spl_src}" "${CSD}/spl" > /dev/null 2>&1; cd "${CSD}/spl"; git_get_all_branches ;
+			git clone "${zfs_src}" "${CSD}/zfs" > /dev/null 2>&1; cd "${CSD}/zfs"; git_get_all_branches ;;
+		esac
+	fi
+}
+
+# @FUNCTION: make_patch
+# @USAGE:
+# @DESCRIPTION:
+make_patch() {
+	local patch="$1"
+	local CSD="${GEEK_STORE_DIR}/${patch}";
+	local CWD="${T}/${patch}";
+	local CTD="/tmp/${patch}"$$
+	# Disable the sandbox for this dir
+	addwrite "${CTD}"
+	shift
+	case "${patch}" in
+	aufs)	cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+		cp -r "${CSD}" "${CTD}";
+		cd "${CTD}";
+		dir=( "Documentation" "fs" "include" )
+		local dest="${CWD}"/aufs3-${aufs_ver}-`date +"%Y%m%d"`.patch;
+
+		git checkout origin/aufs"${aufs_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+
+		mkdir ../a ../b
+		cp -r {Documentation,fs,include} ../b
+		rm ../b/include/uapi/linux/Kbuild
+		cd ..
+
+		for i in "${dir[@]}";
+			do diff -U 3 -dHrN -- a/ b/"${i}"/ >> "${dest}";
+			sed -i "s:a/:a/"${i}"/:" "${dest}";
+			sed -i "s:b:b:" "${dest}";
+		done
+		rm -rf a b;
+
+		cp "${CTD}"/aufs3-base.patch "${CWD}"/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		cp "${CTD}"/aufs3-standalone.patch "${CWD}"/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		cp "${CTD}"/aufs3-kbuild.patch "${CWD}"/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		cp "${CTD}"/aufs3-proc_map.patch "${CWD}"/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		cp "${CTD}"/aufs3-loopback.patch "${CWD}"/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch;
+
+		rm -rf "${CTD}";
+
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	;;
+	bfq)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		cd "${CWD}";
+
+		get_from_url "${bfq_src}" "${bfq_ver}" > /dev/null 2>&1;
+
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	;;
+	bld)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}";
+		cd "${CTD}";
+
+		cp "${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2" "bld-${bld_ver/KMV/$KMV}.tar.bz2"
+		tar -xjpf "bld-${bld_ver/KMV/$KMV}.tar.bz2";
+		cp "${CTD}/bld-${bld_ver/KMV/$KMV}/BLD-${bld_ver/KMV/$KMV}.patch" "${CWD}/BLD-${bld_ver/KMV/$KMV}.patch";
+
+		rm -rf "${CTD}";
+
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	;;
+	fedora) cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+
+		cp -r "${CSD}" "${CTD}";
+		cd "${CTD}";
+
+		git checkout "${fedora_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+
+		ls -1 | grep ".patch" | xargs -I{} cp "{}" "${CWD}"
+
+		awk '/^Apply.*Patch.*\.patch/{print $2}' kernel.spec > "$CWD"/patch_list
+
+		rm -rf "${CTD}"
+	;;
+	gentoo) cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		cd "${CWD}";
+
+		get_or_bump "${patch}" > /dev/null 2>&1;
+
+		cp -r "${CSD}" "${CTD}";
+		cd "${CTD}"/${KMV};
+
+		find -name .svn -type d -exec rm -rf {} \;
+		find -type d -empty -delete
+
+		ls -1 | grep "linux" | xargs -I{} rm -rf "{}";
+		ls -1 | grep ".patch" > "$CWD"/patch_list;
+
+		cp -r "${CTD}"/${KMV}/* "${CWD}"
+
+		rm -rf "${CTD}"
+	;;
+	grsec)	cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+
+		cp -r "${CSD}" "${CTD}";
+
+		cd "${CTD}"/"${grsec_ver}";
+
+		ls -1 | xargs -I{} cp "{}" "${CWD}";
+
+		rm -rf "${CTD}";
+
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	;;
+	ice)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		dest="${CWD}"/tuxonice-kernel-"${PV}"-`date +"%Y%m%d"`.patch;
+		wget "${ice_src}" -O "${dest}" > /dev/null 2>&1;
+		cd "${CWD}";
+		ls -1 | grep ".patch" | xargs -I{} xz "{}" | xargs -I{} cp "{}" "${CWD}";
+		ls -1 "${CWD}" | grep ".patch.xz" > "${CWD}"/patch_list;
+	;;
+	mageia) cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+
+		cp -r "${CSD}" "${CTD}";
+		cd "${CTD}"/"${mageia_ver}"/PATCHES;
+
+		find . -name "*.patch" | xargs -i cp "{}" "${CWD}";
+
+		awk '{gsub(/3rd/,"#3rd") ;print $0}' patches/series > "${CWD}"/patch_list
+
+		rm -rf "${CTD}"
+	;;
+	suse)	cd "${CSD}";
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+
+		cp -r "${CSD}" "${CTD}";
+
+		cd "${CTD}";
+
+		git checkout "${suse_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+
+		[ -e "patches.kernel.org" ] && rm -rf patches.kernel.org > /dev/null 2>&1
+		[ -e "patches.rpmify" ] && rm -rf patches.rpmify > /dev/null 2>&1
+
+		awk '!/(#|^$)/ && !/^(\+(needs|tren|hare|xen|jbeulich|jeffm))|patches\.(kernel|rpmify|xen).*/{gsub(/[ \t]/,"") ; print $1}' series.conf > patch_list
+		grep patches.xen series.conf > spatch_list
+
+		cp -r patches.*/ "${CWD}";
+		cp patch_list "${CWD}";
+		cp spatch_list "${CWD}";
+
+		rm -rf "${CTD}";
+	;;
+	uksm)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		wget "${uksm_src}" -O "${CWD}/${uksm_name}.patch" > /dev/null 2>&1;
+		cd "${CWD}";
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	;;
+	zfs)	einfo "Prepare kernel sources"
+		cd "${S}"
+		export PORTAGE_ARCH="${ARCH}"
+		case ${ARCH} in
+			x86) export ARCH="i386";;
+			amd64) export ARCH="x86_64";;
+			*) export ARCH="${ARCH}";;
+		esac
+		zcat /proc/config.gz > .config > /dev/null 2>&1 && yes "" | make oldconfig > /dev/null 2>&1 && make prepare > /dev/null 2>&1 && make scripts > /dev/null 2>&1;
+
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
+		get_or_bump "${patch}" > /dev/null 2>&1;
+		cp -r "${CSD}" "${CTD}";
+		rm -rf "${CTD}"/{spl,zfs}/.git
+
+		addwrite /usr/src
+		unlink /usr/src/linux
+		ln -s "${S}" /usr/src/linux
+
+		einfo "Integrate SPL"
+		cd "${CTD}/spl";
+		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1;
+		./configure \
+			--prefix=/ \
+			--libdir=/lib64 \
+			--includedir=/usr/include \
+			--datarootdir=/usr/share \
+			--enable-linux-builtin=yes \
+			--with-linux=${S} \
+			--with-linux-obj=${S} > /dev/null 2>&1;
+		./copy-builtin ${S} > /dev/null 2>&1;
+
+		einfo "Integrate ZFS"
+		cd "${CTD}/zfs";
+		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1;
+		./configure \
+			--prefix=/ \
+			--libdir=/lib64 \
+			--includedir=/usr/include \
+			--datarootdir=/usr/share \
+			--enable-linux-builtin=yes \
+			--with-linux=${S} \
+			--with-linux-obj=${S} \
+			--with-spl="${CTD}/spl" \
+			--with-spl-obj="${CTD}/spl" > /dev/null 2>&1;
+		./copy-builtin ${S} > /dev/null 2>&1;
+
+		cd "${S}"
+		make mrproper > /dev/null 2>&1;
+
+		unlink /usr/src/linux
+
+		mv "${CTD}" "${S}/patches/${patch}"
+	;;
+	esac
+
+	cd "${S}"
+}
+
 # @FUNCTION: src_unpack
 # @USAGE:
 # @DESCRIPTION:
 geek-sources_src_unpack() {
+	geek-sources_init_variables
 
-	local SKIP_KERNEL_PATCH_UPDATE="lqx pf";
 	for Current_Patch in $SKIP_KERNEL_PATCH_UPDATE; do
 		if use_if_iuse "${Current_Patch}" ; then
 		case "${Current_Patch}" in
-			*) SKIP_UPDATE="1";
-				;;
+			*) SKIP_UPDATE="1" ;;
 		esac
 		else continue
 		fi;
@@ -261,42 +538,35 @@ geek-sources_src_unpack() {
 	linux-geek_src_unpack
 }
 
-
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION:
-geek-sources_src_prepare() {
-
-### BRANCH APPLY ###
-
-	local _PATCHDIR="/etc/portage/patches" # for user patch
-	local config_file="/etc/portage/kernel.conf"
-	local DEFAULT_GEEKSOURCES_PATCHING_ORDER="pax lqx pf phc scst vserver bfq ck genpatches grsecurity ice imq reiser4 rifs rt rtai xenomai bld uksm aufs mageia fedora suse debian pardus pld zfs branding fix zen upatch";
+geek-sources_src_prepare() { ### BRANCH APPLY ###
 	local xUserOrder=""
 	local xDefOder=""
-	if [ -e "${config_file}" ] ; then
-		source "${config_file}"
+	if [ -e "${cfg_file}" ] ; then
+		source "${cfg_file}"
 		xUserOrder="$(echo -n "$GEEKSOURCES_PATCHING_ORDER" | tr '\n' ' ' | tr -s ' ' | tr ' ' '\n' | sort | tr '\n' ' ' | sed -e 's,^\s*,,' -e 's,\s*$,,')"
 		xDefOrder="$(echo -n "$DEFAULT_GEEKSOURCES_PATCHING_ORDER" | tr '\n' ' ' | tr -s ' ' | tr ' ' '\n' | sort | tr '\n' ' ' | sed -e 's,^\s*,,' -e 's,\s*$,,')"
 
 		if [ "x${xUserOrder}" = "x${xDefOrder}" ] ; then
-			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from ${config_file}"
+			ewarn "${BLUE}Use${NORMAL} ${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL} ${BLUE}from${NORMAL} ${RED}${cfg_file}${NORMAL}"
 		else
-			ewarn "Use GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\" from ${config_file}"
-			ewarn "Not all USE flag present in GEEKSOURCES_PATCHING_ORDER from ${config_file}"
+			ewarn "${BLUE}Use${NORMAL} ${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL} ${BLUE}from${NORMAL} ${RED}${cfg_file}${NORMAL}"
+			ewarn "${BLUE}Not all USE flag present in GEEKSOURCES_PATCHING_ORDER from${NORMAL} ${RED}${cfg_file}${NORMAL}"
 			difference=$(echo "${xDefOrder} ${xUserOrder}" | awk '{for(i=1;i<=NF;i++){_a[$i]++}for(i in _a){if(_a[i]==1)print i}}' ORS=" ")
-			ewarn "The following flags are missing: ${difference}"
-			ewarn "Probably that's the plan. In that case, never mind."
+			ewarn "${BLUE}The following flags are missing:${NORMAL} ${RED}${difference}${NORMAL}"
+			ewarn "${BLUE}Probably that"\'"s the plan. In that case, never mind.${NORMAL}"
 		fi
 	else
 		GEEKSOURCES_PATCHING_ORDER="${DEFAULT_GEEKSOURCES_PATCHING_ORDER}";
-		ewarn "The order of patching is defined in file ${config_file} with the variable GEEKSOURCES_PATCHING_ORDER is its default value:
-GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"
-You are free to choose any order of patching.
-For example, if you like the alphabetical order of patching you must set the variable:
-echo 'GEEKSOURCES_PATCHING_ORDER=\"aufs bfq bld branding build ck debian deblob fedora genpatches grsecurity ice imq lqx mageia pardus pax pf phc pld reiser4 rifs rt rtai scst suse symlink uksm vserver xenomai zen zfs\"' > ${config_file}
-Otherwise i will use the default value of GEEKSOURCES_PATCHING_ORDER!
-And may the Force be with you…"
+		ewarn "${BLUE}The order of patching is defined in file${NORMAL} ${RED}${cfg_file}${NORMAL} ${BLUE}with the variable GEEKSOURCES_PATCHING_ORDER is its default value:${NORMAL}
+${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL}
+${BLUE}You are free to choose any order of patching.${NORMAL}
+${BLUE}For example, if you like the alphabetical order of patching you must set the variable:${NORMAL}
+${RED}echo 'GEEKSOURCES_PATCHING_ORDER=\"`echo ${GEEKSOURCES_PATCHING_ORDER} | sed "s/ /\n/g" | sort | sed ':a;N;$!ba;s/\n/ /g'`\"' > ${cfg_file}${NORMAL}
+${BLUE}Otherwise i will use the default value of GEEKSOURCES_PATCHING_ORDER!${NORMAL}
+${BLUE}And may the Force be with you…${NORMAL}"
 	fi
 
 for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
@@ -305,19 +575,19 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 			echo
 			cat "${FILESDIR}/${PV}/${Current_Patch}/info";
 		fi
+		test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches";
 		case "${Current_Patch}" in
-			aufs)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "aufs3 - ${aufs_url}";
+			aufs)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${aufs_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			bfq)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}";
+			bfq)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			bld)	echo;
-				cd "${T}";
-				unpack "bld-${bld_ver/KMV/$KMV}.tar.bz2";
-				cp "${T}/bld-${bld_ver/KMV/$KMV}/BLD-${bld_ver/KMV/$KMV}.patch" "${S}/BLD-${bld_ver/KMV/$KMV}.patch";
-				cd "${S}";
-				ApplyPatch "BLD-${bld_ver/KMV/$KMV}.patch" "Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}";
-				rm -f "BLD-${bld_ver/KMV/$KMV}.patch";
-				rm -r "${T}/bld-${bld_ver/KMV/$KMV}"; # Clean temp
+			bld)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
 			branding) if [ -e "${FILESDIR}/${Current_Patch}/info" ] ; then
 					echo
@@ -325,7 +595,7 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				fi
 				ApplyPatch "${FILESDIR}/${Current_Patch}/patch_list" "Branding";
 				;;
-			ck)	ApplyPatch "${DISTDIR}/patch-${ck_ver/KMV/$KMV}.lrz" "Con Kolivas high performance patchset - ${ck_url}";
+			ck)	ApplyPatch "${DISTDIR}/patch-${ck_ver/KMV/$KMV}.lrz" "${ck_inf}";
 				if [ -d "${FILESDIR}/${PV}/${Current_Patch}" ] ; then
 					if [ -e "${FILESDIR}/${PV}/${Current_Patch}/patch_list" ] ; then
 						ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "CK Fix";
@@ -334,91 +604,74 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				# Comment out EXTRAVERSION added by CK patch:
 				sed -i -e 's/\(^EXTRAVERSION :=.*$\)/# \1/' "Makefile"
 				;;
-			debian) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Debian - ${debian_url}";
+			fedora)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${fedora_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			fedora) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Fedora - ${fedora_url}";
+			fix)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "${YELLOW}Fixes for current kernel${NORMAL}"
 				;;
-			fix)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Fixes for current kernel"
+			gentoo)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${gentoo_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			genpatches) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Gentoo patches - ${genpatches_url}";
+			grsec)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${grsec_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			grsecurity) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "GrSecurity patches - ${grsecurity_url}";
+			ice)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${ice_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			ice)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "TuxOnIce - ${ice_url}";
+			lqx)	ApplyPatch "${DISTDIR}/${lqx_ver/KMV/$KMV}.patch.gz" "${lqx_inf}";
 				;;
-			imq)	ApplyPatch "${DISTDIR}/patch-imqmq-${imq_ver}.diff.xz" "Intermediate Queueing Device patches - ${imq_url}";
+			mageia)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${mageia_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			lqx)	ApplyPatch "${DISTDIR}/${lqx_ver/KMV/$KMV}.patch.gz" "Liquorix patches - ${lqx_url}";
+			pax)	ApplyPatch "${DISTDIR}/pax-linux-${pax_ver/KMV/$KMV}.patch" "${pax_inf}";
 				;;
-			mageia) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Mandriva/Mageia - ${mageia_url}";
+			pf)	ApplyPatch "${DISTDIR}/patch-${pf_ver/KMV/$KMV}.bz2" "${pf_inf}";
 				;;
-			pardus) ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Pardus - ${pardus_url}";
+			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "${reiser4_inf}";
 				;;
-			pax)	ApplyPatch "${DISTDIR}/pax-linux-${pax_ver/KMV/$KMV}.patch" "PAX patches - ${pax_url}";
+			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "${rt_inf}";
 				;;
-			pf)	ApplyPatch "${DISTDIR}/patch-${pf_ver/KMV/$KMV}.bz2" "pf-kernel patches - ${pf_url}";
+			suse)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${suse_inf}";
+				SmartApplyPatch "${T}/${Current_Patch}/spatch_list" "${YELLOW}OpenSuSE xen - ${suse_url}${NORMAL}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			phc)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Processor Hardware Control for the Linux Kernel - ${phc_url}";
+			uksm)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${uksm_inf}";
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
 				;;
-			pld)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "PLD - ${pld_url}";
-				;;
-			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "Reiser4 - ${reiser4_url}";
-				;;
-			rifs)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "RIFS scheduler - ${rifs_url}";
-				;;
-			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "Ingo Molnar's realtime preempt patches - ${rt_url}";
-					if [ -e "${FILESDIR}/${PV}/$Current_Patch/patch_list" ]
-						then ApplyPatch "${FILESDIR}/${PV}/$Current_Patch/patch_list" "Debian rt - ${debian_url}";
-					fi
-				;;
-			rtai)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "RealTime Application Interface for Linux - ${rtai_url}";
-				;;
-			scst)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Generic SCSI target (SCST) subsystem for Linux - ${scst_url}";
-				;;
-			suse)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "OpenSuSE - ${suse_url}";
-				;;
-			uksm)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "Ultra Kernel Samepage Merging - ${uksm_url}";
-				;;
-			upatch) if [ -d "${_PATCHDIR}/${CATEGORY}/${PN}" ] ; then
-					if [ -e "${_PATCHDIR}/${CATEGORY}/${PN}/info" ] ; then
+			upatch)	if [ -d "${patch_user_dir}/${CATEGORY}/${PN}" ] ; then
+					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/info" ] ; then
 						echo
-						cat "${_PATCHDIR}/${CATEGORY}/${PN}/info";
+						cat "${patch_user_dir}/${CATEGORY}/${PN}/info";
 					fi
-					if [ -e "${_PATCHDIR}/${CATEGORY}/${PN}/patch_list" ] ; then
-						ApplyPatch "${_PATCHDIR}/${CATEGORY}/${PN}/patch_list" "Applying user patches"
+					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/patch_list" ] ; then
+						ApplyPatch "${patch_user_dir}/${CATEGORY}/${PN}/patch_list" "${YELLOW}Applying user patches from${NORMAL} ${RED}${patch_user_dir}/${CATEGORY}/${PN}${NORMAL}"
 					else
-						ewarn "File ${_PATCHDIR}/${CATEGORY}/${PN}/patch_list not found!"
-						ewarn "Try to apply the patches if they are there…"
-						for i in `ls ${_PATCHDIR}/${CATEGORY}/${PN}/*.{patch,gz,bz,bz2,lrz,xz,zip,Z} 2> /dev/null`; do
-							ApplyPatch "${i}" "Applying user patches"
+						ewarn "${BLUE}File${NORMAL} ${RED}${patch_user_dir}/${CATEGORY}/${PN}/patch_list${NORMAL} ${BLUE}not found!${NORMAL}"
+						ewarn "${BLUE}Try to apply the patches if they are there…${NORMAL}"
+						for i in `ls ${patch_user_dir}/${CATEGORY}/${PN}/*.{patch,gz,bz,bz2,lrz,xz,zip,Z} 2> /dev/null`; do
+							ApplyPatch "${i}" "${YELLOW}Applying user patches from${NORMAL} ${RED}${patch_user_dir}/${CATEGORY}/${PN}${NORMAL}"
 						done
 					fi
 				fi
 				;;
-			vserver) ApplyPatch "${DISTDIR}/patch-${vserver_ver}.diff" "VServer - ${vserver_url}";
-				;;
-			xenomai) ApplyPatch "${DISTDIR}/ipipe-core-${xenomai_ver/KMV/$KMV}-x86-3.patch" "Xenomai - ${xenomai_url}";
-				;;
-			zen)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "zen-kernel - ${zen_url}";
-				;;
-			zfs)	if use_if_iuse "grsecurity" ; then
-					[ -e "${FILESDIR}/${PV}/${Current_Patch}/grsecurity/info" ] && echo; cat "${FILESDIR}/${PV}/${Current_Patch}/grsecurity/info";
-					[ -e "${FILESDIR}/${PV}/${Current_Patch}/grsecurity/patch_list" ] && ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/grsecurity/patch_list" "zfs for grsecurity - ${zfs_url}";
-				else
-					[ -e "${FILESDIR}/${PV}/${Current_Patch}/vanilla/info" ] && cat "${FILESDIR}/${PV}/${Current_Patch}/vanilla/info";
-					[ -e "${FILESDIR}/${PV}/${Current_Patch}/vanilla/patch_list" ] && ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/vanilla/patch_list" "zfs for vanilla - ${zfs_url}";
-				fi;
-				[ -e "${FILESDIR}/${PV}/${Current_Patch}/patch_list" ] && ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "zfs for vanilla - ${zfs_url}";
+			zfs)	echo
+				ebegin "${zfs_inf}"
+					make_patch "${Current_Patch}"
+				eend
 				;;
 		esac
 	else continue
 	fi;
 done;
-
-### END OF PATCH APPLICATIONS ###
-
 	linux-geek_src_prepare
-}
+} ### END OF PATCH APPLICATIONS ###
 
 # @FUNCTION: src_compile
 # @USAGE:
@@ -440,109 +693,58 @@ geek-sources_src_install() {
 geek-sources_pkg_postinst() {
 	linux-geek_pkg_postinst
 	einfo
-	einfo "Wiki: https://github.com/init6/init_6/wiki/geek-sources"
+	einfo "${BLUE}Wiki:${NORMAL} ${RED}https://github.com/init6/init_6/wiki/geek-sources${NORMAL}"
 	einfo
-	einfo "For more info on this patchset, and how to report problems, see:"
+	einfo "${BLUE}For more info on this patchset, and how to report problems, see:${NORMAL}"
 	for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 		if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]] ; then
 			case "${Current_Patch}" in
-				aufs)	einfo "aufs3 - ${aufs_url}"
-					if ! has_version sys-fs/aufs-util; then
+				aufs)	if ! has_version sys-fs/aufs-util; then
 						ewarn
-						ewarn "In order to use aufs FS you need to install sys-fs/aufs-util"
-						ewarn
-					fi
-					;;
-				bfq)	einfo "Budget Fair Queueing Budget I/O Scheduler - ${bfq_url}";
-					;;
-				bld)	einfo "Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}";
-					;;
-				ck)	einfo "Con Kolivas high performance patchset - ${ck_url}";
-					;;
-				debian)	einfo "Debian - ${debian_url}";
-					;;
-				fedora)	einfo "Fedora - ${fedora_url}";
-					;;
-				genpatches) einfo "Gentoo patches - ${genpatches_url}";
-					;;
-				grsecurity) einfo "GrSecurity patches - ${grsecurity_url}";
-					local GRADM_COMPAT="sys-apps/gradm-2.9.1"
-					ewarn
-					ewarn "Hardened Gentoo provides three different predefined grsecurity level:"
-					ewarn "[server], [workstation], and [virtualization].  Those who intend to"
-					ewarn "use one of these predefined grsecurity levels should read the help"
-					ewarn "associated with the level.  Because some options require >=gcc-4.5,"
-					ewarn "users with more, than one version of gcc installed should use gcc-config"
-					ewarn "to select a compatible version."
-					ewarn
-					ewarn "Users of grsecurity's RBAC system must ensure they are using"
-					ewarn "${GRADM_COMPAT}, which is compatible with ${PF}."
-					ewarn "It is strongly recommended that the following command is issued"
-					ewarn "prior to booting a ${PF} kernel for the first time:"
-					ewarn
-					ewarn "emerge -na =${GRADM_COMPAT}*"
-					ewarn
-					ewarn
-					;;
-				ice)	einfo "TuxOnIce - ${ice_url}";
-					ewarn
-					ewarn "${P} has the following optional runtime dependencies:"
-					ewarn "  sys-apps/tuxonice-userui"
-					ewarn "    provides minimal userspace progress information related to"
-					ewarn "    suspending and resuming process"
-					ewarn "  sys-power/hibernate-script or sys-power/pm-utils"
-					ewarn "    runtime utilites for hibernating and suspending your computer"
-					ewarn
-					ewarn "If there are issues with this kernel, please direct any"
-					ewarn "queries to the tuxonice-users mailing list:"
-					ewarn "http://lists.tuxonice.net/mailman/listinfo/tuxonice-users/"
-					ewarn
-					;;
-				imq)	einfo "Intermediate Queueing Device patches - ${imq_url}";
-					;;
-				lqx)	einfo "Liquorix patches - ${lqx_url}";
-					;;
-				mageia) einfo "Mandriva/Mageia - ${mageia_url}";
-					;;
-				pardus) einfo "Pardus - ${pardus_url}";
-					;;
-				pax) einfo "PAX patches - ${pax_url}";
-					;;
-				pf) einfo "pf-kernel patches - ${pf_url}";
-					ewarn
-					ewarn "Linux kernel fork with new features, including the -ck patchset (BFS), BFQ, TuxOnIce and UKSM"
-					ewarn
-					;;
-				phc) einfo "Processor Hardware Control for the Linux Kernel - ${phc_url}";
-					;;
-				pld)	einfo "PLD - ${pld_url}";
-					;;
-				reiser4) einfo "Reiser4 - ${reiser4_url}";
-					if ! has_version sys-fs/reiser4progs; then
-						ewarn
-						ewarn "In order to use Reiser4 FS you need to install sys-fs/reiser4progs"
+						ewarn "${BLUE}In order to use aufs FS you need to install${NORMAL} ${RED}sys-fs/aufs-util${NORMAL}"
 						ewarn
 					fi
 					;;
-				rifs)	einfo "RIFS scheduler - ${rifs_url}";
+				grsec) local GRADM_COMPAT="sys-apps/gradm-2.9.1"
+					ewarn
+					ewarn "${BLUE}Hardened Gentoo provides three different predefined grsecurity level:${NORMAL}"
+					ewarn "${BLUE}[server], [workstation], and [virtualization].  Those who intend to${NORMAL}"
+					ewarn "${BLUE}use one of these predefined grsecurity levels should read the help${NORMAL}"
+					ewarn "${BLUE}associated with the level.  Because some options require >=gcc-4.5,${NORMAL}"
+					ewarn "${BLUE}users with more, than one version of gcc installed should use gcc-config${NORMAL}"
+					ewarn "${BLUE}to select a compatible version.${NORMAL}"
+					ewarn
+					ewarn "${BLUE}Users of grsecurity's RBAC system must ensure they are using${NORMAL}"
+					ewarn "${RED}${GRADM_COMPAT}${NORMAL}${BLUE}, which is compatible with${NORMAL} ${RED}${PF}${NORMAL}${BLUE}.${NORMAL}"
+					ewarn "${BLUE}It is strongly recommended that the following command is issued${NORMAL}"
+					ewarn "${BLUE}prior to booting a${NORMAL} ${RED}${PF}${NORMAL} ${BLUE}kernel for the first time:${NORMAL}"
+					ewarn
+					ewarn "${RED}emerge -na =${GRADM_COMPAT}*${NORMAL}"
+					ewarn
+					ewarn
 					;;
-				rt)	einfo "Ingo Molnar's realtime preempt patches - ${rt_url}";
+				ice)	ewarn
+					ewarn "${RED}${P}${NORMAL} ${BLUE}has the following optional runtime dependencies:${NORMAL}"
+					ewarn "  ${RED}sys-apps/tuxonice-userui${NORMAL}"
+					ewarn "    ${BLUE}provides minimal userspace progress information related to${NORMAL}"
+					ewarn "    ${BLUE}suspending and resuming process${NORMAL}"
+					ewarn "  ${RED}sys-power/hibernate-script${NORMAL} ${BLUE}or${NORMAL} ${RED}sys-power/pm-utils${NORMAL}"
+					ewarn "    ${BLUE}runtime utilites for hibernating and suspending your computer${NORMAL}"
+					ewarn
+					ewarn "${BLUE}If there are issues with this kernel, please direct any${NORMAL}"
+					ewarn "${BLUE}queries to the tuxonice-users mailing list:${NORMAL}"
+					ewarn "${RED}http://lists.tuxonice.net/mailman/listinfo/tuxonice-users/${NORMAL}"
+					ewarn
 					;;
-				rtai)	einfo "RealTime Application Interface for Linux - ${rtai_url}";
+				pf)	ewarn
+					ewarn "${BLUE}Linux kernel fork with new features, including the -ck patchset (BFS), BFQ, TuxOnIce and UKSM${NORMAL}"
+					ewarn
 					;;
-				scst)	einfo "Generic SCSI target (SCST) subsystem for Linux - ${scst_url}";
-					;;
-				suse)	einfo "OpenSuSE - ${suse_url}";
-					;;
-				uksm)	einfo "Ultra Kernel Samepage Merging - ${uksm_url}";
-					;;
-				vserver) einfo "VServer - ${vserver_url}";
-					;;
-				xenomai) einfo "Xenomai: Real-Time Framework for Linux - ${xenomai_url}";
-					;;
-				zen)	einfo "zen-kernel - ${zen_url}";
-					;;
-				zfs)	einfo "zfs - ${zfs_url}";
+				reiser4) if ! has_version sys-fs/reiser4progs; then
+						ewarn
+						ewarn "${BLUE}In order to use Reiser4 FS you need to install${NORMAL} ${RED}sys-fs/reiser4progs${NORMAL}"
+						ewarn
+					fi
 					;;
 				esac
 			else continue
