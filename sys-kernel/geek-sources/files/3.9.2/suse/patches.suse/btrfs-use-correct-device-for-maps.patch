@@ -1,0 +1,52 @@
+From: David Sterba <dsterba@suse.cz>
+Date: Mon, 02 Jan 2012 13:40:28 +0100
+Subject: [PATCH] btrfs: use correct device for maps
+Reference: bnc#672923 bnc#769545
+Patch-mainline: no
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+
+---
+ fs/proc/task_mmu.c   |   10 +++++++++-
+ fs/proc/task_nommu.c |   10 +++++++++-
+ 2 files changed, 18 insertions(+), 2 deletions(-)
+
+--- a/fs/proc/task_mmu.c
++++ b/fs/proc/task_mmu.c
+@@ -272,7 +272,15 @@ show_map_vma(struct seq_file *m, struct
+ 
+ 	if (file) {
+ 		struct inode *inode = file_inode(vma->vm_file);
+-		dev = inode->i_sb->s_dev;
++
++		if (inode->i_sb->s_magic == BTRFS_SUPER_MAGIC) {
++			struct kstat stat;
++
++			vfs_getattr(&file->f_path, &stat);
++			dev = stat.dev;
++		} else {
++			dev = inode->i_sb->s_dev;
++		}
+ 		ino = inode->i_ino;
+ 		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
+ 	}
+--- a/fs/proc/task_nommu.c
++++ b/fs/proc/task_nommu.c
+@@ -150,7 +150,15 @@ static int nommu_vma_show(struct seq_fil
+ 
+ 	if (file) {
+ 		struct inode *inode = file_inode(vma->vm_file);
+-		dev = inode->i_sb->s_dev;
++
++		if (inode->i_sb->s_magic == BTRFS_SUPER_MAGIC) {
++			struct kstat stat;
++
++			vfs_getattr(&file->f_path, &stat);
++			dev = stat.dev;
++		} else {
++			dev = inode->i_sb->s_dev;
++		}
+ 		ino = inode->i_ino;
+ 		pgoff = (loff_t)vma->vm_pgoff << PAGE_SHIFT;
+ 	}

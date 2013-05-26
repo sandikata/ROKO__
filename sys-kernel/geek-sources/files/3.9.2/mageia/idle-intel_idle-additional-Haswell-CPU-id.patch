@@ -1,0 +1,26 @@
+commit 0b15841b0bbbde75134a777c543dc51fe6187108
+Author: Len Brown <len.brown@intel.com>
+Date:   Fri Mar 15 10:55:31 2013 -0400
+
+    intel_idle: additional Haswell CPU-id
+    
+    There is an additional HSW CPU-id, 0x46,
+    which has C-states exactly like CPU-id 0x45.
+    
+    Signed-off-by: Len Brown <len.brown@intel.com>
+---
+ drivers/idle/intel_idle.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/idle/intel_idle.c b/drivers/idle/intel_idle.c
+index 5d66750..1a38dd7 100644
+--- a/drivers/idle/intel_idle.c
++++ b/drivers/idle/intel_idle.c
+@@ -465,6 +465,7 @@ static const struct x86_cpu_id intel_idle_ids[] = {
+ 	ICPU(0x3c, idle_cpu_hsw),
+ 	ICPU(0x3f, idle_cpu_hsw),
+ 	ICPU(0x45, idle_cpu_hsw),
++	ICPU(0x46, idle_cpu_hsw),
+ 	{}
+ };
+ MODULE_DEVICE_TABLE(x86cpu, intel_idle_ids);

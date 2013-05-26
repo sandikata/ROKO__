@@ -1,0 +1,21 @@
+X-Git-Url: http://git.linaro.org/gitweb?p=people%2Fahs3%2Farndale-acpi.git;a=blobdiff_plain;f=drivers%2Fnet%2Fethernet%2F8390%2Fax88796.c;fp=drivers%2Fnet%2Fethernet%2F8390%2Fax88796.c;h=763e575c82bc5d24e1927ad685dfbdd7a0eaa19e;hp=70dba5d01ad3cc8178318f9976a5922894a86859;hb=fe8e7c500d3d25234759351096d457b6e557ebd9;hpb=af28003b46fa7b2c5d7b52e0d4bc8f725a6305f1
+
+diff --git a/drivers/net/ethernet/8390/ax88796.c b/drivers/net/ethernet/8390/ax88796.c
+index 70dba5d..763e575 100644
+--- a/drivers/net/ethernet/8390/ax88796.c
++++ b/drivers/net/ethernet/8390/ax88796.c
+@@ -828,7 +828,14 @@ static int ax_probe(struct platform_device *pdev)
+ 	struct ei_device *ei_local;
+ 	struct ax_device *ax;
+ 	struct resource *irq, *mem, *mem2;
++#ifndef CONFIG_ARM_LPAE
++	/* LPAE breaks this code as __aeabi_uldivmod for 64-bit
++	 * is not supported in lib1funcs.s yet
++	 */
+ 	unsigned long mem_size, mem2_size = 0;
++#else
++	u32 mem_size, mem2_size = 0;
++#endif
+ 	int ret = 0;
+ 
+ 	dev = ax__alloc_ei_netdev(sizeof(struct ax_device));

@@ -1,0 +1,39 @@
+From 9e9dd0e889c76c786e8f2e164c825c3c06dea30c Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@googlemail.com>
+Date: Wed, 3 Apr 2013 14:34:11 +0200
+Subject: [PATCH] drm/i915: Add no-lvds quirk for Fujitsu Esprimo Q900
+
+The "Mobile Sandy Bridge CPUs" in the Fujitsu Esprimo Q900
+mini desktop PCs are probably misleading the LVDS detection
+code in intel_lvds_supported. Nothing is connected to the
+LVDS ports in these systems.
+
+Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Daniel Vetter <daniel.vetter@ffwll.ch>
+---
+ drivers/gpu/drm/i915/intel_lvds.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/drivers/gpu/drm/i915/intel_lvds.c b/drivers/gpu/drm/i915/intel_lvds.c
+index 7b6d07b..ca2d903 100644
+--- a/drivers/gpu/drm/i915/intel_lvds.c
++++ b/drivers/gpu/drm/i915/intel_lvds.c
+@@ -862,6 +862,14 @@ static const struct dmi_system_id intel_no_lvds[] = {
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "X7SPA-H"),
+ 		},
+ 	},
++	{
++		.callback = intel_no_lvds_dmi_callback,
++		.ident = "Fujitsu Esprimo Q900",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "FUJITSU"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "ESPRIMO Q900"),
++		},
++	},
+ 
+ 	{ }	/* terminating entry */
+ };
+-- 
+1.8.1.5
+

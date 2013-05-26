@@ -1,0 +1,37 @@
+From 88e7b167a079f090405ab4390b629b5effdab41a Mon Sep 17 00:00:00 2001
+From: Brian King <brking@linux.vnet.ibm.com>
+Date: Mon, 08 Apr 2013 03:05:07 +0000
+Subject: pci: Set dev->dev.type in alloc_pci_dev
+
+Set dev->dev.type in alloc_pci_dev so that archs that have their own
+versions of pci_setup_device get this set properly in order to ensure
+things like the boot_vga sysfs parameter get created as expected.
+
+Signed-off-by: Brian King <brking@linux.vnet.ibm.com>
+Acked-by: Bjorn Helgaas <bhelgaas@google.com>
+Signed-off-by: Michael Ellerman <michael@ellerman.id.au>
+---
+(limited to 'drivers/pci/probe.c')
+
+diff --git a/drivers/pci/probe.c b/drivers/pci/probe.c
+index b494066..92be60c 100644
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -988,7 +988,6 @@ int pci_setup_device(struct pci_dev *dev)
+ 	dev->sysdata = dev->bus->sysdata;
+ 	dev->dev.parent = dev->bus->bridge;
+ 	dev->dev.bus = &pci_bus_type;
+-	dev->dev.type = &pci_dev_type;
+ 	dev->hdr_type = hdr_type & 0x7f;
+ 	dev->multifunction = !!(hdr_type & 0x80);
+ 	dev->error_state = pci_channel_io_normal;
+@@ -1208,6 +1207,7 @@ struct pci_dev *alloc_pci_dev(void)
+ 		return NULL;
+ 
+ 	INIT_LIST_HEAD(&dev->bus_list);
++	dev->dev.type = &pci_dev_type;
+ 
+ 	return dev;
+ }
+--
+cgit v0.9.1

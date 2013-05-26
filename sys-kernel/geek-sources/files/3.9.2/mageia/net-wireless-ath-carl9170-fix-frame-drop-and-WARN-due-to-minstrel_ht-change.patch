@@ -1,0 +1,160 @@
+From 5f34608fa2acbfef5a06d0072a978c9943c28a2d Mon Sep 17 00:00:00 2001
+From: Christian Lamparter <chunkeey@googlemail.com>
+Date: Fri, 22 Feb 2013 01:30:44 +0100
+Subject: [PATCH] carl9170: fix frame drop and WARN due to minstrel_ht change
+
+With "mac80211/minstrel_ht: add support for using CCK rates"
+minstrel_ht selects legacy CCK rates as viable rates for
+outgoing frames which might be sent as part of an A-MPDU
+[IEEE80211_TX_CTL_AMPDU is set].
+
+This behavior triggered the following WARN_ON in the driver:
+> WARNING: at carl9170/tx.c:995 carl9170_op_tx+0x1dd/0x6fd
+The driver assumed that the rate control algorithm made a
+mistake and dropped the frame.
+
+This patch removes the noisy warning altogether and allows
+said A-MPDU frames with CCK sample and/or fallback rates to
+be transmitted seamlessly.
+
+Signed-off-by: Christian Lamparter <chunkeey@googlemail.com>
+Signed-off-by: John W. Linville <linville@tuxdriver.com>
+---
+ drivers/net/wireless/ath/carl9170/tx.c | 69 ++++++++++++++--------------------
+ 1 file changed, 28 insertions(+), 41 deletions(-)
+
+diff --git a/drivers/net/wireless/ath/carl9170/tx.c b/drivers/net/wireless/ath/carl9170/tx.c
+index 9c0b150..c61cafa 100644
+--- a/drivers/net/wireless/ath/carl9170/tx.c
++++ b/drivers/net/wireless/ath/carl9170/tx.c
+@@ -387,8 +387,7 @@ static void carl9170_tx_status_process_ampdu(struct ar9170 *ar,
+ 	u8 tid;
+ 
+ 	if (!(txinfo->flags & IEEE80211_TX_CTL_AMPDU) ||
+-	    txinfo->flags & IEEE80211_TX_CTL_INJECTED ||
+-	   (!(super->f.mac_control & cpu_to_le16(AR9170_TX_MAC_AGGR))))
++	    txinfo->flags & IEEE80211_TX_CTL_INJECTED)
+ 		return;
+ 
+ 	rcu_read_lock();
+@@ -981,30 +980,6 @@ static int carl9170_tx_prepare(struct ar9170 *ar,
+ 
+ 		SET_VAL(CARL9170_TX_SUPER_AMPDU_FACTOR,
+ 			txc->s.ampdu_settings, factor);
+-
+-		for (i = 0; i < CARL9170_TX_MAX_RATES; i++) {
+-			txrate = &info->control.rates[i];
+-			if (txrate->idx >= 0) {
+-				txc->s.ri[i] =
+-					CARL9170_TX_SUPER_RI_AMPDU;
+-
+-				if (WARN_ON(!(txrate->flags &
+-					      IEEE80211_TX_RC_MCS))) {
+-					/*
+-					 * Not sure if it's even possible
+-					 * to aggregate non-ht rates with
+-					 * this HW.
+-					 */
+-					goto err_out;
+-				}
+-				continue;
+-			}
+-
+-			txrate->idx = 0;
+-			txrate->count = ar->hw->max_rate_tries;
+-		}
+-
+-		mac_tmp |= cpu_to_le16(AR9170_TX_MAC_AGGR);
+ 	}
+ 
+ 	/*
+@@ -1012,11 +987,31 @@ static int carl9170_tx_prepare(struct ar9170 *ar,
+ 	 * taken from mac_control. For all fallback rate, the firmware
+ 	 * updates the mac_control flags from the rate info field.
+ 	 */
+-	for (i = 1; i < CARL9170_TX_MAX_RATES; i++) {
++	for (i = 0; i < CARL9170_TX_MAX_RATES; i++) {
++		__le32 phy_set;
+ 		txrate = &info->control.rates[i];
+ 		if (txrate->idx < 0)
+ 			break;
+ 
++		phy_set = carl9170_tx_physet(ar, info, txrate);
++		if (i == 0) {
++			/* first rate - part of the hw's frame header */
++			txc->f.phy_control = phy_set;
++
++			if (ampdu && txrate->flags & IEEE80211_TX_RC_MCS)
++				mac_tmp |= cpu_to_le16(AR9170_TX_MAC_AGGR);
++			if (carl9170_tx_rts_check(ar, txrate, ampdu, no_ack))
++				mac_tmp |= cpu_to_le16(AR9170_TX_MAC_PROT_RTS);
++			else if (carl9170_tx_cts_check(ar, txrate))
++				mac_tmp |= cpu_to_le16(AR9170_TX_MAC_PROT_CTS);
++
++		} else {
++			/* fallback rates are stored in the firmware's
++			 * retry rate set array.
++			 */
++			txc->s.rr[i - 1] = phy_set;
++		}
++
+ 		SET_VAL(CARL9170_TX_SUPER_RI_TRIES, txc->s.ri[i],
+ 			txrate->count);
+ 
+@@ -1027,21 +1022,13 @@ static int carl9170_tx_prepare(struct ar9170 *ar,
+ 			txc->s.ri[i] |= (AR9170_TX_MAC_PROT_CTS <<
+ 				CARL9170_TX_SUPER_RI_ERP_PROT_S);
+ 
+-		txc->s.rr[i - 1] = carl9170_tx_physet(ar, info, txrate);
++		if (ampdu && (txrate->flags & IEEE80211_TX_RC_MCS))
++			txc->s.ri[i] |= CARL9170_TX_SUPER_RI_AMPDU;
+ 	}
+ 
+-	txrate = &info->control.rates[0];
+-	SET_VAL(CARL9170_TX_SUPER_RI_TRIES, txc->s.ri[0], txrate->count);
+-
+-	if (carl9170_tx_rts_check(ar, txrate, ampdu, no_ack))
+-		mac_tmp |= cpu_to_le16(AR9170_TX_MAC_PROT_RTS);
+-	else if (carl9170_tx_cts_check(ar, txrate))
+-		mac_tmp |= cpu_to_le16(AR9170_TX_MAC_PROT_CTS);
+-
+ 	txc->s.len = cpu_to_le16(skb->len);
+ 	txc->f.length = cpu_to_le16(len + FCS_LEN);
+ 	txc->f.mac_control = mac_tmp;
+-	txc->f.phy_control = carl9170_tx_physet(ar, info, txrate);
+ 
+ 	arinfo = (void *)info->rate_driver_data;
+ 	arinfo->timeout = jiffies;
+@@ -1381,9 +1368,9 @@ static void carl9170_tx(struct ar9170 *ar)
+ }
+ 
+ static bool carl9170_tx_ampdu_queue(struct ar9170 *ar,
+-	struct ieee80211_sta *sta, struct sk_buff *skb)
++	struct ieee80211_sta *sta, struct sk_buff *skb,
++	struct ieee80211_tx_info *txinfo)
+ {
+-	struct _carl9170_tx_superframe *super = (void *) skb->data;
+ 	struct carl9170_sta_info *sta_info;
+ 	struct carl9170_sta_tid *agg;
+ 	struct sk_buff *iter;
+@@ -1450,7 +1437,7 @@ err_unlock:
+ 
+ err_unlock_rcu:
+ 	rcu_read_unlock();
+-	super->f.mac_control &= ~cpu_to_le16(AR9170_TX_MAC_AGGR);
++	txinfo->flags &= ~IEEE80211_TX_CTL_AMPDU;
+ 	carl9170_tx_status(ar, skb, false);
+ 	ar->tx_dropped++;
+ 	return false;
+@@ -1492,7 +1479,7 @@ void carl9170_op_tx(struct ieee80211_hw *hw,
+ 		 * sta == NULL checks are redundant in this
+ 		 * special case.
+ 		 */
+-		run = carl9170_tx_ampdu_queue(ar, sta, skb);
++		run = carl9170_tx_ampdu_queue(ar, sta, skb, info);
+ 		if (run)
+ 			carl9170_tx_ampdu(ar);
+ 
+-- 
+1.8.1.5
+

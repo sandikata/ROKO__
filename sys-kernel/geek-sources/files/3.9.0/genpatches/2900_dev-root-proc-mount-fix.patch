@@ -1,0 +1,29 @@
+--- a/init/do_mounts.c	2013-01-25 19:11:11.609802424 -0500
++++ b/init/do_mounts.c	2013-01-25 19:14:20.606053568 -0500
+@@ -461,7 +461,10 @@ void __init change_floppy(char *fmt, ...
+ 	va_start(args, fmt);
+ 	vsprintf(buf, fmt, args);
+ 	va_end(args);
+-	fd = sys_open("/dev/root", O_RDWR | O_NDELAY, 0);
++	if (saved_root_name[0])
++		fd = sys_open(saved_root_name, O_RDWR | O_NDELAY, 0);
++	else
++		fd = sys_open("/dev/root", O_RDWR | O_NDELAY, 0);
+ 	if (fd >= 0) {
+ 		sys_ioctl(fd, FDEJECT, 0);
+ 		sys_close(fd);
+@@ -505,7 +508,13 @@ void __init mount_root(void)
+ #endif
+ #ifdef CONFIG_BLOCK
+ 	create_dev("/dev/root", ROOT_DEV);
+-	mount_block_root("/dev/root", root_mountflags);
++	if (saved_root_name[0]) {
++		create_dev(saved_root_name, ROOT_DEV);
++		mount_block_root(saved_root_name, root_mountflags);
++	} else {
++		create_dev("/dev/root", ROOT_DEV);
++		mount_block_root("/dev/root", root_mountflags);
++	}
+ #endif
+ }
+ 

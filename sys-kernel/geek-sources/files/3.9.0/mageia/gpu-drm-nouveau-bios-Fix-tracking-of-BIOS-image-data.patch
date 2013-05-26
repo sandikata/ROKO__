@@ -1,0 +1,49 @@
+From d06221c0617ab6d0bc41c4980cefdd9c8cc9a1c1 Mon Sep 17 00:00:00 2001
+From: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Date: Mon, 2 Apr 2012 13:38:19 +1000
+Subject: [PATCH] nouveau/bios: Fix tracking of BIOS image data
+
+The code tries various methods for retreiving the BIOS data. However
+it doesn't clear the bios->data pointer between the iterations.
+
+In some cases, the shadow() method will fail and not update bios->data
+at all, which will cause us to "score" the old data and incorrectly
+attribute that score to the new method. This can cause double frees
+later when disposing of the unused data.
+
+Additionally, we were not freeing the data for methods that fail the
+score test (we only freed when a "best" is superseeded, not when the
+new method has a lower score than the exising "best"). Fix that as well.
+
+Signed-off-by: Benjamin Herrenschmidt <benh@kernel.crashing.org>
+Acked-by: Ben Skeggs <bskeggs@redhat.com>
+Signed-off-by: Dave Airlie <airlied@redhat.com>
+---
+ drivers/gpu/drm/nouveau/nouveau_bios.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/gpu/drm/nouveau/nouveau_bios.c b/drivers/gpu/drm/nouveau/nouveau_bios.c
+index 80963d0..1947d61 100644
+--- a/drivers/gpu/drm/nouveau/nouveau_bios.c
++++ b/drivers/gpu/drm/nouveau/nouveau_bios.c
+@@ -273,6 +273,7 @@ bios_shadow(struct drm_device *dev)
+ 		mthd->score = score_vbios(bios, mthd->rw);
+ 		mthd->size = bios->length;
+ 		mthd->data = bios->data;
++		bios->data = NULL;
+ 	} while (mthd->score != 3 && (++mthd)->shadow);
+ 
+ 	mthd = shadow_methods;
+@@ -281,7 +282,8 @@ bios_shadow(struct drm_device *dev)
+ 		if (mthd->score > best->score) {
+ 			kfree(best->data);
+ 			best = mthd;
+-		}
++		} else
++			kfree(mthd->data);
+ 	} while ((++mthd)->shadow);
+ 
+ 	if (best->score) {
+-- 
+1.7.9.3
+

@@ -1,0 +1,43 @@
+From 7362f04c2888b14c20f8aaa02e1a897025261768 Mon Sep 17 00:00:00 2001
+From: Viresh Kumar <viresh.kumar@linaro.org>
+Date: Fri, 15 Mar 2013 08:48:20 +0000
+Subject: DMA: OF: Check properties value before running be32_to_cpup() on it
+
+In of_dma_controller_register() routine we are calling of_get_property() as an
+parameter to be32_to_cpup(). In case the property doesn't exist we will get a
+crash.
+
+This patch changes this code to check if we got a valid property first and then
+runs be32_to_cpup() on it.
+
+Signed-off-by: Viresh Kumar <viresh.kumar@linaro.org>
+Signed-off-by: Vinod Koul <vinod.koul@intel.com>
+---
+diff --git a/drivers/dma/of-dma.c b/drivers/dma/of-dma.c
+index 6036cd0..00db454 100644
+--- a/drivers/dma/of-dma.c
++++ b/drivers/dma/of-dma.c
+@@ -93,6 +93,7 @@ int of_dma_controller_register(struct device_node *np,
+ {
+ 	struct of_dma	*ofdma;
+ 	int		nbcells;
++	const __be32	*prop;
+ 
+ 	if (!np || !of_dma_xlate) {
+ 		pr_err("%s: not enough information provided\n", __func__);
+@@ -103,8 +104,11 @@ int of_dma_controller_register(struct device_node *np,
+ 	if (!ofdma)
+ 		return -ENOMEM;
+ 
+-	nbcells = be32_to_cpup(of_get_property(np, "#dma-cells", NULL));
+-	if (!nbcells) {
++	prop = of_get_property(np, "#dma-cells", NULL);
++	if (prop)
++		nbcells = be32_to_cpup(prop);
++
++	if (!prop || !nbcells) {
+ 		pr_err("%s: #dma-cells property is missing or invalid\n",
+ 		       __func__);
+ 		kfree(ofdma);
+--
+cgit v0.9.1

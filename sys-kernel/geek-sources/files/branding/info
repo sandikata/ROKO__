@@ -1,0 +1,9 @@
+font-8x16-iso-latin-1-v2.patch
+CONFIG_FONT_ISO_LATIN_1_8x16 http://sudormrf.wordpress.com/2010/10/23/ka-ping-yee-iso-latin-1%c2%a0font-in-linux-kernel/
+
+gentoo-larry-logo-v3.patch
+CONFIG_LOGO_LARRY_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/branding/logo_larry_clut224.gif
+CONFIG_LOGO_LARRY_HEAD_CLUT224 https://github.com/init6/init_6/raw/master/sys-kernel/geek-sources/files/branding/logo_larry_head_clut224.gif
+
+
+linux-3.8.6-colored-printk.patch - Colored printk
