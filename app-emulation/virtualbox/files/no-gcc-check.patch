@@ -1,0 +1,100 @@
+--- a/VirtualBox-4.2.12/configure
++++ b/VirtualBox-4.2.12/configure
+@@ -390,96 +390,7 @@
+ #
+ check_gcc()
+ {
+-  test_header gcc
+-  if check_avail "$CC" CC really; then
+-    cc_ver=`$CC -dumpversion` 2>/dev/null
+-    if [ $? -ne 0 ]; then
+-      log_failure "cannot execute '$CC -dumpversion'"
+-      fail really
+-    fi
+-    if check_avail "$CXX" CXX really; then
+-      cxx_ver=`$CXX -dumpversion` 2>/dev/null
+-      if [ $? -ne 0 ]; then
+-        log_failure "cannot execute '$CXX -dumpversion'"
+-        fail really
+-      fi
+-      cc_maj=`echo $cc_ver|cut -d. -f1`
+-      cc_min=`echo $cc_ver|cut -d. -f2`
+-      if [ "x$cc_ver" != "x$cxx_ver" ]; then
+-        log_failure "gcc version $cc_ver does not match g++ version $cxx_ver"
+-        fail really
+-      elif [ $cc_maj -eq 4 -a $cc_min -eq 0 -a "$OS" = "darwin" ]; then
+-        log_success "found version $cc_ver"
+-      # gcc-4.0 is allowed for Darwin only
+-      elif [ $cc_maj -lt 3 \
+-             -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
+-             -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
+-             -o \( $cc_maj -eq 4 -a $cc_min -gt 7 \) \
+-             -o $cc_maj -gt 4 ]; then
+-        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<8"
+-        fail really
+-      else
+-        log_success "found version $cc_ver"
+-      fi
+-      if [ "$BUILD_MACHINE" = "amd64" ]; then
+-        [ -z "$CC32"  ] && CC32="$CC -m32"
+-        [ -z "$CXX32" ] && CXX32="$CXX -m32"
+-      else
+-        [ -z "$CC32"  ] && CC32="$CC"
+-        [ -z "$CXX32" ] && CXX32="$CXX"
+-      fi
+-      if [ "$BUILD_MACHINE" = "x86" -a "$TARGET_MACHINE" = "amd64" ]; then
+-        [ -z "$CC64"  ] && CC64="$CC -m64"
+-        [ -z "$CXX64" ] && CXX64="$CXX -m64"
+-      fi
+-      if [ "$TARGET_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 0 ]; then
+-        CC32="undefined"
+-        CXX32="undefined"
+-      fi
+-      if [ "$CC" != "gcc" ]; then
+-        cnf_append "TOOL_GCC3_CC"   "$CC"
+-        cnf_append "TOOL_GCC3_AS"   "$CC"
+-        cnf_append "TOOL_GCC3_LD"   "$CC"
+-        cnf_append "TOOL_GXX3_CC"   "$CC"
+-        cnf_append "TOOL_GXX3_AS"   "$CC"
+-      fi
+-      if [ "$CXX" != "g++" ]; then
+-        cnf_append "TOOL_GCC3_CXX"  "$CXX"
+-        cnf_append "TOOL_GXX3_CXX"  "$CXX"
+-        cnf_append "TOOL_GXX3_LD"   "$CXX"
+-      fi
+-      if [ "$CC32" != "gcc -m32" -a "$CC32" != "undefined" ]; then
+-        cnf_append "TOOL_GCC32_CC"  "$CC32"
+-        cnf_append "TOOL_GCC32_AS"  "$CC32"
+-        cnf_append "TOOL_GCC32_LD"  "$CC32"
+-        cnf_append "TOOL_GXX32_CC"  "$CC32"
+-        cnf_append "TOOL_GXX32_AS"  "$CC32"
+-      fi
+-      if [ "$CXX32" != "g++ -m32" -a "$CXX32" != "undefined" ]; then
+-        cnf_append "TOOL_GCC32_CXX" "$CXX32"
+-        cnf_append "TOOL_GXX32_CXX" "$CXX32"
+-        cnf_append "TOOL_GXX32_LD"  "$CXX32"
+-      fi
+-      # this isn't not necessary, there is not such tool.
+-      if [ -n "$CC64" ]; then
+-        cnf_append "TOOL_GCC64_CC"  "$CC64"
+-        cnf_append "TOOL_GCC64_AS"  "$CC64"
+-        cnf_append "TOOL_GCC64_LD"  "$CC64"
+-        cnf_append "TOOL_GXX64_CC"  "$CC64"
+-        cnf_append "TOOL_GXX64_AS"  "$CC64"
+-      fi
+-      if [ -n "$CXX64" ]; then
+-        cnf_append "TOOL_GCC64_CXX" "$CXX64"
+-        cnf_append "TOOL_GXX64_CXX" "$CXX64"
+-        cnf_append "TOOL_GXX64_LD"  "$CXX64"
+-      fi
+-      # Solaris sports a 32-bit gcc/g++.
+-      if [ "$OS" = "solaris" -a "$BUILD_MACHINE" = "amd64" ]; then
+-        [ "$CC" = "gcc" ] && CC="gcc -m64"
+-        [ "$CXX" = "g++" ] && CXX="g++ -m64"
+-      fi
+-    fi
+-  fi
++  log_success "gcc check disabled, see https://bugs.gentoo.org/show_bug.cgi?id=465334"
+ }
+ 
+ 
