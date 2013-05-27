@@ -3,7 +3,7 @@
 # $Header: $
 
 #inherit distutils eutils gnome2-utils
-EAPI=4
+EAPI=5
 inherit eutils gnome2-utils
 DESCRIPTION="Gnome taskbar applet with groupping and group manipulation"
 HOMEPAGE="http://launchpad.net/dockbar"
@@ -12,7 +12,6 @@ SRC_URI="http://launchpad.net/dockbar/dockbarx/x.${PV}/+download/${P/-/_}.tar.gz
 SLOT=0
 LICENSE="GPL-3"
 KEYWORDS="~amd64 ~x86"
-IUSE="awn"
 
 RDEPEND="
 	dev-python/pygobject
@@ -26,19 +25,13 @@ RDEPEND="
 	dev-libs/keybinder[python]
 	dev-python/pyxdg
 	dev-python/python-xlib"
-DEPEND="awn? ( gnome-extra/avant-window-navigator )"
+DEPEND=""
 
 S="${WORKDIR}/${P/-/_}"
 
 pkg_preinst() {
 	rm -rf ${ROOT}/usr/share/avant-window-navigator/applets/DockBarX/
 	rm -f ${ROOT}/usr/share/avant-window-navigator/applets/DockBarX.desktop
-	if use awn ; then
-		dodir /usr/share/avant-window-navigator/applets/DockBarX/
-		cp ${S}/AWN/DockBarX.desktop ${D}/usr/share/avant-window-navigator/applets/
-		cp ${S}/AWN/DockBarX/DockBarX.py ${D}/usr/share/avant-window-navigator/applets/DockBarX/
-		fperms -x /usr/share/avant-window-navigator/applets/DockBarX.desktop
-	fi
 }
 pkg_postinst() { gnome2_icon_cache_update; }
 pkg_postrm() { gnome2_icon_cache_update; }
