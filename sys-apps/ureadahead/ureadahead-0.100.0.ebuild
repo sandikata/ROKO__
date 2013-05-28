@@ -16,7 +16,8 @@ IUSE=""
 
 RDEPEND="sys-libs/libnih
 	sys-apps/util-linux
-	>=sys-fs/e2fsprogs-1.41"
+	>=sys-fs/e2fsprogs-1.41
+	sys-kernel/ubuntu-sources"
 
 DEPEND="${RDEPEND}
 	sys-devel/gettext
