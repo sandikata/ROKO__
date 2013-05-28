@@ -13,7 +13,7 @@ KERNEL_URI="http://mirror.telepoint.bg/ubuntu/pool/main/l/linux/${KV_MAJOR}.${KV
 RESTRICT="binchecks strip"
 
 LICENSE="GPL-2"
-KEYWORDS="*"
+KEYWORDS="~x86 ~amd64"
 IUSE="binary"
 DEPEND="binary? ( >=sys-kernel/genkernel-3.4.12.6-r4 )"
 RDEPEND="binary? ( >=sys-fs/udev-160 )"
