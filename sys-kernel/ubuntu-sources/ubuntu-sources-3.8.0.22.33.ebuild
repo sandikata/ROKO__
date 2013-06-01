@@ -17,10 +17,10 @@ KEYWORDS="~x86 ~amd64"
 IUSE="binary"
 DEPEND="binary? ( >=sys-kernel/genkernel-3.4.12.6-r4 )"
 RDEPEND="binary? ( >=sys-fs/udev-160 )"
-DESCRIPTION="Ubuntu Server sources (and optional binary kernel)"
-HOMEPAGE="http://www.openvz.org"
+DESCRIPTION="Ureadahead patchset Sources"
+HOMEPAGE=""
 MAINPATCH="linux_${CKV}${EXTRAVERSION}.diff.gz"
-SRC_URI="${KERNEL_URI} http://archive.ubuntu.com/ubuntu/pool/main/l/linux/${MAINPATCH} 
+SRC_URI="${KERNEL_URI} http://mirror.telepoint.bg/ubuntu/pool/main/l/linux/${MAINPATCH} 
 	http://kernel.ubuntu.com/~kernel-ppa/configs/precise/amd64-config.flavour.generic
 	http://kernel.ubuntu.com/~kernel-ppa/configs/precise/i386-config.flavour.generic"
 S="$WORKDIR/linux-3.8"

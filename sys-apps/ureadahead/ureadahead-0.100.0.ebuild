@@ -1,4 +1,4 @@
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2013 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -16,17 +16,16 @@ IUSE=""
 
 RDEPEND="sys-libs/libnih
 	sys-apps/util-linux
-	>=sys-fs/e2fsprogs-1.41
-	sys-kernel/ubuntu-sources"
+	>=sys-fs/e2fsprogs-1.41"
 
 DEPEND="${RDEPEND}
 	sys-devel/gettext
-	dev-util/pkgconfig"
+	virtual/pkgconfig"
 
 CONFIG_CHECK="~FTRACE ~DEBUG_FS"
 
 src_prepare() {
-	epatch "${FILESDIR}"/${P}-5.patch   # Downloaded from upstream
+	epatch "${FILESDIR}"/${P}-16.patch   # Downloaded from upstream
 	epatch "${FILESDIR}"/${P}-gold.patch
 }
 
