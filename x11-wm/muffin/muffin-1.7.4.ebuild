@@ -60,11 +60,9 @@ DEPEND="${COMMON_DEPEND}
 RDEPEND="${COMMON_DEPEND}
 	!x11-misc/expocity"
 
+S="${WORKDIR}/linuxmint-muffin-ddb840a"
 
 src_prepare() {
-	cd "${WORKDIR}"
-	mkdir linuxmint-muffin-58fceaa
-	S="${WORKDIR}/linuxmint-muffin-58fceaa"
 	# Regenerate obsolete Makefile.in
 	eautoreconf
 	gnome2_src_prepare
