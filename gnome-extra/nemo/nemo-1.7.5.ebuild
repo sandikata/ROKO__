@@ -52,7 +52,7 @@ DEPEND="${COMMON_DEPEND}
 #	gnome-base/gnome-common, dev-util/gtk-doc (not only -am!)
 PDEPEND=">=gnome-base/gvfs-0.1.2"
 
-S="${WORKDIR}/linuxmint-nemo-6067cf0"
+S="${WORKDIR}/linuxmint-nemo-030e4da"
 
 src_prepare() {
 	sed 's:-DG.*DISABLE_DEPRECATED::g' -i configure.in || die
