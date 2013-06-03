@@ -63,7 +63,8 @@ RDEPEND="${COMMON_DEPEND}
 S="${WORKDIR}/linuxmint-muffin-58fceaa"
 
 src_prepare() {
-	mkdir "${S}"
+	cd "${WORKDIR}"
+	mkdir linuxmint-muffin-58fceaa
 	# Regenerate obsolete Makefile.in
 	eautoreconf
 	gnome2_src_prepare
