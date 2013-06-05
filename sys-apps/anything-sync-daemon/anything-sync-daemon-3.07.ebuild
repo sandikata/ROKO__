@@ -12,7 +12,7 @@ SRC_URI="http://repo-ck.com/source/${PN}/${P}.tar.xz"
 
 LICENSE="GPL-2 GPL-3"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64 ~x86"
 
 RDEPEND="
 	app-shells/bash

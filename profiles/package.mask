@@ -7,3 +7,8 @@
 # Дата: 20121016 19:27
 # Коментар: Бета
 =x11-drivers/nvidia-drivers-310.14
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20130605 19:27
+# Коментар: gcc-4.8 фикс
+=sys-firmware/ipxe-1.0.0_p20120905-r1
