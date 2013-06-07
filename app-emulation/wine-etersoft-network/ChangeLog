@@ -1,0 +1,25 @@
+# ChangeLog for app-emulation/wine-etersoft-network
+# Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+*wine-etersoft-network-1.0.9_beta (25 Mar 2008)
+
+  25 Mar 2008; <johnrdoe63@cregion.ru> Changelog :
+  Bump version
+
+  08 Feb 2008; <johnrdoe63@cregion.ru> Changelog :
+  adding 1.0.8 ver
+  remove 1.0.6 and 1.0.7n deprecated
+
+  08 Aug 2007; <johnrdoe63@cregion.ru> Changelog :
+  stable 1.0.6 on x86
+
+*wine-etersoft-network-1.0.7n (01 Aug 2007)
+
+  01 Aug 2007; JohnRDoe63 <johnrdoe63@cregion.ru> :
+  initial import
+
+*wine-etersoft-network-1.0.6 (01 Aug 2007)
+
+  1 Aug 2007; JohnRDoe63 <johnrdoe63@cregion.ru> :
+  Initial import

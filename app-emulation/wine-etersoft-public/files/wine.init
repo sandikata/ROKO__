@@ -1,0 +1,45 @@
+#!/sbin/runscript
+# Copyright 1999-2004 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+
+PROCBIN=/proc/sys/fs/binfmt_misc
+
+check()
+{
+        [ -e $PROCBIN/windows -o -e $PROCBIN/windowsPE ]
+}
+
+
+start() {
+	ebegin "Registering binary handler for Windows programs"
+
+	    if check ; then
+                    ewarn "WINE: Binary handler for Windows programs already registered. "
+                    return
+        fi
+
+	[ -e $PROCBIN/register ] || eerror "Failure register!"
+	echo ':windows:M::MZ::/usr/bin/wine:' >$PROCBIN/register && echo ':windowsPE:M::PE::/usr/bin/wine:' >$PROCBIN/register
+	eend $?
+
+}
+
+stop() {
+	ebegin "Unregistering binary handler for Windows programs"
+
+	echo '-1' >$PROCBIN/windows &&echo '-1' >$PROCBIN/windowsPE
+	eend $?
+}
+
+
+
+status()
+{
+       if  check ; then
+                einfo "Wine binary format handlers are registered."
+        else
+               einfo "Wine binary format handlers are not registered."
+        fi
+}
+

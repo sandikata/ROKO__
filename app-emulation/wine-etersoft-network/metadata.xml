@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+<herd>wine-etersoft-network</herd>
+  <maintainer>
+    <email>johnrdoe63@cregion.ru</email>
+    <name>JohnRDoe63</name>
+  </maintainer>
+<longdescription>
+WINE@Etersoft Network is an commercial product of Etersoft ltd.
+
+This package allows you to run many office winodws applications(1C, Konsultant, etc) within Network support in your *nix environment.
+</longdescription> 
+</pkgmetadata>

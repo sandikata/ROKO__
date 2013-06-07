@@ -1,0 +1,30 @@
+diff -uHNrpa a/etersoft/winelauncher b/etersoft/winelauncher
+--- a/etersoft/winelauncher	2008-02-05 13:39:44.000000000 +0300
++++ b/etersoft/winelauncher	2008-02-07 16:01:39.000000000 +0300
+@@ -19,6 +19,7 @@ BINDIR=`dirname $0`
+ ETCDIR=$BINDIR/../etc/wine
+ [ -d $ETCDIR ] || ETCDIR=/etc/wine
+ DATADIR=$BINDIR/../share/wine
++LIBDIR=$BINDIR/../lib
+ STATEDIR=/var/lib/wine
+ 
+ WINEDIAG=$BINDIR/winediag
+@@ -157,6 +158,7 @@ update_wine()
+ 	fi
+ 
+ 	# Copying from datadir if we have some prepared tree there
++	# jrd63 fix 07.02.08
+ 	if [ ! "$WINEMODE" = "--attach" ] && cd ${DATADIR}/skel 2>/dev/null ; then
+ 		echo "Copying prepared tree from '${DATADIR}/skel' ..."
+ 		XARGS="xargs -IQQQ"
+@@ -164,6 +166,10 @@ update_wine()
+ 		find ./ -type d | $XARGS install -m 2775 -d "${CROOT}/QQQ" 2>/dev/null
+ 		# FIXME: use hard links if possible, preserve attributions (like cp -p)
+ 		find ./ -type f | $XARGS install -m 664 "QQQ" "${CROOT}/QQQ" 2>/dev/null
++		if cd ${LIBDIR}/wine-default 2>/dev/null ; then
++		    find ./ -type d | $XARGS install -m 2775 -d "${CROOT}/QQQ" 2>/dev/null
++		    find ./ -type f | $XARGS install -m 664 "QQQ" "${CROOT}/QQQ" 2>/dev/null
++		fi
+ 		chmod a+x ${CROOT}/windows/command/* 2>/dev/null
+ 		#find ./ -type f | $XARGS ln "QQQ" "${CROOT}/QQQ" 2>/dev/null
+ 		cd - >/dev/null

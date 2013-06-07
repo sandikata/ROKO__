@@ -1,0 +1,139 @@
+# ChangeLog for app-emulation/wine-etersoft-public
+# Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
+
+  18 Jun 2011; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+  15 Feb 2011; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+  26 Oct 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+*wine-etersoft-public-1.0.12_p6 (16 Jun 2010)
+
+  16 Jun 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+  06 May 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Remove oem_charset fix..
+
+*wine-etersoft-public-1.0.12_p4 (23 March 2010)
+
+  23 March 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+*wine-etersoft-public-1.0.12_p3 (02 March 2010)
+
+  02 March 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+*wine-etersoft-public-1.0.12_p2 (28 Feb 2010)
+
+  28 Feb 2010; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+  19 Oct 2009; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+
+*wine-etersoft-public-1.0.11_p9 (12 Oct 2009)
+
+  12 Oct 2009; <johnrdoe63@cregion.ru> ChangeLog:
+    Version bump.
+    Delete buggie ebuild 11_p8.
+
+*wine-etersoft-public-1.0.11_p8 (19 Aug 2009)
+
+  19 Aug 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump.
+
+*wine-etersoft-public-1.0.10_p25 (16 Jun 2009)
+
+  16 Jun 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump.
+  Remove old version.
+  Add new beta 1.0.11eter19
+
+*wine-etersoft-public-1.0.10_p23-r1 (27 May 2009)
+
+  27 May 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump.
+  Fix configure fo x86_64.
+
+*wine-etersoft-public-1.0.10_p21 (12 May 2009)
+
+  12 May 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump.
+  Stable x86, x86_64.
+
+  09 Apr 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Change name of packet: depend on eter revision and local.
+  Rework binary handler for gentoo.(+file:wine.init).
+  fix depend etercifs.
+
+  11 Mar 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump.
+  Fixed configuration.
+
+  12 Mar 2009; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bumping.
+
+*wine-etersoft-public-1.0.9 (25 Mar 2008)
+
+  25 Mar 2008; <johnrdoe63@cregion.ru> ChangeLog:
+  Version bump
+
+*wine-etersoft-public-1.0.8 (07 Feb 2008)
+
+  07 Feb 2008; <johnrdoe63@cregion.ru> ChangeLog:
+  fix a skel coping.
+  fix dependence for a binary packet
+
+  05 Feb 2008; <johnrdoe63@cregion.ru> ChangeLog:
+  adding russian dosfonts
+  +files/vga866.fon
+  +files/vgafix.fon
+  +files/vgafixr.fon
+  +files/vgasysr.fon
+  +files/vgasys.fon
+  +files/vgaoem.fon
+  +files/lucon.ttf
+
+  04 Feb 2008; <johnrdoe63@cregion.ru> ChangeLog:
+  update winebase for 1.0.8
+  fix wine-etersoft patch-file
+  add the fonts render OEM_CHARSET 1251 and 866 code pages fix
+
+*wine-etersoft-public-1.0.6 (08 Aug 2007)
+
+  08 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  stable 1.0.6 on x86
+
+  06 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  cleanning ebuild file
+
+*wine-etersoft-public-1.0.6_beta3 (03 Aug 2007)
+
+  03 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  fixed installing function src_install
+
+*wine-etersoft-public-1.0.8_beta (02 Aug 2007)
+
+  02 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  initial import
+
+*wine-etersoft-public-1.0.7n (02 Aug 2007)
+
+  02 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  initial import
+
+*wine-etersoft-public-1.0.6_beta2 (02 Aug 2007)
+
+  02 Aug 2007; <johnrdoe63@cregion.ru> ChangeLog:
+  debug installing
+
+*wine-etersoft-public-1.0.6_beta (01 Aug 2007)
+
+  1 Aug 2007; JohnRDoe63 <johnrdoe63@cregion.ru> :
+  Initial import

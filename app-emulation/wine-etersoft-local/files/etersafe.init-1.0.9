@@ -1,0 +1,17 @@
+#!/sbin/runscript
+# Copyright 1999-2004 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+
+
+
+start() {
+	ebegin "Starting etersafe keylock"
+	eval start-stop-daemon --start --quiet --pidfile /var/run/etersafe.pid --exec /usr/sbin/etersafed --
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping etersafe keylock"
+	start-stop-daemon --stop --signal 2 --quiet --pidfile /var/run/etersafe.pid
+	eend $?
+}

@@ -1,0 +1,25 @@
+diff --git a/dlls/gdi32/freetype.c b/dlls/gdi32/freetype.c
+index cdd23ef..03b3aca 100644
+--- a/dlls/gdi32/freetype.c
++++ b/dlls/gdi32/freetype.c
+@@ -2320,6 +2320,12 @@ static int get_nearest_charset(Face *fac
+  }
+     }
+ 
++    if (!face->scalable && !face->fs.fsCsb[0]) /* OEM */ {
++ *cp = GetOEMCP();
++ return OEM_CHARSET;
++    }
++
++
+     FIXME("returning DEFAULT_CHARSET face->fs.fsCsb[0] = %08x file = %s\n",
+   face->fs.fsCsb[0], face->file);
+     *cp = acp;
+@@ -2717,6 +2723,7 @@ GdiFont *WineEngCreateFontInstance(DC *d
+     if(!TranslateCharsetInfo((DWORD*)(INT_PTR)lf.lfCharSet, &csi, TCI_SRCCHARSET)) {
+	switch(lf.lfCharSet) {
+	case DEFAULT_CHARSET:
++	case OEM_CHARSET:
+	    csi.fs.fsCsb[0] = 0;
+	    break;
+	default:

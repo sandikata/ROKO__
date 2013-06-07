@@ -10,7 +10,8 @@ inherit python
 
 DESCRIPTION="A library for registering global keyboard shortcuts"
 HOMEPAGE="http://kaizer.se/wiki/keybinder/"
-SRC_URI="http://kaizer.se/publicfiles/${PN}/${P}.tar.gz"
+#SRC_URI="http://kaizer.se/publicfiles/${PN}/${P}.tar.gz"
+SRC_URI="http://pkgs.fedoraproject.org/repo/pkgs/keybinder/keybinder-0.2.2.tar.gz/b4ccd4bd19f3ae3f0ab2cbda11fcd3ac/keybinder-0.2.2.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"

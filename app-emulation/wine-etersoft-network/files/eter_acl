@@ -1,0 +1,134 @@
+#!/bin/bash
+#
+# eter_acl - The 1C 7.7 database check and set true file/dir permissions script, ver 0.1
+#
+# Copyright (C) 2007  Kazankov Alexsander <johnrdoe63ATcregionDOTru>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program or from the site that you downloaded it
+# from; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA  02111-1307   USA
+#
+###########################################################################
+
+
+VERSION="`basename $0` ver. 0.1"
+USAGE="Usage: `basename $0` < option > <dir_name>"
+OPTIONS="sVhg:"
+retval=1
+args=$#
+sflag=
+gflag=
+
+if [ $# -eq 0 ]; then
+   echo $"${USAGE}" >&2
+   exit 2
+fi
+
+help()
+{
+       echo $"${USAGE}" >&2
+       echo
+       echo "Options:"
+       echo "	-h 	Show help message"
+       echo "	-V	Show version"
+       echo "	-s	Set true permissions"
+       echo "	-g	Name of group for 1C's users"
+       echo
+       exit 0
+}
+
+fatal ()
+{
+	echo "Access denied!!! Switch to another user!"
+	exit
+}
+
+test_create()
+{
+    echo "Testing to create file..."
+    TESTFILE=$WORK_DIR/winelock-test.001
+
+    touch $TESTFILE
+
+    if  [ "`stat -c%a  $TESTFILE`" != "660" ] ; then 
+	echo "Bad a create permissions!!!"
+	echo "Perm of create file is: `stat -c%a $TESTFILE`"
+    else
+	echo "Looks like good ;-)"
+    fi
+
+    rm -f $TESTFILE
+}
+
+while getopts "${OPTIONS}" name
+do
+    case $name in
+    s)	sflag=1;;
+    g)	gflag=1
+	NAME_GR=$OPTARG;;
+    V)	echo $"${VERSION}" >&2
+	exit 0;;
+    h)	help;;
+    ?)	echo $"${USAGE}" >&2
+	exit 2;;
+    *)	echo $"${USAGE}" >&2
+	exit 1;;
+    esac
+done
+
+NAME_GR=${NAME_GR:-users}
+WORK_DIR=${!args}
+[ -d "${WORK_DIR}" ] || { echo "No working dir! Choose right working dir."; exit 1; }
+
+. gettext.sh
+
+TEXTDOMAIN=wine-etersoft
+export TEXTDOMAIN
+TEXTDOMAINDIR='/usr/share/locale'
+export TEXTDOMAINDIR
+
+echo "Finding incorrect files and dirs..."
+find $WORK_DIR -maxdepth 10  \( ! -group $NAME_GR  -o  ! -perm 2770 \)  -type d -print0 | xargs -n1 -0 --no-run-if-empty ls -d -l
+
+find $WORK_DIR  -maxdepth 10  \( ! -group $NAME_GR  -o ! -perm 660 \)   -type f -print0 | xargs -n1 -0 --no-run-if-empty ls -l
+
+echo Umask: `umask`
+
+if [ ! -z "$sflag" ]; then
+    echo "Setting right permissions..."
+    find $WORK_DIR -maxdepth 10 -type f -print0 | xargs -0 chgrp $NAME_GR || fatal $?
+    find $WORK_DIR -maxdepth 10 -type f -print0 | xargs -0 chmod 0660 
+    
+    find $WORK_DIR -maxdepth 10 -type d -print0 | xargs -0 chgrp $NAME_GR || fatal $?
+    find $WORK_DIR -maxdepth 10 -type d -print0 | xargs -0 chmod 02770
+    exit 0
+fi
+
+test_create
+
+# EOF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
