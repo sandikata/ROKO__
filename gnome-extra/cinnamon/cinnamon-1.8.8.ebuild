@@ -99,7 +99,7 @@ RDEPEND="${COMMON_DEPEND}
 
 	dev-python/dbus-python[${PYTHON_USEDEP}]
 	dev-python/gconf-python:2
-	dev-python/imaging
+	virtual/python-imaging
 	dev-python/lxml
 
 	x11-themes/gnome-icon-theme-symbolic
