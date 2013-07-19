@@ -36,9 +36,7 @@ inherit linux-geek
 
 EXPORT_FUNCTIONS src_unpack src_prepare src_compile src_install pkg_postinst
 
-KNOWN_USES="aufs bfq bld branding build ck deblob fedora gentoo grsec ice lqx mageia pax pf reiser4 rt suse symlink uksm zfs";
-
-SLOT="${PV:-${KMV}/-${VERSION}}"
+KNOWN_USES="aufs bfq bld branding build ck deblob fedora gentoo grsec ice lqx mageia pax pf reiser4 rt suse symlink uksm zfs"
 
 # @FUNCTION: geek-sources_init_variables
 # @INTERNAL
@@ -52,9 +50,9 @@ geek-sources_init_variables() {
 	: ${GEEK_STORE_DIR:="${PORTAGE_ACTUAL_DISTDIR-${DISTDIR}}/geek"}
 
 	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf"}
-	: ${patch_user_dir="/etc/portage/patches"}
-	: ${cfg_file="/etc/portage/kernel.conf"}
-	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER="pax lqx pf bfq ck gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse zfs branding fix upatch"}
+	: ${patch_user_dir:="/etc/portage/patches"}
+	: ${cfg_file:="/etc/portage/kernel.conf"}
+	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER:="pax lqx pf bfq ck gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse zfs branding fix upatch"}
 
 	# Disable the sandbox for this dir
 	addwrite "${GEEK_STORE_DIR}"
@@ -66,6 +64,8 @@ geek-sources_init_variables() {
 # @USAGE:
 # @DESCRIPTION:
 USEKnown() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local USE=$1
 	[ "${USE}" == "" ] && die "${RED}Feature not defined!${NORMAL}"
 
@@ -91,14 +91,13 @@ USEKnown() {
 			bld_def_src="http://bld.googlecode.com/files/bld-${bld_ver/KMV/$KMV}.tar.bz2"
 			bld_src=${user_bld_src:-$bld_def_src}
 			bld_url="http://code.google.com/p/bld"
-			bld_url="${YELLOW}Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}${NORMAL}"
+			bld_inf="${YELLOW}Alternate CPU load distribution technique for Linux kernel scheduler - ${bld_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${bld_url}"
 			SRC_URI="${SRC_URI}
 				bld?		( ${bld_src} )"
 			;;
 		ck)	ck_ver=${user_ck_ver:-$KMV-ck1}
-			ck_def_src="http://mirror.telepoint.bg/gentoo/distfiles/patch-${ck_ver/KMV/$KMV}.bz2"
-#			ck_def_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
+			ck_def_src="http://ck.kolivas.org/patches/3.0/${KMV}/${ck_ver/KMV/$KMV}/patch-${ck_ver/KMV/$KMV}.lrz"
 			ck_src=${user_ck_src:-$ck_def_src}
 			ck_url="http://users.on.net/~ckolivas/kernel"
 			ck_inf="${YELLOW}Con Kolivas high performance patchset - ${ck_url}${NORMAL}"
@@ -138,7 +137,7 @@ USEKnown() {
 			HOMEPAGE="${HOMEPAGE} ${ice_url}"
 			RDEPEND="${RDEPEND}
 				ice?	( >=sys-apps/tuxonice-userui-1.0
-						( || ( >=sys-power/hibernate-script-2.0 sys-power/pm-utils ) ) )"
+						|| ( >=sys-power/hibernate-script-2.0 sys-power/pm-utils ) )"
 			;;
 		lqx)	lqx_ver=${user_lqx_ver:-$KMV}
 			lqx_def_src="http://liquorix.net/sources/${lqx_ver/KMV/$KMV}.patch.gz"
@@ -184,7 +183,7 @@ USEKnown() {
 				reiser4?	( ${reiser4_src} )"
 			;;
 		rt)	rt_ver=${user_rt_ver:-$KMV}
-			rt_def_src="http://www.kernel.org/pub/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
+			rt_def_src="mirror://kernel/linux/kernel/projects/rt/${KMV}/patch-${rt_ver/KMV/$KMV}.patch.xz"
 			rt_src=${user_rt_src:-$rt_def_src}
 			rt_url="http://www.kernel.org/pub/linux/kernel/projects/rt"
 			rt_inf="${YELLOW}Ingo Molnar"\'"s realtime preempt patches - ${rt_url}${NORMAL}"
@@ -217,8 +216,8 @@ USEKnown() {
 			zfs_inf="${YELLOW}Native ZFS on Linux - ${zfs_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${zfs_url}"
 			LICENSE="${LICENSE} GPL-3"
-			RDEPEND="${RDEPEND}
-				zfs?	( sys-fs/zfs[kernel-builtin] )"
+			PDEPEND="${PDEPEND}
+				zfs?	( sys-fs/zfs[kernel-builtin(+)] )"
 			;;
 	esac
 }
@@ -236,6 +235,7 @@ done
 # Note that this function should not be used in the global scope.
 in_iuse() {
 	debug-print-function ${FUNCNAME} "${@}"
+
 	[[ ${#} -eq 1 ]] || die "Invalid args to ${FUNCNAME}()"
 
 	local flag=${1}
@@ -251,6 +251,8 @@ in_iuse() {
 #
 # Note that this function should not be used in the global scope.
 use_if_iuse() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	in_iuse $1 || return 1
 	use $1
 }
@@ -259,6 +261,8 @@ use_if_iuse() {
 # @USAGE:
 # @DESCRIPTION:
 get_from_url() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local url="$1"
 	local release="$2"
 	shift
@@ -270,35 +274,55 @@ get_from_url() {
 # @USAGE:
 # @DESCRIPTION:
 git_get_all_branches(){
+	debug-print-function ${FUNCNAME} "$@"
+
 	for branch in `git branch -a | grep remotes | grep -v HEAD | grep -v master`; do
 		git branch --track ${branch##*/} ${branch} > /dev/null 2>&1
 	done
+}
+
+# @FUNCTION: git_checkout
+# @USAGE:
+# @DESCRIPTION:
+git_checkout(){
+	debug-print-function ${FUNCNAME} "$@"
+
+	local branch_name=${1:-master}
+
+	pushd "${EGIT_SOURCEDIR}" > /dev/null
+
+	debug-print "${FUNCNAME}: git checkout ${branch_name}"
+	git checkout ${branch_name}
+
+	popd > /dev/null
 }
 
 # @FUNCTION: get_or_bump
 # @USAGE:
 # @DESCRIPTION:
 get_or_bump() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch=$1
-	local CSD="${GEEK_STORE_DIR}/${patch}";
+	local CSD="${GEEK_STORE_DIR}/${patch}"
 	shift
 	if [ -d ${CSD} ]; then
-		cd "${CSD}"
+		cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"
 		if [ -e ".git" ]; then # git
-			git fetch --all && git pull --all;
+			git fetch --all && git pull --all
 		elif [ -e ".svn" ]; then # subversion
 			svn up
 		fi
 	else
 		case "${patch}" in
-		aufs)	git clone "${aufs_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
-		fedora)	git clone "${fedora_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		aufs)	git clone "${aufs_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches ;;
+		fedora)	git clone "${fedora_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches ;;
 		gentoo)	svn co "${gentoo_src}" "${CSD}" > /dev/null 2>&1;;
-		grsec)	git clone "${grsec_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
+		grsec)	git clone "${grsec_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches ;;
 		mageia)	svn co "${mageia_src}" "${CSD}" > /dev/null 2>&1;;
-		suse)	git clone "${suse_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}"; git_get_all_branches ;;
-		zfs)	git clone "${spl_src}" "${CSD}/spl" > /dev/null 2>&1; cd "${CSD}/spl"; git_get_all_branches ;
-			git clone "${zfs_src}" "${CSD}/zfs" > /dev/null 2>&1; cd "${CSD}/zfs"; git_get_all_branches ;;
+		suse)	git clone "${suse_src}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches ;;
+		zfs)	git clone "${spl_src}" "${CSD}/spl" > /dev/null 2>&1; cd "${CSD}/spl" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches
+			git clone "${zfs_src}" "${CSD}/zfs" > /dev/null 2>&1; cd "${CSD}/zfs" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches ;;
 		esac
 	fi
 }
@@ -307,142 +331,144 @@ get_or_bump() {
 # @USAGE:
 # @DESCRIPTION:
 make_patch() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch="$1"
-	local CSD="${GEEK_STORE_DIR}/${patch}";
-	local CWD="${T}/${patch}";
+	local CSD="${GEEK_STORE_DIR}/${patch}"
+	local CWD="${T}/${patch}"
 	local CTD="/tmp/${patch}"$$
 	# Disable the sandbox for this dir
 	addwrite "${CTD}"
 	shift
 	case "${patch}" in
-	aufs)	cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
-		cp -r "${CSD}" "${CTD}";
-		cd "${CTD}";
+	aufs)	cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+		cd "${CTD}" || die "${RED}cd ${CTD} failed${NORMAL}"
 		dir=( "Documentation" "fs" "include" )
-		local dest="${CWD}"/aufs3-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		local dest="${CWD}"/aufs3-${aufs_ver}-`date +"%Y%m%d"`.patch
 
-		git checkout origin/aufs"${aufs_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+		git_checkout "origin/aufs${aufs_ver}" > /dev/null 2>&1 git pull > /dev/null 2>&1
 
-		mkdir ../a ../b
-		cp -r {Documentation,fs,include} ../b
-		rm ../b/include/uapi/linux/Kbuild
-		cd ..
+		mkdir ../a ../b || die "${RED}mkdir ../a ../b failed${NORMAL}"
+		cp -r {Documentation,fs,include} ../b || die "${RED}cp -r {Documentation,fs,include} ../b failed${NORMAL}"
+		rm ../b/include/uapi/linux/Kbuild || die "${RED}rm ../b/include/uapi/linux/Kbuild failed${NORMAL}"
+		cd .. || die "${RED}cd .. failed${NORMAL}"
 
-		for i in "${dir[@]}";
-			do diff -U 3 -dHrN -- a/ b/"${i}"/ >> "${dest}";
-			sed -i "s:a/:a/"${i}"/:" "${dest}";
-			sed -i "s:b:b:" "${dest}";
+		for i in "${dir[@]}"; do
+			diff -U 3 -dHrN -- a/ b/"${i}"/ >> "${dest}"
+			sed -i "s:a/:a/"${i}"/:" "${dest}"
+			sed -i "s:b:b:" "${dest}"
 		done
-		rm -rf a b;
+		rm -rf a b || die "${RED}rm -rf a b failed${NORMAL}"
 
-		cp "${CTD}"/aufs3-base.patch "${CWD}"/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch;
-		cp "${CTD}"/aufs3-standalone.patch "${CWD}"/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch;
-		cp "${CTD}"/aufs3-kbuild.patch "${CWD}"/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch;
-		cp "${CTD}"/aufs3-proc_map.patch "${CWD}"/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch;
-		cp "${CTD}"/aufs3-loopback.patch "${CWD}"/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch;
+		cp "${CTD}"/aufs3-base.patch "${CWD}"/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-base.patch ${CWD}/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
+		cp "${CTD}"/aufs3-standalone.patch "${CWD}"/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-standalone.patch ${CWD}/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
+		cp "${CTD}"/aufs3-kbuild.patch "${CWD}"/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-kbuild.patch ${CWD}/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
+		cp "${CTD}"/aufs3-proc_map.patch "${CWD}"/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-proc_map.patch ${CWD}/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
+		cp "${CTD}"/aufs3-loopback.patch "${CWD}"/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-loopback.patch ${CWD}/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
 
-		rm -rf "${CTD}";
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 
-		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
-	bfq)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		cd "${CWD}";
+	bfq)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
 
-		get_from_url "${bfq_src}" "${bfq_ver}" > /dev/null 2>&1;
+		get_from_url "${bfq_src}" "${bfq_ver}" > /dev/null 2>&1
 
-		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
-	bld)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}";
-		cd "${CTD}";
+	bld)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"
+		cd "${CTD}" || die "${RED}cd ${CTD} failed${NORMAL}"
 
-		cp "${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2" "bld-${bld_ver/KMV/$KMV}.tar.bz2"
-		tar -xjpf "bld-${bld_ver/KMV/$KMV}.tar.bz2";
-		cp "${CTD}/bld-${bld_ver/KMV/$KMV}/BLD-${bld_ver/KMV/$KMV}.patch" "${CWD}/BLD-${bld_ver/KMV/$KMV}.patch";
+		cp "${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2" "bld-${bld_ver/KMV/$KMV}.tar.bz2" || die "${RED}cp ${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2 bld-${bld_ver/KMV/$KMV}.tar.bz2 failed${NORMAL}"
+		tar -xjpf "bld-${bld_ver/KMV/$KMV}.tar.bz2" || die "${RED}tar -xjpf bld-${bld_ver/KMV/$KMV}.tar.bz2 failed${NORMAL}"
+		find "${CTD}/bld-${bld_ver/KMV/$KMV}/" -name "*-${bld_ver/KMV/$KMV}.patch" -exec cp {} "${CWD}" \;
 
-		rm -rf "${CTD}";
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 
-		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
-	fedora) cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
+	fedora) cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
 
-		cp -r "${CSD}" "${CTD}";
-		cd "${CTD}";
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+		cd "${CTD}" || die "${RED}cd ${CTD} failed${NORMAL}"
 
-		git checkout "${fedora_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+		git_checkout "${fedora_ver}" > /dev/null 2>&1 git pull > /dev/null 2>&1
 
 		ls -1 | grep ".patch" | xargs -I{} cp "{}" "${CWD}"
 
 		awk '/^Apply.*Patch.*\.patch/{print $2}' kernel.spec > "$CWD"/patch_list
 
-		rm -rf "${CTD}"
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 	;;
-	gentoo) cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		cd "${CWD}";
+	gentoo) cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
 
-		get_or_bump "${patch}" > /dev/null 2>&1;
+		get_or_bump "${patch}" > /dev/null 2>&1
 
-		cp -r "${CSD}" "${CTD}";
-		cd "${CTD}"/${KMV};
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+		cd "${CTD}"/${KMV} || die "${RED}cd ${CTD}/${KMV} failed${NORMAL}"
 
-		find -name .svn -type d -exec rm -rf {} \;
+		find -name .svn -type d -exec rm -rf {} \
 		find -type d -empty -delete
 
-		ls -1 | grep "linux" | xargs -I{} rm -rf "{}";
-		ls -1 | grep ".patch" > "$CWD"/patch_list;
+		ls -1 | grep "linux" | xargs -I{} rm -rf "{}"
+		ls -1 | grep ".patch" > "$CWD"/patch_list
 
-		cp -r "${CTD}"/${KMV}/* "${CWD}"
+		cp -r "${CTD}"/${KMV}/* "${CWD}" || die "${RED}cp -r ${CTD}/${KMV}/* ${CWD} failed${NORMAL}"
 
-		rm -rf "${CTD}"
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 	;;
-	grsec)	cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
+	grsec)	cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
 
-		cp -r "${CSD}" "${CTD}";
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
 
-		cd "${CTD}"/"${grsec_ver}";
+		cd "${CTD}"/"${grsec_ver}" || die "${RED}cd ${CTD}/${grsec_ver} failed${NORMAL}"
 
-		ls -1 | xargs -I{} cp "{}" "${CWD}";
+		ls -1 | xargs -I{} cp "{}" "${CWD}"
 
-		rm -rf "${CTD}";
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 
-		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
-	ice)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		dest="${CWD}"/tuxonice-kernel-"${PV}"-`date +"%Y%m%d"`.patch;
-		wget "${ice_src}" -O "${dest}" > /dev/null 2>&1;
-		cd "${CWD}";
-		ls -1 | grep ".patch" | xargs -I{} xz "{}" | xargs -I{} cp "{}" "${CWD}";
-		ls -1 "${CWD}" | grep ".patch.xz" > "${CWD}"/patch_list;
+	ice)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		dest="${CWD}"/tuxonice-kernel-"${PV}"-`date +"%Y%m%d"`.patch
+		wget "${ice_src}" -O "${dest}" > /dev/null 2>&1
+		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+		ls -1 | grep ".patch" | xargs -I{} xz "{}" | xargs -I{} cp "{}" "${CWD}"
+		ls -1 "${CWD}" | grep ".patch.xz" > "${CWD}"/patch_list
 	;;
-	mageia) cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
+	mageia) cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
 
-		cp -r "${CSD}" "${CTD}";
-		cd "${CTD}"/"${mageia_ver}"/PATCHES;
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+		cd "${CTD}"/"${mageia_ver}"/PATCHES || die "${RED}cd ${CTD}/${mageia_ver}/PATCHES failed${NORMAL}"
 
-		find . -name "*.patch" | xargs -i cp "{}" "${CWD}";
+		find . -name "*.patch" | xargs -i cp "{}" "${CWD}"
 
 		awk '{gsub(/3rd/,"#3rd") ;print $0}' patches/series > "${CWD}"/patch_list
 
-		rm -rf "${CTD}"
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 	;;
-	suse)	cd "${CSD}";
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
+	suse)	cd "${CSD}" >/dev/null 2>&1
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
 
-		cp -r "${CSD}" "${CTD}";
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
 
-		cd "${CTD}";
+		cd "${CTD}" || die "${RED}cd ${CTD} failed${NORMAL}"
 
-		git checkout "${suse_ver}" > /dev/null 2>&1; git pull > /dev/null 2>&1;
+		git_checkout "${suse_ver}" > /dev/null 2>&1 git pull > /dev/null 2>&1
 
 		[ -e "patches.kernel.org" ] && rm -rf patches.kernel.org > /dev/null 2>&1
 		[ -e "patches.rpmify" ] && rm -rf patches.rpmify > /dev/null 2>&1
@@ -450,39 +476,39 @@ make_patch() {
 		awk '!/(#|^$)/ && !/^(\+(needs|tren|hare|xen|jbeulich|jeffm))|patches\.(kernel|rpmify|xen).*/{gsub(/[ \t]/,"") ; print $1}' series.conf > patch_list
 		grep patches.xen series.conf > spatch_list
 
-		cp -r patches.*/ "${CWD}";
-		cp patch_list "${CWD}";
-		cp spatch_list "${CWD}";
+		cp -r patches.*/ "${CWD}" || die "${RED}cp -r patches.*/ ${CWD} failed${NORMAL}"
+		cp patch_list "${CWD}" || die "${RED}cp patch_list ${CWD} failed${NORMAL}"
+		cp spatch_list "${CWD}" || die "${RED}cp spatch_list ${CWD} failed${NORMAL}"
 
-		rm -rf "${CTD}";
+		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 	;;
-	uksm)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		wget "${uksm_src}" -O "${CWD}/${uksm_name}.patch" > /dev/null 2>&1;
-		cd "${CWD}";
-		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list;
+	uksm)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		wget "${uksm_src}" -O "${CWD}/${uksm_name}.patch" > /dev/null 2>&1
+		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
 	zfs)	einfo "Prepare kernel sources"
-		cd "${S}"
+		cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
 		export PORTAGE_ARCH="${ARCH}"
 		case ${ARCH} in
 			x86) export ARCH="i386";;
 			amd64) export ARCH="x86_64";;
 			*) export ARCH="${ARCH}";;
 		esac
-		zcat /proc/config.gz > .config > /dev/null 2>&1 && yes "" | make oldconfig > /dev/null 2>&1 && make prepare > /dev/null 2>&1 && make scripts > /dev/null 2>&1;
+		`zcat /proc/config.gz > .config && yes "" | make oldconfig && make prepare && make scripts` > /dev/null 2>&1
 
-		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}";
-		get_or_bump "${patch}" > /dev/null 2>&1;
-		cp -r "${CSD}" "${CTD}";
-		rm -rf "${CTD}"/{spl,zfs}/.git
+		test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		get_or_bump "${patch}" > /dev/null 2>&1
+		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+		rm -rf "${CTD}"/{spl,zfs}/.git || die "${RED}rm -rf ${CTD}/{spl,zfs}/.git failed${NORMAL}"
 
-		addwrite /usr/src
-		unlink /usr/src/linux
-		ln -s "${S}" /usr/src/linux
+		addwrite "/usr/src/linux"
+		unlink "/usr/src/linux" || die "${RED}unlink /usr/src/linux failed${NORMAL}"
+		ln -s "${S}" /usr/src/linux || die "${RED}ln -s ${S} /usr/src/linux failed${NORMAL}"
 
 		einfo "Integrate SPL"
-		cd "${CTD}/spl";
-		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1;
+		cd "${CTD}/spl" || die "${RED}cd ${CTD}/spl failed${NORMAL}"
+		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1
 		./configure \
 			--prefix=/ \
 			--libdir=/lib64 \
@@ -490,12 +516,12 @@ make_patch() {
 			--datarootdir=/usr/share \
 			--enable-linux-builtin=yes \
 			--with-linux=${S} \
-			--with-linux-obj=${S} > /dev/null 2>&1;
-		./copy-builtin ${S} > /dev/null 2>&1;
+			--with-linux-obj=${S} > /dev/null 2>&1 || die "${RED}spl ./configure failed${NORMAL}"
+		./copy-builtin ${S} > /dev/null 2>&1 || die "${RED}spl ./copy-builtin ${S} failed${NORMAL}"
 
 		einfo "Integrate ZFS"
-		cd "${CTD}/zfs";
-		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1;
+		cd "${CTD}/zfs" || die "${RED}cd ${CTD}/zfs failed${NORMAL}"
+		[ -e autogen.sh ] && ./autogen.sh > /dev/null 2>&1
 		./configure \
 			--prefix=/ \
 			--libdir=/lib64 \
@@ -505,51 +531,56 @@ make_patch() {
 			--with-linux=${S} \
 			--with-linux-obj=${S} \
 			--with-spl="${CTD}/spl" \
-			--with-spl-obj="${CTD}/spl" > /dev/null 2>&1;
-		./copy-builtin ${S} > /dev/null 2>&1;
+			--with-spl-obj="${CTD}/spl" > /dev/null 2>&1 || die "${RED}zfs ./configure failed${NORMAL}"
+		./copy-builtin ${S} > /dev/null 2>&1 || die "${RED}zfs ./copy-builtin ${S} failed${NORMAL}"
 
-		cd "${S}"
-		make mrproper > /dev/null 2>&1;
+		cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
+		make mrproper > /dev/null 2>&1
 
-		unlink /usr/src/linux
+		addwrite "/usr/src/linux"
+		unlink "/usr/src/linux" || die "${RED}unlink /usr/src/linux failed${NORMAL}"
 
-		mv "${CTD}" "${S}/patches/${patch}"
+		mv "${CTD}" "${S}/patches/${patch}" || die "${RED}mv ${CTD} ${S}/patches/${patch} failed${NORMAL}"
 	;;
 	esac
 
-	cd "${S}"
+	cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
 }
 
 # @FUNCTION: src_unpack
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Extract source packages and do any necessary patching or fixes.
 geek-sources_src_unpack() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	geek-sources_init_variables
 
 	for Current_Patch in $SKIP_KERNEL_PATCH_UPDATE; do
-		if use_if_iuse "${Current_Patch}" ; then
+		if use_if_iuse "${Current_Patch}"; then
 		case "${Current_Patch}" in
-			*) SKIP_UPDATE="1" ;;
+			*) SKIP_UPDATE="1" SKIP_SQUEUE="1" ;;
 		esac
 		else continue
-		fi;
-	done;
+		fi
+	done
 
 	linux-geek_src_unpack
 }
 
 # @FUNCTION: src_prepare
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-sources_src_prepare() { ### BRANCH APPLY ###
+	debug-print-function ${FUNCNAME} "$@"
+
 	local xUserOrder=""
 	local xDefOder=""
-	if [ -e "${cfg_file}" ] ; then
+	if [ -e "${cfg_file}" ]; then
 		source "${cfg_file}"
 		xUserOrder="$(echo -n "$GEEKSOURCES_PATCHING_ORDER" | tr '\n' ' ' | tr -s ' ' | tr ' ' '\n' | sort | tr '\n' ' ' | sed -e 's,^\s*,,' -e 's,\s*$,,')"
 		xDefOrder="$(echo -n "$DEFAULT_GEEKSOURCES_PATCHING_ORDER" | tr '\n' ' ' | tr -s ' ' | tr ' ' '\n' | sort | tr '\n' ' ' | sed -e 's,^\s*,,' -e 's,\s*$,,')"
 
-		if [ "x${xUserOrder}" = "x${xDefOrder}" ] ; then
+		if [ "x${xUserOrder}" = "x${xDefOrder}" ]; then
 			ewarn "${BLUE}Use${NORMAL} ${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL} ${BLUE}from${NORMAL} ${RED}${cfg_file}${NORMAL}"
 		else
 			ewarn "${BLUE}Use${NORMAL} ${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL} ${BLUE}from${NORMAL} ${RED}${cfg_file}${NORMAL}"
@@ -559,7 +590,7 @@ geek-sources_src_prepare() { ### BRANCH APPLY ###
 			ewarn "${BLUE}Probably that"\'"s the plan. In that case, never mind.${NORMAL}"
 		fi
 	else
-		GEEKSOURCES_PATCHING_ORDER="${DEFAULT_GEEKSOURCES_PATCHING_ORDER}";
+		GEEKSOURCES_PATCHING_ORDER="${DEFAULT_GEEKSOURCES_PATCHING_ORDER}"
 		ewarn "${BLUE}The order of patching is defined in file${NORMAL} ${RED}${cfg_file}${NORMAL} ${BLUE}with the variable GEEKSOURCES_PATCHING_ORDER is its default value:${NORMAL}
 ${RED}GEEKSOURCES_PATCHING_ORDER=\"${GEEKSOURCES_PATCHING_ORDER}\"${NORMAL}
 ${BLUE}You are free to choose any order of patching.${NORMAL}
@@ -570,87 +601,87 @@ ${BLUE}And may the Force be with you…${NORMAL}"
 	fi
 
 for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
-	if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]] ; then
-		if [ -e "${FILESDIR}/${PV}/${Current_Patch}/info" ] ; then
+	if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]]; then
+		if [ -e "${FILESDIR}/${PV}/${Current_Patch}/info" ]; then
 			echo
-			cat "${FILESDIR}/${PV}/${Current_Patch}/info";
+			cat "${FILESDIR}/${PV}/${Current_Patch}/info"
 		fi
-		test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches";
+		test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches"
 		case "${Current_Patch}" in
 			aufs)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${aufs_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${aufs_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			bfq)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			bld)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			branding) if [ -e "${FILESDIR}/${Current_Patch}/info" ] ; then
+			branding) if [ -e "${FILESDIR}/${Current_Patch}/info" ]; then
 					echo
-					cat "${FILESDIR}/${Current_Patch}/info";
+					cat "${FILESDIR}/${Current_Patch}/info"
 				fi
-				ApplyPatch "${FILESDIR}/${Current_Patch}/patch_list" "Branding";
+				ApplyPatch "${FILESDIR}/${Current_Patch}/patch_list" "Branding"
 				;;
-			ck)	ApplyPatch "${DISTDIR}/patch-${ck_ver/KMV/$KMV}.lrz" "${ck_inf}";
-				if [ -d "${FILESDIR}/${PV}/${Current_Patch}" ] ; then
-					if [ -e "${FILESDIR}/${PV}/${Current_Patch}/patch_list" ] ; then
-						ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "CK Fix";
+			ck)	ApplyPatch "${DISTDIR}/patch-${ck_ver/KMV/$KMV}.lrz" "${ck_inf}"
+				if [ -d "${FILESDIR}/${PV}/${Current_Patch}" ]; then
+					if [ -e "${FILESDIR}/${PV}/${Current_Patch}/patch_list" ]; then
+						ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "CK Fix"
 					fi
 				fi
 				# Comment out EXTRAVERSION added by CK patch:
 				sed -i -e 's/\(^EXTRAVERSION :=.*$\)/# \1/' "Makefile"
 				;;
 			fedora)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${fedora_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${fedora_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			fix)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "${YELLOW}Fixes for current kernel${NORMAL}"
 				;;
 			gentoo)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${gentoo_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${gentoo_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			grsec)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${grsec_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${grsec_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			ice)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${ice_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${ice_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			lqx)	ApplyPatch "${DISTDIR}/${lqx_ver/KMV/$KMV}.patch.gz" "${lqx_inf}";
+			lqx)	ApplyPatch "${DISTDIR}/${lqx_ver/KMV/$KMV}.patch.gz" "${lqx_inf}"
 				;;
 			mageia)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${mageia_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${mageia_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			pax)	ApplyPatch "${DISTDIR}/pax-linux-${pax_ver/KMV/$KMV}.patch" "${pax_inf}";
+			pax)	ApplyPatch "${DISTDIR}/pax-linux-${pax_ver/KMV/$KMV}.patch" "${pax_inf}"
 				;;
-			pf)	ApplyPatch "${DISTDIR}/patch-${pf_ver/KMV/$KMV}.bz2" "${pf_inf}";
+			pf)	ApplyPatch "${DISTDIR}/patch-${pf_ver/KMV/$KMV}.bz2" "${pf_inf}"
 				;;
-			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "${reiser4_inf}";
+			reiser4) ApplyPatch "${DISTDIR}/reiser4-for-${reiser4_ver}.patch.gz" "${reiser4_inf}"
 				;;
-			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "${rt_inf}";
+			rt)	ApplyPatch "${DISTDIR}/patch-${rt_ver}.patch.xz" "${rt_inf}"
 				;;
 			suse)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${suse_inf}";
-				SmartApplyPatch "${T}/${Current_Patch}/spatch_list" "${YELLOW}OpenSuSE xen - ${suse_url}${NORMAL}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${suse_inf}"
+				SmartApplyPatch "${T}/${Current_Patch}/spatch_list" "${YELLOW}OpenSuSE xen - ${suse_url}${NORMAL}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			uksm)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${uksm_inf}";
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${uksm_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			upatch)	if [ -d "${patch_user_dir}/${CATEGORY}/${PN}" ] ; then
-					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/info" ] ; then
+			upatch)	if [ -d "${patch_user_dir}/${CATEGORY}/${PN}" ]; then
+					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/info" ]; then
 						echo
-						cat "${patch_user_dir}/${CATEGORY}/${PN}/info";
+						cat "${patch_user_dir}/${CATEGORY}/${PN}/info"
 					fi
-					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/patch_list" ] ; then
+					if [ -e "${patch_user_dir}/${CATEGORY}/${PN}/patch_list" ]; then
 						ApplyPatch "${patch_user_dir}/${CATEGORY}/${PN}/patch_list" "${YELLOW}Applying user patches from${NORMAL} ${RED}${patch_user_dir}/${CATEGORY}/${PN}${NORMAL}"
 					else
 						ewarn "${BLUE}File${NORMAL} ${RED}${patch_user_dir}/${CATEGORY}/${PN}/patch_list${NORMAL} ${BLUE}not found!${NORMAL}"
@@ -668,36 +699,42 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				;;
 		esac
 	else continue
-	fi;
-done;
+	fi
+done
 	linux-geek_src_prepare
 } ### END OF PATCH APPLICATIONS ###
 
 # @FUNCTION: src_compile
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Configure and build the package.
 geek-sources_src_compile() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	linux-geek_src_compile
 }
 
 # @FUNCTION: src_install
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Install a package to ${D}
 geek-sources_src_install() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	linux-geek_src_install
 }
 
 # @FUNCTION: pkg_postinst
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Called after image is installed to ${ROOT}
 geek-sources_pkg_postinst() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	linux-geek_pkg_postinst
 	einfo
 	einfo "${BLUE}Wiki:${NORMAL} ${RED}https://github.com/init6/init_6/wiki/geek-sources${NORMAL}"
 	einfo
 	einfo "${BLUE}For more info on this patchset, and how to report problems, see:${NORMAL}"
 	for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
-		if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]] ; then
+		if use_if_iuse "${Current_Patch}" || [[ "${Current_Patch}" == "fix" ]] || [[ "${Current_Patch}" == "upatch" ]]; then
 			case "${Current_Patch}" in
 				aufs)	if ! has_version sys-fs/aufs-util; then
 						ewarn
@@ -748,6 +785,6 @@ geek-sources_pkg_postinst() {
 					;;
 				esac
 			else continue
-		fi;
-	done;
+		fi
+	done
 }

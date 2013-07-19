@@ -24,6 +24,7 @@ DEPEND="dev-python/pygobject
 	=dev-libs/keybinder-0.2.2[python]
 	dev-python/pyxdg
 	dev-python/python-xlib
-	dockmanager? ( x11-misc/dockmanager )"
+	dockmanager? ( x11-misc/dockmanager )
+	dev-python/numpy"
 RDEPEND="${DEPEND}"
 

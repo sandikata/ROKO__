@@ -11,7 +11,7 @@ SRC_URI=""
 LICENSE=""
 SLOT="0"
 KEYWORDS="~amd64"
-IUSE=""
+IUSE="dockmanager"
 
 DEPEND="dev-python/pygobject
 	dev-python/pygtk
@@ -21,6 +21,8 @@ DEPEND="dev-python/pygobject
 	dev-python/pyxdg
 	dev-python/python-xlib
 	mate-base/mate-conf
-	dev-python/gconf-python"
+	dev-python/gconf-python
+	dev-python/numpy
+	dockmanager? ( x11-misc/dockmanager )"
 RDEPEND="${DEPEND}"
 

@@ -14,6 +14,8 @@ linux-055-add_Formosa_eHome_Infrared_Receiver.patch
 linux-056-add_Adaptec_eHome_Infrared_Receiver.patch
 linux-057-add_SMK_Manufacturing_Inc_Infrared_Receiver.patch
 linux-057-Removed-MCE-customer-code-restriction-in-rc6-decode.patch
+linux-058.01-HID-Sony-upstream_patches.patch
+linux-058.05-hid_sony-add_autorepeat_for_PS3_remotes.patch
 linux-059-remove_some_xpad_pids-0.2.patch
 linux-060-add_AUGUST_DVB-T205.patch
 linux-203-stb0899_enable_low_symbol_rate.patch
@@ -24,7 +26,6 @@ linux-221-ngene-octopus.patch
 linux-222-stb0899_signal_quality.patch
 linux-223-Fix-video-artifacts-with-tt-3600-s2-usb.patch
 linux-700-jmicron_1_0_8_5.patch
-linux-701-fix-r8169.patch
 linux-900-hide_tsc_error.patch
 linux-950-saa716x_PCIe_interface_chipset.patch
 linux-995-CX24120-13Z_frontend.patch

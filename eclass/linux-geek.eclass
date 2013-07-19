@@ -32,7 +32,7 @@
 # Bugs to sudormrfhalt@gmail.com
 #
 
-EXPORT_FUNCTIONS ApplyPatch SmartApplyPatch src_unpack src_prepare src_compile src_install pkg_postinst
+EXPORT_FUNCTIONS ApplyPatch SmartApplyPatch src_unpack get_config src_prepare src_compile src_install pkg_postinst
 
 # Color
 BR="\x1b[0;01m"
@@ -103,14 +103,14 @@ KMV="${1}.${2}"
 if [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ]; then
 	PV="${KMV}" # default PV=3.4.0 new PV=3.4
 	SKIP_UPDATE=1 # Skip update to latest upstream
-fi;
+fi
 
 # ebuild default values setup settings
 DEFEXTRAVERSION="-geek"
 EXTRAVERSION=${EXTRAVERSION:-$DEFEXTRAVERSION}
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
-SLOT="${PV:-${KMV}/-${VERSION}}"
+SLOT=${SLOT:-${KMV}}
 IUSE="symlink build"
 
 # @FUNCTION: linux-geek_init_variables
@@ -122,17 +122,30 @@ IUSE="symlink build"
 linux-geek_init_variables() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	: ${patch_cmd:="patch -p1 -s"}
+	: ${GEEK_STORE_DIR:="${PORTAGE_ACTUAL_DISTDIR-${DISTDIR}}/geek"}
+	: ${cfg_file:="/etc/portage/kernel.conf"}
+	local crap_patch_cfg=$(source $cfg_file 2>/dev/null echo ${crap_patch})
+	local rm_unneeded_arch_cfg=$(source $cfg_file 2>/dev/null echo ${rm_unneeded_arch})
+
+	: ${crap_patch:=${crap_patch_cfg:-ignore}} # crap_patch=ignore/will_not_pass
+	: ${crap:="0"}
+
+	case "$crap_patch" in
+	ignore) : ${patch_cmd:="patch -p1 -g1 --no-backup-if-mismatch"} ;;
+	will_not_pass) : ${patch_cmd:="patch -p1 -g1"} ;;
+	esac
+
+	: ${rm_unneeded_arch:=${rm_unneeded_arch_cfg:-no}} # rm_unneeded-arch=yes/no
 }
 
 case "$PR" in
 	r0)	case "$VERSION" in
 		2)	extension="bz2"
-			kurl="http://www.kernel.org/pub/linux/kernel/v${KMV}"
+			kurl="mirror://kernel/linux/kernel/v${KMV}"
 			kversion="${PV}"
 		;;
 		3)	extension="xz"
-			kurl="http://www.kernel.org/pub/linux/kernel/v${VERSION}.0"
+			kurl="mirror://kernel/linux/kernel/v${VERSION}.0"
 			kversion="${KMV}"
 			if [ "${SUBLEVEL}" != "0" ] || [ "${PV}" != "${KMV}" ]; then
 				pversion="${PV}"
@@ -143,7 +156,7 @@ case "$PR" in
 		esac
 	;;
 	*)	extension="xz"
-		kurl="http://www.kernel.org/pub/linux/kernel/v${VERSION}.0/testing"
+		kurl="mirror://kernel/linux/kernel/v${VERSION}.0/testing"
 		kversion="${VERSION}.$((${PATCHLEVEL} - 1))"
 		if [ "${SUBLEVEL}" != "0" ] || [ "${PV}" != "${KMV}" ]; then
 			pversion="${PVR//r/rc}"
@@ -157,8 +170,8 @@ kname="linux-${kversion}.tar.${extension}"
 SRC_URI="${SRC_URI} ${kurl}/${kname}"
 
 # Bug #266157, deblob for libre support
-if [[ -z ${PREDEBLOBBED} ]] ; then
-	if [[ ${DEBLOB_AVAILABLE} == "1" ]] ; then
+if [[ -z ${PREDEBLOBBED} ]]; then
+	if [[ ${DEBLOB_AVAILABLE} == "1" ]]; then
 		IUSE="${IUSE} deblob"
 		# Reflect that kernels contain firmware blobs unless otherwise
 		# stripped
@@ -178,7 +191,7 @@ if [[ -z ${PREDEBLOBBED} ]] ; then
 		DEBLOB_CHECK_A="deblob-check-${DEBLOB_PV}"
 		DEBLOB_HOMEPAGE="http://www.fsfla.org/svnwiki/selibre/linux-libre/"
 		DEBLOB_URI_PATH="download/releases/LATEST-${DEBLOB_PV}.N"
-		if ! has "${EAPI:-0}" 0 1 ; then
+		if ! has "${EAPI:-0}" 0 1; then
 			DEBLOB_CHECK_URI="${DEBLOB_HOMEPAGE}/${DEBLOB_URI_PATH}/deblob-check -> ${DEBLOB_CHECK_A}"
 		else
 			DEBLOB_CHECK_URI="mirror://gentoo/${DEBLOB_CHECK_A}"
@@ -204,6 +217,8 @@ fi
 # @USAGE: ExtractApply "<patch>"
 # @DESCRIPTION: Extract patch from *.gz, *.bz, *.bz2, *.lrz, *.xz, *.zip, *.Z
 ExtractApply() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch=$1
 	shift
 	case "$patch" in
@@ -217,6 +232,32 @@ ExtractApply() {
 	esac
 }
 
+# iternal function
+#
+# @FUNCTION: find_crap
+# @USAGE:
+# @DESCRIPTION: Find *.orig or *.rej files
+find_crap() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	if [ $(find "${S}" \( -name \*.orig -o -name \*.rej \) | wc -c) -eq 0 ]; then
+		crap="0"
+	else
+		crap="1"
+	fi
+}
+
+# iternal function
+#
+# @FUNCTION: rm_crap
+# @USAGE:
+# @DESCRIPTION: Remove *.orig or *.rej files
+rm_crap() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	find "${S}" \( -name \*~ -o -name \.gitignore -o -name \*.orig -o -name \.*.orig -o -name \*.rej -o -name \*.old -o -name \.*.old \) -delete
+}
+
 # internal function
 #
 # @FUNCTION: Handler
@@ -227,6 +268,8 @@ ExtractApply() {
 # Test run patch with 'patch -p1 --dry-run'
 # All tests completed successfully? run ExtractApply
 Handler() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch=$1
 	local patch_base_name=$(basename "$patch")
 	shift
@@ -236,9 +279,15 @@ Handler() {
 	case "$patch" in
 	*.gz|*.bz|*.bz2|*.lrz|*.xz|*.zip|*.Z)
 		if [ -s "$patch" ]; then # !=0
-			patch_cmd="patch -p1 --dry-run" # test argument to patch
+			case "$crap_patch" in # test argument to patch
+			ignore) patch_cmd="patch -p1 -g1 --dry-run --no-backup-if-mismatch" ;;
+			will_not_pass) patch_cmd="patch -p1 -g1 --dry-run" ;;
+			esac
 			if ExtractApply "$patch" &>/dev/null; then
-				patch_cmd="patch -p1 -s"
+				case "$crap_patch" in
+				ignore) patch_cmd="patch -p1 -g1 --no-backup-if-mismatch" ;;
+				will_not_pass) patch_cmd="patch -p1 -g1" ;;
+				esac
 				ExtractApply "$patch" &>/dev/null
 			else
 				ewarn "${BLUE}Skipping patch -->${NORMAL} ${RED}$patch_base_name${NORMAL}"
@@ -251,9 +300,15 @@ Handler() {
 	*)
 		local C=$(wc -l "$patch" | awk '{print $1}')
 		if [ "$C" -gt 8 ]; then # 8 lines
-			patch_cmd="patch -p1 --dry-run" # test argument to patch
+			case "$crap_patch" in # test argument to patch
+			ignore) patch_cmd="patch -p1 -g1 --dry-run --no-backup-if-mismatch" ;;
+			will_not_pass) patch_cmd="patch -p1 -g1 --dry-run" ;;
+			esac
 			if ExtractApply "$patch" &>/dev/null; then
-				patch_cmd="patch -p1 -s"
+				case "$crap_patch" in
+				ignore) patch_cmd="patch -p1 -g1 --no-backup-if-mismatch" ;;
+				will_not_pass) patch_cmd="patch -p1 -g1" ;;
+				esac
 				ExtractApply "$patch" &>/dev/null
 			else
 				ewarn "${BLUE}Skipping patch -->${NORMAL} ${RED}$patch_base_name${NORMAL}"
@@ -264,15 +319,30 @@ Handler() {
 		fi
 	;;
 	esac
+
+	case "$crap_patch" in
+	will_not_pass) find_crap
+	if [[ "${crap}" == 1 ]]; then
+		ebegin "${BLUE}Reversing crap patch <--${NORMAL} ${RED}$patch_base_name${NORMAL}"
+			patch_cmd="patch -p1 -g1 -R"; # reverse argument to patch
+			ExtractApply "$patch" &>/dev/null
+			rm_crap
+		eend
+	fi
+
+	;;
+	esac
 }
 
 # @FUNCTION: ApplyPatch
 # @USAGE:
-# ApplyPatch "${FILESDIR}/${PVR}/patch_list" "Patch set description";
-# ApplyPatch "${FILESDIR}/<patch>" "Patch description";
+# ApplyPatch "${FILESDIR}/${PVR}/patch_list" "Patch set description"
+# ApplyPatch "${FILESDIR}/<patch>" "Patch description"
 # @DESCRIPTION:
 # Main function
 linux-geek_ApplyPatch() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch=$1
 	local msg=$2
 	shift
@@ -282,19 +352,19 @@ linux-geek_ApplyPatch() {
 	patch_dir_name=$(dirname "$patch")
 	case $patch_base_name in
 	patch_list) # list of patches
-		while read -r line ; do
+		while read -r line; do
 			# skip empty lines
 			[[ -z "$line" ]] && continue
 			# skip comments
 			[[ $line =~ ^\ {0,}# ]] && continue
 			ebegin "Applying $line"
-				Handler "$patch_dir_name/$line";
+				Handler "$patch_dir_name/$line"
 			eend $?
 		done < "$patch"
 	;;
 	*) # else is patch
 		ebegin "Applying $patch_base_name"
-			Handler "$patch";
+			Handler "$patch"
 		eend $?
 	;;
 	esac
@@ -302,10 +372,12 @@ linux-geek_ApplyPatch() {
 
 # @FUNCTION: SmartApplyPatch
 # @USAGE:
-# SmartApplyPatch "${FILESDIR}/${PVR}/spatch_list" "Patch set description";
+# SmartApplyPatch "${FILESDIR}/${PVR}/spatch_list" "Patch set description"
 # @DESCRIPTION:
 # Main function
 linux-geek_SmartApplyPatch() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	local patch=$1
 	local msg=$2
 	shift
@@ -322,65 +394,94 @@ linux-geek_SmartApplyPatch() {
 			eend
 		done
 		if [ "${no_luck}" = "1" ]; then
-			local vars=($(grep -v '^#' ${patch}));
+			local vars=($(grep -v '^#' ${patch}))
 			for var in $(seq $((${#vars[@]} - 1)) -1 0); do
 				ebegin "${BLUE}Reversing patch <--${NORMAL} ${RED}${vars[$var]}${NORMAL}"
-					patch_cmd="patch -p1 -R" # reverse argument to patch
+					patch_cmd="patch -p1 -g1 -R" # reverse argument to patch
 					ExtractApply "${patch_dir_name}/${vars[$var]}" &>/dev/null
 				eend $?
 			done
-		fi;
+		fi
 	;;
 	*) continue ;;
 	esac
 }
 
-# @FUNCTION: src_unpack
+# @FUNCTION: gen_squeue
 # @USAGE:
 # @DESCRIPTION:
+linux-geek_gen_squeue() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	local CSD="${GEEK_STORE_DIR}/squeue"
+	local CWD="${S}/patches/squeue"
+
+	if [ -d ${CSD} ]; then
+		cd ${CSD} || die "${RED}cd ${CSD} failed${NORMAL}"
+		git pull > /dev/null 2>&1
+		cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
+	else
+		git clone "git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git" ${CSD} > /dev/null 2>&1
+	fi
+
+	test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches"
+
+	if [ -d ${CSD}/queue-${KMV} ]; then
+		cp -r "${CSD}/queue-${KMV}" "${CWD}" || die "${RED}cp -r ${CSD}/queue-${KMV} ${CWD} failed${NORMAL}"
+		mv "${CWD}/series" "${CWD}/patch_list" || die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
+	else
+		ewarn "There is no stable-queue patch-set this time"
+	fi
+}
+
+# @FUNCTION: src_unpack
+# @USAGE:
+# @DESCRIPTION: Extract source packages and do any necessary patching or fixes.
 linux-geek_src_unpack() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	linux-geek_init_variables
+
+	einfo "${BLUE}Crap patch -->${NORMAL} ${RED}$crap_patch${NORMAL}"
+	einfo "${BLUE}Remove unneeded architectures -->${NORMAL} ${RED}$rm_unneeded_arch${NORMAL}"
 
 	if [ "${A}" != "" ]; then
 		ebegin "Extract the sources"
 			tar xvJf "${DISTDIR}/${kname}" &>/dev/null
 		eend $?
-		cd "${WORKDIR}"
-		mv "linux-${kversion}" "${S}"
+		cd "${WORKDIR}" || die "${RED}cd ${WORKDIR} failed${NORMAL}"
+		mv "linux-${kversion}" "${S}" || die "${RED}mv linux-${kversion} ${S} failed${NORMAL}"
 	fi
-	cd "${S}"
+	cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
 	case "$VERSION" in
 		2) continue
 	#	if  [ "${SUBLEVEL}" != "0" ]; then
-	#		ApplyPatch "${DISTDIR}/${pname}" "Update to latest upstream ..."
+	#		ApplyPatch "${DISTDIR}/${pname}" "${YELLOW}Update to latest upstream ...${NORMAL}"
 	#	fi
 		;;
 		3) if [ "${SKIP_UPDATE}" = "1" ] || [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ]; then
 				ewarn "${RED}Skipping update to latest upstream ...${NORMAL}"
 			else
-				ApplyPatch "${DISTDIR}/${pname}" "Update to latest upstream ..."
+				ApplyPatch "${DISTDIR}/${pname}" "${YELLOW}Update to latest upstream ...${NORMAL}"
 		fi
 		;;
 	esac
 
-	if [[ $DEBLOB_AVAILABLE == 1 ]] && use deblob ; then
+	if [[ $DEBLOB_AVAILABLE == 1 ]] && use deblob; then
 		cp "${DISTDIR}/${DEBLOB_A}" "${T}" || die "${RED}cp ${DEBLOB_A} failed${NORMAL}"
 		cp "${DISTDIR}/${DEBLOB_CHECK_A}" "${T}/deblob-check" || die "${RED}cp ${DEBLOB_CHECK_A} failed${NORMAL}"
 		chmod +x "${T}/${DEBLOB_A}" "${T}/deblob-check" || die "${RED}chmod deblob scripts failed${NORMAL}"
 	fi
 }
 
-# @FUNCTION: src_prepare
+# @FUNCTION: get_config
 # @USAGE:
 # @DESCRIPTION:
-linux-geek_src_prepare() {
-	echo
-	ebegin "Set extraversion in Makefile" # manually set extraversion
-		sed -i -e "s:^\(EXTRAVERSION =\).*:\1 ${EXTRAVERSION}:" Makefile
-	eend
+linux-geek_get_config() {
+	debug-print-function ${FUNCNAME} "$@"
 
 	ebegin "Searching for best availiable kernel config"
-		if [ -e "/proc/config.gz" ]; then test -d .config >/dev/null 2>&1 || zcat /proc/config.gz > .config;
+		if [ -e "/proc/config.gz" ]; then test -d .config >/dev/null 2>&1 || zcat /proc/config.gz > .config
 			einfo " ${BLUE}Foung config from running kernel, updating to match target kernel${NORMAL}"
 		elif [ -e "/boot/config-${FULLVER}" ]; then test -d .config >/dev/null 2>&1 || cat "/boot/config-${FULLVER}" > .config
 			einfo " ${BLUE}Found${NORMAL} ${RED}/boot/config-${FULLVER}${NORMAL}"
@@ -394,26 +495,50 @@ linux-geek_src_prepare() {
 			einfo " ${BLUE}No suitable custom config found, defaulting to defconfig${NORMAL}"
 		fi
 	eend $?
+}
+
+# @FUNCTION: src_prepare
+# @USAGE:
+# @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
+linux-geek_src_prepare() {
+	debug-print-function ${FUNCNAME} "$@"
+
+	if [ "${SKIP_SQUEUE}" = "1" ]; then
+			ewarn "${RED}Skipping update to latest stable queue ...${NORMAL}"
+		else
+			linux-geek_gen_squeue
+			ApplyPatch "${S}/patches/squeue/patch_list" "${YELLOW}Update to latest stable queue ...${NORMAL}"
+	fi
+
+	echo
+	ebegin "Set extraversion in Makefile" # manually set extraversion
+		sed -i -e "s:^\(EXTRAVERSION =\).*:\1 ${EXTRAVERSION}:" Makefile
+	eend
+
+	linux-geek_get_config
 
 	ebegin "Cleanup backups after patching"
-		find '(' -name '*~' -o -name '*.orig' -o -name '.*.orig' -o -name '.gitignore'  -o -name '.*.old' ')' -print0 | xargs -0 -r -l512 rm -f
+		rm_crap
 	eend
 
-	ebegin "Remove unneeded architectures"
-		if use x86 || use amd64; then
-			rm -rf "${WORKDIR}"/linux-"${KV_FULL}"/arch/{alpha,arc,arm,arm26,arm64,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
-			sed -i 's/include/#include/g' "${WORKDIR}"/linux-"${KV_FULL}"/fs/hostfs/Makefile
-		else
-			rm -rf "${WORKDIR}"/linux-"${KV_FULL}"/arch/{avr32,blackfin,c6x,cris,frv,h8300,hexagon,m32r,m68k,m68knommu,microblaze,mn10300,openrisc,score,tile,unicore32,um,v850,xtensa}
-		fi
-	eend
+	case "$rm_unneeded_arch" in
+	yes)	ebegin "Remove unneeded architectures"
+			if use x86 || use amd64; then
+				rm -rf "${WORKDIR}"/linux-"${KV_FULL}"/arch/{alpha,arc,arm,arm26,arm64,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
+				sed -i 's/include/#include/g' "${WORKDIR}"/linux-"${KV_FULL}"/fs/hostfs/Makefile
+			else
+				rm -rf "${WORKDIR}"/linux-"${KV_FULL}"/arch/{avr32,blackfin,c6x,cris,frv,h8300,hexagon,m32r,m68k,m68knommu,microblaze,mn10300,openrisc,score,tile,unicore32,um,v850,xtensa}
+			fi
+		eend ;;
+	no)	einfo "Skipping remove unneeded architectures ..." ;;
+	esac
 
 	ebegin "Compile ${RED}gen_init_cpio${NORMAL}"
 		make -C "${WORKDIR}"/linux-"${KV_FULL}"/usr/ gen_init_cpio > /dev/null 2>&1
 		chmod +x "${WORKDIR}"/linux-"${KV_FULL}"/usr/gen_init_cpio "${WORKDIR}"/linux-"${KV_FULL}"/scripts/gen_initramfs_list.sh > /dev/null 2>&1
 	eend
 
-	cd "${WORKDIR}"/linux-"${KV_FULL}"
+	cd "${WORKDIR}"/linux-"${KV_FULL}" || die "${RED}cd ${WORKDIR}/linux-${KV_FULL} failed${NORMAL}"
 	local GENTOOARCH="${ARCH}"
 	unset ARCH
 	ebegin "Running ${RED}make oldconfig${NORMAL}"
@@ -431,9 +556,11 @@ linux-geek_src_prepare() {
 
 # @FUNCTION: src_compile
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Configure and build the package.
 linux-geek_src_compile() {
-	if [[ $DEBLOB_AVAILABLE == 1 ]] && use deblob ; then
+	debug-print-function ${FUNCNAME} "$@"
+
+	if [[ $DEBLOB_AVAILABLE == 1 ]] && use deblob; then
 		echo ">>> Running deblob script ..."
 		sh "${T}/${DEBLOB_A}" --force || \
 			die "${RED}Deblob script failed to run!!!${NORMAL}"
@@ -442,8 +569,10 @@ linux-geek_src_compile() {
 
 # @FUNCTION: src_install
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Install a package to ${D}
 linux-geek_src_install() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	# Disable the sandbox for this dir
 	addwrite "/boot"
 
@@ -456,24 +585,25 @@ linux-geek_src_install() {
 		rm -f "${version_h}"
 	fi
 
-	cd "${S}"
+	cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
 	dodir /usr/src
 	echo ">>> Copying sources ..."
 
-	mv ${WORKDIR}/linux* "${D}"/usr/src;
+	mv ${WORKDIR}/linux* "${D}"/usr/src || die "${RED}mv ${WORKDIR}/linux* ${D}/usr/src failed${NORMAL}"
 
-	if use symlink ; then
+	if use symlink; then
 		if [ -h "/usr/src/linux" ]; then
-			unlink "/usr/src/linux"
+			addwrite "/usr/src/linux"
+			unlink "/usr/src/linux" || die "${RED}unlink /usr/src/linux failed${NORMAL}"
 		elif [ -d "/usr/src/linux" ]; then
-			mv "/usr/src/linux" "/usr/src/linux-old"
+			mv "/usr/src/linux" "/usr/src/linux-old" || die "${RED}mv /usr/src/linux /usr/src/linux-old failed${NORMAL}"
 		fi
 		dosym linux-${KV_FULL} \
 			"/usr/src/linux" ||
 			die "${RED}cannot install kernel symlink${NORMAL}"
 	fi
 
-	if use build ; then
+	if use build; then
 		# Find out some info..
 		eval $(head -n 4 Makefile | sed -e 's/ //g')
 		local ARCH=$(uname -m | sed -e s/i.86/i386/g)
@@ -503,27 +633,9 @@ linux-geek_src_install() {
 						mount /boot
 					eend $?
 				fi
-				ebegin " No kernel config found, searching for best availiable config"
-				if [ -e "/proc/config.gz" ]; then test -d .config >/dev/null 2>&1 || zcat /proc/config.gz > .config;
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}Foung config from running kernel, updating to match target kernel${NORMAL}"
-				elif [ -e "/boot/config-${FULLVER}" ]; then test -d .config >/dev/null 2>&1 || cat "/boot/config-${FULLVER}" > .config
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}Found${NORMAL} ${RED}/boot/config-${FULLVER}${NORMAL}"
-				elif [ -e "/etc/portage/savedconfig/${CATEGORY}/${PN}/config" ]; then test -d .config >/dev/null 2>&1 || cat /etc/portage/savedconfig/${CATEGORY}/${PN}/config > .config
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}Found${NORMAL} ${RED}/etc/portage/savedconfig/${CATEGORY}/${PN}/config${NORMAL}"
-				elif [ -e "/usr/src/linux/.config" ]; then test -d .config >/dev/null 2>&1 || cat /usr/src/linux/.config > .config
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}Found${NORMAL} ${RED}/usr/src/linux/.config${NORMAL}"
-				elif [ -e "/usr/src/linux-${KV_FULL}/.config" ]; then test -d .config >/dev/null 2>&1 || cat /usr/src/linux-${KV_FULL}/.config > .config
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}Found${NORMAL} ${RED}/usr/src/linux-${KV_FULL}/.config${NORMAL}"
-				else test -d .config >/dev/null 2>&1 || cp arch/${ARCH}/defconfig .config \
-					true | make oldconfig 2>/dev/null \
-					einfo " ${BLUE}No suitable custom config found, defaulting to defconfig${NORMAL}"
-				fi
-				eend $
+
+				linux-geek_get_config
+
 			fi
 
 			if [[ ${ISNEWER} != "" ]]; then
@@ -559,10 +671,10 @@ linux-geek_src_install() {
 				fi
 				ebegin " Editing kernel entry in GRUB"
 					if [[ -e "/etc/grub.d/10_linux" ]]; then
-						grub2-mkconfig -o /boot/grub2/grub.cfg;
+						grub2-mkconfig -o /boot/grub2/grub.cfg
 					elif [[ -e "/etc/boot.conf" ]]; then
-						boot-update;
-					fi;
+						boot-update
+					fi
 				eend $?
 			eend $?
 
@@ -583,8 +695,10 @@ linux-geek_src_install() {
 
 # @FUNCTION: pkg_postinst
 # @USAGE:
-# @DESCRIPTION:
+# @DESCRIPTION: Called after image is installed to ${ROOT}
 linux-geek_pkg_postinst() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	einfo " ${BLUE}If you are upgrading from a previous kernel, you may be interested${NORMAL}"
 	einfo " ${BLUE}in the following document:${NORMAL}"
 	einfo "   ${BLUE}- General upgrade guide:${NORMAL} ${RED}http://www.gentoo.org/doc/en/kernel-upgrade.xml${NORMAL}"
