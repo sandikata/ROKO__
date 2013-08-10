@@ -1,8 +1,0 @@
-
-[Desktop Entry]
-Type=Application
-Name=Windows Installer File
-Exec=wine %f
-MimeType=application/x-ole-storage;text/mspg-legacyinfo;
-Hidden=true
-X-Desktop-File-Install-Version=0.18

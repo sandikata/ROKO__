@@ -100,9 +100,11 @@ SUBLEVEL="${3}"
 KMV="${1}.${2}"
 
 # 0 for 3.4.0
-if [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ]; then
+if [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ] ; then
 	PV="${KMV}" # default PV=3.4.0 new PV=3.4
-	SKIP_UPDATE=1 # Skip update to latest upstream
+	if [[ "${PR}" == "r0" ]] ; then
+		SKIP_UPDATE=1 # Skip update to latest upstream
+	fi
 fi
 
 # ebuild default values setup settings
@@ -123,10 +125,12 @@ linux-geek_init_variables() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	: ${GEEK_STORE_DIR:="${PORTAGE_ACTUAL_DISTDIR-${DISTDIR}}/geek"}
-	: ${cfg_file:="/etc/portage/kernel.conf"}
-	local crap_patch_cfg=$(source $cfg_file 2>/dev/null echo ${crap_patch})
-	local rm_unneeded_arch_cfg=$(source $cfg_file 2>/dev/null echo ${rm_unneeded_arch})
+	# Disable the sandbox for this dir
+	addwrite "${GEEK_STORE_DIR}"
 
+	: ${cfg_file:="/etc/portage/kernel.conf"}
+
+	local crap_patch_cfg=$(source $cfg_file 2>/dev/null; echo ${crap_patch})
 	: ${crap_patch:=${crap_patch_cfg:-ignore}} # crap_patch=ignore/will_not_pass
 	: ${crap:="0"}
 
@@ -135,7 +139,11 @@ linux-geek_init_variables() {
 	will_not_pass) : ${patch_cmd:="patch -p1 -g1"} ;;
 	esac
 
+	local rm_unneeded_arch_cfg=$(source $cfg_file 2>/dev/null; echo ${rm_unneeded_arch})
 	: ${rm_unneeded_arch:=${rm_unneeded_arch_cfg:-no}} # rm_unneeded-arch=yes/no
+
+	local skip_squeue_cfg=$(source $cfg_file 2>/dev/null; echo ${skip_squeue})
+	: ${skip_squeue:=${skip_squeue_cfg:-no}} # skip_squeue=yes/no
 }
 
 case "$PR" in
@@ -426,8 +434,11 @@ linux-geek_gen_squeue() {
 
 	test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches"
 
-	if [ -d ${CSD}/queue-${KMV} ]; then
+	if [ -d ${CSD}/queue-${KMV} ] ; then
 		cp -r "${CSD}/queue-${KMV}" "${CWD}" || die "${RED}cp -r ${CSD}/queue-${KMV} ${CWD} failed${NORMAL}"
+		mv "${CWD}/series" "${CWD}/patch_list" || die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
+	elif [ -d ${CSD}/releases/${PV} ]; then
+		cp -r "${CSD}/releases/${PV}" "${CWD}" || die "${RED}cp -r ${CSD}/releases/${PV} ${CWD} failed${NORMAL}"
 		mv "${CWD}/series" "${CWD}/patch_list" || die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
 	else
 		ewarn "There is no stable-queue patch-set this time"
@@ -444,6 +455,7 @@ linux-geek_src_unpack() {
 
 	einfo "${BLUE}Crap patch -->${NORMAL} ${RED}$crap_patch${NORMAL}"
 	einfo "${BLUE}Remove unneeded architectures -->${NORMAL} ${RED}$rm_unneeded_arch${NORMAL}"
+	einfo "${BLUE}Skip stable-queue -->${NORMAL} ${RED}$skip_squeue${NORMAL}"
 
 	if [ "${A}" != "" ]; then
 		ebegin "Extract the sources"
@@ -459,7 +471,7 @@ linux-geek_src_unpack() {
 	#		ApplyPatch "${DISTDIR}/${pname}" "${YELLOW}Update to latest upstream ...${NORMAL}"
 	#	fi
 		;;
-		3) if [ "${SKIP_UPDATE}" = "1" ] || [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ]; then
+		3) if [ "${SKIP_UPDATE}" = "1" ] ; then
 				ewarn "${RED}Skipping update to latest upstream ...${NORMAL}"
 			else
 				ApplyPatch "${DISTDIR}/${pname}" "${YELLOW}Update to latest upstream ...${NORMAL}"
@@ -503,7 +515,7 @@ linux-geek_get_config() {
 linux-geek_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	if [ "${SKIP_SQUEUE}" = "1" ]; then
+	if [ "${skip_squeue}" = "yes" ]; then
 			ewarn "${RED}Skipping update to latest stable queue ...${NORMAL}"
 		else
 			linux-geek_gen_squeue

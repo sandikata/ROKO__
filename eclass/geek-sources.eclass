@@ -36,7 +36,7 @@ inherit linux-geek
 
 EXPORT_FUNCTIONS src_unpack src_prepare src_compile src_install pkg_postinst
 
-KNOWN_USES="aufs bfq bld branding build ck deblob fedora gentoo grsec ice lqx mageia pax pf reiser4 rt suse symlink uksm zfs"
+KNOWN_USES="aufs bfq bld branding build ck deblob fedora gentoo grsec ice lqx mageia pax pf reiser4 rt suse symlink uksm zen zfs"
 
 # @FUNCTION: geek-sources_init_variables
 # @INTERNAL
@@ -48,14 +48,16 @@ geek-sources_init_variables() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	: ${GEEK_STORE_DIR:="${PORTAGE_ACTUAL_DISTDIR-${DISTDIR}}/geek"}
-
-	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf"}
-	: ${patch_user_dir:="/etc/portage/patches"}
-	: ${cfg_file:="/etc/portage/kernel.conf"}
-	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER:="pax lqx pf bfq ck gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse zfs branding fix upatch"}
-
 	# Disable the sandbox for this dir
 	addwrite "${GEEK_STORE_DIR}"
+
+	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf zen"}
+	: ${patch_user_dir:="/etc/portage/patches"}
+	: ${cfg_file:="/etc/portage/kernel.conf"}
+	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER:="pax lqx pf zen bfq ck gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse zfs branding fix upatch"}
+
+	local disable_fixes_cfg=$(source $cfg_file 2>/dev/null; echo ${disable_fixes})
+	: ${disable_fixes:=${disable_fixes_cfg:-no}} # disable_fixes=yes/no
 }
 
 # internal function
@@ -205,6 +207,13 @@ USEKnown() {
 			uksm_url="http://kerneldedup.org"
 			uksm_inf="${YELLOW}Ultra Kernel Samepage Merging - ${uksm_url}${NORMAL}"
 			HOMEPAGE="${HOMEPAGE} ${uksm_url}"
+			;;
+		zen)	zen_ver=${user_zen_ver:-$KMV}
+			zen_def_src="https://github.com/damentz/zen-kernel/compare/torvalds:v${zen_ver/KMV/$KMV}...${zen_ver/KMV/$KMV}/master.diff"
+			zen_src=${user_zen_src:-$zen_def_src}
+			zen_url="https://github.com/damentz/zen-kernel"
+			zen_inf="${YELLOW}The Zen Kernel - ${zen_url}${NORMAL}"
+			HOMEPAGE="${HOMEPAGE} ${zen_url}"
 			;;
 		zfs)	spl_ver=${user_spl_ver:-$KMV}
 			spl_def_src="git://github.com/zfsonlinux/spl.git"
@@ -386,7 +395,7 @@ make_patch() {
 
 		cp "${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2" "bld-${bld_ver/KMV/$KMV}.tar.bz2" || die "${RED}cp ${DISTDIR}/bld-${bld_ver/KMV/$KMV}.tar.bz2 bld-${bld_ver/KMV/$KMV}.tar.bz2 failed${NORMAL}"
 		tar -xjpf "bld-${bld_ver/KMV/$KMV}.tar.bz2" || die "${RED}tar -xjpf bld-${bld_ver/KMV/$KMV}.tar.bz2 failed${NORMAL}"
-		find "${CTD}/bld-${bld_ver/KMV/$KMV}/" -name "*-${bld_ver/KMV/$KMV}.patch" -exec cp {} "${CWD}" \;
+		find "${CTD}/bld-${bld_ver/KMV/$KMV}/" -name "*-${bld_ver/KMV/$KMV}.patch" -exec cp {} "${CWD}" \ > /dev/null 2>&1;
 
 		rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 
@@ -416,7 +425,7 @@ make_patch() {
 		cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
 		cd "${CTD}"/${KMV} || die "${RED}cd ${CTD}/${KMV} failed${NORMAL}"
 
-		find -name .svn -type d -exec rm -rf {} \
+		find -name .svn -type d -exec rm -rf {} \ > /dev/null 2>&1
 		find -type d -empty -delete
 
 		ls -1 | grep "linux" | xargs -I{} rm -rf "{}"
@@ -487,6 +496,13 @@ make_patch() {
 		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
 		ls -1 "${CWD}" | grep ".patch" > "${CWD}"/patch_list
 	;;
+	zen)	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+		dest="${CWD}"/zen-kernel-"${PV}"-`date +"%Y%m%d"`.patch
+		wget "${zen_src}" -O "${dest}" > /dev/null 2>&1
+		cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+		ls -1 | grep ".patch" | xargs -I{} xz "{}" | xargs -I{} cp "{}" "${CWD}"
+		ls -1 "${CWD}" | grep ".patch.xz" > "${CWD}"/patch_list
+	;;
 	zfs)	einfo "Prepare kernel sources"
 		cd "${S}" || die "${RED}cd ${S} failed${NORMAL}"
 		export PORTAGE_ARCH="${ARCH}"
@@ -503,8 +519,8 @@ make_patch() {
 		rm -rf "${CTD}"/{spl,zfs}/.git || die "${RED}rm -rf ${CTD}/{spl,zfs}/.git failed${NORMAL}"
 
 		addwrite "/usr/src/linux"
-		unlink "/usr/src/linux" || die "${RED}unlink /usr/src/linux failed${NORMAL}"
-		ln -s "${S}" /usr/src/linux || die "${RED}ln -s ${S} /usr/src/linux failed${NORMAL}"
+		unlink "/usr/src/linux" #|| die "${RED}unlink /usr/src/linux failed${NORMAL}"
+		ln -s "${S}" /usr/src/linux #|| die "${RED}ln -s ${S} /usr/src/linux failed${NORMAL}"
 
 		einfo "Integrate SPL"
 		cd "${CTD}/spl" || die "${RED}cd ${CTD}/spl failed${NORMAL}"
@@ -538,7 +554,7 @@ make_patch() {
 		make mrproper > /dev/null 2>&1
 
 		addwrite "/usr/src/linux"
-		unlink "/usr/src/linux" || die "${RED}unlink /usr/src/linux failed${NORMAL}"
+		unlink "/usr/src/linux" #|| die "${RED}unlink /usr/src/linux failed${NORMAL}"
 
 		mv "${CTD}" "${S}/patches/${patch}" || die "${RED}mv ${CTD} ${S}/patches/${patch} failed${NORMAL}"
 	;;
@@ -558,12 +574,13 @@ geek-sources_src_unpack() {
 	for Current_Patch in $SKIP_KERNEL_PATCH_UPDATE; do
 		if use_if_iuse "${Current_Patch}"; then
 		case "${Current_Patch}" in
-			*) SKIP_UPDATE="1" SKIP_SQUEUE="1" ;;
+			*) SKIP_UPDATE="1" skip_squeue="yes" ;;
 		esac
 		else continue
 		fi
 	done
 
+	einfo "${BLUE}Disable fixes -->${NORMAL} ${RED}$disable_fixes${NORMAL}"
 	linux-geek_src_unpack
 }
 
@@ -616,9 +633,13 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}"
 				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			bld)	make_patch "${Current_Patch}"
-				ApplyPatch "${T}/${Current_Patch}/patch_list" "${bfq_inf}"
-				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
+			bld)	if [ "${VERSION}" = "3" -a "${PATCHLEVEL}" = "10" ]; then
+					ApplyPatch "${DISTDIR}/BLD-${bld_ver/KMV/$KMV}.patch" "${bld_inf}"
+				else
+					make_patch "${Current_Patch}"
+					ApplyPatch "${T}/${Current_Patch}/patch_list" "${bld_inf}"
+					mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
+				fi
 				;;
 			branding) if [ -e "${FILESDIR}/${Current_Patch}/info" ]; then
 					echo
@@ -639,7 +660,7 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 				ApplyPatch "${T}/${Current_Patch}/patch_list" "${fedora_inf}"
 				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
-			fix)	ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "${YELLOW}Fixes for current kernel${NORMAL}"
+			fix)	[ "${disable_fixes}" = "no" ] && ApplyPatch "${FILESDIR}/${PV}/${Current_Patch}/patch_list" "${YELLOW}Fixes for current kernel${NORMAL}"
 				;;
 			gentoo)	make_patch "${Current_Patch}"
 				ApplyPatch "${T}/${Current_Patch}/patch_list" "${gentoo_inf}"
@@ -691,6 +712,10 @@ for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 						done
 					fi
 				fi
+				;;
+			zen)	make_patch "${Current_Patch}"
+				ApplyPatch "${T}/${Current_Patch}/patch_list" "${zen_inf}"
+				mv "${T}/${Current_Patch}" "${S}/patches/${Current_Patch}" || die "${RED}mv ${T}/${Current_Patch} ${S}/patches/${Current_Patch} failed${NORMAL}"
 				;;
 			zfs)	echo
 				ebegin "${zfs_inf}"
