@@ -30,6 +30,7 @@ src_unpack() {
 }
 
 src_configure() {
+	epatch "${FILESDIR}"/fix-animation.patch
 	econf --disable-dependency-tracking --enable-animation
 }
 
