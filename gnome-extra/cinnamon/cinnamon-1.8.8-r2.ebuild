@@ -16,7 +16,7 @@ HOMEPAGE="http://cinnamon.linuxmint.com/"
 MY_PV="${PV/_p/-UP}"
 MY_P="${PN}-${MY_PV}"
 
-SRC_URI="https://github.com/linuxmint/Cinnamon/tarball/${MY_PV} -> ${MY_P}.tar.gz"
+SRC_URI="https://github.com/linuxmint/Cinnamon/archive/${MY_PV}.tar.gz -> ${MY_P}.tar.gz"
 
 LICENSE="GPL-2+"
 SLOT="0"
@@ -81,15 +81,16 @@ COMMON_DEPEND=">=dev-libs/glib-2.29.10:2
 # 10. pygobject needed for menu editor
 # 11. nemo - default file manager, tightly integrated with cinnamon
 # 12. timedated or DateTimeMechanism implementation for cinnamon-settings
+# TODO(lxnay): fix error: libgnome-desktop/gnome-rr-labeler.h: No such file or directory
+# 	=gnome-extra/cinnamon-control-center-1.8*
 RDEPEND="${COMMON_DEPEND}
 	>=gnome-base/dconf-0.4.1
 	>=gnome-base/libgnomekbd-2.91.4[introspection]
 	sys-power/upower[introspection]
 
-	>=gnome-base/gnome-session-3.2.1-r1
+	>=gnome-base/gnome-session-3.8
 
 	>=gnome-base/gnome-settings-daemon-2.91
-	>=gnome-base/gnome-control-center-2.91.92-r1
 
 	>=sys-apps/accountsservice-0.6.14[introspection]
 
@@ -125,20 +126,32 @@ DEPEND="${COMMON_DEPEND}
 # libmozjs.so is picked up from /usr/lib while compiling, so block at build-time
 # https://bugs.gentoo.org/show_bug.cgi?id=360413
 
-S="${WORKDIR}/linuxmint-Cinnamon-efbeb72"
+S="${WORKDIR}/Cinnamon-${PV}"
 
 pkg_setup() {
 	python-single-r1_pkg_setup
 }
 
 src_prepare() {
+	# Fix GNOME 3.8 support
+	epatch "${FILESDIR}/gnome-3.8.patch"
+	epatch "${FILESDIR}/background.patch"
+	epatch "${FILESDIR}/idle-dim.patch"
+	# https://github.com/linuxmint/Cinnamon/issues/1337
+	epatch "${FILESDIR}/keyboard_applet.patch"
+	epatch "${FILESDIR}/screensaver.patch"
+	epatch "${FILESDIR}/bluetooth_obex_transfer.patch"
+	epatch "${FILESDIR}/remove_GC.patch"
+	epatch "${FILESDIR}/menu_editor.patch"
+
+
 	# Fix cinnamon-settings lspci path
 #	epatch "${FILESDIR}/${PN}-1.7.8-settings-lspci.patch"
 	# Fix automagic gnome-bluetooth dep, bug #398145
 	epatch "${FILESDIR}/${PN}-1.6.1-automagic-gnome-bluetooth.patch"
 
-	# Make networkmanager optional, bug #398593
-	epatch "${FILESDIR}/${PN}-1.7.8-optional-networkmanager.patch"
+	# Use Sabayon branding
+	cp "${FILESDIR}"/start-here.png data/theme/menu.png || die "Could not copy image."
 
 	# Gentoo uses /usr/libexec
 	sed -e "s:/usr/lib/gnome-session/gnome-session-check-accelerated:${EPREFIX}/usr/libexec/gnome-session-check-accelerated:" \
@@ -192,6 +205,10 @@ src_install() {
 	sed -e "s%#!.*python%#!$(python_get_PYTHON)%" \
 		-i "${ED}usr/bin/cinnamon-"{launcher,menu-editor,settings} \
 		-i "${ED}usr/$(get_libdir)/cinnamon-settings/cinnamon-settings.py" || die
+
+	insinto /usr/share/applications
+	doins "${FILESDIR}/cinnamon-screensaver.desktop"
+	doins "${FILESDIR}/cinnamon2d-screensaver.desktop"
 
 	# Required for gnome-shell on hardened/PaX, bug #398941
 	pax-mark mr "${ED}usr/bin/cinnamon"
