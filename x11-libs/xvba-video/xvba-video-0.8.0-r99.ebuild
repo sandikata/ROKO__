@@ -4,7 +4,7 @@ EAPI=5
 
 EGIT_REPO_URI="git://anongit.freedesktop.org/vaapi/xvba-driver"
 [[ ${PV} = 9999 ]] && inherit git-2
-inherit eutils autotools
+inherit eutils autotools base
 
 DESCRIPTION="XVBA Backend for Video Acceleration (VA) API"
 HOMEPAGE="http://www.freedesktop.org/wiki/Software/vaapi"
@@ -34,6 +34,7 @@ S="${WORKDIR}/xvba-driver-${PV}"
 src_prepare() {
 	epatch "${FILESDIR}/${P}-glext-missing-definition.patch"
 	epatch "${FILESDIR}/${P}-python3.patch"
+	epatch "${FILESDIR}/xvba-video-0.8.0-glx-fix.patch"
 	eautoreconf
 }
 
