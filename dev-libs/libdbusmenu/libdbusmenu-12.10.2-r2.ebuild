@@ -4,7 +4,7 @@
 
 EAPI=4
 
-AYATANA_VALA_VERSION=0.16
+AYATANA_VALA_VERSION=0.20
 
 inherit eutils flag-o-matic
 
