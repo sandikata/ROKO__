@@ -1,0 +1,21 @@
+--- Makefile.am.orig	2012-09-30 10:04:12.333053198 +1000
++++ Makefile.am	2012-09-30 10:04:30.366385956 +1000
+@@ -28,7 +28,6 @@
+ 	--enable-checking \
+ 	--enable-experimental \
+ 	--enable-experimental-non-null \
+-	--fatal-warnings \
+ 	--target-glib=2.30 \
+ 	--vapidir=$(srcdir)/bindings/vapi \
+ 	--pkg=config \
+@@ -52,10 +51,6 @@
+ 
+ VALA_CFLAGS = \
+ 	--include config.h \
+-	-Wno-unused-parameter \
+-	-Wno-unused-variable \
+-	-Wno-missing-field-initializers \
+-	-Wno-unused-but-set-variable \
+ 	$(GTK_CFLAGS) \
+ 	$(AM_CFLAGS) \
+ 	$(NULL)
