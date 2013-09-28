@@ -1,6 +1,41 @@
-diff -urN a/drivers/video/console/font_iso_latin_1_8x16.c c/drivers/video/console/font_iso_latin_1_8x16.c
---- a/drivers/video/console/font_iso_latin_1_8x16.c	1970-01-01 03:00:00.000000000 +0300
-+++ c/drivers/video/console/font_iso_latin_1_8x16.c	2012-01-21 16:56:51.645802989 +0200
+diff -urN a/include/linux/font.h b/include/linux/font.h
+--- a/include/linux/font.h	2013-09-02 23:46:10.000000000 +0300
++++ b/include/linux/font.h	2013-09-16 17:32:33.769645882 +0300
+@@ -21,19 +21,21 @@
+     int pref;
+ };
+ 
+-#define VGA8x8_IDX	0
+-#define VGA8x16_IDX	1
+-#define PEARL8x8_IDX	2
+-#define VGA6x11_IDX	3
+-#define FONT7x14_IDX	4
+-#define	FONT10x18_IDX	5
+-#define SUN8x16_IDX	6
+-#define SUN12x22_IDX	7
+-#define ACORN8x8_IDX	8
+-#define	MINI4x6_IDX	9
++#define VGA8x8_IDX		0
++#define VGA8x16_IDX		1
++#define ISO_LATIN_1_8x16_IDX	2
++#define PEARL8x8_IDX		3
++#define VGA6x11_IDX		4
++#define FONT7x14_IDX		5
++#define FONT10x18_IDX		6
++#define SUN8x16_IDX		7
++#define SUN12x22_IDX		8
++#define ACORN8x8_IDX		9
++#define MINI4x6_IDX		10
+ 
+ extern const struct font_desc	font_vga_8x8,
+ 			font_vga_8x16,
++			font_iso_latin_1_8x16,
+ 			font_pearl_8x8,
+ 			font_vga_6x11,
+ 			font_7x14,
+diff -urN a/lib/fonts/font_iso_latin_1_8x16.c b/lib/fonts/font_iso_latin_1_8x16.c
+--- a/lib/fonts/font_iso_latin_1_8x16.c	1970-01-01 03:00:00.000000000 +0300
++++ b/lib/fonts/font_iso_latin_1_8x16.c	2013-09-16 17:17:34.000000000 +0300
 @@ -0,0 +1,4655 @@
 +/*
 +http://www.opensource.apple.com/source/xnu/xnu-517.9.4/osfmk/console/iso_font.c
@@ -4657,9 +4692,9 @@ diff -urN a/drivers/video/console/font_iso_latin_1_8x16.c c/drivers/video/consol
 +};
 +EXPORT_SYMBOL(font_iso_latin_1_8x16);
 +
-diff -urN a/drivers/video/console/fonts.c c/drivers/video/console/fonts.c
---- a/drivers/video/console/fonts.c	2012-01-05 01:55:44.000000000 +0200
-+++ c/drivers/video/console/fonts.c	2012-01-21 17:05:30.878311686 +0200
+diff -urN a/lib/fonts/fonts.c b/lib/fonts/fonts.c
+--- a/lib/fonts/fonts.c	2013-09-02 23:46:10.000000000 +0300
++++ b/lib/fonts/fonts.c	2013-09-16 17:20:15.362877237 +0300
 @@ -31,6 +31,10 @@
  #undef NO_FONTS
      &font_vga_8x16,
@@ -4671,10 +4706,10 @@ diff -urN a/drivers/video/console/fonts.c c/drivers/video/console/fonts.c
  #ifdef CONFIG_FONT_6x11
  #undef NO_FONTS
      &font_vga_6x11,
-diff -urN a/drivers/video/console/Kconfig c/drivers/video/console/Kconfig
---- a/drivers/video/console/Kconfig	2012-01-21 15:47:04.589148400 +0200
-+++ c/drivers/video/console/Kconfig	2012-01-21 16:59:02.119171848 +0200
-@@ -166,6 +166,16 @@
+diff -urN a/lib/fonts/Kconfig b/lib/fonts/Kconfig
+--- a/lib/fonts/Kconfig	2013-09-02 23:46:10.000000000 +0300
++++ b/lib/fonts/Kconfig	2013-09-16 17:22:26.466238219 +0300
+@@ -43,6 +43,16 @@
  
  	  If unsure, say Y.
  
@@ -4691,20 +4726,18 @@ diff -urN a/drivers/video/console/Kconfig c/drivers/video/console/Kconfig
  config FONT_6x11
  	bool "Mac console 6x11 font (not supported by all drivers)" if FONTS
  	depends on FRAMEBUFFER_CONSOLE || STI_CONSOLE
---- a/drivers/video/console/Kconfig	2012-07-21 23:58:29.000000000 +0300
-+++ c/drivers/video/console/Kconfig	2012-09-01 16:55:19.946568597 +0300
-@@ -236,6 +236,7 @@
-	depends on !FONT_SUN8x16
-	depends on !FONT_SUN12x22
-	depends on !FONT_10x18
+@@ -112,6 +122,7 @@
+ 	depends on !FONT_SUN8x16
+ 	depends on !FONT_SUN12x22
+ 	depends on !FONT_10x18
 +	depends on !FONT_ISO_LATIN_1_8x16
-	select FONT_8x16
-
- endmenu
-diff -urN a/drivers/video/console/Makefile c/drivers/video/console/Makefile
---- a/drivers/video/console/Makefile	2012-01-05 01:55:44.000000000 +0200
-+++ c/drivers/video/console/Makefile	2012-01-21 16:59:49.912574347 +0200
-@@ -9,6 +9,7 @@
+ 	select FONT_8x16
+ 
+ endif # FONT_SUPPORT
+diff -urN a/lib/fonts/Makefile b/lib/fonts/Makefile
+--- a/lib/fonts/Makefile	2013-09-02 23:46:10.000000000 +0300
++++ b/lib/fonts/Makefile	2013-09-16 17:23:02.388789125 +0300
+@@ -6,6 +6,7 @@
  font-objs-$(CONFIG_FONT_SUN12x22)  += font_sun12x22.o
  font-objs-$(CONFIG_FONT_8x8)       += font_8x8.o
  font-objs-$(CONFIG_FONT_8x16)      += font_8x16.o
@@ -4712,38 +4745,3 @@ diff -urN a/drivers/video/console/Makefile c/drivers/video/console/Makefile
  font-objs-$(CONFIG_FONT_6x11)      += font_6x11.o
  font-objs-$(CONFIG_FONT_7x14)      += font_7x14.o
  font-objs-$(CONFIG_FONT_10x18)     += font_10x18.o
-diff -urN a/include/linux/font.h c/include/linux/font.h
---- a/include/linux/font.h	2012-01-05 01:55:44.000000000 +0200
-+++ c/include/linux/font.h	2012-01-21 16:54:05.085885274 +0200
-@@ -21,19 +21,21 @@
-     int pref;
- };
- 
--#define VGA8x8_IDX	0
--#define VGA8x16_IDX	1
--#define PEARL8x8_IDX	2
--#define VGA6x11_IDX	3
--#define FONT7x14_IDX	4
--#define	FONT10x18_IDX	5
--#define SUN8x16_IDX	6
--#define SUN12x22_IDX	7
--#define ACORN8x8_IDX	8
--#define	MINI4x6_IDX	9
-+#define VGA8x8_IDX		0
-+#define VGA8x16_IDX		1
-+#define ISO_LATIN_1_8x16_IDX	2
-+#define PEARL8x8_IDX		3
-+#define VGA6x11_IDX		4
-+#define FONT7x14_IDX		5
-+#define	FONT10x18_IDX		6
-+#define SUN8x16_IDX		7
-+#define SUN12x22_IDX		8
-+#define ACORN8x8_IDX		9
-+#define	MINI4x6_IDX		10
- 
- extern const struct font_desc	font_vga_8x8,
- 			font_vga_8x16,
-+			font_iso_latin_1_8x16,
- 			font_pearl_8x8,
- 			font_vga_6x11,
- 			font_7x14,

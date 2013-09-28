@@ -16,4 +16,4 @@
 # Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
 # Дата: 20130804 17:23
 # Коментар: Тест
->=sys-kernel/geek-sources-3.11-r3
+#>=sys-kernel/geek-sources-3.11-r3
