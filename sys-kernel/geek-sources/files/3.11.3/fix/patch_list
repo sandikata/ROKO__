@@ -25,12 +25,15 @@ linux-223-Fix-video-artifacts-with-tt-3600-s2-usb.patch
 linux-701-linksys_aes2500_brcmfmac.patch
 linux-702-Support-for-cheap-Ralink-3070-WiFi-plug.patch
 linux-703-macmini2012-ethernet.patch
+linux-704-Support-for-Ubiquiti-WifiStation.patch
 linux-900-hide_tsc_error.patch
 linux-950-saa716x_PCIe_interface_chipset.patch
 linux-990.06-hda-Avoid-outputting-HDMI-audio-before-prepare-.patch
-linux-990.07-ALSA-hda-hdmi-Fallback-to-ALSA-allocation-when-selec.patch
+linux-990.11-ALSA-AMD-HD-Audio.patch
+linux-990.12-RADEON-upstream-fix-01.patch
+linux-990.12-RADEON-upstream-fix-02.patch
+linux-990.12-RADEON-upstream-fix-03.patch
 linux-991.01-ptrace_fix.patch
 linux-995-CX24120-13Z_frontend.patch
 linux-998.01-cpufreq-revert-9d3ce4af3be0235d4cf41ea9fd774205a32e58a2.patch
-linux-999.01-smsdvb-fix-kernel-panic-on-inserting-DVB-T-stick.patch
 linux-999.02-A-split-for-ds3000-ts2020-code-forgot-to-change-the-.patch
