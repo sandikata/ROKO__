@@ -8,8 +8,8 @@ inherit multilib
 
 DESCRIPTION="ACE Stream player libraries files"
 HOMEPAGE="http://torrentstream.org/"
-SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1quantal1_i386.deb )
-		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1quantal1_amd64.deb )"
+SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1raring2_i386.deb )
+		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1raring2_amd64.deb )"
 
 LICENSE="GPL-2 LGPL-2"
 SLOT="0"
@@ -42,7 +42,7 @@ DEPEND="media-libs/aalib
 		pulseaudio? ( media-sound/pulseaudio )
 		portaudio? ( media-libs/portaudio )
 		avahi? ( net-dns/avahi )
-		media-video/acestream-ffmpeg[pulseaudio=,jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
+		=media-video/ffmpeg-0.10.8[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
 		media-libs/acestream-x264
 		cddb? ( media-libs/libcddb )
 		cdda? ( media-libs/libcddb dev-libs/libcdio )
@@ -98,10 +98,9 @@ src_prepare(){
 src_install(){
 	cp -R usr "${D}"
 
-	$(has_version ">=net-libs/gnutls-3.1.10") && dosym /usr/$(get_libdir)/libgnutls.so /usr/$(get_libdir)/libgnutls.so.26
-	dosym /usr/$(get_libdir)/liblua.so /usr/$(get_libdir)/liblua5.1.so.0
-	dosym /usr/$(get_libdir)/libmpcdec.so /usr/$(get_libdir)/libmpcdec.so.6
-	dosym /usr/$(get_libdir)/liba52.so /usr/$(get_libdir)/liba52-0.7.4.so
+	$(has_version ">=net-libs/gnutls-3.1.10") && dosym "libgnutls.so" "/usr/$(get_libdir)/libgnutls.so.26"
+	dosym "liblua.so" "/usr/$(get_libdir)/liblua5.1.so.0"
+	dosym "liba52.so" "/usr/$(get_libdir)/liba52-0.7.4.so"
 
 	use pulseaudio || rm "${D}/usr/lib/acestreamplayer/plugins/audio_output/libpulse_plugin.so"
 	use portaudio || rm "${D}/usr/lib/acestreamplayer/plugins/audio_output/libportaudio_plugin.so"
