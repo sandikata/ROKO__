@@ -1,0 +1,324 @@
+diff -x .git -urN linux-3.11/arch/x86/kernel/early_printk.c zen/arch/x86/kernel/early_printk.c
+--- linux-3.11/arch/x86/kernel/early_printk.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/arch/x86/kernel/early_printk.c	2013-09-15 11:06:03.050913536 +0300
+@@ -24,7 +24,8 @@
+ static int max_ypos = 25, max_xpos = 80;
+ static int current_ypos = 25, current_xpos;
+ 
+-static void early_vga_write(struct console *con, const char *str, unsigned n)
++static void early_vga_write(struct console *con, const char *str, unsigned n,
++                            unsigned int loglevel)
+ {
+ 	char c;
+ 	int  i, k, j;
+@@ -102,7 +103,8 @@
+ 	return timeout ? 0 : -1;
+ }
+ 
+-static void early_serial_write(struct console *con, const char *s, unsigned n)
++static void early_serial_write(struct console *con, const char *s, unsigned n,
++                               unsigned int loglevel)
+ {
+ 	while (*s && n-- > 0) {
+ 		if (*s == '\n')
+diff -x .git -urN linux-3.11/drivers/accessibility/braille/braille_console.c zen/drivers/accessibility/braille/braille_console.c
+--- linux-3.11/drivers/accessibility/braille/braille_console.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/accessibility/braille/braille_console.c	2013-09-15 11:06:03.091913023 +0300
+@@ -116,7 +116,7 @@
+ 	*c++ = csum;
+ 	*c++ = ETX;
+ 
+-	braille_co->write(braille_co, data, c - data);
++	braille_co->write(braille_co, data, c - data, 0);
+ }
+ 
+ /* Follow the VC cursor*/
+diff -x .git -urN linux-3.11/drivers/net/netconsole.c zen/drivers/net/netconsole.c
+--- linux-3.11/drivers/net/netconsole.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/net/netconsole.c	2013-09-15 11:06:03.141912398 +0300
+@@ -719,7 +719,8 @@
+ 	.notifier_call  = netconsole_netdev_event,
+ };
+ 
+-static void write_msg(struct console *con, const char *msg, unsigned int len)
++static void write_msg(struct console *con, const char *msg, unsigned int len,
++                      unsigned int loglevel)
+ {
+ 	int frag, left;
+ 	unsigned long flags;
+diff -x .git -urN linux-3.11/drivers/tty/Kconfig zen/drivers/tty/Kconfig
+--- linux-3.11/drivers/tty/Kconfig	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/tty/Kconfig	2013-09-15 11:06:03.203911623 +0300
+@@ -75,6 +75,111 @@
+ 	def_bool y
+ 	depends on VT_CONSOLE && PM_SLEEP
+ 
++menuconfig VT_CKO
++	bool "Colored kernel message output"
++	depends on VT_CONSOLE
++	---help---
++	  This option enables kernel messages to be emitted in
++	  colors other than the default.
++
++	  The color value you need to enter is composed (OR-ed)
++	  of a foreground and a background color.
++
++	  Foreground:
++	  0x00 = black,   0x08 = dark gray,
++	  0x01 = red,     0x09 = light red,
++	  0x02 = green,   0x0A = light green,
++	  0x03 = brown,   0x0B = yellow,
++	  0x04 = blue,    0x0C = light blue,
++	  0x05 = magenta, 0x0D = light magenta,
++	  0x06 = cyan,    0x0E = light cyan,
++	  0x07 = gray,    0x0F = white,
++
++	  (Foreground colors 0x08 to 0x0F do not work when a VGA
++	  console font with 512 glyphs is used.)
++
++	  Background:
++	  0x00 = black,   0x40 = blue,
++	  0x10 = red,     0x50 = magenta,
++	  0x20 = green,   0x60 = cyan,
++	  0x30 = brown,   0x70 = gray,
++
++	  For example, 0x1F would yield white on red.
++
++	  If unsure, say N.
++
++config VT_PRINTK_EMERG_COLOR
++	hex "Emergency messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel emergency messages will
++	  be printed to the console.
++
++config VT_PRINTK_ALERT_COLOR
++	hex "Alert messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel alert messages will
++	  be printed to the console.
++
++config VT_PRINTK_CRIT_COLOR
++	hex "Critical messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel critical messages will
++	  be printed to the console.
++
++config VT_PRINTK_ERR_COLOR
++	hex "Error messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel error messages will
++	  be printed to the console.
++
++config VT_PRINTK_WARNING_COLOR
++	hex "Warning messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel warning messages will
++	  be printed to the console.
++
++config VT_PRINTK_NOTICE_COLOR
++	hex "Notice messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel notice messages will
++	  be printed to the console.
++
++config VT_PRINTK_INFO_COLOR
++	hex "Information messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel information messages will
++	  be printed to the console.
++
++config VT_PRINTK_DEBUG_COLOR
++	hex "Debug messages color"
++	range 0x00 0xFF
++	depends on VT_CKO
++	default 0x07
++	---help---
++	  This option defines with which color kernel debug messages will
++	  be printed to the console.
++
+ config HW_CONSOLE
+ 	bool
+ 	depends on VT && !UML
+diff -x .git -urN linux-3.11/drivers/tty/serial/8250/8250_core.c zen/drivers/tty/serial/8250/8250_core.c
+--- linux-3.11/drivers/tty/serial/8250/8250_core.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/tty/serial/8250/8250_core.c	2013-09-15 11:06:03.217911448 +0300
+@@ -2850,7 +2850,8 @@
+  *	The console_lock must be held when we get here.
+  */
+ static void
+-serial8250_console_write(struct console *co, const char *s, unsigned int count)
++serial8250_console_write(struct console *co, const char *s, unsigned int count,
++                         unsigned int loglevel)
+ {
+ 	struct uart_8250_port *up = &serial8250_ports[co->index];
+ 	struct uart_port *port = &up->port;
+diff -x .git -urN linux-3.11/drivers/tty/serial/8250/8250_early.c zen/drivers/tty/serial/8250/8250_early.c
+--- linux-3.11/drivers/tty/serial/8250/8250_early.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/tty/serial/8250/8250_early.c	2013-09-15 11:06:03.244911110 +0300
+@@ -98,7 +98,7 @@
+ }
+ 
+ static void __init early_serial8250_write(struct console *console,
+-					const char *s, unsigned int count)
++          const char *s, unsigned int count, unsigned int loglevel)
+ {
+ 	struct uart_port *port = &early_device.port;
+ 	unsigned int ier;
+diff -x .git -urN linux-3.11/drivers/tty/vt/vt.c zen/drivers/tty/vt/vt.c
+--- linux-3.11/drivers/tty/vt/vt.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/drivers/tty/vt/vt.c	2013-09-15 11:06:03.251911023 +0300
+@@ -71,6 +71,7 @@
+  */
+ 
+ #include <linux/module.h>
++#include <linux/moduleparam.h>
+ #include <linux/types.h>
+ #include <linux/sched.h>
+ #include <linux/tty.h>
+@@ -2421,16 +2422,44 @@
+ 		return kmsg_con;
+ }
+ 
++#ifdef CONFIG_VT_CKO
++static unsigned int printk_color[8] __read_mostly = {
++	CONFIG_VT_PRINTK_EMERG_COLOR,	/* KERN_EMERG */
++	CONFIG_VT_PRINTK_ALERT_COLOR,	/* KERN_ALERT */
++	CONFIG_VT_PRINTK_CRIT_COLOR,	/* KERN_CRIT */
++	CONFIG_VT_PRINTK_ERR_COLOR,	/* KERN_ERR */
++	CONFIG_VT_PRINTK_WARNING_COLOR,	/* KERN_WARNING */
++	CONFIG_VT_PRINTK_NOTICE_COLOR,	/* KERN_NOTICE */
++	CONFIG_VT_PRINTK_INFO_COLOR,	/* KERN_INFO */
++	CONFIG_VT_PRINTK_DEBUG_COLOR,	/* KERN_DEBUG */
++};
++module_param_array(printk_color, uint, NULL, S_IRUGO | S_IWUSR);
++
++static inline void vc_set_color(struct vc_data *vc, unsigned char color)
++{
++	vc->vc_color = color_table[color & 0xF] |
++	               (color_table[(color >> 4) & 0x7] << 4) |
++	               (color & 0x80);
++	update_attr(vc);
++}
++#else
++static unsigned int printk_color[8];
++static inline void vc_set_color(const struct vc_data *vc, unsigned char c)
++{
++}
++#endif
++
+ /*
+  *	Console on virtual terminal
+  *
+  * The console must be locked when we get here.
+  */
+ 
+-static void vt_console_print(struct console *co, const char *b, unsigned count)
++static void vt_console_print(struct console *co, const char *b, unsigned count,
++			     unsigned int loglevel)
+ {
+ 	struct vc_data *vc = vc_cons[fg_console].d;
+-	unsigned char c;
++	unsigned char current_color, c;
+ 	static DEFINE_SPINLOCK(printing_lock);
+ 	const ushort *start;
+ 	ushort cnt = 0;
+@@ -2466,11 +2495,20 @@
+ 
+ 	start = (ushort *)vc->vc_pos;
+ 
++	/*
++	 * We always get a valid loglevel - <8> and "no level" is transformed
++	 * to <4> in the typical kernel.
++	 */
++	current_color = printk_color[loglevel];
++	vc_set_color(vc, current_color);
++
++
+ 	/* Contrived structure to try to emulate original need_wrap behaviour
+ 	 * Problems caused when we have need_wrap set on '\n' character */
+ 	while (count--) {
+ 		c = *b++;
+ 		if (c == 10 || c == 13 || c == 8 || vc->vc_need_wrap) {
++			vc_set_color(vc, vc->vc_def_color);
+ 			if (cnt > 0) {
+ 				if (CON_IS_VISIBLE(vc))
+ 					vc->vc_sw->con_putcs(vc, start, cnt, vc->vc_y, vc->vc_x);
+@@ -2483,6 +2521,7 @@
+ 				bs(vc);
+ 				start = (ushort *)vc->vc_pos;
+ 				myx = vc->vc_x;
++				vc_set_color(vc, current_color);
+ 				continue;
+ 			}
+ 			if (c != 13)
+@@ -2490,6 +2529,7 @@
+ 			cr(vc);
+ 			start = (ushort *)vc->vc_pos;
+ 			myx = vc->vc_x;
++			vc_set_color(vc, current_color);
+ 			if (c == 10 || c == 13)
+ 				continue;
+ 		}
+@@ -2512,6 +2552,7 @@
+ 			vc->vc_need_wrap = 1;
+ 		}
+ 	}
++	vc_set_color(vc, vc->vc_def_color);
+ 	set_cursor(vc);
+ 	notify_update(vc);
+ 
+diff -x .git -urN linux-3.11/include/linux/console.h zen/include/linux/console.h
+--- linux-3.11/include/linux/console.h	2013-09-02 23:46:10.000000000 +0300
++++ zen/include/linux/console.h	2013-09-15 11:06:03.264910860 +0300
+@@ -118,7 +118,7 @@
+ 
+ struct console {
+ 	char	name[16];
+-	void	(*write)(struct console *, const char *, unsigned);
++	void	(*write)(struct console *, const char *, unsigned, unsigned int);
+ 	int	(*read)(struct console *, char *, unsigned);
+ 	struct tty_driver *(*device)(struct console *, int *);
+ 	void	(*unblank)(void);
+diff -x .git -urN linux-3.11/kernel/printk/printk.c zen/kernel/printk/printk.c
+--- linux-3.11/kernel/printk/printk.c	2013-09-02 23:46:10.000000000 +0300
++++ zen/kernel/printk/printk.c	2013-09-15 11:06:03.311910273 +0300
+@@ -1282,7 +1282,7 @@
+ 		if (!cpu_online(smp_processor_id()) &&
+ 		    !(con->flags & CON_ANYTIME))
+ 			continue;
+-		con->write(con, text, len);
++		con->write(con, text, len, level);
+ 	}
+ }
+ 
+@@ -1732,7 +1732,7 @@
+ 		char buf[512];
+ 		int n = vscnprintf(buf, sizeof(buf), fmt, ap);
+ 
+-		early_console->write(early_console, buf, n);
++		early_console->write(early_console, buf, n, 0);
+ 	}
+ }
+ 
