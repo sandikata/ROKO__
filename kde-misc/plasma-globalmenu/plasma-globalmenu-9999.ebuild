@@ -5,7 +5,7 @@
 EAPI="3"
 
 inherit cmake-utils
-inherit git
+inherit git-2
 
 EGIT_REPO_URI="git://gitorious.org/plasma-globalmenu-mod/plasma-globalmenu-mod.git"
 
