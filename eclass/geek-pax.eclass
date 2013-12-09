@@ -62,20 +62,20 @@ geek-pax_init_variables() {
 	: ${PAX_URL:=${PAX_URL:-"http://pax.grsecurity.net"}}
 
 	: ${PAX_INF=${PAX_INF:-"${YELLOW}PAX patches - ${PAX_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${PAX_URL}"}
-
-	: ${SRC_URI:="${SRC_URI}
-		pax?( ${PAX_SRC} )"}
 }
+
+geek-pax_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${PAX_URL}"
+
+SRC_URI="${SRC_URI}
+	pax?	( ${PAX_SRC} )"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-pax_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-pax_init_variables
 
 	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/pax-linux-${PAX_VER/KMV/$KMV}.patch" "${PAX_INF}"
 }

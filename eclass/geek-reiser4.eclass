@@ -62,23 +62,23 @@ geek-reiser4_init_variables() {
 	: ${REISER4_URL:=${REISER4_URL:-"http://sourceforge.net/projects/reiser4"}}
 
 	: ${REISER4_INF:=${REISER4_INF:-"${YELLOW}ReiserFS v4 - ${REISER4_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${REISER4_URL}"}
-
-	: ${DEPEND:="${RDEPEND}
-		>=sys-fs/reiser4progs-1.0.6"}
-
-	: ${SRC_URI:="${SRC_URI}
-		reiser4?	( ${REISER4_SRC} )"}
 }
+
+geek-reiser4_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${REISER4_URL}"
+
+DEPEND="${RDEPEND}
+	>=sys-fs/reiser4progs-1.0.6"
+
+SRC_URI="${SRC_URI}
+	reiser4?	( ${REISER4_SRC} )"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-reiser4_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-reiser4_init_variables
 
 	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/reiser4-for-${REISER4_VER}.patch.gz" "${REISER4_INF}"
 }

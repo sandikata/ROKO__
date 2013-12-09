@@ -62,26 +62,28 @@ geek-squeue_init_variables() {
 
 	: ${SQUEUE_SRC:=${SQUEUE_SRC:-"git://git.kernel.org/pub/scm/linux/kernel/git/stable/stable-queue.git"}}
 
-	: ${SQUEUE_URL:=${SQUEUE_URL:-"http://git.kernel.org/scm/linux/kernel/git/stable/stable-queue.git"}}
+	: ${SQUEUE_URL:=${SQUEUE_URL:-"http://git.kernel.org/cgit/linux/kernel/git/stable/stable-queue.git"}}
 
 	: ${SQUEUE_INF:=${SQUEUE_INF:-"${YELLOW}Stable-queue patch-set - ${SQUEUE_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${SQUEUE_URL}"}
 
 	: ${cfg_file:="/etc/portage/kernel.conf"}
 
 	local skip_squeue_cfg=$(source $cfg_file 2>/dev/null; echo ${skip_squeue})
 	: ${skip_squeue:=${skip_squeue_cfg:-no}} # skip_squeue=yes/no
-	einfo "${BLUE}Skip stable-queue -->${NORMAL} ${RED}$skip_squeue${NORMAL}"
 }
+
+geek-squeue_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${SQUEUE_URL}"
+
+DEPEND="${DEPEND}
+	dev-vcs/git"
 
 # @FUNCTION: src_unpack
 # @USAGE:
 # @DESCRIPTION: Extract source packages and do any necessary patching or fixes.
 geek-squeue_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-squeue_init_variables
 
 	local CSD="${GEEK_STORE_DIR}/squeue"
 	local CWD="${T}/squeue"
@@ -94,16 +96,19 @@ geek-squeue_src_unpack() {
 		git clone ${SQUEUE_SRC} ${CSD} > /dev/null 2>&1
 	fi
 
-#	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+#	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 
 	if [ -d ${CSD}/queue-${SQUEUE_VER} ] ; then
-		cp -r "${CSD}/queue-${SQUEUE_VER}" "${CWD}" #|| die "${RED}cp -r ${CSD}/queue-${SQUEUE_VER} ${CWD} failed${NORMAL}"
-		mv "${CWD}/series" "${CWD}/patch_list" #|| die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
+		cp -r "${CSD}/queue-${SQUEUE_VER}" "${CWD}" > /dev/null 2>&1; #|| die "${RED}cp -r ${CSD}/queue-${SQUEUE_VER} ${CWD} failed${NORMAL}"
+#		rsync -avhW --no-compress --progress "${CSD}/queue-${SQUEUE_VER}/" "${CWD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/queue-${SQUEUE_VER}/ ${CWD} failed${NORMAL}"
+		mv "${CWD}/series" "${CWD}/patch_list" > /dev/null 2>&1; #|| die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
 	elif [ -d ${CSD}/releases/${PV} ]; then
-		cp -r "${CSD}/releases/${PV}" "${CWD}" #|| die "${RED}cp -r ${CSD}/releases/${PV} ${CWD} failed${NORMAL}"
-		mv "${CWD}/series" "${CWD}/patch_list" #|| die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
+		cp -r "${CSD}/releases/${PV}" "${CWD}" > /dev/null 2>&1; #|| die "${RED}cp -r ${CSD}/releases/${PV} ${CWD} failed${NORMAL}"
+#		rsync -avhW --no-compress --progress "${CSD}/releases/${PV}/" "${CWD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/releases/${PV}/ ${CWD} failed${NORMAL}"
+		mv "${CWD}/series" "${CWD}/patch_list" > /dev/null 2>&1 || ewarn "There is no stable-queue patch-set this time"; skip_squeue="yes"; #die "${RED}mv ${CWD}/series ${CWD}/patch_list failed${NORMAL}"
 	else
 		ewarn "There is no stable-queue patch-set this time"
+		skip_squeue="yes";
 	fi
 }
 
@@ -117,7 +122,8 @@ geek-squeue_src_prepare() {
 			ewarn "${RED}Skipping update to latest stable queue ...${NORMAL}"
 		else
 			ApplyPatch "${T}/squeue/patch_list" "${SQUEUE_INF}"
-			mv "${T}/squeue" "${S}/patches/squeue" || die "${RED}mv ${T}/squeue ${S}/patches/squeue failed${NORMAL}"
+			mv "${T}/squeue" "${WORKDIR}/linux-${KV_FULL}-patches/squeue" || die "${RED}mv ${T}/squeue ${WORKDIR}/linux-${KV_FULL}-patches/squeue failed${NORMAL}"
+#			rsync -avhW --no-compress --progress "${T}/squeue/" "${WORKDIR}/linux-${KV_FULL}-patches/squeue" || die "${RED}rsync -avhW --no-compress --progress ${T}/squeue/ ${WORKDIR}/linux-${KV_FULL}-patches/squeue failed${NORMAL}"
 	fi
 }
 

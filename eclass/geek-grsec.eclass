@@ -65,27 +65,27 @@ geek-grsec_init_variables() {
 	: ${GRSEC_URL:=${GRSEC_URL:-"http://hardened.gentoo.org"}}
 
 	: ${GRSEC_INF:=${GRSEC_INF:-"${YELLOW}GrSecurity patches - ${GRSEC_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${GRSEC_URL}"}
-
-	: ${DEPEND:="${DEPEND}
-		grsec?	( >=sys-apps/gradm-2.2.2 )"}
 }
 
+geek-grsec_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${GRSEC_URL}"
+
+DEPEND="${DEPEND}
+	grsec?	( dev-vcs/git
+		>=sys-apps/gradm-2.2.2 )"
+	
 # @FUNCTION: src_unpack
 # @USAGE:
 # @DESCRIPTION: Extract source packages and do any necessary patching or fixes.
 geek-grsec_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-grsec_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/grsec"
 	local CWD="${T}/grsec"
 	local CTD="${T}/grsec"$$
 	shift
-	cd "${CSD}" >/dev/null 2>&1
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	if [ -d ${CSD} ]; then
 	cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"
 		if [ -e ".git" ]; then # git
@@ -95,10 +95,13 @@ geek-grsec_src_unpack() {
 		git clone "${GRSEC_SRC}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches
 	fi
 
-	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
 
 	cd "${CTD}"/"${GRSEC_VER}" || die "${RED}cd ${CTD}/${GRSEC_VER} failed${NORMAL}"
 
+	ls -1 | grep "linux" | xargs -I{} rm -rf "{}"
 	ls -1 | xargs -I{} cp "{}" "${CWD}"
 
 	rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
@@ -113,7 +116,8 @@ geek-grsec_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/grsec/patch_list" "${GRSEC_INF}"
-	mv "${T}/grsec" "${S}/patches/grsec" || die "${RED}mv ${T}/grsec ${S}/patches/grsec failed${NORMAL}"
+	mv "${T}/grsec" "${WORKDIR}/linux-${KV_FULL}-patches/grsec" || die "${RED}mv ${T}/grsec ${WORKDIR}/linux-${KV_FULL}-patches/grsec failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/grsec/" "${WORKDIR}/linux-${KV_FULL}-patches/grsec" || die "${RED}rsync -avhW --no-compress --progress ${T}/grsec/ ${WORKDIR}/linux-${KV_FULL}-patches/grsec failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

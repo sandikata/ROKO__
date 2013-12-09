@@ -65,9 +65,14 @@ geek-suse_init_variables() {
 	: ${SUSE_URL:=${SUSE_URL:-"http://www.opensuse.org"}}
 
 	: ${SUSE_INF:=${SUSE_INF:-"${YELLOW}OpenSuSE - ${SUSE_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${SUSE_URL}"}
 }
+
+geek-suse_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${SUSE_URL}"
+
+DEPEND="${DEPEND}
+	suse?	( dev-vcs/git )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -75,14 +80,12 @@ geek-suse_init_variables() {
 geek-suse_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-suse_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/suse"
 	local CWD="${T}/suse"
 	local CTD="${T}/suse"$$
 	shift
 	cd "${CSD}" >/dev/null 2>&1
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	if [ -d ${CSD} ]; then
 	cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"
 		if [ -e ".git" ]; then # git
@@ -92,7 +95,9 @@ geek-suse_src_unpack() {
 		git clone "${SUSE_SRC}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches
 	fi
 
-	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
 
 	cd "${CTD}" || die "${RED}cd ${CTD} failed${NORMAL}"
 
@@ -101,7 +106,7 @@ geek-suse_src_unpack() {
 	[ -e "patches.kernel.org" ] && rm -rf patches.kernel.org > /dev/null 2>&1
 	[ -e "patches.rpmify" ] && rm -rf patches.rpmify > /dev/null 2>&1
 
-	awk '!/(#|^$)/ && !/^(\+(needs|tren|hare|xen|jbeulich|jeffm))|patches\.(kernel|rpmify|xen).*/{gsub(/[ \t]/,"") ; print $1}' series.conf > patch_list
+	awk '!/(#|^$)/ && !/^(\+(needs|tren|trenn|hare|xen|jbeulich|jeffm|agruen|still|philips|disabled))|patches\.(kernel|rpmify|xen).*/{gsub(/[ \t]/,"") ; print $1}' series.conf > patch_list
 	grep patches.xen series.conf > spatch_list
 
 	cp -r patches.*/ "${CWD}" || die "${RED}cp -r patches.*/ ${CWD} failed${NORMAL}"
@@ -119,7 +124,8 @@ geek-suse_src_prepare() {
 
 	ApplyPatch "${T}/suse/patch_list" "${SUSE_INF}"
 	SmartApplyPatch "${T}/suse/spatch_list" "${YELLOW}OpenSuSE xen - ${SUSE_URL}${NORMAL}"
-	mv "${T}/suse" "${S}/patches/suse" || die "${RED}mv ${T}/suse ${S}/patches/suse failed${NORMAL}"
+	mv "${T}/suse" "${WORKDIR}/linux-${KV_FULL}-patches/suse" || die "${RED}mv ${T}/suse ${WORKDIR}/linux-${KV_FULL}-patches/suse failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/suse/" "${WORKDIR}/linux-${KV_FULL}-patches/suse" || die "${RED}rsync -avhW --no-compress --progress ${T}/suse/ ${WORKDIR}/linux-${KV_FULL}-patches/suse failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

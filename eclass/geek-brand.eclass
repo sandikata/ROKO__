@@ -45,17 +45,17 @@ geek-brand_init_variables() {
 	: ${BRAND_URL:=${BRAND_URL:-"https://github.com/init6/init_6/wiki/geek-sources"}}
 
 	: ${BRAND_INF:=${BRAND_INF:-"${YELLOW}Branding - ${BRAND_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${BRAND_URL}"}
 }
+
+geek-brand_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${BRAND_URL}"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-brand_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-brand_init_variables
 
 	ApplyPatch "${FILESDIR}/${PV}/brand/patch_list" "${BRAND_INF}"
 }

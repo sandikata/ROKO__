@@ -62,20 +62,20 @@ geek-lqx_init_variables() {
 	: ${LQX_URL:=${LQX_URL:-"http://liquorix.net"}}
 
 	: ${LQX_INF:=${LQX_INF:-"${YELLOW}Liquorix patches - ${LQX_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${LQX_URL}"}
-
-	: ${SRC_URI:="${SRC_URI}
-		lqx?( ${LQX_SRC} )"}
 }
+
+geek-lqx_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${LQX_URL}"
+
+SRC_URI="${SRC_URI}
+	lqx?	( ${LQX_SRC} )"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-lqx_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-lqx_init_variables
 
 	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/${LQX_VER/KMV/$KMV}.patch.gz" "${LQX_INF}"
 }

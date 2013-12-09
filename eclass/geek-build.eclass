@@ -55,7 +55,9 @@ geek-build_src_compile() {
 	dodir /usr/src
 	echo ">>> Copying sources ..."
 
-	mv ${WORKDIR}/linux* "${D}"/usr/src || die "${RED}mv ${WORKDIR}/linux* ${D}/usr/src failed${NORMAL}"
+#	mv ${WORKDIR}/linux* "${D}"/usr/src || die "${RED}mv ${WORKDIR}/linux* ${D}/usr/src failed${NORMAL}"
+#	rsync -avhW --no-compress --progress ${WORKDIR}/linux*/ "${D}"/usr/src || die "${RED}rsync -avhW --no-compress --progress ${WORKDIR}/linux*/ ${D}/usr/src failed${NORMAL}"
+	test -d "${D}"/usr/src >/dev/null 2>&1 || mkdir -p "${D}"/usr/src; (cd ${WORKDIR}/linux*; tar cf - .) | (cd "${D}"/usr/src; tar xpf -)
 
 	if use build; then
 		# Find out some info..
@@ -95,10 +97,10 @@ geek-build_src_compile() {
 			if [[ ${ISNEWER} != "" ]]; then
 				ebegin " No kernel version found"
 					if [[ -e /usr/src/linux/.version ]]; then
-						einfo "  Foung kernel version /usr/src/linux/.version"
+						einfo "  Found kernel version /usr/src/linux/.version"
 							cat /usr/src/linux/.version > .version
 					elif [[ -e /usr/src/linux-${KV_FULL}/.version ]]; then
-						einfo "  Foung kernel version /usr/src/linux-${KV_FULL}/.version"
+						einfo "  Found kernel version /usr/src/linux-${KV_FULL}/.version"
 							cat /usr/src/linux-${KV_FULL}/.version > .version
 					fi
 				eend $

@@ -62,12 +62,14 @@ geek-cjktty_init_variables() {
 	: ${CJKTTY_URL:=${CJKTTY_URL:-"https://github.com/Gentoo-zh/linux-cjktty"}} # http://sourceforge.net/projects/cjktty
 
 	: ${CJKTTY_INF:=${CJKTTY_INF:-"${YELLOW}CJK support for tty framebuffer vt - ${CJKTTY_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${CJKTTY_URL}"}
-
-#	: ${SRC_URI:="${SRC_URI}
-#		cjktty?	( ${CJKTTY_SRC} )"}
 }
+
+geek-cjktty_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${CJKTTY_URL}"
+
+#SRC_URI="${SRC_URI}
+#	cjktty?	( ${CJKTTY_SRC} )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -75,12 +77,10 @@ geek-cjktty_init_variables() {
 geek-cjktty_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-cjktty_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/cjktty"
 	local CWD="${T}/cjktty"
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	dest="${CWD}"/cjktty-"${PV}"-`date +"%Y%m%d"`.patch
 	wget "${CJKTTY_SRC}" -O "${dest}" > /dev/null 2>&1
 	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
@@ -95,7 +95,8 @@ geek-cjktty_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/cjktty/patch_list" "${CJKTTY_INF}"
-	mv "${T}/cjktty" "${S}/patches/cjktty" || die "${RED}mv ${T}/cjktty ${S}/patches/cjktty failed${NORMAL}"
+	mv "${T}/cjktty" "${WORKDIR}/linux-${KV_FULL}-patches/cjktty" || die "${RED}mv ${T}/cjktty ${WORKDIR}/linux-${KV_FULL}-patches/cjktty failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/cjktty/" "${WORKDIR}/linux-${KV_FULL}-patches/cjktty" || die "${RED}rsync -avhW --no-compress --progress ${T}/cjktty/ ${WORKDIR}/linux-${KV_FULL}-patches/cjktty failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

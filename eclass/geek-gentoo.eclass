@@ -66,9 +66,14 @@ geek-gentoo_init_variables() {
 	: ${GENTOO_URL:=${GENTOO_URL:-"http://dev.gentoo.org/~mpagano/genpatches"}}
 
 	: ${GENTOO_INF:=${GENTOO_INF:-"${YELLOW}Gentoo patches - ${GENTOO_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${GENTOO_URL}"}
 }
+
+geek-gentoo_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${GENTOO_URL}"
+
+DEPEND="${DEPEND}
+	gentoo?	( dev-vcs/subversion )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -76,13 +81,11 @@ geek-gentoo_init_variables() {
 geek-gentoo_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-gentoo_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/gentoo"
 	local CWD="${T}/gentoo"
 	local CTD="${T}/gentoo"$$
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	if [ -d ${CSD} ]; then
 		cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"
 		if [ -e ".svn" ]; then # git
@@ -92,7 +95,9 @@ geek-gentoo_src_unpack() {
 		svn co "${GENTOO_SRC}" "${CSD}" > /dev/null 2>&1
 	fi
 
-	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
 	cd "${CTD}"/${KMV} || die "${RED}cd ${CTD}/${KMV} failed${NORMAL}"
 
 	find -name .svn -type d -exec rm -rf {} \ > /dev/null 2>&1
@@ -101,7 +106,9 @@ geek-gentoo_src_unpack() {
 	ls -1 | grep "linux" | xargs -I{} rm -rf "{}"
 	ls -1 | grep ".patch" > "$CWD"/patch_list
 
-	cp -r "${CTD}"/${KMV}/* "${CWD}" || die "${RED}cp -r ${CTD}/${KMV}/* ${CWD} failed${NORMAL}"
+#	cp -r "${CTD}"/${KMV}/* "${CWD}" || die "${RED}cp -r ${CTD}/${KMV}/* ${CWD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CTD}"/${KMV}/ "${CWD}" || die "${RED}rsync -avhW --no-compress --progress ${CTD}/${KMV}/ ${CWD} failed${NORMAL}"
+	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"; (cd "${CTD}"/${KMV}; tar cf - .) | (cd "${CWD}"; tar xpf -)
 
 	rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 }
@@ -113,7 +120,8 @@ geek-gentoo_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/gentoo/patch_list" "${GENTOO_INF}"
-	mv "${T}/gentoo" "${S}/patches/gentoo" || die "${RED}mv ${T}/gentoo ${S}/patches/gentoo failed${NORMAL}"
+	mv "${T}/gentoo" "${WORKDIR}/linux-${KV_FULL}-patches/gentoo" || die "${RED}mv ${T}/gentoo ${WORKDIR}/linux-${KV_FULL}-patches/gentoo failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/gentoo/" "${WORKDIR}/linux-${KV_FULL}-patches/gentoo" || die "${RED}rsync -avhW --no-compress --progress ${T}/gentoo/ ${WORKDIR}/linux-${KV_FULL}-patches/gentoo failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

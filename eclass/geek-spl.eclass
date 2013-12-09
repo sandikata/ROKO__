@@ -58,18 +58,23 @@ geek-spl_init_variables() {
 	: ${GEEK_STORE_DIR:=${GEEK_STORE_DIR:-"${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/geek"}}
 	addwrite "${GEEK_STORE_DIR}" # Disable the sandbox for this dir
 
-	: ${SPL_VER:=${SPL_VER:-$KMV}}
+	: ${SPL_VER:=${SPL_VER:-master}}
 
 	: ${SPL_SRC:=${SPL_SRC:-"git://github.com/zfsonlinux/spl.git"}}
 
 	: ${SPL_URL=${SPL_URL:-"http://zfsonlinux.org"}}
 
 	: ${SPL_INF:=${SPL_INF:-"${YELLOW}Integrate Solaris Porting Layer - ${SPL_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${SPL_URL}"}
-
-	: ${LICENSE:="${LICENSE} GPL-3"}
 }
+
+geek-spl_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${SPL_URL}"
+
+LICENSE="${LICENSE} GPL-3"
+
+DEPEND="${DEPEND}
+	zfs?	( dev-vcs/git )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -77,8 +82,7 @@ geek-spl_init_variables() {
 geek-spl_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-spl_init_variables
-
+	local CTD="${T}/spl"
 	local CSD="${GEEK_STORE_DIR}/spl"
 	local CWD="${T}/spl"
 	shift
@@ -103,7 +107,14 @@ geek-spl_src_unpack() {
 		git clone "${SPL_SRC}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches
 	fi
 
-	cp -r "${CSD}" "${CWD}" || die "${RED}cp -r ${CSD} ${CWD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CWD}" || die "${RED}cp -r ${CSD} ${CWD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
+	
+	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+
+	git_checkout "${SPL_VER}" > /dev/null 2>&1 git pull > /dev/null 2>&1
+
 	rm -rf "${CWD}"/.git || die "${RED}rm -rf ${CWD}/.git failed${NORMAL}"
 }
 

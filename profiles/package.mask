@@ -17,3 +17,8 @@
 # Дата: 20130804 17:23
 # Коментар: Тест
 #>=sys-kernel/geek-sources-3.11-r3
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20131105 17:21
+# Коментар: Лайно!
+=kde-misc/veromix-0.18.3

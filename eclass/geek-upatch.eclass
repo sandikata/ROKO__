@@ -58,13 +58,13 @@ geek-upatch_init_variables() {
 	: ${PATCH_USER_DIR:=${PATCH_USER_DIR:-"/etc/portage/patches/sys-kernel/${PN}"}}
 }
 
+geek-upatch_init_variables
+
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-upatch_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-upatch_init_variables
 
 	if [ -d "${PATCH_USER_DIR}" ]; then
 		if [ -e "${PATCH_USER_DIR}/patch_list" ]; then

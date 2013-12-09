@@ -62,12 +62,14 @@ geek-bld_init_variables() {
 	: ${BLD_URL:=${BLD_URL:-"http://code.google.com/p/bld"}}
 
 	: ${BLD_INF:=${BLD_INF:-"${YELLOW}Alternate CPU load distribution technique for Linux kernel scheduler - ${BLD_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${BLD_URL}"}
-
-	: ${SRC_URI:="${SRC_URI}
-		bld?( ${BLD_SRC} )"}
 }
+
+geek-bld_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${BLD_URL}"
+
+SRC_URI="${SRC_URI}
+	bld?	( ${BLD_SRC} )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -75,11 +77,9 @@ geek-bld_init_variables() {
 geek-bld_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-bld_init_variables
-
 	local CWD="${T}/bld"
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	dest="${CWD}"/bld-"${PV}"-`date +"%Y%m%d"`.patch
 	wget "${BLD_SRC}" -O "${dest}" > /dev/null 2>&1
 	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
@@ -94,7 +94,8 @@ geek-bld_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/bld/patch_list" "${BLD_INF}"
-	mv "${T}/bld" "${S}/patches/bld" || die "${RED}mv ${T}/bld ${S}/patches/bld failed${NORMAL}"
+	mv "${T}/bld" "${WORKDIR}/linux-${KV_FULL}-patches/bld" || die "${RED}mv ${T}/bld ${WORKDIR}/linux-${KV_FULL}-patches/bld failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/bld/" "${WORKDIR}/linux-${KV_FULL}-patches/bld" || die "${RED}rsync -avhW --no-compress --progress ${T}/bld/ ${WORKDIR}/linux-${KV_FULL}-patches/bld failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

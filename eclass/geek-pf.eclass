@@ -63,12 +63,14 @@ geek-pf_init_variables() {
 	: ${PF_URL:=${PF_URL:-"http://pf.natalenko.name"}}
 
 	: ${PF_INF:=${PF_INF:-"${YELLOW}pf-kernel patches - ${PF_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${PF_URL}"}
-
-#	: ${SRC_URI:="${SRC_URI}
-#		pf?( ${PF_SRC} )"}
 }
+
+geek-pf_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${PF_URL}"
+
+#SRC_URI="${SRC_URI}
+#	pf?( ${PF_SRC} )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -76,12 +78,10 @@ geek-pf_init_variables() {
 geek-pf_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-pf_init_variables
-
 	local CWD="${T}/pf"
 	local CTD="${T}/pf"$$
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	dest="${CWD}"/pf-kernel-"${PV}"-`date +"%Y%m%d"`.patch
 	wget "${PF_SRC}" -O "${dest}" > /dev/null 2>&1
 	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
@@ -97,7 +97,8 @@ geek-pf_src_prepare() {
 
 #	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/patch-${PF_VER/KMV/$KMV}.bz2" "${PF_INF}"
 	ApplyPatch "${T}/pf/patch_list" "${PF_INF}"
-	mv "${T}/pf" "${S}/patches/pf" || die "${RED}mv ${T}/pf ${S}/patches/pf failed${NORMAL}"
+	mv "${T}/pf" "${WORKDIR}/linux-${KV_FULL}-patches/pf" || die "${RED}mv ${T}/pf ${WORKDIR}/linux-${KV_FULL}-patches/pf failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/pf/" "${WORKDIR}/linux-${KV_FULL}-patches/pf" || die "${RED}rsync -avhW --no-compress --progress ${T}/pf/ ${WORKDIR}/linux-${KV_FULL}-patches/pf failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

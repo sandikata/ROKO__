@@ -62,12 +62,14 @@ geek-zen_init_variables() {
 	: ${ZEN_URL:=${ZEN_URL:-"https://github.com/damentz/zen-kernel"}}
 
 	: ${ZEN_INF:=${ZEN_INF:-"${YELLOW}The Zen Kernel - ${ZEN_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${ZEN_URL}"}
-
-#	: ${SRC_URI:="${SRC_URI}
-#		zen?	( ${ZEN_SRC} )"}
 }
+
+geek-zen_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${ZEN_URL}"
+
+#SRC_URI="${SRC_URI}
+#	zen?	( ${ZEN_SRC} )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -75,13 +77,11 @@ geek-zen_init_variables() {
 geek-zen_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-zen_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/zen"
 	local CWD="${T}/zen"
 	local CTD="${T}/zen"$$
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	dest="${CWD}"/zen-kernel-"${PV}"-`date +"%Y%m%d"`.patch
 	wget "${ZEN_SRC}" -O "${dest}" > /dev/null 2>&1
 	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
@@ -96,7 +96,8 @@ geek-zen_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/zen/patch_list" "${ZEN_INF}"
-	mv "${T}/zen" "${S}/patches/zen" || die "${RED}mv ${T}/zen ${S}/patches/zen failed${NORMAL}"
+	mv "${T}/zen" "${WORKDIR}/linux-${KV_FULL}-patches/zen" || die "${RED}mv ${T}/zen ${WORKDIR}/linux-${KV_FULL}-patches/zen failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/zen/" "${WORKDIR}/linux-${KV_FULL}-patches/zen" || die "${RED}rsync -avhW --no-compress --progress ${T}/zen/ ${WORKDIR}/linux-${KV_FULL}-patches/zen failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

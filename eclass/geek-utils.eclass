@@ -132,7 +132,7 @@ geek-utils_get_config() {
 
 	ebegin "Searching for best availiable kernel config"
 		if [ -e "/proc/config.gz" ]; then test -d .config >/dev/null 2>&1 || zcat /proc/config.gz > .config
-			einfo " ${BLUE}Foung config from running kernel, updating to match target kernel${NORMAL}"
+			einfo " ${BLUE}Found config from running kernel, updating to match target kernel${NORMAL}"
 		elif [ -e "/boot/config-${FULLVER}" ]; then test -d .config >/dev/null 2>&1 || cat "/boot/config-${FULLVER}" > .config
 			einfo " ${BLUE}Found${NORMAL} ${RED}/boot/config-${FULLVER}${NORMAL}"
 		elif [ -e "/etc/portage/savedconfig/${CATEGORY}/${PN}/config" ]; then test -d .config >/dev/null 2>&1 || cat /etc/portage/savedconfig/${CATEGORY}/${PN}/config > .config

@@ -2,7 +2,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/app-emulation/vmware-modules/vmware-modules-271.2.ebuild,v 1.2 2013/06/21 20:44:01 dilfridge Exp $
 
-EAPI="4"
+EAPI="5"
 
 inherit eutils flag-o-matic linux-info linux-mod user versionator udev
 
@@ -58,17 +58,17 @@ src_unpack() {
 	done
 }
 
-src_prepare() {
-	epatch "${FILESDIR}/${PV_MAJOR}-makefile-kernel-dir.patch"
-	epatch "${FILESDIR}/${PV_MAJOR}-makefile-include.patch"
-	epatch "${FILESDIR}/${PV_MAJOR}-netdevice.patch"
-	use pax_kernel && epatch "${FILESDIR}/hardened.patch"
-	epatch "${FILESDIR}/${PV_MAJOR}-apic.patch"
+#src_prepare() {
+#	epatch "${FILESDIR}/${PV_MAJOR}-makefile-kernel-dir.patch"
+#	epatch "${FILESDIR}/${PV_MAJOR}-makefile-include.patch"
+#	epatch "${FILESDIR}/${PV_MAJOR}-netdevice.patch"
+#	use pax_kernel && epatch "${FILESDIR}/hardened.patch"
+#	epatch "${FILESDIR}/${PV_MAJOR}-apic.patch"
 #	kernel_is ge 3 7 0 && epatch "${FILESDIR}/${PV_MAJOR}-putname.patch"
 
 	# Allow user patches so they can support RC kernels and whatever else
-	epatch_user
-}
+#	epatch_user
+#}
 
 src_install() {
 	linux-mod_src_install

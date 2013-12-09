@@ -29,7 +29,7 @@
 
 inherit geek-linux geek-utils geek-fix geek-upatch geek-squeue
 
-KNOWN_USES="aufs bfq bld brand build cjktty ck deblob fedora gentoo grsec ice lqx mageia optimization pax pf reiser4 rt suse symlink uksm zen zfs"
+KNOWN_USES="aufs bfq bld brand build cjktty ck deblob exfat fedora gentoo grsec rsbac ice lqx mageia optimization pax pf reiser4 rh rifs rt suse symlink ubuntu uksm xenomai zen zfs"
 
 # internal function
 #
@@ -61,6 +61,7 @@ for use_flag in ${IUSE}; do
 		cjktty	)	inherit geek-cjktty ;;
 		ck	)	inherit geek-ck ;;
 		deblob	)	inherit geek-deblob ;;
+		exfat	)	inherit geek-exfat ;;
 		fedora	)	inherit geek-fedora ;;
 		gentoo	)	inherit geek-gentoo ;;
 		grsec	)	inherit geek-grsec ;;
@@ -71,9 +72,14 @@ for use_flag in ${IUSE}; do
 		pax	)	inherit geek-pax ;;
 		pf	)	inherit geek-pf ;;
 		reiser4	)	inherit geek-reiser4 ;;
+		rh	)	inherit geek-rh ;;
+		rifs	)	inherit geek-rifs ;;
+		rsbac	)	inherit geek-rsbac ;;
 		rt	)	inherit geek-rt ;;
 		suse	)	inherit geek-suse ;;
+		ubuntu	)	inherit geek-ubuntu ;;
 		uksm	)	inherit geek-uksm ;;
+		xenomai)	inherit geek-xenomai ;;
 		zen	)	inherit geek-zen ;;
 		zfs	)	inherit geek-spl geek-zfs ;;
 	esac
@@ -88,10 +94,10 @@ done
 geek-sources_init_variables() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf zen"}
+	: ${SKIP_KERNEL_PATCH_UPDATE:="lqx pf rh ubuntu zen"}
 	: ${cfg_file:="/etc/portage/kernel.conf"}
-	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER:="zfs optimization pax lqx pf zen bfq ck cjktty gentoo grsec ice reiser4 rt bld uksm aufs mageia fedora suse brand fix upatch squeue"}
-	
+	: ${DEFAULT_GEEKSOURCES_PATCHING_ORDER:="zfs optimization pax lqx pf zen bfq rifs ck cjktty gentoo grsec rsbac ice rh reiser4 exfat rt bld uksm aufs mageia fedora suse ubuntu xenomai brand fix upatch squeue"}
+
 	local xUserOrder=""
 	local xDefOder=""
 	if [ -e "${cfg_file}" ]; then
@@ -126,6 +132,11 @@ ${BLUE}And may the Force be with you…${NORMAL}"
 geek-sources_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
+	einfo "${BLUE}Crap patch -->${NORMAL} ${RED}$crap_patch${NORMAL}"
+	einfo "${BLUE}Disable fixes -->${NORMAL} ${RED}$disable_fixes${NORMAL}"
+	einfo "${BLUE}Remove unneeded architectures -->${NORMAL} ${RED}$rm_unneeded_arch${NORMAL}"
+	einfo "${BLUE}Skip stable-queue -->${NORMAL} ${RED}$skip_squeue${NORMAL}"
+
 	geek-sources_init_variables
 
 	for Current_Patch in $SKIP_KERNEL_PATCH_UPDATE; do
@@ -139,7 +150,7 @@ geek-sources_src_unpack() {
 
 	geek-linux_src_unpack
 
-	test -d "${S}/patches" >/dev/null 2>&1 || mkdir -p "${S}/patches"
+	test -d "${WORKDIR}/linux-${KV_FULL}-patches" >/dev/null 2>&1 || mkdir -p "${WORKDIR}/linux-${KV_FULL}-patches"
 	for Current_Patch in $GEEKSOURCES_PATCHING_ORDER; do
 		if use_if_iuse "${Current_Patch}" || [ "${Current_Patch}" = "fix" ] || [ "${Current_Patch}" = "upatch" ] || [ "${Current_Patch}" = "squeue" ]; then
 			einfo "Unpack - ${Current_Patch}"
@@ -148,6 +159,7 @@ geek-sources_src_unpack() {
 				bfq	)	geek-bfq_src_unpack ;;
 				bld	)	geek-bld_src_unpack ;;
 				cjktty	)	geek-cjktty_src_unpack ;;
+				exfat	)	geek-exfat_src_unpack ;;
 				fedora	)	geek-fedora_src_unpack ;;
 				gentoo	)	geek-gentoo_src_unpack ;;
 				grsec	)	geek-grsec_src_unpack ;;
@@ -155,9 +167,12 @@ geek-sources_src_unpack() {
 				mageia	)	geek-mageia_src_unpack ;;
 				optimization	)	geek-optimization_src_unpack ;;
 				pf	)	geek-pf_src_unpack ;;
+				rh	)	geek-rh_src_unpack ;;
+				rifs	)	geek-rifs_src_unpack ;;
 				squeue	)	geek-squeue_src_unpack ;;
 				suse	)	geek-suse_src_unpack ;;
 				uksm	)	geek-uksm_src_unpack ;;
+				xenomai)	geek-xenomai_src_unpack ;;
 				zen	)	geek-zen_src_unpack ;;
 				zfs	)	geek-spl_src_unpack; geek-zfs_src_unpack ;;
 			esac
@@ -182,6 +197,7 @@ geek-sources_src_prepare() {
 				brand	)	geek-brand_src_prepare ;;
 				cjktty	)	geek-cjktty_src_prepare ;;
 				ck	)	geek-ck_src_prepare ;;
+				exfat	)	geek-exfat_src_prepare ;;
 				fedora	)	geek-fedora_src_prepare ;;
 				fix	)	geek-fix_src_prepare ;;
 				gentoo	)	geek-gentoo_src_prepare ;;
@@ -193,11 +209,16 @@ geek-sources_src_prepare() {
 				pax	)	geek-pax_src_prepare ;;
 				pf	)	geek-pf_src_prepare ;;
 				reiser4	)	geek-reiser4_src_prepare ;;
+				rh	)	geek-rh_src_prepare ;;
+				rifs	)	geek-rifs_src_prepare ;;
+				rsbac	)	geek-rsbac_src_prepare ;;
 				rt	)	geek-rt_src_prepare ;;
 				squeue	)	geek-squeue_src_prepare ;;
 				suse	)	geek-suse_src_prepare ;;
+				ubuntu	)	geek-ubuntu_src_prepare ;;
 				uksm	)	geek-uksm_src_prepare ;;
 				upatch	)	geek-upatch_src_prepare ;;
+				xenomai)	geek-xenomai_src_prepare ;;
 				zen	)	geek-zen_src_prepare ;;
 				zfs	)	geek-spl_src_prepare; geek-zfs_src_prepare ;;
 			esac

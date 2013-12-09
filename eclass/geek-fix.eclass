@@ -59,16 +59,15 @@ geek-fix_init_variables() {
 
 	local disable_fixes_cfg=$(source $cfg_file 2>/dev/null; echo ${disable_fixes})
 	: ${disable_fixes:=${disable_fixes_cfg:-no}} # disable_fixes=yes/no
-	einfo "${BLUE}Disable fixes -->${NORMAL} ${RED}$disable_fixes${NORMAL}"
 }
+
+geek-fix_init_variables
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-fix_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-fix_init_variables
 
 	if [ "${disable_fixes}" = "no" ]; then
 		ApplyPatch "${FILESDIR}/${PV}/fix/patch_list" "${YELLOW}Fixes for current kernel${NORMAL}"

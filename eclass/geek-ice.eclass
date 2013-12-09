@@ -62,16 +62,19 @@ geek-ice_init_variables() {
 	: ${ICE_URL:=${ICE_URL:-"http://tuxonice.net"}}
 
 	: ${ICE_INF:=${ICE_INF:-"${YELLOW}TuxOnIce - ${ICE_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${ICE_URL}"}
-
-	: ${DEPEND:="${DEPEND}
-		ice?	( >=sys-apps/tuxonice-userui-1.0
-	|| ( >=sys-power/hibernate-script-2.0 sys-power/pm-utils ) )"}
-
-#	: ${SRC_URI:="${SRC_URI}
-#		ice?	( ${ICE_SRC} )"}
 }
+
+geek-ice_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${ICE_URL}"
+
+DEPEND="${DEPEND}
+	ice?	( dev-vcs/git
+		>=sys-apps/tuxonice-userui-1.0
+		|| ( >=sys-power/hibernate-script-2.0 sys-power/pm-utils ) )"
+
+#SRC_URI="${SRC_URI}
+#	ice?	( ${ICE_SRC} )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -79,12 +82,10 @@ geek-ice_init_variables() {
 geek-ice_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-ice_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/ice"
 	local CWD="${T}/ice"
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	dest="${CWD}"/tuxonice-kernel-"${PV}"-`date +"%Y%m%d"`.patch
 	wget "${ICE_SRC}" -O "${dest}" > /dev/null 2>&1
 	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
@@ -99,7 +100,8 @@ geek-ice_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/ice/patch_list" "${ICE_INF}"
-	mv "${T}/ice" "${S}/patches/ice" || die "${RED}mv ${T}/ice ${S}/patches/ice failed${NORMAL}"
+	mv "${T}/ice" "${WORKDIR}/linux-${KV_FULL}-patches/ice" || die "${RED}mv ${T}/ice ${WORKDIR}/linux-${KV_FULL}-patches/ice failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/ice/" "${WORKDIR}/linux-${KV_FULL}-patches/ice" || die "${RED}rsync -avhW --no-compress --progress ${T}/ice/ ${WORKDIR}/linux-${KV_FULL}-patches/ice failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

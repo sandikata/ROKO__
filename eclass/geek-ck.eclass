@@ -62,20 +62,20 @@ geek-ck_init_variables() {
 	: ${CK_URL:=${CK_URL:-"http://users.on.net/~ckolivas/kernel"}}
 
 	: ${CK_INF:=${CK_INF:-"${YELLOW}Con Kolivas high performance patchset - ${CK_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${CK_URL}"}
-
-	: ${SRC_URI:="${SRC_URI}
-		ck?( ${CK_SRC} )"}
 }
+
+geek-ck_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${CK_URL}"
+
+SRC_URI="${SRC_URI}
+	ck?	( ${CK_SRC} )"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-ck_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-ck_init_variables
 
 	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/patch-${CK_VER}.lrz" "${CK_INF}"
 

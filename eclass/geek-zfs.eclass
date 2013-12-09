@@ -58,21 +58,24 @@ geek-zfs_init_variables() {
 	: ${GEEK_STORE_DIR:=${GEEK_STORE_DIR:-"${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/geek"}}
 	addwrite "${GEEK_STORE_DIR}" # Disable the sandbox for this dir
 
-	: ${ZFS_VER:=${ZFS_VER:-$KMV}}
+	: ${ZFS_VER:=${ZFS_VER:-master}}
 
 	: ${ZFS_SRC:=${ZFS_SRC:-"git://github.com/zfsonlinux/zfs.git"}}
 
 	: ${ZFS_URL:=${ZFS_URL:-"http://zfsonlinux.org"}}
 
 	: ${ZFS_INF:=${ZFS_INF:-"${YELLOW}Integrate Native ZFS on Linux - ${ZFS_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${ZFS_URL}"}
-
-	: ${LICENSE:="${LICENSE} GPL-3"}
-
-	: ${DEPEND:="${DEPEND}
-		zfs?	( sys-fs/zfs[kernel-builtin(+)] )"}
 }
+
+geek-zfs_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${ZFS_URL}"
+
+LICENSE="${LICENSE} GPL-3"
+
+DEPEND="${DEPEND}
+	zfs?	( dev-vcs/git
+		=sys-fs/zfs-9999[kernel-builtin(+)] )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -80,8 +83,7 @@ geek-zfs_init_variables() {
 geek-zfs_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-zfs_init_variables
-
+	local CTD="${T}/zfs"
 	local CSD="${GEEK_STORE_DIR}/zfs"
 	local CWD="${T}/zfs"
 	shift
@@ -95,7 +97,13 @@ geek-zfs_src_unpack() {
 		git clone "${ZFS_SRC}" "${CSD}" > /dev/null 2>&1; cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"; git_get_all_branches
 	fi
 
-	cp -r "${CSD}" "${CWD}" || die "${RED}cp -r ${CSD} ${CWD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CWD}" || die "${RED}cp -r ${CSD} ${CWD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
+	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+
+	git_checkout "${ZFS_VER}" > /dev/null 2>&1 git pull > /dev/null 2>&1
+
 	rm -rf "${CWD}"/.git || die "${RED}rm -rf ${CWD}/.git failed${NORMAL}"
 }
 
@@ -117,6 +125,7 @@ geek-zfs_src_prepare() {
 		--includedir=/usr/include \
 		--datarootdir=/usr/share \
 		--enable-linux-builtin=yes \
+		--with-blkid \
 		--with-linux=${S} \
 		--with-linux-obj=${S} \
 		--with-spl="${T}/spl" \

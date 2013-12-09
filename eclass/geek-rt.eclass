@@ -62,20 +62,20 @@ geek-rt_init_variables() {
 	: ${RT_URL:=${RT_URL:-"http://www.kernel.org/pub/linux/kernel/projects/rt"}}
 
 	: ${RT_INF:=${RT_INF:-"${YELLOW}Ingo Molnar"\'"s realtime preempt patches - ${RT_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${RT_URL}"}
-
-	: ${SRC_URI:="${SRC_URI}
-		rt?( ${RT_SRC} )"}
 }
+
+geek-rt_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${RT_URL}"
+
+SRC_URI="${SRC_URI}
+	rt?	( ${RT_SRC} )"
 
 # @FUNCTION: src_prepare
 # @USAGE:
 # @DESCRIPTION: Prepare source packages and do any necessary patching or fixes.
 geek-rt_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-rt_init_variables
 
 	ApplyPatch "${PORTAGE_ACTUAL_DISTDIR:-${DISTDIR}}/patch-${RT_VER}.patch.xz" "${RT_INF}"
 }

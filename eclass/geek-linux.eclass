@@ -69,7 +69,7 @@ YELLOW="\x1b[33;01m"
 
 # 0 for 3.4.0
 if [ "${SUBLEVEL}" = "0" ] || [ "${PV}" = "${KMV}" ] ; then
-	: ${PV:="${KMV}"} # default PV=3.4.0 new PV=3.4
+	PV="${KMV}" # default PV=3.4.0 new PV=3.4
 	if [[ "${PR}" == "r0" ]] ; then
 		SKIP_UPDATE=1 # Skip update to latest upstream
 	fi
@@ -79,18 +79,40 @@ fi
 EXTRAVERSION=${EXTRAVERSION:-"-geek"}
 KV_FULL="${PVR}${EXTRAVERSION}"
 S="${WORKDIR}"/linux-"${KV_FULL}"
+
+DEPEND="!build? ( sys-apps/sed
+		  >=sys-devel/binutils-2.11.90.0.31 )"
+RDEPEND="!build? ( >=sys-libs/ncurses-5.2
+		   sys-devel/make
+		   dev-lang/perl
+		   sys-devel/bc )"
+PDEPEND="!build? ( virtual/dev-manager )"
+
 SLOT=${SLOT:-${KMV}}
 IUSE="${IUSE} symlink"
 
 case "$PR" in
-	r0)	extension="xz"
-		kurl="mirror://kernel/linux/kernel/v${VERSION}.0"
-		kversion="${KMV}"
-		if [ "${SUBLEVEL}" != "0" ] || [ "${PV}" != "${KMV}" ]; then
-			pversion="${PV}"
-			pname="patch-${pversion}.${extension}"
-			SRC_URI="${SRC_URI} ${kurl}/${pname}"
-		fi ;;
+	r0)	case "$VERSION" in
+		2)	extension="xz"
+			kurl="mirror://kernel/linux/kernel/v${KMV}/longterm/v${KMV}.${SUBLEVEL}"
+			kversion="${KMV}.${SUBLEVEL}"
+			if [ "${SUBLEVEL}" != "0" ] || [ "${PV}" != "${KMV}" ]; then
+				pversion="${PV}"
+				pname="patch-${pversion}.${extension}"
+				SRC_URI="${SRC_URI} ${kurl}/${pname}"
+			fi
+		;;
+		3)	extension="xz"
+			kurl="mirror://kernel/linux/kernel/v${VERSION}.0"
+			kversion="${KMV}"
+			if [ "${SUBLEVEL}" != "0" ] || [ "${PV}" != "${KMV}" ]; then
+				pversion="${PV}"
+				pname="patch-${pversion}.${extension}"
+				SRC_URI="${SRC_URI} ${kurl}/${pname}"
+			fi
+		;;
+		esac
+	;;
 	*)	extension="xz"
 		kurl="mirror://kernel/linux/kernel/v${VERSION}.0/testing"
 		kversion="${VERSION}.$((${PATCHLEVEL} - 1))"
@@ -98,8 +120,13 @@ case "$PR" in
 			pversion="${PVR//r/rc}"
 			pname="patch-${pversion}.${extension}"
 			SRC_URI="${SRC_URI} ${kurl}/${pname}"
-		fi ;;
-	esac
+		fi
+	;;
+esac
+
+case "$VERSION" in
+	2)	kurl="mirror://kernel/linux/kernel/v${KMV}" ;;
+esac
 
 kname="linux-${kversion}.tar.${extension}"
 SRC_URI="${SRC_URI} ${kurl}/${kname}"
@@ -117,17 +144,15 @@ geek-linux_init_variables() {
 
 	local rm_unneeded_arch_cfg=$(source $cfg_file 2>/dev/null; echo ${rm_unneeded_arch})
 	: ${rm_unneeded_arch:=${rm_unneeded_arch_cfg:-no}} # rm_unneeded-arch=yes/no
-	einfo "${BLUE}Remove unneeded architectures -->${NORMAL} ${RED}$rm_unneeded_arch${NORMAL}"
 }
 
+geek-linux_init_variables
 
 # @FUNCTION: src_unpack
 # @USAGE:
 # @DESCRIPTION: Extract source packages and do any necessary patching or fixes.
 geek-linux_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
-
-	geek-linux_init_variables
 
 	if [ "${A}" != "" ]; then
 		ebegin "Extract the sources"
@@ -231,7 +256,10 @@ geek-linux_src_install() {
 	dodir /usr/src
 	echo ">>> Copying sources ..."
 
-	mv ${WORKDIR}/linux* "${D}"/usr/src || die "${RED}mv ${WORKDIR}/linux* ${D}/usr/src failed${NORMAL}"
+#	mv ${WORKDIR}/linux* "${D}"/usr/src || die "${RED}mv ${WORKDIR}/linux* ${D}/usr/src failed${NORMAL}"
+#	rsync -avhW --no-compress --progress ${WORKDIR}/linux*/ "${D}"/usr/src || die "${RED}rsync -avhW --no-compress --progress ${WORKDIR}/linux*/ ${D}/usr/src failed${NORMAL}"
+	test -d "${D}/usr/src/linux-${KV_FULL}" >/dev/null 2>&1 || mkdir -p "${D}/usr/src/linux-${KV_FULL}"; (cd "${WORKDIR}/linux-${KV_FULL}"; tar cf - .) | (cd "${D}/usr/src/linux-${KV_FULL}"; tar xpf -)
+	test -d "${D}/usr/src/linux-${KV_FULL}-patches" >/dev/null 2>&1 || mkdir -p "${D}/usr/src/linux-${KV_FULL}-patches"; (cd "${WORKDIR}/linux-${KV_FULL}-patches"; tar cf - .) | (cd "${D}/usr/src/linux-${KV_FULL}-patches"; tar xpf -)
 
 	if use symlink; then
 		if [ -h "/usr/src/linux" ]; then

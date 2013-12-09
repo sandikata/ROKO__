@@ -65,9 +65,14 @@ geek-mageia_init_variables() {
 	: ${MAGEIA_URL:=${MAGEIA_URL:-"http://www.mageia.org"}}
 
 	: ${MAGEIA_INF:=${MAGEIA_INF:-"${YELLOW}Mageia - ${MAGEIA_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${MAGEIA_URL}"}
 }
+
+geek-mageia_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${MAGEIA_URL}"
+
+DEPEND="${DEPEND}
+	mageia?	( dev-vcs/subversion )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -75,14 +80,11 @@ geek-mageia_init_variables() {
 geek-mageia_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-mageia_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/mageia"
 	local CWD="${T}/mageia"
 	local CTD="${T}/mageia"$$
 	shift
-	cd "${CSD}" >/dev/null 2>&1
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	if [ -d ${CSD} ]; then
 	cd "${CSD}" || die "${RED}cd ${CSD} failed${NORMAL}"
 		if [ -e ".svn" ]; then # subversion
@@ -92,7 +94,9 @@ geek-mageia_src_unpack() {
 		svn co "${MAGEIA_SRC}" "${CSD}" > /dev/null 2>&1
 	fi
 
-	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
 	cd "${CTD}"/"${MAGEIA_VER}"/PATCHES || die "${RED}cd ${CTD}/${MAGEIA_VER}/PATCHES failed${NORMAL}"
 
 	find . -name "*.patch" | xargs -i cp "{}" "${CWD}"
@@ -109,7 +113,8 @@ geek-mageia_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/mageia/patch_list" "${MAGEIA_INF}"
-	mv "${T}/mageia" "${S}/patches/mageia" || die "${RED}mv ${T}/mageia ${S}/patches/mageia failed${NORMAL}"
+	mv "${T}/mageia" "${WORKDIR}/linux-${KV_FULL}-patches/mageia" || die "${RED}mv ${T}/mageia ${WORKDIR}/linux-${KV_FULL}-patches/mageia failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/mageia/" "${WORKDIR}/linux-${KV_FULL}-patches/mageia" || die "${RED}rsync -avhW --no-compress --progress ${T}/mageia/ ${WORKDIR}/linux-${KV_FULL}-patches/mageia failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

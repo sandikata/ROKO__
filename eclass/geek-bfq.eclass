@@ -62,9 +62,11 @@ geek-bfq_init_variables() {
 	: ${BFQ_URL:=${BFQ_URL:-"http://algo.ing.unimo.it/people/paolo/disk_sched/"}}
 
 	: ${BFQ_INF:=${BFQ_INF:-"${YELLOW}Budget Fair Queueing Budget I/O Scheduler - ${BFQ_URL}${NORMAL}"}}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${BFQ_URL}"}
 }
+
+geek-bfq_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${BFQ_URL}"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -72,12 +74,9 @@ geek-bfq_init_variables() {
 geek-bfq_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-bfq_init_variables
-
 	local CWD="${T}/bfq"
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
-	cd "${CWD}" || die "${RED}cd ${CWD} failed${NORMAL}"
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 
 	get_from_url "${BFQ_SRC}" "${BFQ_VER}" > /dev/null 2>&1
 
@@ -91,7 +90,8 @@ geek-bfq_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/bfq/patch_list" "${BFQ_INF}"
-	mv "${T}/bfq" "${S}/patches/bfq" || die "${RED}mv ${T}/bfq ${S}/patches/bfq failed${NORMAL}"
+	mv "${T}/bfq" "${WORKDIR}/linux-${KV_FULL}-patches/bfq" || die "${RED}mv ${T}/bfq ${WORKDIR}/linux-${KV_FULL}-patches/bfq failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/bfq/" "${WORKDIR}/linux-${KV_FULL}-patches/bfq" || die "${RED}rsync -avhW --no-compress --progress ${T}/bfq/ ${WORKDIR}/linux-${KV_FULL}-patches/bfq failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst

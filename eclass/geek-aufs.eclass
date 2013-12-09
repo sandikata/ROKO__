@@ -65,13 +65,16 @@ geek-aufs_init_variables() {
 	: ${AUFS_URL:=${AUFS_URL:-"http://aufs.sourceforge.net"}}
 
 	: ${AUFS_INF:="${YELLOW}Another UnionFS - ${AUFS_URL}${NORMAL}"}
-
-	: ${HOMEPAGE:="${HOMEPAGE} ${AUFS_URL}"}
-
-	: ${DEPEND:="${DEPEND}
-		sys-fs/aufs-util
-		sys-fs/squashfs-tools"}
 }
+
+geek-aufs_init_variables
+
+HOMEPAGE="${HOMEPAGE} ${AUFS_URL}"
+
+DEPEND="${DEPEND}
+	aufs?	( dev-vcs/git
+		sys-fs/aufs-util
+		sys-fs/squashfs-tools )"
 
 # @FUNCTION: src_unpack
 # @USAGE:
@@ -79,14 +82,11 @@ geek-aufs_init_variables() {
 geek-aufs_src_unpack() {
 	debug-print-function ${FUNCNAME} "$@"
 
-	geek-aufs_init_variables
-
 	local CSD="${GEEK_STORE_DIR}/aufs"
 	local CWD="${T}/aufs"
 	local CTD="${T}/aufs"$$
 	shift
-	test -d "${CWD}" >/dev/null 2>&1 || mkdir -p "${CWD}"
-
+	test -d "${CWD}" >/dev/null 2>&1 && cd "${CWD}" || mkdir -p "${CWD}"; cd "${CWD}"
 	if [ -d "${CSD}" ]; then
 		cd "${CSD}"
 		if [ -e ".git" ]; then # git
@@ -98,7 +98,9 @@ geek-aufs_src_unpack() {
 		git_get_all_branches
 	fi
 
-	cp -r "${CSD}" "${CTD}"
+#	cp -r "${CSD}" "${CTD}" || die "${RED}cp -r ${CSD} ${CTD} failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${CSD}/" "${CTD}" || die "${RED}rsync -avhW --no-compress --progress ${CSD}/ ${CTD} failed${NORMAL}"
+	test -d "${CTD}" >/dev/null 2>&1 || mkdir -p "${CTD}"; (cd "${CSD}"; tar cf - .) | (cd "${CTD}"; tar xpf -)
 	cd "${CTD}"
 
 	dir=( "Documentation" "fs" "include" )
@@ -108,7 +110,7 @@ geek-aufs_src_unpack() {
 
 	mkdir ../a ../b || die "${RED}mkdir ../a ../b failed${NORMAL}"
 	cp -r {Documentation,fs,include} ../b || die "${RED}cp -r {Documentation,fs,include} ../b failed${NORMAL}"
-	if [ ${KMV} == "3.4" ]; then
+	if [ ${KMV} == "3.0" -o ${KMV} == "3.2" -o ${KMV} == "3.4" ]; then
 		rm ../b/include/linux/Kbuild || die "${RED}rm ../b/include/linux/Kbuild failed${NORMAL}"
 	else
 		rm ../b/include/uapi/linux/Kbuild || die "${RED}rm ../b/include/uapi/linux/Kbuild failed${NORMAL}"
@@ -122,11 +124,12 @@ geek-aufs_src_unpack() {
 	done
 	rm -rf a b || die "${RED}rm -rf a b failed${NORMAL}"
 
-	cp "${CTD}"/aufs3-base.patch "${CWD}"/aufs3-base-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-base.patch ${CWD}/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
-	cp "${CTD}"/aufs3-standalone.patch "${CWD}"/aufs3-standalone-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-standalone.patch ${CWD}/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
-	cp "${CTD}"/aufs3-kbuild.patch "${CWD}"/aufs3-kbuild-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-kbuild.patch ${CWD}/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
-	cp "${CTD}"/aufs3-proc_map.patch "${CWD}"/aufs3-proc_map-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-proc_map.patch ${CWD}/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
-	cp "${CTD}"/aufs3-loopback.patch "${CWD}"/aufs3-loopback-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-loopback.patch ${CWD}/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}"
+	[[ -r "${CTD}/aufs3-base.patch" ]] && (cp "${CTD}"/aufs3-base.patch "${CWD}"/aufs3-base-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-base.patch ${CWD}/aufs3-base-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
+	[[ -r "${CTD}/aufs3-standalone.patch" ]] && (cp "${CTD}"/aufs3-standalone.patch "${CWD}"/aufs3-standalone-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-standalone.patch ${CWD}/aufs3-standalone-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
+	[[ -r "${CTD}/aufs3-kbuild.patch" ]] && (cp "${CTD}"/aufs3-kbuild.patch "${CWD}"/aufs3-kbuild-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-kbuild.patch ${CWD}/aufs3-kbuild-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
+	[[ -r "${CTD}/aufs3-proc_map.patch" ]] && (cp "${CTD}"/aufs3-proc_map.patch "${CWD}"/aufs3-proc_map-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-proc_map.patch ${CWD}/aufs3-proc_map-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
+	[[ -r "${CTD}/aufs3-mmap.patch" ]] && (cp "${CTD}"/aufs3-mmap.patch "${CWD}"/aufs3-mmap-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-mmap.patch ${CWD}/aufs3-mmap-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
+	[[ -r "${CTD}/aufs3-loopback.patch" ]] && (cp "${CTD}"/aufs3-loopback.patch "${CWD}"/aufs3-loopback-${AUFS_VER}-`date +"%Y%m%d"`.patch || die "${RED}cp ${CTD}/aufs3-loopback.patch ${CWD}/aufs3-loopback-${aufs_ver}-`date +"%Y%m%d"`.patch failed${NORMAL}")
 
 	rm -rf "${CTD}" || die "${RED}rm -rf ${CTD} failed${NORMAL}"
 
@@ -140,7 +143,8 @@ geek-aufs_src_prepare() {
 	debug-print-function ${FUNCNAME} "$@"
 
 	ApplyPatch "${T}/aufs/patch_list" "${AUFS_INF}"
-	mv "${T}/aufs" "${S}/patches/aufs" || die "${RED}mv ${T}/aufs ${S}/patches/aufs failed${NORMAL}"
+	mv "${T}/aufs" "${WORKDIR}/linux-${KV_FULL}-patches/aufs" || die "${RED}mv ${T}/aufs ${WORKDIR}/linux-${KV_FULL}-patches/aufs failed${NORMAL}"
+#	rsync -avhW --no-compress --progress "${T}/aufs/" "${WORKDIR}/linux-${KV_FULL}-patches/aufs" || die "${RED}rsync -avhW --no-compress --progress ${T}/aufs/ ${WORKDIR}/linux-${KV_FULL}-patches/aufs failed${NORMAL}"
 }
 
 # @FUNCTION: pkg_postinst
