@@ -57,7 +57,7 @@ geek-optimization_init_variables() {
 
 	: ${OPTIMIZATION_VER:=${OPTIMIZATION_VER:-$KMV}}
 
-	: ${OPTIMIZATION_SRC:=${OPTIMIZATION_SRC:-"https://raw.github.com/graysky2/kernel_gcc_patch/master/kernel-${KMV/./}-gcc48-${OPTIMIZATION_VER}.patch"}}
+	: ${OPTIMIZATION_SRC:=${OPTIMIZATION_SRC:-"https://raw.github.com/graysky2/kernel_gcc_patch/master/enable_additional_cpu_optimizations_for_gcc.patch"}}
 
 	: ${OPTIMIZATION_URL:=${OPTIMIZATION_URL:-"https://github.com/graysky2/kernel_gcc_patch"}}
 

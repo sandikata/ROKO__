@@ -57,7 +57,7 @@ geek-bld_init_variables() {
 
 	: ${BLD_VER:=${BLD_VER:-$KMV}}
 
-	: ${BLD_SRC:=${BLD_SRC:-"http://bld.googlecode.com/files/bld-${BLD_VER}.patch"}}
+	: ${BLD_SRC:=${BLD_SRC:-"http://bld.googlecode.com/files/BLD-${BLD_VER}.patch"}}
 
 	: ${BLD_URL:=${BLD_URL:-"http://code.google.com/p/bld"}}
 
