@@ -1,0 +1,37 @@
+From 177783e194c6db40cc6dece9fc7ad848a54d85b7 Mon Sep 17 00:00:00 2001
+From: Sebastian Pipping <sebastian@pipping.org>
+Date: Mon, 24 Jun 2013 15:59:14 +0200
+Subject: [PATCH] Prefer GTK+ over Metal in non-KDE Linux/BSD environment (e.g.
+ XFCE), too
+
+---
+ src/net/java/sip/communicator/impl/gui/UIServiceImpl.java | 6 ------
+ 1 file changed, 6 deletions(-)
+
+diff --git a/src/net/java/sip/communicator/impl/gui/UIServiceImpl.java b/src/net/java/sip/communicator/impl/gui/UIServiceImpl.java
+index 33fa243..a3abe47 100644
+--- a/src/net/java/sip/communicator/impl/gui/UIServiceImpl.java
++++ b/src/net/java/sip/communicator/impl/gui/UIServiceImpl.java
+@@ -895,11 +895,6 @@ public class UIServiceImpl
+             {
+                 try
+                 {
+-                    String kdeFullSession = System.getenv("KDE_FULL_SESSION");
+-
+-                    if ((kdeFullSession != null)
+-                            && (kdeFullSession.length() != 0))
+-                    {
+                         for (LookAndFeelInfo lafi
+                                 : UIManager.getInstalledLookAndFeels())
+                         {
+@@ -909,7 +904,6 @@ public class UIServiceImpl
+                                 break;
+                             }
+                         }
+-                    }
+                 }
+                 catch (Throwable t)
+                 {
+-- 
+1.8.2.1
+
