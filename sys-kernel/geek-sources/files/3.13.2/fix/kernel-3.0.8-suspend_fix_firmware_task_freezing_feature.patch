@@ -1,0 +1,21 @@
+diff --git a/arch/x86/kernel/microcode_core.c b/arch/x86/kernel/microcode_core.c
+index f924280..cd7ef2f 100644
+--- a/arch/x86/kernel/microcode_core.c
++++ b/arch/x86/kernel/microcode_core.c
+@@ -483,7 +483,15 @@ mc_cpu_callback(struct notifier_block *nb, unsigned long action, void *hcpu)
+ 		sysfs_remove_group(&sys_dev->kobj, &mc_attr_group);
+ 		pr_debug("CPU%d removed\n", cpu);
+ 		break;
+-	case CPU_DEAD:
++
++	/*
++	 * Do not invalidate the microcode if a CPU goes offline,
++	 * because it would be impossible to get the microcode again
++	 * from userspace when the CPU comes back up, if the userspace
++	 * happens to be frozen at that moment by the freezer subsystem,
++	 * for example, due to a suspend operation in progress.
++	 */
++
+ 	case CPU_UP_CANCELED_FROZEN:
+ 		/* The CPU refused to come up during a system resume */
+ 		microcode_fini_cpu(cpu);

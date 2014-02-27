@@ -1,0 +1,102 @@
+change-default-console-loglevel.patch
+
+linux-003-no_dev_console.patch
+linux-004_lower_undefined_mode_timeout.patch
+linux-006_enable_utf8.patch
+linux-007_die_floppy_die.patch
+linux-009_disable_i8042_check_on_apple_mac.patch
+linux-052-XBOX_remote_support.patch
+linux-053-spinelplus-remote-0.2.patch
+linux-054-nuvoton_revert_d7b290a1056c5564eec8a1b169c6e84ff3.6.114c13.patch
+linux-055-add_Formosa_eHome_Infrared_Receiver.patch
+linux-056-add_Adaptec_eHome_Infrared_Receiver.patch
+linux-057-add_SMK_Manufacturing_Inc_Infrared_Receiver.patch
+linux-057-Removed-MCE-customer-code-restriction-in-rc6-decode.patch
+linux-058.05-hid_sony-add_autorepeat_for_PS3_remotes.patch
+linux-058.06-hid_sony-add_SMK_link.patch
+linux-059-remove_some_xpad_pids-0.2.patch
+linux-060-add_AUGUST_DVB-T205.patch
+linux-203-stb0899_enable_low_symbol_rate.patch
+linux-210-dvbsky.patch
+linux-212-mantis_stb0899_faster_lock.patch
+linux-221-ngene-octopus.patch
+linux-222-stb0899_signal_quality.patch
+linux-223-Fix-video-artifacts-with-tt-3600-s2-usb.patch
+linux-701-linksys_aes2500_brcmfmac.patch
+linux-703-macmini2012-ethernet.patch
+linux-704-Support-for-Ubiquiti-WifiStation.patch
+linux-705-Support-for-Buffalo-WLI-UC-G300HP-V1.patch
+linux-706-Sitecom-N300.patch
+linux-801-fix-radeon-si-performance-issue.patch
+linux-802-fix-radeon-7xxx-performance-issue.patch
+linux-900-hide_tsc_error.patch
+linux-950-saa716x_PCIe_interface_chipset.patch
+linux-990.06-hda-Avoid-outputting-HDMI-audio-before-prepare-.patch
+linux-991.01-ptrace_fix.patch
+linux-995-CX24120-13Z_frontend.patch
+
+# allow criu without expert option set
+# patch from fedora
+criu-no-expert.patch
+
+# add Gentoo patches
+2700_ThinkPad-30-brightness-control-fix.patch
+
+# fix 15 seocnds nfs delay
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=4b9a445e3eeb8bd9278b1ae51c1b3a651e370cd6
+0001-sunrpc-create-a-new-dummy-pipe-for-gssd-to-hold-open.patch
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=89f842435c630f8426f414e6030bc2ffea0d6f81
+0002-sunrpc-replace-sunrpc_net-gssd_running-flag-with-a-m.patch
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=6aa23d76a7b549521a03b63b6d5b7880ea87eab7
+0003-nfs-check-if-gssd-is-running-before-attempting-to-us.patch
+
+# fix nfs kernel oops
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=3396f92f8be606ea485b0a82d4e7749a448b013b
+0004-rpc_pipe-remove-the-clntXX-dir-if-creating-the-pipe-.patch
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=e2f0c83a9de331d9352185ca3642616c13127539
+0005-sunrpc-add-an-info-file-for-the-dummy-gssd-pipe.patch
+# http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=23e66ba97127ff3b064d4c6c5138aa34eafc492f
+0006-rpc_pipe-fix-cleanup-of-dummy-gssd-directory-when-no.patch
+
+# Fix i8042 aliases
+i8042-fix-aliases.patch
+
+kernel-2.6.35-430-scsi_header_fix.patch
+kernel-2.6.28.10-MSG_PEEK_race_msg.patch
+kernel-3.2.1-8139cp.patch
+kernel26-2.6.18-bt8xx.patch
+kernel-2.6.20-freezer.patch
+kernel-2.6.19-hda_snd_intel-null_pointer.patch
+kernel-2.6.35-usbstorage-disable_delay_use.patch
+kernel-2.6.21-VT3351_disable_msi.patch
+kernel-2.6.21-kvm_wbinvd.patch
+kernel-2.6.22-ppc_PM_NEEDS_RTC_LIB.patch
+kernel-2.6.22-ppc_export_vgacon_remap_base.patch
+kernel-2.6.26-snd_hda_intel_zepto.patch
+kernel-2.6.26-fglrx_disable_gpl_check.patch
+kernel-2.6.26-atl1_disable_TSO.patch
+kernel-2.6.30-fglrx_flush_tlb_page.patch
+kernel-2.6.30-wmi_fix.patch
+kernel-3.2.1-rtl8139too.patch
+kernel-2.6.33-lzo_decompressor_fix.patch
+kernel-2.6.33.5-squashfs-fixes.patch
+kernel-2.6.33.7-make-3.82.patch
+kernel-2.6.33-dns_resolve_include.patch
+kernel-2.6.33-fix_dependence_for_intel_agp_module.patch
+kernel-2.6.35-CTI_USB-485-Mini_USB-Nano-485.patch
+kernel-2.6.33-tpm_calc_ordinal_duration.patch
+kernel-2.6.35.10-drm-radeon-r600-cs-checker-fixes.patch
+kernel-2.6.37.1-radeon_flickering_fix.patch
+kernel-2.6.35-vga_dont_ask.patch
+kernel-3.1-arm_missing_includes.patch
+kernel-2.6.38.6-arm-rtlwifi-eliminate_udelay.patch
+kernel-3.2-elantech.patch
+kernel-3.0.8-suspend_fix_firmware_task_freezing_feature.patch
+kernel-3.2-arm_remove_BUILD_BUG_ON_from_bug_h.patch
+kernel-3.2.9-asix_sitecom_ln_031.patch
+kernel-3.2.16-ipw2200_fix.patch
+kernel-3.2-option_add_Huawey-E352.patch
+kernel-3.7.1-libata_restore_acpi_disable_functionality.patch
+kernel-3.4.24-ACPI_do_not_use_Lid_and_Sleep_button_for_S5_wakeup.patch
+kernel-3.8.3-arm-imx-drm-buildfix.patch
+kernel-3.10.2-arm-mtd_omap2_allow_building_as_a_module.patch

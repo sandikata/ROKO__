@@ -1,0 +1,10 @@
+--- 1.53/arch/ppc/kernel/setup.c        Thu Feb 19 05:42:24 2004
++++ edited/arch/ppc/kernel/setup.c      Wed Apr 28 14:27:12 2004
+@@ -83,6 +83,7 @@
+
+ #ifdef CONFIG_VGA_CONSOLE
+ unsigned long vgacon_remap_base;
++EXPORT_SYMBOL(vgacon_remap_base);
+ #endif
+
+ struct machdep_calls ppc_md;

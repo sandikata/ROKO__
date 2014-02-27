@@ -1,0 +1,12 @@
+diff -Nru kernel26-2.6.18mamba.orig/drivers/media/video/bt8xx/bttvp.h kernel26-2.6.18mamba/drivers/media/video/bt8xx/bttvp.h
+--- kernel26-2.6.18mamba.orig/drivers/media/video/bt8xx/bttvp.h	2006-09-20 05:42:06.000000000 +0200
++++ kernel26-2.6.18mamba/drivers/media/video/bt8xx/bttvp.h	2006-09-22 13:48:19.000000000 +0200
+@@ -49,7 +49,7 @@
+ 
+ #include "bt848.h"
+ #include "bttv.h"
+-#include "btcx-risc.h"
++#include "../btcx-risc.h"
+ 
+ #ifdef __KERNEL__
+ 

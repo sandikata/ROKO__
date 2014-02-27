@@ -1,0 +1,11 @@
+--- kernel-2.6.33mamba-ppc.orig/fs/cifs/dns_resolve.h	2010-08-16 22:56:17.470128075 +0200
++++ kernel-2.6.33mamba-ppc/fs/cifs/dns_resolve.h	2010-08-16 22:52:41.522253342 +0200
+@@ -23,6 +23,8 @@
+ #ifndef _DNS_RESOLVE_H
+ #define _DNS_RESOLVE_H
+ 
++#include <linux/module.h>
++
+ #ifdef __KERNEL__
+ extern int __init cifs_init_dns_resolver(void);
+ extern void cifs_exit_dns_resolver(void);

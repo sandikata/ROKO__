@@ -1,0 +1,22 @@
+diff -ru kernel-2.6.38mamba-arm.orig//drivers/dma/pch_dma.c kernel-2.6.38mamba-arm/drivers/dma/pch_dma.c
+--- kernel-2.6.38mamba-arm.orig//drivers/dma/pch_dma.c	2011-05-14 16:12:25.650768202 +0200
++++ kernel-2.6.38mamba-arm/drivers/dma/pch_dma.c	2011-05-14 16:08:03.266987477 +0200
+@@ -24,6 +24,7 @@
+ #include <linux/interrupt.h>
+ #include <linux/module.h>
+ #include <linux/pch_dma.h>
++#include <linux/slab.h>
+ 
+ #define DRV_NAME "pch-dma"
+ 
+diff -ru kernel-2.6.38mamba-arm.orig//drivers/gpio/gpio-ml-ioh.c kernel-2.6.38mamba-arm/drivers/gpio/ml_ioh_gpio.c
+--- kernel-2.6.38mamba-arm.orig//drivers/gpio/gpio-ml-ioh.c	2011-05-14 16:12:49.406381203 +0200
++++ kernel-2.6.38mamba-arm/drivers/gpio/gpio-ml-ioh.c	2011-05-14 16:07:17.392970223 +0200
+@@ -17,6 +17,7 @@
+ #include <linux/kernel.h>
+ #include <linux/pci.h>
+ #include <linux/gpio.h>
++#include <linux/slab.h>
+ 
+ #define PCI_VENDOR_ID_ROHM             0x10DB
+ 

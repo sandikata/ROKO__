@@ -1,0 +1,10 @@
+--- kernel-2.6.19mamba/drivers/net/ethernet/realtek/8139cp.orig	2006-11-30 19:33:18.000000000 +0100
++++ kernel-2.6.19mamba/drivers/net/ethernet/realtek/8139cp.c	2006-11-30 19:33:26.000000000 +0100
+@@ -401,7 +401,6 @@
+ 			 struct ethtool_eeprom *eeprom, u8 *data);
+ 
+ static DEFINE_PCI_DEVICE_TABLE(cp_pci_tbl) = {
+-	{ PCI_DEVICE(PCI_VENDOR_ID_REALTEK,	PCI_DEVICE_ID_REALTEK_8139), },
+ 	{ PCI_DEVICE(PCI_VENDOR_ID_TTTECH,	PCI_DEVICE_ID_TTTECH_MC322), },
+ 	{ },
+ };

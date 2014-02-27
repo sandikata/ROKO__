@@ -1,0 +1,86 @@
+From 32f519d32ca9ca0f84e81953c8d9ddefdb7771d3 Mon Sep 17 00:00:00 2001
+From: Alex Deucher <alexdeucher@gmail.com>
+Date: Sun, 13 Feb 2011 18:38:23 -0500
+Subject: [PATCH] drm/radeon/kms: hopefully fix pll issues for real (v3)
+
+The problematic boards have a recommended reference divider
+to be used when spread spectrum is enabled on the laptop panel.
+Enable the use of the recommended reference divider along with
+the new pll algo.
+
+v2: testing options
+
+v3: When using the fixed reference divider with
+LVDS, prefer min m to max p and use fractional feedback dividers.
+
+Signed-off-by: Alex Deucher <alexdeucher@gmail.com>
+Cc: stable@kernel.org
+---
+ drivers/gpu/drm/radeon/atombios_crtc.c |   22 ++++++++--------------
+ 1 files changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/gpu/drm/radeon/atombios_crtc.c b/drivers/gpu/drm/radeon/atombios_crtc.c
+index 1bf6122..3127a28 100644
+--- a/drivers/gpu/drm/radeon/atombios_crtc.c
++++ b/drivers/gpu/drm/radeon/atombios_crtc.c
+@@ -538,7 +538,6 @@ static u32 atombios_adjust_pll(struct drm_crtc *crtc,
+ 			pll->flags |= RADEON_PLL_PREFER_HIGH_FB_DIV;
+ 		else
+ 			pll->flags |= RADEON_PLL_PREFER_LOW_REF_DIV;
+-
+ 	}
+ 
+ 	list_for_each_entry(encoder, &dev->mode_config.encoder_list, head) {
+@@ -555,29 +554,28 @@ static u32 atombios_adjust_pll(struct drm_crtc *crtc,
+ 					dp_clock = dig_connector->dp_clock;
+ 				}
+ 			}
+-/* this might work properly with the new pll algo */
+-#if 0 /* doesn't work properly on some laptops */
++
+ 			/* use recommended ref_div for ss */
+ 			if (radeon_encoder->devices & (ATOM_DEVICE_LCD_SUPPORT)) {
++				pll->flags |= RADEON_PLL_PREFER_MINM_OVER_MAXP;
+ 				if (ss_enabled) {
+ 					if (ss->refdiv) {
+ 						pll->flags |= RADEON_PLL_USE_REF_DIV;
+ 						pll->reference_div = ss->refdiv;
++						if (ASIC_IS_AVIVO(rdev))
++							pll->flags |= RADEON_PLL_USE_FRAC_FB_DIV;
+ 					}
+ 				}
+ 			}
+-#endif
++
+ 			if (ASIC_IS_AVIVO(rdev)) {
+ 				/* DVO wants 2x pixel clock if the DVO chip is in 12 bit mode */
+ 				if (radeon_encoder->encoder_id == ENCODER_OBJECT_ID_INTERNAL_KLDSCP_DVO1)
+ 					adjusted_clock = mode->clock * 2;
+ 				if (radeon_encoder->active_device & (ATOM_DEVICE_TV_SUPPORT))
+ 					pll->flags |= RADEON_PLL_PREFER_CLOSEST_LOWER;
+-				/* rv515 needs more testing with this option */
+-				if (rdev->family != CHIP_RV515) {
+-					if (radeon_encoder->devices & (ATOM_DEVICE_LCD_SUPPORT))
+-						pll->flags |= RADEON_PLL_IS_LCD;
+-				}
++				if (radeon_encoder->devices & (ATOM_DEVICE_LCD_SUPPORT))
++					pll->flags |= RADEON_PLL_IS_LCD;
+ 			} else {
+ 				if (encoder->encoder_type != DRM_MODE_ENCODER_DAC)
+ 					pll->flags |= RADEON_PLL_NO_ODD_POST_DIV;
+@@ -957,11 +955,7 @@ static void atombios_crtc_set_pll(struct drm_crtc *crtc, struct drm_display_mode
+ 	/* adjust pixel clock as needed */
+ 	adjusted_clock = atombios_adjust_pll(crtc, mode, pll, ss_enabled, &ss);
+ 
+-	/* rv515 seems happier with the old algo */
+-	if (rdev->family == CHIP_RV515)
+-		radeon_compute_pll_legacy(pll, adjusted_clock, &pll_clock, &fb_div, &frac_fb_div,
+-					  &ref_div, &post_div);
+-	else if (ASIC_IS_AVIVO(rdev))
++	if (ASIC_IS_AVIVO(rdev))
+ 		radeon_compute_pll_avivo(pll, adjusted_clock, &pll_clock, &fb_div, &frac_fb_div,
+ 					 &ref_div, &post_div);
+ 	else
+-- 
+1.7.1.1
+

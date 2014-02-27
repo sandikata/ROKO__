@@ -1,0 +1,11 @@
+--- kernel-2.6.35mamba/drivers/usb/storage/usb.c.orig	2011-02-28 01:11:31.203872385 +0100
++++ kernel-2.6.35mamba/drivers/usb/storage/usb.c	2011-02-28 01:11:44.133071045 +0100
+@@ -78,7 +78,7 @@
+ MODULE_DESCRIPTION("USB Mass Storage driver for Linux");
+ MODULE_LICENSE("GPL");
+ 
+-static unsigned int delay_use = 1;
++static unsigned int delay_use = 0;
+ module_param(delay_use, uint, S_IRUGO | S_IWUSR);
+ MODULE_PARM_DESC(delay_use, "seconds to delay before using a new device");
+ 

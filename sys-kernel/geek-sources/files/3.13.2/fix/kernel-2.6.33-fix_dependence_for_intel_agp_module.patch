@@ -1,0 +1,80 @@
+From 3d1c7b93431f07c10c22cd09ab6c676841c6c69b Mon Sep 17 00:00:00 2001
+From: Zhenyu Wang <zhenyuw@linux.intel.com>
+Date: Tue, 23 Feb 2010 13:58:40 +0800
+Subject: [PATCH] drm/i915: fix dependence for intel agp module
+
+See http://bugzilla.kernel.org/show_bug.cgi?id=15021
+
+This one trys to ensure the module dependence with drm/i915
+on intel_agp module by using a exported symbol. Because intel_agp
+is a subdriver for agp, so the required dependence isn't built
+with i915 subdriver for drm. I hope this is not too strange..
+
+Signed-off-by: Zhenyu Wang <zhenyuw@linux.intel.com>
+---
+ drivers/char/agp/intel-agp.c    |   10 ++++++++--
+ drivers/gpu/drm/i915/i915_drv.c |    6 ++++++
+ 2 files changed, 14 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/char/agp/intel-agp.c b/drivers/char/agp/intel-agp.c
+index e5ffefe..c921ee2 100644
+--- a/drivers/char/agp/intel-agp.c
++++ b/drivers/char/agp/intel-agp.c
+@@ -10,6 +10,9 @@
+ #include <linux/agp_backend.h>
+ #include "agp.h"
+ 
++int intel_agp_enabled;
++EXPORT_SYMBOL(intel_agp_enabled);
++
+ /*
+  * If we have Intel graphics, we're not going to have anything other than
+  * an Intel IOMMU. So make the correct use of the PCI DMA API contingent
+@@ -2378,7 +2381,7 @@ static int __devinit agp_intel_probe(struct pci_dev *pdev,
+ 	struct agp_bridge_data *bridge;
+ 	u8 cap_ptr = 0;
+ 	struct resource *r;
+-	int i;
++	int i, err;
+ 
+ 	cap_ptr = pci_find_capability(pdev, PCI_CAP_ID_AGP);
+ 
+@@ -2470,7 +2473,10 @@ static int __devinit agp_intel_probe(struct pci_dev *pdev,
+ 	}
+ 
+ 	pci_set_drvdata(pdev, bridge);
+-	return agp_add_bridge(bridge);
++	err = agp_add_bridge(bridge);
++	if (!err)
++		intel_agp_enabled = 1;
++	return err;
+ }
+ 
+ static void __devexit agp_intel_remove(struct pci_dev *pdev)
+diff --git a/drivers/gpu/drm/i915/i915_drv.c b/drivers/gpu/drm/i915/i915_drv.c
+index cf4cb3e..48ae2c2 100644
+--- a/drivers/gpu/drm/i915/i915_drv.c
++++ b/drivers/gpu/drm/i915/i915_drv.c
+@@ -49,6 +49,7 @@ unsigned int i915_lvds_downclock = 0;
+ module_param_named(lvds_downclock, i915_lvds_downclock, int, 0400);
+ 
+ static struct drm_driver driver;
++extern int intel_agp_enabled;
+ 
+ #define INTEL_VGA_DEVICE(id, info) {		\
+ 	.class = PCI_CLASS_DISPLAY_VGA << 8,	\
+@@ -546,6 +547,11 @@ static struct drm_driver driver = {
+ 
+ static int __init i915_init(void)
+ {
++	if (!intel_agp_enabled) {
++		DRM_ERROR("drm/i915 can't work without intel_agp module!\n");
++		return -ENODEV;
++	}
++
+ 	driver.num_ioctls = i915_max_ioctl;
+ 
+ 	i915_gem_shrinker_init();
+-- 
+1.6.3.3
+

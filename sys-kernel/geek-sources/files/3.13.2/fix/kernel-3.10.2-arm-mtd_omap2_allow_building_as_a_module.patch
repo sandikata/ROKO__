@@ -1,0 +1,12 @@
+--- kernel-3.10mamba-arm/drivers/mtd/nand/Kconfig.orig	2013-07-01 00:13:29.000000000 +0200
++++ kernel-3.10mamba-arm/drivers/mtd/nand/Kconfig	2013-07-23 12:33:22.442708624 +0200
+@@ -95,8 +95,7 @@
+ 
+ config MTD_NAND_OMAP_BCH
+ 	depends on MTD_NAND && MTD_NAND_OMAP2 && ARCH_OMAP3
+-	bool "Enable support for hardware BCH error correction"
+-	default n
++	tristate "Enable support for hardware BCH error correction"
+ 	select BCH
+ 	select BCH_CONST_PARAMS
+ 	help
