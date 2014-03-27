@@ -317,7 +317,7 @@ src_prepare() {
 
 	# LibGL fix permissions
 	epatch "${FILESDIR}/fglrx-14.3-libgl-permission-fix.patch"
-
+	#epatch "${FILESDIR}/ati-drivers-13.8-proc-permissions.diff"
 	cd "${MODULE_DIR}"
 
 	# bugged fglrx build system, this file should be copied by hand
