@@ -49,7 +49,7 @@ DEPEND="media-libs/aalib
 		sys-apps/dbus
 		dvd? ( media-libs/libdca media-libs/libdvdnav media-libs/libdvdread )
 		dirac? ( media-video/dirac media-libs/schroedinger )
-		media-libs/libdvbpsi
+		=media-libs/libdvbpsi-0.2.2
 		aac? ( media-libs/faad2 )
 		flac? ( media-libs/flac )
 		ogg? ( media-libs/libogg media-libs/libkate )
