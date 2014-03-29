@@ -2,22 +2,29 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
-EAPI=2
-inherit eutils linux-info
+EAPI=5
+inherit autotools eutils linux-info systemd ubuntu-versionator
+
+UURL="mirror://ubuntu/pool/main/u/${PN}"
+URELEASE="trusty"
+UVER="16"
 
 DESCRIPTION="Ureadahead - Read files in advance during boot"
 HOMEPAGE="https://launchpad.net/ureadahead"
-SRC_URI="http://launchpad.net/ureadahead/trunk/${PV}/+download/${P}.tar.gz"
+SRC_URI="${UURL}/${MY_P}.orig.tar.gz
+	${UURL}/${MY_P}-${UVER}.diff.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
+RESTRICT="mirror"
 
 RDEPEND="sys-libs/libnih
 	sys-apps/util-linux
-	>=sys-fs/e2fsprogs-1.41"
-
+	>=sys-fs/e2fsprogs-1.41
+	|| ( sys-kernel/ubuntu-sources
+		sys-kernel/zen-sources )"
 DEPEND="${RDEPEND}
 	sys-devel/gettext
 	virtual/pkgconfig"
@@ -25,8 +32,9 @@ DEPEND="${RDEPEND}
 CONFIG_CHECK="~FTRACE ~DEBUG_FS"
 
 src_prepare() {
-	epatch "${FILESDIR}"/${P}-16.patch   # Downloaded from upstream
-	epatch "${FILESDIR}"/${P}-gold.patch
+	# Ubuntu patchset #
+	epatch -p1 "${WORKDIR}/${PN}_${PV}-16.diff" || die
+	eautoreconf
 }
 
 src_configure() {
@@ -37,15 +45,17 @@ src_install() {
 	emake DESTDIR="${D}" install || die "emake install failed"
 	rm -r "${D}/etc/init"
 	newinitd "${FILESDIR}"/ureadahead.initd ureadahead
+	systemd_dounit "${FILESDIR}/${PN}-collect.service" "${FILESDIR}/${PN}-replay.service"
 	keepdir /var/lib/ureadahead
-	dodoc TODO 0001-trace-add-trace-events-for-open-exec-an.patch
 }
 
 pkg_postinst() {
-	elog "ureadahead needs some kernel tuning to work"
-	elog "Kernel hacking -> Tracers (FTRACE)"
-	elog "Kernel hacking -> Tracers -> Trace process context switches and events (ENABLE_DEFAULT_TRACERS)"
-	elog "which should also select 'Kernel hacking -> Debug Filesystem' (DEBUG_FS))"
-	elog "Also, you MAY have to apply 0001-trace-add-trace-events-for-open-exec-an.patch"
-	elog "from /usr/share/doc/${PF}/ on your kernel source."
+	ubuntu-versionator_pkg_postinst
+	elog "To enable ureadahead, as root do:"
+	elog "systemctl enable ureadahead-collect.service"
+	elog
+	elog "If systemd-readahead is enabled, it is recommended it be disabled when using ureadahead"
+	elog
+	elog "To disable systemd-readahead, as root do:"
+	elog "systemctl disable systemd-readahead-collect.service systemd-readahead-replay.service"
 }

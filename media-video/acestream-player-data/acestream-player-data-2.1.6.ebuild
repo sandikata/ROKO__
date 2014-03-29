@@ -42,14 +42,14 @@ DEPEND="media-libs/aalib
 		pulseaudio? ( media-sound/pulseaudio )
 		portaudio? ( media-libs/portaudio )
 		avahi? ( net-dns/avahi )
-		=media-video/ffmpeg-0.10.9[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
+		<=media-video/ffmpeg-0.10.99[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
 		media-libs/acestream-x264
 		cddb? ( media-libs/libcddb )
 		cdda? ( media-libs/libcddb dev-libs/libcdio )
 		sys-apps/dbus
 		dvd? ( media-libs/libdca media-libs/libdvdnav media-libs/libdvdread )
 		dirac? ( media-video/dirac media-libs/schroedinger )
-		media-libs/libdvbpsi
+		=media-libs/libdvbpsi-0.2.2
 		aac? ( media-libs/faad2 )
 		flac? ( media-libs/flac )
 		ogg? ( media-libs/libogg media-libs/libkate )

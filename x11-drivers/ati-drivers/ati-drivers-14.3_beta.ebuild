@@ -315,6 +315,12 @@ src_prepare() {
 	# Compile fix, https://bugs.gentoo.org/show_bug.cgi?id=454870
 	use pax_kernel && epatch "${FILESDIR}/const-notifier-block.patch"
 
+<<<<<<< HEAD
+=======
+	# LibGL fix permissions
+	epatch "${FILESDIR}/fglrx-14.3-libgl-permission-fix.patch"
+	#epatch "${FILESDIR}/ati-drivers-13.8-proc-permissions.diff"
+>>>>>>> 0849d2ee7f51cc6f725d4671eae1047a68475ca5
 	cd "${MODULE_DIR}"
 
 	# bugged fglrx build system, this file should be copied by hand

@@ -68,9 +68,6 @@ PDEPEND=">=gnome-extra/cinnamon-1.8.0"
 src_prepare() {
 	epatch "${FILESDIR}/${PN}-optional-bt-colord.patch"
 	epatch "${FILESDIR}/${PN}-optional-kerberos.patch"
-#	epatch "${FILESDIR}/gnomerrlabeler.patch"
-#	epatch "${FILESDIR}/idle-delay.patch"
-#	epatch "${FILESDIR}/remove_obex.patch"
 	eautoreconf
 	gnome2_src_prepare
 

@@ -2,7 +2,11 @@ diff --git a/common/lib/modules/fglrx/build_mod/firegl_public.c b/common/lib/mod
 index 22561c5..6480d1a 100755
 --- a/common/lib/modules/fglrx/build_mod/firegl_public.c
 +++ b/common/lib/modules/fglrx/build_mod/firegl_public.c
+<<<<<<< HEAD
 @@ -821,7 +821,7 @@ static struct proc_dir_entry *firegl_proc_init( device_t *dev,
+=======
+@@ -822,7 +822,7 @@ static struct proc_dir_entry *firegl_proc_init( device_t *dev,
+>>>>>>> 0849d2ee7f51cc6f725d4671eae1047a68475ca5
      KCL_DEBUG1(FN_FIREGL_PROC, "minor %d, proc_list 0x%08lx\n", minor, (unsigned long)proc_list);
      if (!minor)
      {

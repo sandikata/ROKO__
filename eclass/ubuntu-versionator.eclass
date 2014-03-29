@@ -18,9 +18,24 @@
 # If this occurs, the ebuild should be named package-3.6.0a_p0_p02
 
 
-EXPORT_FUNCTIONS pkg_pretend
+EXPORT_FUNCTIONS pkg_pretend pkg_postinst
+
+#---------------------------------------------------------------------------------------------------------------------------------#
+### GLOBAL ECLASS INHERIT DEFAULTS ##
+
+## distutils-r1.eclass ##
+# Set this to catch future parallel build problems, parallel builds give us no real benefit for our tiny python packages #
+export DISTUTILS_NO_PARALLEL_BUILD=1
+
+## vala.eclass ##
+# Set base sane vala version for all packages requiring vala, override in ebuild if or when specific higher versions are needed #
+export VALA_MIN_API_VERSION=${VALA_MIN_API_VERSION:=0.20}
+export VALA_MAX_API_VERSION=${VALA_MAX_API_VERSION:=0.20}
+export VALA_USE_DEPEND="vapigen"
+#---------------------------------------------------------------------------------------------------------------------------------#
 
 PV="${PV%%[a-z]_p*}"	# For package-3.6.0a_p0_p02
+PV="${PV%%[a-z]*}"	# For package-3.6.0a
 PV="${PV%%_p*}"		# For package-3.6.0_p0_p02
 PV="${PV%%_*}"		# For package-3.6.0_p_p02
 
@@ -51,7 +66,12 @@ done
 
 PVR_PL_MINOR="${strarray[@]}"
 PVR_PL_MINOR="${PVR_PL_MINOR// /.}"
-UVER="${PVR_PL_MAJOR}ubuntu${PVR_PL_MINOR}"
+
+if [ "${PN}" = "ubuntu-sources" ]; then
+	UVER="${PVR_PL_MAJOR}.${PVR_PL_MINOR}"
+else
+	UVER="${PVR_PL_MAJOR}ubuntu${PVR_PL_MINOR}"
+fi
 
 ## Check we have the correct masking in place for the overlay to work ##
 ubuntu-versionator_pkg_pretend() {
@@ -60,4 +80,22 @@ ubuntu-versionator_pkg_pretend() {
 
 	grep -R '\*/\*::unity-gentoo' /etc/portage/package.keywords* &> /dev/null || \
 		die "Please place '*/*::unity-gentoo' in your package.keywords file"
+}
+
+ubuntu-versionator_pkg_postinst() {
+	## Create a new bamf-2.index file at postinst stage of every package to capture all *.desktop files ##
+	if [[ -x /usr/bin/bamf-index-create ]]; then
+		einfo "Checking bamf-2.index"
+			/usr/bin/bamf-index-create triggered
+	fi
+
+	## If sys-apps/ureadahead is installed, force re-profiling of ureadahead's database at next boot ##
+	if [[ -n "$(systemctl list-unit-files --no-pager | grep ureadahead)" ]] && \
+		[[ "$(systemctl is-enabled ureadahead-collect.service)" = "enabled" ]]; then
+			if [[ -w /var/lib/ureadahead/pack ]] && \
+				[[ -d "${ED}etc" ]]; then
+					elog "Ureadahead will be reprofiled on next reboot"
+						rm -f /var/lib/ureadahead/pack /var/lib/ureadahead/*.pack 2> /dev/null
+			fi
+	fi
 }
