@@ -1,0 +1,15 @@
+diff -Nur src_orig/audacious-plugins-3.3.2/src/pulse_audio/pulse_audio.c src_new/audacious-plugins-3.3.2/src/pulse_audio/pulse_audio.c
+--- src_orig/audacious-plugins-3.3.2/src/pulse_audio/pulse_audio.c	2012-09-23 10:05:12.000000000 -0300
++++ src_new/audacious-plugins-3.3.2/src/pulse_audio/pulse_audio.c	2012-09-24 02:02:19.986001973 -0300
+@@ -542,7 +542,10 @@
+         goto unlock_and_fail;
+     }
+ 
+-    if (!(stream = pa_stream_new(context, "Audacious", &ss, NULL))) {
++    pa_channel_map cmap;
++    pa_channel_map_init_auto(&cmap, nch, PA_CHANNEL_MAP_WAVEEX);
++
++    if (!(stream = pa_stream_new(context, "Audacious", &ss, &cmap))) {
+         ERROR ("Failed to create stream: %s", pa_strerror(pa_context_errno(context)));
+         goto unlock_and_fail;
+     }
