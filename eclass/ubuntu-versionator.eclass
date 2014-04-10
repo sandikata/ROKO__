@@ -18,7 +18,7 @@
 # If this occurs, the ebuild should be named package-3.6.0a_p0_p02
 
 
-EXPORT_FUNCTIONS pkg_pretend pkg_postinst
+EXPORT_FUNCTIONS pkg_postinst
 
 #---------------------------------------------------------------------------------------------------------------------------------#
 ### GLOBAL ECLASS INHERIT DEFAULTS ##
@@ -74,13 +74,13 @@ else
 fi
 
 ## Check we have the correct masking in place for the overlay to work ##
-ubuntu-versionator_pkg_pretend() {
-	readlink /etc/portage/package.mask/unity-portage.pmask &> /dev/null || \
-		die "Please create symlink 'ln -s /var/lib/layman/unity-gentoo/unity-portage.pmask /etc/portage/package.mask/unity-portage.pmask'"
-
-	grep -R '\*/\*::unity-gentoo' /etc/portage/package.keywords* &> /dev/null || \
-		die "Please place '*/*::unity-gentoo' in your package.keywords file"
-}
+#ubuntu-versionator_pkg_pretend() {
+#	readlink /etc/portage/package.mask/unity-portage.pmask &> /dev/null || \
+#		die "Please create symlink 'ln -s /var/lib/layman/unity-gentoo/unity-portage.pmask /etc/portage/package.mask/unity-portage.pmask'"
+#
+#	grep -R '\*/\*::unity-gentoo' /etc/portage/package.keywords* &> /dev/null || \
+#		die "Please place '*/*::unity-gentoo' in your package.keywords file"
+#}
 
 ubuntu-versionator_pkg_postinst() {
 	## Create a new bamf-2.index file at postinst stage of every package to capture all *.desktop files ##
