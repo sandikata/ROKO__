@@ -22,7 +22,7 @@ IUSE="+gtk"
 
 DEPEND="dev-python/m2crypto[${PYTHON_USEDEP}]
 		dev-python/apsw[${PYTHON_USEDEP}]
-		gtk? ( >=dev-libs/libappindicator-12.10.1_p0_p04 )"
+		gtk? ( >=dev-libs/libappindicator-12.10.2_p0_p02 )"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}"
