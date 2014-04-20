@@ -17,6 +17,7 @@ DEPEND="
 	x11-apps/xrandr
 	x11-apps/xdpyinfo
 	sys-apps/gawk
+	sys-apps/pciutils
 "
 RDEPEND="${DEPEND}"
 
