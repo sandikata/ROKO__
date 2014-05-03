@@ -1,0 +1,11 @@
+--- caffeine/core.py	2013-12-10 23:59:00.000000000 +0200
++++ caffeine/core-patched.py	2014-04-13 20:32:58.000000000 +0300
+@@ -137,7 +137,7 @@
+         """Toggle the screensaver and powersaving with the interfaces used by freedesktop.org."""
+ 
+         bus = dbus.SessionBus()
+-        self.susuProxy = bus.get_object('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver')
++        self.susuProxy = bus.get_object('org.freedesktop.ScreenSaver', '/ScreenSaver')
+         self.iface = dbus.Interface(self.susuProxy, 'org.freedesktop.ScreenSaver')
+         if self.sleepIsPrevented:
+             if self.screenSaverCookie != None:

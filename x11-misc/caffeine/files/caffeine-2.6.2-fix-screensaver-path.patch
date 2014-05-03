@@ -1,0 +1,11 @@
+--- caffeine/core.py	2014-02-03 16:16:10.000000000 +0200
++++ caffeine/core-patched.py	2014-04-06 19:23:30.000000000 +0300
+@@ -146,7 +146,7 @@
+         """Toggle inhibition of desktop idleness with the freedesktop.org interface."""
+
+         bus = dbus.SessionBus()
+-        self.susuProxy = bus.get_object('org.freedesktop.ScreenSaver', '/org/freedesktop/ScreenSaver')
++        self.susuProxy = bus.get_object('org.freedesktop.ScreenSaver', '/ScreenSaver')
+         self.iface = dbus.Interface(self.susuProxy, 'org.freedesktop.ScreenSaver')
+         if self.sleepIsPrevented:
+             if self.screenSaverCookie != None:
