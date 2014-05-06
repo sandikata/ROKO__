@@ -1,4 +1,4 @@
-# Copyright 1999-2013 Gentoo Foundation
+# Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $Header: $
 
@@ -33,10 +33,11 @@ COMMON_DEPEND="
 	>=media-libs/clutter-1.7.5:1.0[introspection]
 	app-misc/ca-certificates
 	>=dev-libs/json-glib-0.13.2
-	>=gnome-extra/cinnamon-desktop-2.0.3
+	>=gnome-extra/cinnamon-desktop-2.2
+	>=gnome-extra/cinnamon-menus-2.2
 	>=gnome-base/gsettings-desktop-schemas-2.91.91
-	>=media-libs/gstreamer-0.10.16:0.10
-	>=media-libs/gst-plugins-base-0.10.16:0.10
+	>=media-libs/gstreamer-1.0:1.0
+	>=media-libs/gst-plugins-base-1.0:1.0
 	net-libs/libsoup:2.4[introspection]
 	>=sys-auth/polkit-0.100[introspection]
 	>=x11-wm/muffin-1.9.1[introspection]
@@ -59,17 +60,16 @@ COMMON_DEPEND="
 	${PYTHON_DEPS}
 
 	>=net-misc/networkmanager-0.9
-	>=net-wireless/cinnamon-bluetooth-3.8.2
 "
 RDEPEND="${COMMON_DEPEND}
 	>=gnome-base/dconf-0.4.1
 	>=gnome-base/libgnomekbd-2.91.4[introspection]
 	sys-power/upower[introspection]
 
-	>=gnome-extra/cinnamon-control-center-2.0.7
-	>=gnome-extra/cinnamon-screensaver-2.0.3
-	>=gnome-extra/cinnamon-session-2.0.5
-	>=gnome-extra/cinnamon-settings-daemon-2.0.7
+	>=gnome-extra/cinnamon-control-center-2.2
+	>=gnome-extra/cinnamon-screensaver-2.2
+	>=gnome-extra/cinnamon-session-2.2
+	>=gnome-extra/cinnamon-settings-daemon-2.2
 
 	>=sys-apps/accountsservice-0.6.14[introspection]
 
@@ -107,12 +107,9 @@ pkg_setup() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}/background.patch"
-	epatch "${FILESDIR}/screensaver.patch"
-	epatch "${FILESDIR}/remove_GC.patch"
-	epatch "${FILESDIR}/keyboard_applet.patch"
-	epatch "${FILESDIR}/input_keybindings.patch"
-	epatch "${FILESDIR}/lspci.patch"
+	epatch "${FILESDIR}/upower_calendar_fix.patch"
+	epatch "${FILESDIR}/set_wheel.patch"
+	epatch "${FILESDIR}/remove_bluetooth.patch"
 
 	# Gentoo uses /usr/$(get_libdir), not /usr/lib even for python
 	sed -e "s:/usr/lib/:/usr/$(get_libdir)/:" \
