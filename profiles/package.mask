@@ -4,11 +4,6 @@
 =sys-apps/inxi-9999
 
 # Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20121016 19:27
-# Коментар: Бета
-=x11-drivers/nvidia-drivers-310.14
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
 # Дата: 20130605 19:27
 # Коментар: gcc-4.8 фикс
 =sys-firmware/ipxe-1.0.0_p20120905-r1
@@ -22,3 +17,9 @@
 # Дата: 20131105 17:21
 # Коментар: Лайно!
 =kde-misc/veromix-0.18.3
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20140506 13:31
+# Коментар: за тестване 
+# Comment: for testing
+=sys-devel/gcc-4.9.0
