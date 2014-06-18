@@ -1,0 +1,16 @@
+diff -urNp skype-4.3.0.37.orig/skype.desktop skype-4.3.0.37/skype.desktop
+--- skype-4.3.0.37.orig/skype.desktop	2014-06-18 20:46:33.553714853 +0300
++++ skype-4.3.0.37/skype.desktop	2014-06-18 20:47:51.550722817 +0300
+@@ -2,10 +2,10 @@
+ Name=Skype
+ Comment=Skype Internet Telephony
+ Exec=skype %U
+-Icon=skype.png
++Icon=skype
+ Terminal=false
+ Type=Application
+ Encoding=UTF-8
+-Categories=Network;Application;
++Categories=Network;InstantMessaging;Telephony;
+ MimeType=x-scheme-handler/skype;
+ X-KDE-Protocols=skype
