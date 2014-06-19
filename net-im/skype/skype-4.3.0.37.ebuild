@@ -20,6 +20,10 @@ RESTRICT="mirror strip" #299368
 
 EMUL_X86_VER=20120520
 
+DEPEND="
+	>=media-sound/pulseaudio-4.0
+"
+
 RDEPEND="
 	virtual/ttf-fonts
 	amd64? (
