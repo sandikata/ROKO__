@@ -12,7 +12,7 @@ SRC_URI="http://download.${PN}.com/linux/${P}.tar.bz2"
 
 LICENSE="${PN}-4.0.0.7-copyright ${PN}-4.0.0.7-third-party_attributions.txt"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 IUSE="pax_kernel selinux"
 
 QA_PREBUILT=opt/bin/${PN}
@@ -115,6 +115,7 @@ pkg_postinst() {
 	# http://bugs.gentoo.org/360815
 	elog "For webcam support, see \"LD_PRELOAD\" section of \"README.lib\" document provided by"
 	elog "media-libs/libv4l package and \"README\" document of this package."
+	elog "For this to work, you must delete /home/"${USER}"/.Skype оtherwise, will not start."
 	if use amd64; then
 		elog "You can install app-emulation/emul-linux-x86-medialibs package for the 32bit"
 		elog "libraries from the media-libs/libv4l package."
