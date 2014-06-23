@@ -72,7 +72,7 @@ src_install() {
 		newicon -s ${size} "${MAXTHON_HOME}/product_logo_${size}.png" ${PN}-browser.png
 	done
 
-	dosym "/usr/$(get_libdir)/libudev.so"  "${MAXTHON_HOME}/libudev.so.0"	
+	dosym "/usr/$(get_libdir)/libudev.so.1.4.0"  "${MAXTHON_HOME}/libudev.so.0"	
 	domenu "${MAXTHON_HOME}"/${PN}.desktop
 	
 }
