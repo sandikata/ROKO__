@@ -31,7 +31,7 @@ RDEPEND="${DEPEND}"
 
 src_configure() {
 	cd "${WORKDIR}"/"${PN}-${PV}"
-#	./waf wscript
+	./waf wscript
 	./waf configure
 	./waf build
 	./waf install
