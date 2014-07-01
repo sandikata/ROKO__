@@ -16,12 +16,12 @@ RESTRICT="mirror"
 LICENSE="GPL3"
 SLOT="0"
 KEYWORDS=""
-IUSE=""
+IUSE="dockmanager"
 
 DEPEND="dev-python/pygobject
 	dev-python/pygtk
 	dev-python/gconf-python
-	dev-python/imaging
+	dev-python/pillow
 	dev-python/libwnck-python
 	dev-python/gnome-applets-python
 	dev-libs/keybinder[python]
@@ -29,7 +29,8 @@ DEPEND="dev-python/pygobject
 	dev-python/python-xlib
 	=x11-libs/libwnck-2.31.0
 	=gnome-base/gnome-menus-2.30.5-r1
-	=gnome-base/gnome-panel-2.32.1-r3"
+	=gnome-base/gnome-panel-2.32.1-r3
+	dockmanager? ( x11-misc/dockmanager )"
 RDEPEND="${DEPEND}"
 
 pkg_setup() {
