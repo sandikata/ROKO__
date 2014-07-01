@@ -23,6 +23,9 @@ DEPEND="dev-python/pygobject
 	dev-python/gconf-python
 	dev-python/imaging
 	dev-python/libwnck-python
+	dev-python/gnome-applets-python
+	dev-python/gnome-vfs-python
+	dev-python/libgnome-python
 	dev-libs/keybinder[python]
 	dev-python/pyxdg
 	dev-python/python-xlib"

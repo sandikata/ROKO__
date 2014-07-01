@@ -4,7 +4,7 @@
 
 EAPI=5
 
-inherit xfconf distutils eutils python vala waf-utils
+inherit xfconf  python vala waf-utils
 
 PYTHON_DEPEND="2:2.7"
 RESTRICT_PYTHON_ABIS="3.*"
@@ -24,13 +24,16 @@ DEPEND="dev-lang/vala
 "
 RDEPEND="${DEPEND}"
 
+src_prepare() {
+	vala_src_prepare
+}
+
 src_configure() {
 	cd "${WORKDIR}"/"${PN}-${PV}"
 	waf-utils_src_configure
 	waf-utils_src_compile
-	waf-utils_src_install
 }
 
-#src_install() {
-#
-#}
+src_install() {
+	waf-utils_src_install
+}
