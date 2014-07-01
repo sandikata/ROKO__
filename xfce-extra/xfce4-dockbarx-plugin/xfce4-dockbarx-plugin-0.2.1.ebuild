@@ -36,6 +36,7 @@ src_configure() {
 	./waf build
 }
 
-#src_install() {
-#
-#}
+src_install() {
+	cd "${WORKDIR}"/"${PN}-${PV}"
+	./waf install
+}
