@@ -22,6 +22,7 @@ DEPEND="dev-python/pygobject
 	dev-python/pygtk
 	dev-python/gconf-python
 	dev-python/imaging
+	dev-python/libwnck-python
 	dev-libs/keybinder[python]
 	dev-python/pyxdg
 	dev-python/python-xlib"
