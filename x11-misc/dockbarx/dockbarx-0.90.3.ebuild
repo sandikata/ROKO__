@@ -16,7 +16,7 @@ SRC_URI="https://launchpad.net/dockbar/dockbarx/"${PV}"/+download/"${PN}"_"${PV}
 
 LICENSE="GPL3"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="x86 amd64"
 IUSE="dockmanager"
 
 DEPEND="dev-python/pygobject

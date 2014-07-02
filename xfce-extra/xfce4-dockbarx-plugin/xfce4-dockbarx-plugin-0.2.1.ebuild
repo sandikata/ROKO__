@@ -15,7 +15,7 @@ SRC_URI="http://tiz.qc.to/pub/xfce4-dockbarx-plugin-${PV}.tar.bz2"
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="x86 amd64"
 IUSE=""
 
 DEPEND="dev-lang/vala
