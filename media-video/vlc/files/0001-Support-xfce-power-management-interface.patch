@@ -1,0 +1,72 @@
+From acdce10ae4f34b350717b70fe4598f979b96e861 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Rafa=C3=ABl=20Carr=C3=A9?= <funman@videolan.org>
+Date: Sat, 26 Oct 2013 00:56:37 +0200
+Subject: [PATCH] Support xfce power management interface
+
+---
+ modules/misc/inhibit/dbus.c | 18 +++++++++++++++---
+ 1 file changed, 15 insertions(+), 3 deletions(-)
+
+diff --git a/modules/misc/inhibit/dbus.c b/modules/misc/inhibit/dbus.c
+index d878bf9..4130b10 100644
+--- a/modules/misc/inhibit/dbus.c
++++ b/modules/misc/inhibit/dbus.c
+@@ -40,25 +40,36 @@ enum vlc_inhibit_api
+ {
+     FDO_SS, /**< KDE >= 4 and GNOME >= 3.10 */
+     FDO_PM, /**< KDE and GNOME <= 2.26 */
++    XFCE,
+     MATE,  /**< >= 1.0 */
+     GNOME, /**< GNOME 2.26..3.4 */
+ };
+ 
+ #define MAX_API (GNOME+1)
+ 
+-/* Currently, all services have identical service and interface names. */
+ static const char dbus_service[][40] =
+ {
+     [FDO_SS] = "org.freedesktop.ScreenSaver",
+     [FDO_PM] = "org.freedesktop.PowerManagement.Inhibit",
++    [XFCE]   = "org.freedesktop.PowerManagement",
+     [MATE]   = "org.mate.SessionManager",
+     [GNOME]  = "org.gnome.SessionManager",
+ };
+ 
+-static const char dbus_path[][33] =
++static const char dbus_interface[][40] =
++{
++    [FDO_SS] = "org.freedesktop.ScreenSaver",
++    [FDO_PM] = "org.freedesktop.PowerManagement.Inhibit",
++    [XFCE]   = "org.freedesktop.PowerManagement.Inhibit",
++    [MATE]   = "org.mate.SessionManager",
++    [GNOME]  = "org.gnome.SessionManager",
++};
++
++static const char dbus_path[][41] =
+ {
+     [FDO_SS] = "/ScreenSaver",
+     [FDO_PM] = "/org/freedesktop/PowerManagement",
++    [XFCE]   = "/org/freedesktop/PowerManagement/Inhibit",
+     [MATE]   = "/org/mate/SessionManager",
+     [GNOME]  = "/org/gnome/SessionManager",
+ };
+@@ -67,6 +78,7 @@ static const char dbus_method_uninhibit[][10] =
+ {
+     [FDO_SS] = "UnInhibit",
+     [FDO_PM] = "UnInhibit",
++    [XFCE]   = "UnInhibit",
+     [MATE]   = "Uninhibit",
+     [GNOME]  = "Uninhibit",
+ };
+@@ -119,7 +131,7 @@ static void Inhibit(vlc_inhibit_t *ih, unsigned flags)
+     dbus_bool_t ret;
+ 
+     DBusMessage *msg = dbus_message_new_method_call(dbus_service[type],
+-                                  dbus_path[type], dbus_service[type], method);
++                                  dbus_path[type], dbus_interface[type], method);
+     if (unlikely(msg == NULL))
+         return;
+ 
+-- 
+1.8.3.2
+
