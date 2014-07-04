@@ -11,7 +11,7 @@ SRC_URI="mirror://xfce/src/panel-plugins/${PN}/0.1/${P}.tar.bz2"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="alpha amd64 arm ia64 ppc ppc64 sparc x86"
+KEYWORDS=""
 IUSE=""
 
 RDEPEND=">=x11-libs/gtk+-2.4:2

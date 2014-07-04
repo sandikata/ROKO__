@@ -23,3 +23,10 @@
 # Коментар: за тестване 
 # Comment: for testing
 =sys-devel/gcc-4.9.0
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20140704 14:41
+# Коментар: скоро ще бъде изтрит
+# Comment: will be removed soon
+
+xfce-extra/xfce4-xfapplet-plugin
