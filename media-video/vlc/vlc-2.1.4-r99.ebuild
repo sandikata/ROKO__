@@ -242,8 +242,9 @@ src_prepare() {
 	epatch "${FILESDIR}"/${PN}-2.1.0-TomWij-bisected-PA-broken-underflow.patch
 
 	# Inhibit xfce power manager
-	epatch "${FILESDIR}"/0001-Support-xfce-power-management-interface.patch
-	epatch "${FILESDIR}"/0001-Fix-D-Bus-path-for-freedesktop.org-screen-saver.patch
+#	epatch "${FILESDIR}"/0001-Support-xfce-power-management-interface.patch
+#	epatch "${FILESDIR}"/0001-Fix-D-Bus-path-for-freedesktop.org-screen-saver.patch
+	epatch "${FILESDIR}"/54477_54476.diff
 
 	# Disable avcodec checks when avcodec is not used.
 	sed -i 's/^#if LIBAVCODEC_VERSION_CHECK(.*)$/#if 0/' modules/codec/avcodec/fourcc.c || die
