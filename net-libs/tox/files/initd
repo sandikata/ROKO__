@@ -1,0 +1,35 @@
+#!/sbin/runscript
+
+PIDFILE=/run/tox-dht-bootstrap.pid
+LOGDIR=/var/log/tox-dht-bootstrap
+RUNDIR=/var/lib/tox-dht-bootstrap
+
+depend() {
+	need net
+}
+
+start() {
+	ebegin "Starting tox-dht-bootstrap daemon"
+
+	[ -d "${LOGDIR}" ] || mkdir -p "${LOGDIR}"
+	[ -d "${RUNDIR}" ] || mkdir -p "${RUNDIR}"
+	chown -R nobody:nobody "${LOGDIR}" "${RUNDIR}"
+
+	start-stop-daemon --start \
+		--pidfile "${PIDFILE}" --make-pidfile --background \
+		--stdout "${LOGDIR}/stdout" --stderr "${LOGDIR}/stderr" \
+		--chdir "${RUNDIR}" \
+		--user=nobody --group=nobody \
+		--exec /usr/bin/DHT_bootstrap
+
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping tox-dht-bootstrap daemon"
+
+	start-stop-daemon --stop \
+		--pidfile "${PIDFILE}"
+
+	eend $?
+}

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer>
+		<email>holgersson@posteo.de</email>
+		<name>holgersson</name>
+	</maintainer>
+	<use>
+		<flag name="av">Adds support for audio and video.</flag>
+		<flag name="logging">Enables logging, useful for debugging.</flag>
+		<flag name="ntox">Enable the testing nTox client.</flag>
+		<flag name="daemon">Enable the DHT Bootstrap Daemon</flag>
+	</use>
+</pkgmetadata>
