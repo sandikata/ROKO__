@@ -1,5 +1,6 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 2009-2014 Andrey Ovcharov <sudormrfhalt@gmail.com>
 # Distributed under the terms of the GNU General Public License v2
+# $Header: $
 
 EAPI="5"
 
@@ -19,7 +20,7 @@ DESCRIPTION="The GNU Compiler Collection"
 
 LICENSE="GPL-3+ LGPL-3+ || ( GPL-3+ libgcc libstdc++ gcc-runtime-library-exception-3.1 ) FDL-1.3+"
 
-KEYWORDS="~amd64 ~amd64-linux ~x86 ~x86-linux"
+KEYWORDS="amd64 amd64-linux ~x86 ~x86-linux"
 
 RDEPEND=""
 DEPEND="${RDEPEND}
@@ -32,7 +33,7 @@ if [[ ${CATEGORY} != cross-* ]] ; then
 fi
 
 src_prepare() {
-	export BRANDING_GCC_PKGVERSION="Gentoo Live"
+	export BRANDING_GCC_PKGVERSION="Gentoo Blitznote"
 
 	toolchain_src_prepare
 
