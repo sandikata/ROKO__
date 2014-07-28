@@ -10,6 +10,7 @@ DESCRIPTION="Vala/Gtk+ graphical user interface for Tox"
 
 HOMEPAGE="http://wiki.tox.im/Venom"
 EGIT_REPO_URI="https://github.com/naxuroqa/Venom.git"
+EGIT_BRANCH="av"
 
 LICENSE="GPL-3+"
 SLOT="0"
