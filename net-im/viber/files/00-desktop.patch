@@ -1,0 +1,11 @@
+--- usr/share/applications/viber.desktop.old	2014-04-03 12:24:38.000000000 +0400
++++ usr/share/applications/viber.desktop	2014-04-03 12:25:03.000000000 +0400
+@@ -6,5 +6,5 @@
+ Terminal=false
+ Type=Application
+ Encoding=UTF-8
+-Categories=Network;Application;
+-Path=
++Categories=Network;
++Path=/opt/viber
+
