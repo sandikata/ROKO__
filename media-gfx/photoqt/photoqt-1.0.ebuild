@@ -15,6 +15,6 @@ KEYWORDS="~x86 ~amd64"
 IUSE=""
 
 DEPEND="media-gfx/exiv2
-	media-libs/qtphonon
+	dev-qt/qtphonon
 	media-gfx/graphicsmagick"
 RDEPEND="${DEPEND}"
