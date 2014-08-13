@@ -29,10 +29,3 @@ mtd -r write /tmp/tplink.bin firmware
 
 
 and wait until flash complete!
-
-melquiferreira
-     
-    Posts: 5
-    Joined: Sat Oct 05, 2013 7:14 am
-
-

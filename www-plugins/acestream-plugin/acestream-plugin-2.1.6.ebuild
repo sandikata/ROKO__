@@ -18,7 +18,8 @@ KEYWORDS="~x86 ~amd64"
 IUSE=""
 
 DEPEND="~media-video/acestream-player-data-${PV}
-		net-p2p/acestream-engine"
+		net-p2p/acestream-engine
+	<=www-client/firefox-29.0"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}"
