@@ -19,7 +19,7 @@ IUSE=""
 
 DEPEND="~media-video/acestream-player-data-${PV}
 		net-p2p/acestream-engine
-	<=www-client/firefox-29.0"
+	<=www-client/firefox-29.0.99"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}"
