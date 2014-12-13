@@ -21,8 +21,8 @@ RDEPEND="
 	dev-python/notify-python
 	media-libs/mutagen
 	dev-python/simplejson
-	dev-python/gst-python:1.0
-	media-plugins/gst-plugins-meta:1.0
+	dev-python/gst-python:0.10
+	media-plugins/gst-plugins-meta:0.10
 	"
 
 DEPEND="${RDEPEND}"
