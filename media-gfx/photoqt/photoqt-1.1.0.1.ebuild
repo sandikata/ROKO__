@@ -21,3 +21,6 @@ DEPEND="dev-qt/qtmultimedia:5
 		media-gfx/exiv2"
 RDEPEND="${DEPEND}"
 
+src_install() {
+	ewarn "This version of the photo is stable but remains in ~arch while Gentoo Team unmasks qt:5"
+}
