@@ -3,11 +3,13 @@
 # $Header: $
 
 EAPI=5
-inherit cmake-utils 
+
+inherit cmake-utils git-2
 
 DESCRIPTION="Simple but powerful Qt5-based image viewer"
 HOMEPAGE="http://photoqt.org"
-SRC_URI="http://photoqt.org/pkgs/${P}.tar.gz"
+#SRC_URI="http://photoqt.org/pkgs/${P}.tar.gz"
+EGIT_REPO_URI="git://github.com/luspi/photoqt-dev.git"
 
 LICENSE="GPL-2"
 SLOT="0"
@@ -17,10 +19,15 @@ DEPEND="dev-qt/qtmultimedia:5
 		dev-qt/qtimageformats:5
 		dev-qt/qtgui:5
 		dev-qt/qtnetwork:5
+		dev-qt/qtwidgets:5
+		dev-qt/linguist:5
+		dev-qt/linguist-tools:5
+		dev-qt/qtsql:5
+		dev-qt/qtsvg:5
 		media-gfx/graphicsmagick
 		media-gfx/exiv2"
 RDEPEND="${DEPEND}"
 
-src_install() {
-	ewarn "This version of the photo is stable but remains in ~arch while Gentoo Team unmasks qt:5"
+pkg_postinst() {
+	ewarn "This version of the photoqt is masked while Gentoo Team unmasks qt:5"
 }

@@ -56,7 +56,7 @@ DEPEND="media-libs/aalib
 		mad? ( media-libs/libmad )
 		mpeg? ( media-libs/libmpeg2 media-sound/twolame )
 		dev-libs/fribidi
-		dev-libs/libgcrypt
+		=dev-libs/libgcrypt-1.5.4-r100
 		dev-libs/libgpg-error
 		media-libs/mesa
 		dev-qt/qtwebkit

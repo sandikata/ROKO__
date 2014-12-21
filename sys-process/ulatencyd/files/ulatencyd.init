@@ -1,0 +1,16 @@
+#!/sbin/runscript
+
+LOGFILE=/var/log/ulatencyd.log
+
+start() {
+    ebegin "Starting ulatencyd"
+    start-stop-daemon --start --exec /usr/sbin/ulatencyd \
+	-- --daemonize --log-file ${LOGFILE}
+  eend $? 
+}
+
+stop() {
+    ebegin "Stopping ulatencyd"
+    start-stop-daemon --stop --exec /usr/sbin/ulatencyd
+    eend $?
+}
