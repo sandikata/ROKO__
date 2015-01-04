@@ -4,7 +4,7 @@
 
 EAPI=5
 inherit gnome2-utils eutils rpm
-PYTHON_DEPEND="3:3.3"
+PYTHON_DEPEND="3:3.2"
 
 DESCRIPTION=""
 HOMEPAGE="http://sourceforge.net/projects/gis-weather/"
@@ -19,7 +19,8 @@ DEPEND="dev-python/pygobject:3
 	dev-libs/gobject-introspection[cairo]
 	<=x11-libs/gtk+-3.12.2
 	gnome-base/librsvg
-	dev-libs/libappindicator"
+	dev-libs/libappindicator
+	dev-lang/python:3"
 
 RDEPEND="${DEPEND}"
 
