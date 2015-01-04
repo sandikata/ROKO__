@@ -17,8 +17,10 @@ IUSE=""
 
 DEPEND="dev-python/pygobject:3
 	dev-libs/gobject-introspection[cairo]
-	x11-libs/gtk+:3
-	gnome-base/librsvg"
+	<=x11-libs/gtk+-3.12.2
+	gnome-base/librsvg
+	dev-libs/libappindicator"
+
 RDEPEND="${DEPEND}"
 
 S=${WORKDIR}
