@@ -20,7 +20,7 @@ DEPEND="dev-python/pygobject:3
 	<=x11-libs/gtk+-3.12.2
 	gnome-base/librsvg
 	dev-libs/libappindicator
-	dev-lang/python:3"
+	dev-lang/python:3.3"
 
 RDEPEND="${DEPEND}"
 
