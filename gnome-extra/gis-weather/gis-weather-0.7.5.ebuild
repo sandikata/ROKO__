@@ -12,7 +12,7 @@ SRC_URI="mirror://sourceforge/gis-weather/${PN}-${PV}-2.noarch.rpm"
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="~amd64 x86"
 IUSE=""
 
 DEPEND="dev-python/pygobject:3

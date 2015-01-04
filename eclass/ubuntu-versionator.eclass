@@ -7,18 +7,19 @@
 #  <patchlevel>ubuntu<revision> strings for Ubuntu based SRC_URIs
 
 ## Naming convention examples ##
-# 0ubuntu0.12.10.3	= package-3.6.0_p0_p00121003
-# 0ubuntu0.13.04.3	= package-3.6.0_p0_p00130403
-# 0ubuntu3.2		= package-3.6.0_p0_p0302
-# 1ubuntu5		= package-3.6.0_p1_p05
-# 0ubuntu6		= package-3.6.0_p0_p06
+# 0ubuntu0.12.10.3		= package-3.6.0_p0_p00121003
+# 0ubuntu0.13.04.3		= package-3.6.0_p0_p00130403
+# 0ubuntu3.2			= package-3.6.0_p0_p0302
+# 1ubuntu5			= package-3.6.0_p1_p05
+# 0ubuntu6			= package-3.6.0_p0_p06
+# +14.10.20140915-1ubuntu2.2	= package-3.6.0_p1_p0202_p20140915 (14.10 is the Ubuntu release version taken from URELEASE)
 #
 ## When upgrading <revision> from a floating point to a whole number, portage will see the upgrade as a downgrade ##
 # Example: package-3.6.0_p0_p0101 (0ubuntu1.1) to package-3.6.0_p0_p02 (0ubuntu2)
 # If this occurs, the ebuild should be named package-3.6.0a_p0_p02
 
 
-EXPORT_FUNCTIONS pkg_postinst
+EXPORT_FUNCTIONS pkg_setup pkg_postinst
 
 #---------------------------------------------------------------------------------------------------------------------------------#
 ### GLOBAL ECLASS INHERIT DEFAULTS ##
@@ -34,6 +35,11 @@ export VALA_MAX_API_VERSION=${VALA_MAX_API_VERSION:=0.20}
 export VALA_USE_DEPEND="vapigen"
 #---------------------------------------------------------------------------------------------------------------------------------#
 
+[[ "${URELEASE}" == *trusty* ]] && UVER_RELEASE="14.04"
+[[ "${URELEASE}" == *utopic* ]] && UVER_RELEASE="14.10"
+[[ "${URELEASE}" == *vivid* ]] && UVER_RELEASE="15.04"
+
+
 PV="${PV%%[a-z]_p*}"	# For package-3.6.0a_p0_p02
 PV="${PV%%[a-z]*}"	# For package-3.6.0a
 PV="${PV%%_p*}"		# For package-3.6.0_p0_p02
@@ -42,30 +48,59 @@ PV="${PV%%_*}"		# For package-3.6.0_p_p02
 MY_P="${PN}_${PV}"
 S="${WORKDIR}/${PN}-${PV}"
 
-PVR_PL_MAJOR="${PVR#*_p}"
-PVR_PL_MAJOR="${PVR_PL_MAJOR%_p*}"
-PVR_PL="${PVR##*_p}"
-PVR_PL="${PVR_PL%%-r*}"
+OIFS="${IFS}"
+IFS=p; read -ra PVR_ARRAY <<< "${PVR}"
+IFS="${OIFS}"
 
-char=2
-index=1
-strlength="${#PVR_PL}"
-while [ "${PVR_PL}" != "" ]; do
-	strtmp="${PVR_PL:0:$char}"
-	if [ "${strlength}" -ge 6 ]; then	# Don't strip zeros from 3rd number field, this is the Ubuntu OS release #
-		if [ "${index}" != 3 ]; then
+## Major version field ##
+PVR_PL_MAJOR="${PVR_ARRAY[1]}"
+PVR_PL_MAJOR="${PVR_PL_MAJOR%*_}"
+
+## Minor version field ##
+PVR_PL_MINOR="${PVR_ARRAY[2]}"
+PVR_PL_MINOR="${PVR_PL_MINOR%*_}"
+PVR_PL_MINOR="${PVR_PL_MINOR%%-r*}"	# Strip revision strings
+	char=2
+	index=1
+	strlength="${#PVR_PL_MINOR}"
+	while [ "${PVR_PL_MINOR}" != "" ]; do
+		strtmp="${PVR_PL_MINOR:0:$char}"
+		if [ "${strlength}" -ge 6 ]; then	# Don't strip zeros from 3rd number field, this is the Ubuntu OS release #
+			if [ "${index}" != 3 ]; then
+				strtmp="${strtmp#0}"
+			fi
+		else
 			strtmp="${strtmp#0}"
 		fi
-	else
-		strtmp="${strtmp#0}"
-	fi
-	strarray+=( "${strtmp}" )
-	PVR_PL="${PVR_PL:$char}"
-	((index++))
-done
+		strarray+=( "${strtmp}" )
+		PVR_PL_MINOR="${PVR_PL_MINOR:$char}"
+		((index++))
+	done
+PVR_PL_MINOR_tmp="${strarray[@]}"
+PVR_PL_MINOR="${PVR_PL_MINOR_tmp// /.}"
 
-PVR_PL_MINOR="${strarray[@]}"
-PVR_PL_MINOR="${PVR_PL_MINOR// /.}"
+## Micro version field ##
+PVR_PL_MICRO="${PVR_ARRAY[3]}"
+PVR_PL_MICRO="${PVR_PL_MICRO%*_}"
+PVR_PL_MICRO="${PVR_PL_MICRO%%-r*}"	# Strip revision strings
+	[[ -n "${strarray[@]}" ]] && unset strarray[@]
+	char=2
+	index=1
+	strlength="${#PVR_PL_MICRO}"
+	while [ "${PVR_PL_MICRO}" != "" ]; do
+		strtmp="${PVR_PL_MICRO:0:$char}"
+		if [ "${strlength}" -ge 10 ]; then	# Last field can be a floating point so strip off leading zero and add decimal point #
+			if [ "${index}" = 5 ]; then
+				strtmp=".${strtmp#0}"
+			fi
+		fi
+		strarray+=( "${strtmp}" )
+		PVR_PL_MICRO="${PVR_PL_MICRO:$char}"
+		((index++))
+	done
+PVR_PL_MICRO_tmp="${strarray[@]}"
+PVR_MICRO="${PVR_PL_MICRO_tmp// /}"
+
 
 if [ "${PN}" = "ubuntu-sources" ]; then
 	UVER="${PVR_PL_MAJOR}.${PVR_PL_MINOR}"
@@ -73,16 +108,26 @@ else
 	UVER="${PVR_PL_MAJOR}ubuntu${PVR_PL_MINOR}"
 fi
 
-## Check we have the correct masking in place for the overlay to work ##
-#ubuntu-versionator_pkg_pretend() {
-#	readlink /etc/portage/package.mask/unity-portage.pmask &> /dev/null || \
-#		die "Please create symlink 'ln -s /var/lib/layman/unity-gentoo/unity-portage.pmask /etc/portage/package.mask/unity-portage.pmask'"
-#
-#	grep -R '\*/\*::unity-gentoo' /etc/portage/package.keywords* &> /dev/null || \
-#		die "Please place '*/*::unity-gentoo' in your package.keywords file"
-#}
+# @FUNCTION: ubuntu-versionator_pkg_setup
+# @DESCRIPTION:
+# Check we have a valid profile set and the correct
+# masking in place for the overlay to work
+ubuntu-versionator_pkg_setup() {
+	debug-print-function ${FUNCNAME} "$@"
 
+        # Use a profile to set things like make.defaults and use.mask only, and to fill $SUBSLOT for unity-base/unity-build-env:0/${SUBSLOT}
+        # unity-base/unity-build-env creates symlinks to /etc/portage/package.*
+        #   This allows masking category/package::gentoo and overriding IUSE in /etc/portage/make.conf, which cannot be done in profiles/
+        #   Using profiles/ also sets a sane base set of USE flags by all profiles inheriting the Gentoo 'desktop' profile
+
+}
+
+# @FUNCTION: ubuntu-versionator_pkg_postinst
+# @DESCRIPTION:
+# Re-create bamf.index and trigger re-profile of ureadahead if installed
 ubuntu-versionator_pkg_postinst() {
+	debug-print-function ${FUNCNAME} "$@"
+
 	## Create a new bamf-2.index file at postinst stage of every package to capture all *.desktop files ##
 	if [[ -x /usr/bin/bamf-index-create ]]; then
 		einfo "Checking bamf-2.index"
@@ -99,3 +144,4 @@ ubuntu-versionator_pkg_postinst() {
 			fi
 	fi
 }
+
