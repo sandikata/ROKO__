@@ -9,8 +9,8 @@ inherit multilib
 DESCRIPTION="ACE Stream multimedia plugin for web browsers"
 HOMEPAGE="http://torrentstream.org/"
 MY_PN="acestream-mozilla-plugin"
-SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${MY_PN}/${MY_PN}_${PV}-1raring2_i386.deb )
-		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${MY_PN}/${MY_PN}_${PV}-1raring2_amd64.deb )"
+SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${MY_PN}/${MY_PN}_${PV}-1trusty1_i386.deb )
+		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${MY_PN}/${MY_PN}_${PV}-1trusty1_amd64.deb )"
 
 LICENSE="GPL-2 LGPL-2"
 SLOT="0"
@@ -26,7 +26,7 @@ S="${WORKDIR}"
 
 src_prepare(){
 	unpack ${A}
-	unpack ./data.tar.gz
+	unpack ./data.tar.xz
 }
 src_install(){
 	mv usr/lib/mozilla usr/lib/nsbrowser

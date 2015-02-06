@@ -8,12 +8,12 @@ inherit multilib
 
 DESCRIPTION="ACE Stream player libraries files"
 HOMEPAGE="http://torrentstream.org/"
-SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1raring2_i386.deb )
-		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1raring2_amd64.deb )"
+SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1trusty2_i386.deb )
+		amd64? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-1trusty2_amd64.deb )"
 
 LICENSE="GPL-2 LGPL-2"
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="~amd64"
 IUSE="pulseaudio jack portaudio avahi cddb cdda dvd dirac aac flac ogg lirc mad matroska modplug musepack mpeg
 		ieee1394 samba mtp ncurses libproxy speex theora upnp v4l vaapi vcdx vorbis"
 
@@ -42,14 +42,14 @@ DEPEND="media-libs/aalib
 		pulseaudio? ( media-sound/pulseaudio )
 		portaudio? ( media-libs/portaudio )
 		avahi? ( net-dns/avahi )
-		<=media-video/ffmpeg-0.10.99[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
+		<=media-video/ffmpeg-1.12.99[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
 		media-libs/acestream-x264
 		cddb? ( media-libs/libcddb )
 		cdda? ( media-libs/libcddb dev-libs/libcdio )
 		sys-apps/dbus
 		dvd? ( media-libs/libdca media-libs/libdvdnav media-libs/libdvdread )
 		dirac? ( media-video/dirac media-libs/schroedinger )
-		=media-libs/libdvbpsi-0.2.2
+		=media-libs/libdvbpsi-1.0.0
 		aac? ( media-libs/faad2 )
 		flac? ( media-libs/flac )
 		ogg? ( media-libs/libogg media-libs/libkate )
@@ -76,7 +76,10 @@ DEPEND="media-libs/aalib
 		vcdx? ( dev-libs/libcdio media-video/vcdimager )
 		vorbis? ( media-libs/libvorbis )
 		dev-libs/libxml2
-		x11-libs/libXpm"
+		x11-libs/libXpm
+		media-libs/schroedinger
+		media-libs/taglib"
+
 RDEPEND="${DEPEND}"
 
 RESTRICT="strip"
@@ -85,7 +88,7 @@ S="${WORKDIR}"
 
 src_prepare(){
 	unpack ${A}
-	unpack ./data.tar.gz
+	unpack ./data.tar.xz
 
 	for lang in ${LANGS};do
 		for x in ${lang};do
@@ -100,7 +103,9 @@ src_install(){
 
 	$(has_version ">=net-libs/gnutls-3.1.10") && dosym "libgnutls.so" "/usr/$(get_libdir)/libgnutls.so.26"
 	dosym "liblua.so" "/usr/$(get_libdir)/liblua5.1.so.0"
-	dosym "liba52.so" "/usr/$(get_libdir)/liba52-0.7.4.so"
+	dosym "/usr/$(get_libdir)/liba52.so.0.0.0" "/usr/$(get_libdir)/liba52-0.7.4.so"
+	dolib "${FILESDIR}"/liblua5.2.so.0
+	dolib "${FILESDIR}"/liblua5.2.so.0.0.0
 
 	use pulseaudio || rm "${D}/usr/lib/acestreamplayer/plugins/audio_output/libpulse_plugin.so"
 	use portaudio || rm "${D}/usr/lib/acestreamplayer/plugins/audio_output/libportaudio_plugin.so"
