@@ -36,3 +36,9 @@ xfce-extra/xfce4-xfapplet-plugin
 # Коментар: Изисква ld.gold който е в конфликт с някои пакети които не работят с ld.gold
 # Comment: Depend on ld.gold which is in conflict with some packages which doesn't work with gold linker for now
 sys-kernel/lto-sources
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20150206 08:59
+# Коментар: Скоро ще поправя пакета с новите зависимости и архиви.
+# Comment: Soon will fix package with new dependencies and archives
+net-p2p/acestream-engine
