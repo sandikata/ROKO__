@@ -41,4 +41,4 @@ sys-kernel/lto-sources
 # Дата: 20150206 08:59
 # Коментар: Скоро ще поправя пакета с новите зависимости и архиви.
 # Comment: Soon will fix package with new dependencies and archives
-net-p2p/acestream-engine
+#>net-p2p/acestream-engine-2.1.99

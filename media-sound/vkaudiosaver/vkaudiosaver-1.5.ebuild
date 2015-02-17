@@ -25,5 +25,5 @@ src_prepare(){
 }
 src_install(){
 	cp -R opt "${D}"
-	dosym /opt/VkAudioSaver/vkaudiosaver /usr/bin/vkaudioserver
+	dosym /opt/VkAudioSaver/vkaudiosaver /usr/bin/vkaudiosaver
 }
