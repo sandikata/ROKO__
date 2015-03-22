@@ -24,10 +24,6 @@ EXPORT_FUNCTIONS pkg_setup pkg_postinst
 #---------------------------------------------------------------------------------------------------------------------------------#
 ### GLOBAL ECLASS INHERIT DEFAULTS ##
 
-## distutils-r1.eclass ##
-# Set this to catch future parallel build problems, parallel builds give us no real benefit for our tiny python packages #
-export DISTUTILS_NO_PARALLEL_BUILD=1
-
 ## vala.eclass ##
 # Set base sane vala version for all packages requiring vala, override in ebuild if or when specific higher versions are needed #
 export VALA_MIN_API_VERSION=${VALA_MIN_API_VERSION:=0.20}
@@ -120,6 +116,19 @@ ubuntu-versionator_pkg_setup() {
         #   This allows masking category/package::gentoo and overriding IUSE in /etc/portage/make.conf, which cannot be done in profiles/
         #   Using profiles/ also sets a sane base set of USE flags by all profiles inheriting the Gentoo 'desktop' profile
 
+        if [ -z "${UNITY_BUILD_OK}" ]; then     # Creates a oneshot so it only checks on the 1st package in the emerge list
+                CURRENT_PROFILE=$(eselect --brief profile show)
+
+                if [ -z "$(echo ${CURRENT_PROFILE} | grep unity-gentoo)" ]; then
+                        die "Invalid profile detected, please select a 'unity-gentoo' profile for your architecture shown in 'eselect profile list'"
+                else
+                        PROFILE_RELEASE=$(echo "${CURRENT_PROFILE}" | sed -n 's/.*:\(.*\)\/.*/\1/p')
+                fi
+
+                has_version unity-base/unity-build-env:0/${PROFILE_RELEASE} || \
+			die "'${PROFILE_RELEASE}' profile detected, please run 'emerge unity-base/unity-build-env:0/${PROFILE_RELEASE}' to setup package masking"
+                export UNITY_BUILD_OK=1
+        fi
 }
 
 # @FUNCTION: ubuntu-versionator_pkg_postinst
@@ -144,4 +153,3 @@ ubuntu-versionator_pkg_postinst() {
 			fi
 	fi
 }
-

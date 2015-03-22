@@ -15,5 +15,3 @@ pref("intl.locale.matchOS", true);
 pref("general.useragent.locale", "chrome://global/locale/intl.properties");
 pref("extensions.autoDisableScopes", 0);
 pref("layout.css.dpi", 0);
-
-
