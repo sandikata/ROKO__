@@ -1,0 +1,34 @@
+
+This adapts for kernel-3.19 changes
+
+Signed-off-by: Thomas Backlund <tmb@mageia.org>
+
+diff -Nurp 14.12.orig/common/lib/modules/fglrx/build_mod/firegl_public.c 14.12/common/lib/modules/fglrx/build_mod/firegl_public.c
+--- 14.12.orig/common/lib/modules/fglrx/build_mod/firegl_public.c	2014-11-28 22:02:10.000000000 +0200
++++ 14.12/common/lib/modules/fglrx/build_mod/firegl_public.c	2015-01-25 18:37:56.392363086 +0200
+@@ -4816,8 +4816,13 @@ static unsigned long kasSetExecutionLeve
+ {
+     unsigned long orig_level;
+ 
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
++    orig_level = __this_cpu_read(kasExecutionLevel);
++    __this_cpu_write(kasExecutionLevel, level);
++#else
+     orig_level = __get_cpu_var(kasExecutionLevel);
+     __get_cpu_var(kasExecutionLevel) = level;
++#endif
+ 
+     return orig_level;
+ }
+@@ -4829,7 +4834,11 @@ static unsigned long kasSetExecutionLeve
+  */
+ static unsigned long kas_GetExecutionLevel(void)
+ {
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
++    return __this_cpu_read(kasExecutionLevel);
++#else
+     return __get_cpu_var(kasExecutionLevel);
++#endif
+ }
+ 
+ /** \brief Type definition for kas_spin_lock() parameter */
