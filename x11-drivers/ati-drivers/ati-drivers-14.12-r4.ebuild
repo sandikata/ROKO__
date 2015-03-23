@@ -324,8 +324,9 @@ src_prepare() {
 	# Compile fix, #526602
 	epatch "${FILESDIR}/use-kernel_fpu_begin.patch"
 
-	# Compile fix, kernel 3.19
+	# Compile fix, kernel 3.19/4.0
 	epatch "${FILESDIR}/kolasa-3.19-get_cpu_var.patch"
+	epatch "${FILESDIR}/kolasa_4.0-cr4-strn.patch"
 
 	# Allow user patches so they can support RC kernels and whatever else
 	epatch_user
