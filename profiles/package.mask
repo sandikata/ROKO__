@@ -8,37 +8,3 @@
 # Коментар: gcc-4.8 фикс
 =sys-firmware/ipxe-1.0.0_p20120905-r1
 
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20130804 17:23
-# Коментар: Тест
-#>=sys-kernel/geek-sources-3.11-r3
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20131105 17:21
-# Коментар: Лайно!
-=kde-misc/veromix-0.18.3
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20140506 13:31
-# Коментар: за тестване 
-# Comment: for testing
-=sys-devel/gcc-4.9.0
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20140704 14:41
-# Коментар: скоро ще бъде изтрит
-# Comment: will be removed soon
-
-xfce-extra/xfce4-xfapplet-plugin
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20150101 16:29
-# Коментар: Изисква ld.gold който е в конфликт с някои пакети които не работят с ld.gold
-# Comment: Depend on ld.gold which is in conflict with some packages which doesn't work with gold linker for now
-sys-kernel/lto-sources
-
-# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
-# Дата: 20150206 08:59
-# Коментар: Скоро ще поправя пакета с новите зависимости и архиви.
-# Comment: Soon will fix package with new dependencies and archives
-#>net-p2p/acestream-engine-2.1.99
