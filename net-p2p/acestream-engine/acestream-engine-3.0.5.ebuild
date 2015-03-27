@@ -10,11 +10,12 @@ inherit multilib python-r1 unpacker
 
 DESCRIPTION="ACE Stream Engine"
 HOMEPAGE="http://torrentstream.org/"
-SRC_URI=" amd64? ( http://dl.acestream.org/ubuntu/12/acestream_3.0.5.1_ubuntu_12.04_x86_64.tar.gz )"
+SRC_URI=" amd64? ( http://dl.acestream.org/ubuntu/12/acestream_3.0.5.1_ubuntu_12.04_x86_64.tar.gz )
+	  x86? ( http://dl.acestream.org/ubuntu/12/acestream_3.0.3_ubuntu_12.04_i686.tar.gz )"
 
 LICENSE="GPL-2 LGPL-2"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="amd64 x86"
 IUSE="+gtk"
 
 DEPEND="dev-python/m2crypto[${PYTHON_USEDEP}]
@@ -34,9 +35,14 @@ usr/share/acestream/lib/acestreamengine/Transport.so
 usr/share/acestream/lib/acestreamengine/CoreApp.so
 usr/share/acestream/lib/acestreamengine/streamer.so"
 
+pkg_setup() {
+	use amd64 && S="${WORKDIR}"/acestream_3.0.5.1_ubuntu_12.04_x86_64
+	use x86 && S="${WORKDIR}"/acestream_3.0.3_ubuntu_12.04_i686
+}
+
 src_install(){
 	dodir /usr/share/acestream
 	insinto /usr/share/acestream
-	cp -R "${WORKDIR}"/acestream_3.0.5.1_ubuntu_12.04_x86_64/* "${D}/usr/share/acestream" || die "Install failed!"
+	cp -R "${S}"/* "${D}/usr/share/acestream" || die "Install failed!"
 	dosym /usr/share/acestream/acestreamengine /usr/bin/acestreamengine
 }
