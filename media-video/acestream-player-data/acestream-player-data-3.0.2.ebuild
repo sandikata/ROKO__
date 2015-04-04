@@ -13,7 +13,7 @@ SRC_URI=" x86? ( http://repo.acestream.org/ubuntu/pool/main/a/${PN}/${PN}_${PV}-
 
 LICENSE="GPL-2 LGPL-2"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="~amd64 ~x86"
 IUSE="pulseaudio jack portaudio avahi cddb cdda dvd dirac aac flac ogg lirc mad matroska modplug musepack mpeg
 		ieee1394 samba mtp ncurses libproxy speex theora upnp v4l vaapi vcdx vorbis"
 
@@ -78,7 +78,8 @@ DEPEND="media-libs/aalib
 		dev-libs/libxml2
 		x11-libs/libXpm
 		media-libs/schroedinger
-		media-libs/taglib"
+		media-libs/taglib
+		=media-plugins/live-2015.04.01"
 
 RDEPEND="${DEPEND}"
 

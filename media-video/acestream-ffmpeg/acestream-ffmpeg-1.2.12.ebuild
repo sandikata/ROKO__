@@ -322,6 +322,6 @@ multilib_src_install() {
 	rm -r "${D}"/usr/{bin,include,share}
 	rm -r "${D}"/usr/lib*/pkgconfig
 	rm "${D}"/usr/lib*/{libavcodec.so,libavformat.so,libavutil.so}
-	rm "${D}"/usr/lib*/{libavdevice.*,libavfilter.*,libpostproc.*,libswresample.*,libavresample.*,libswscale.*}
+	rm "${D}"/usr/lib*/{libavdevice.*,libavfilter.*,libpostproc.*,libswresample.*,libavresample.*,libswscale.so}
 }
 
