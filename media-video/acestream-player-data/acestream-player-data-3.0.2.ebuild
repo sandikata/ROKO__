@@ -42,7 +42,7 @@ DEPEND="media-libs/aalib
 		pulseaudio? ( media-sound/pulseaudio )
 		portaudio? ( media-libs/portaudio )
 		avahi? ( net-dns/avahi )
-		media-video/acestream-ffmpeg[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa]
+		|| ( media-video/acestream-ffmpeg[jack=,aac=,modplug=,ieee1394=,speex=,theora=,v4l=,vaapi=,vorbis=,alsa] >=media-video/libav-9.17 )
 		media-libs/acestream-x264
 		cddb? ( media-libs/libcddb )
 		cdda? ( media-libs/libcddb dev-libs/libcdio )
@@ -56,7 +56,7 @@ DEPEND="media-libs/aalib
 		mad? ( media-libs/libmad )
 		mpeg? ( media-libs/libmpeg2 media-sound/twolame )
 		dev-libs/fribidi
-		=dev-libs/libgcrypt-1.5.4-r100
+		>=dev-libs/libgcrypt-1.5.4-r1
 		dev-libs/libgpg-error
 		media-libs/mesa
 		dev-qt/qtwebkit
