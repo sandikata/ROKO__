@@ -11,7 +11,7 @@ SRC_URI="amd64? ( http://vkaudiosaver.ru/downloads/vkaudiosaver-debian-amd64 -> 
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="~amd64 ~x86"
 IUSE=""
 
 DEPEND=""

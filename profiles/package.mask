@@ -8,3 +8,4 @@
 # Коментар: gcc-4.8 фикс
 =sys-firmware/ipxe-1.0.0_p20120905-r1
 
+>=www-client/firefox-38.0_beta1
