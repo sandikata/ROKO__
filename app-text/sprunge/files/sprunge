@@ -1,0 +1,4 @@
+#!/bin/bash
+
+file=`zenity --file-selection  --filename=$HOME/ --file-filter=*.txt --title="Изберете Текстов файл"`
+cat $file | curl -s -F 'sprunge=<-' http://sprunge.us 2>&1 | zenity --width=10 --height=0 --text-info --title "Връзка към файл" 
