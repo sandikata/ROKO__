@@ -13,7 +13,9 @@ SLOT="0"
 KEYWORDS="x86 amd64"
 IUSE=""
 
-DEPEND=">=app-shells/bash-4.1_p9"
+DEPEND=">=app-shells/bash-4.1_p9
+	gnome-extra/zenity
+	net-misc/curl"
 RDEPEND="${DEPEND}"
 
 src_install() {
