@@ -1,11 +1,15 @@
 #!/bin/bash
+#Author: Rosen Aleksandrov
+#E-Mail: sandikata@yandex.ru
+#IRC: irc.freenode.net/#calculate irc.politeia.net/#bulgaria
+# Pastebin for large files
 
-file=`zenity --file-selection  --filename=$HOME/ --file-filter='Text files (txt,conf,log) | *.txt *.conf *.log' --file-filter='All files | *' --title="Изберете Текстов файл"`
+file=`zenity --file-selection  --filename=$HOME/ --file-filter='Text files (txt,conf,log) | *.txt *.conf *.log' --file-filter='All files | *' --title="Select a text file"`
 
 value=$?
 
 case $value in
-0) cat $file | curl -s -F 'sprunge=<-' http://sprunge.us 2>&1 | zenity --width=10 --height=0 --text-info --title "Връзка към файл"
+0) cat $file | curl -s -F 'sprunge=<-' http://sprunge.us 2>&1 | zenity --width=10 --height=0 --text-info --title "Sprunge link"
 ;;
 
 1) exit 0
