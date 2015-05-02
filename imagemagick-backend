@@ -1,0 +1,47 @@
+#!/bin/bash
+
+gui="zenity"
+converter="mogrify"
+
+image=`$gui --file-selection  --multiple --separator=' ' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp) | *.jpg *.png *.bmp' --file-filter='All files | *' --title="Select a image file"`
+case $? in
+        0)
+                echo "You selected $image.";;
+        1)
+                exit 0 ;;
+        255)
+                exit 0 ;;
+esac
+
+format=`$gui --title="Format Selector" --list --radiolist --column="" --column="Format:" TRUE "jpg" FALSE "png" FALSE "pdf" --text "Select image format."` 
+case $? in
+        0)
+                echo "You selected $format.";;
+        1)
+                exit 0 ;;
+        255)
+                exit 0 ;;
+esac
+
+scale=`$gui --scale --text="compression level" --value=85`
+case $? in
+	0)
+		echo "You selected $scale%.";;
+	1)
+		exit 0 ;;
+	255)
+		exit 0 ;;
+esac
+
+resolution=`$gui --title="Resolution Selector" --list --radiolist --column="" --column="Resolution:" FALSE "640x480" FALSE "800x600" FALSE "1024x768" FALSE "1280x1024" TRUE "1680x1050" FALSE "1920x1080" --text "Select image resolution"`
+case $? in
+        0)
+                echo "You selected $resolution.";;
+        1)
+                exit 0 ;;
+        255)
+                exit 0 ;;
+esac
+
+$converter -format $format -quality $scale -scale $resolution $image 
+#2>&1 | $gui --progress --pulsate --no-cancel
