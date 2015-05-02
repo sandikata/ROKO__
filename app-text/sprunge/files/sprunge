@@ -1,7 +1,18 @@
 #!/bin/bash
-#Author: Rosen Aleksandrov
-#E-Mail: sandikata@yandex.ru
-#IRC: irc.freenode.net/#calculate
 
-file=`zenity --file-selection  --filename=$HOME/ --file-filter=*.txt --title="Изберете Текстов файл/Select Text File"`
-cat $file | curl -s -F 'sprunge=<-' http://sprunge.us 2>&1 | zenity --width=10 --height=0 --text-info --title "Връзка към файл/Link to file" 
+file=`zenity --file-selection  --filename=$HOME/ --file-filter='Text files (txt,conf,log) | *.txt *.conf *.log' --file-filter='All files | *' --title="Изберете Текстов файл"`
+
+value=$?
+
+case $value in
+0) cat $file | curl -s -F 'sprunge=<-' http://sprunge.us 2>&1 | zenity --width=10 --height=0 --text-info --title "Връзка към файл"
+;;
+
+1) exit 0
+;;
+
+255) exit 0
+;;
+
+esac
+
