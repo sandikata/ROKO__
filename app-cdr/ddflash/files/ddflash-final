@@ -28,7 +28,7 @@
     select yn in "Да" "Не"; do
     case $yn in
     # Разкоменирайте този ред ако искате по-кратка информация за трансфера Да ) dd if=$iso | pv -ptr -N $iso | dd of=$flash ;;
-    Да ) dd if=$iso | pv -ptrs `du -csh $iso 2>/dev/null|tail -n1|awk '{print $1}'` | dd of=$flash ; exit 1 ;;
+    Да ) (pv -n $iso | dd of=$flash bs=128M conv=notrunc,noerror) 2>&1 | dialog --gauge "Копиране... Моля Изчакайте..."; exit 1 ;;
     Не ) exit;;
     esac
     done

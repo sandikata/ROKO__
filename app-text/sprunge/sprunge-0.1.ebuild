@@ -6,7 +6,7 @@ EAPI=3
 
 DESCRIPTION="Програма за прилагане на текстови файлове към http://sprunge.us/"
 HOMEPAGE=""
-SRC_URI="https://raw.github.com/sandikata/ROKO__/master/app-text/sprunge/files/sprunge"
+SRC_URI="https://raw.github.com/sandikata/ROKO__/master/app-text/sprunge/files/sprunge-0.1"
 
 LICENSE=""
 SLOT="0"
@@ -18,7 +18,7 @@ RDEPEND="${DEPEND}"
 
 src_install() {
 cd ${DISTDIR}
-	dobin ${PN} || die
+	dobin ${PN}-${PV} || die
 	}
 
 pkg_postinst() {
