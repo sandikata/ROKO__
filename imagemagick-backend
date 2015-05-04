@@ -3,6 +3,7 @@
 # E-Mail: sandikata@yandex.ru
 # IRC: irc.freenode.net/#calculate irc.politeia.in/#bulgaria
 # Dependencies: zenity imagemagick
+# License: GPLv3
 
 gui="zenity"
 converter="mogrify"
@@ -27,7 +28,7 @@ case $? in
                 exit 0 ;;
 esac
 
-scale=`$gui --scale --text="compression level" --value=85`
+scale=`$gui --scale --text="Quality level" --value=85`
 case $? in
 	0)
 		echo $scale ;;
