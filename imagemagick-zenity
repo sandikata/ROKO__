@@ -19,7 +19,7 @@ case $? in
 		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
-IFS=$'\n' image=( `$gui --file-selection  --multiple --separator=$'\n' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp) | *.jpg *.png *.bmp' --file-filter='All files | *' --title="Select an image files"` )
+IFS=$'\n' image=( `$gui --file-selection  --multiple --separator=$'\n' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp,tiff,pdf,djvu) | *.jpg *.png *.bmp *.tiff *.pdf *.djvu' --file-filter='All files | *' --title="Select an image files"` )
 case $? in
         0)
                 echo $image ;;
@@ -29,7 +29,7 @@ case $? in
                 $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
-outformat=`$gui --title="Format Selector" --list --radiolist --column="" --column="Format" TRUE "jpg" FALSE "png" FALSE "pdf" --text "Select output image format."` 
+outformat=`$gui --title="Format Selector" --list --radiolist --width=400 --height=300 --column="" --column="Format" TRUE "jpg" FALSE "png" FALSE "bmp" FALSE "tiff" FALSE "pdf" FALSE "djvu" --text "Select output image format."` 
 case $? in
         0)
                 echo $outformat ;;
@@ -49,7 +49,7 @@ case $? in
 		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
-resolution=`$gui --title="Resolution Selector" --list --radiolist --column="" --column="Resolution" FALSE "640x480" FALSE "800x600" FALSE "1024x768" FALSE "1280x1024" TRUE "1680x1050" FALSE "1920x1080" --text "Select image resolution"`
+resolution=`$gui --title="Resolution Selector" --list --radiolist --width=400 --height=300 --column="" --column="Resolution" FALSE "640x480" FALSE "800x600" FALSE "1024x768" FALSE "1280x1024" TRUE "1680x1050" FALSE "1920x1080" --text "Select image resolution"`
 case $? in
         0)
                 echo $resolution ;;
@@ -59,7 +59,7 @@ case $? in
                 $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
-IFS=$'\n' outpath=`$gui --file-selection  --separator=$'\n' --filename=$HOME/ --confirm-overwrite --directory --title="Select where to save converted images."`
+IFS=$'\n' outpath=`$gui --file-selection  --separator=$'\n' --filename=$HOME/ --directory --title="Select where to save converted images."`
 case $? in
 	0)
 		echo $outpath ;;
