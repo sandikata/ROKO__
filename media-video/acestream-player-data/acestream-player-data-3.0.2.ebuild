@@ -80,7 +80,7 @@ DEPEND="media-libs/aalib
 		x11-libs/libXpm
 		media-libs/schroedinger
 		media-libs/taglib
-		=media-plugins/live-2015.04.01"
+		>=media-plugins/live-2015.04.01"
 
 RDEPEND="${DEPEND}"
 
