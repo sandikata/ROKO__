@@ -19,7 +19,7 @@ case $? in
 		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
-IFS=$'\n' image=`$gui --file-selection  --multiple --separator=$'\n' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp) | *.jpg *.png *.bmp' --file-filter='All files | *' --title="Select a image file"`
+IFS=$'\n' image=( `$gui --file-selection  --multiple --separator=$'\n' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp) | *.jpg *.png *.bmp' --file-filter='All files | *' --title="Select an image files"` )
 case $? in
         0)
                 echo $image ;;
@@ -59,6 +59,24 @@ case $? in
                 $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
+IFS=$'\n' outpath=`$gui --file-selection  --separator=$'\n' --filename=$HOME/ --confirm-overwrite --directory --title="Select where to save converted images."`
+case $? in
+	0)
+		echo $outpath ;;
+	1)
+		echo "Calcel Pressed!" ;;
+	255)
+		echo "Window Closed!" ;;
+esac
+
+step=$((100/${#image[@]}))
+pos=0
+ 
+(
 for i in ${image[@]}; do
-    $converter -format $outformat -quality $scale -scale $resolution "$i" 2>&1 | $gui --progress --text="$i" --percentage=0 --no-cancel --auto-close
+    echo "# Current file:\n$i"
+    $converter -path $outpath -format $outformat -quality $scale -scale $resolution "$i"
+    pos=$(($pos+1))
+    echo $(($step*$pos))
 done
+) | $gui --progress --percentage=0 --no-cancel --auto-close --title="$title"
