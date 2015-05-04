@@ -7,15 +7,26 @@
 
 gui="zenity"
 converter="mogrify"
+title="imagemagick-zenity"
+
+$gui --width 500 --question --title="$title" --text "Welcome to imagemagick-zenity!" --ok-label="Start" --cancel-label="Quit"
+case $? in
+	0)
+		echo $welcome ;;
+	1)
+		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
+	255)
+		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
+esac
 
 IFS=$'\n' image=`$gui --file-selection  --multiple --separator=$'\n' --filename=$HOME/ --file-filter='Image Files (jpg,png,bmp) | *.jpg *.png *.bmp' --file-filter='All files | *' --title="Select a image file"`
 case $? in
         0)
                 echo $image ;;
         1)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
         255)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
 outformat=`$gui --title="Format Selector" --list --radiolist --column="" --column="Format" TRUE "jpg" FALSE "png" FALSE "pdf" --text "Select output image format."` 
@@ -23,9 +34,9 @@ case $? in
         0)
                 echo $outformat ;;
         1)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
         255)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
 scale=`$gui --scale --text="Quality level" --value=85`
@@ -33,9 +44,9 @@ case $? in
 	0)
 		echo $scale ;;
 	1)
-		exit 0 ;;
+		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 	255)
-		exit 0 ;;
+		$gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
 resolution=`$gui --title="Resolution Selector" --list --radiolist --column="" --column="Resolution" FALSE "640x480" FALSE "800x600" FALSE "1024x768" FALSE "1280x1024" TRUE "1680x1050" FALSE "1920x1080" --text "Select image resolution"`
@@ -43,9 +54,9 @@ case $? in
         0)
                 echo $resolution ;;
         1)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
         255)
-                exit 0 ;;
+                $gui --warning --title="$title" --text "Program will close when press OK" ; exit 0 ;;
 esac
 
 for i in ${image[@]}; do
