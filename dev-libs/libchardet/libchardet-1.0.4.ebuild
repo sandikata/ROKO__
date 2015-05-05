@@ -1,0 +1,33 @@
+# Copyright 1999-2014 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: $
+
+EAPI="5"
+
+inherit eutils
+
+DESCRIPTION="Mozilla's Universal Charset Detector C/C++ API"
+HOMEPAGE="http://ftp.oops.org/pub/oops/libchardet"
+SRC_URI="ftp://ftp.oops.org/pub/oops/libchardet/libchardet-1.0.4.tar.bz2
+		 https://github.com/sandikata/ROKO__/raw/master/libchardet-1.0.4.tar.bz2
+		http://ftp.oops.org/pub/oops/libchardet/libchardet-1.0.4.tar.bz2"
+
+LICENSE="MPL-1.1 LGPL-2.1"
+SLOT="0"
+KEYWORDS="amd64 x86"
+IUSE=""
+
+DEPEND=""
+RDEPEND="${DEPEND}"
+
+pkg_nofetch() {
+	# Forbidden UserAgent "wget". Must be manually downloaded.
+	einfo "Please download ${P} from"
+	einfo "ftp://ftp.oops.org/pub/oops/libchardet/${P}.tar.bz2"
+	einfo "and place it in ${DISTDIR}."
+	einfo "If you want to download with wget, don't use default user-agent of wget! (Use -U option)"
+}
+
+src_install() {
+	emake DESTDIR="${D}" install || die "Install failed"
+}

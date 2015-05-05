@@ -1,0 +1,11 @@
+--- src/bomi/stdafx.hpp.orig	2015-02-14 08:41:57.682128823 +0100
++++ src/bomi/stdafx.hpp	2015-02-14 10:47:32.507831197 +0100
+@@ -3,7 +3,7 @@
+ 
+ #if defined(__cplusplus) && !defined(__OBJC__)
+ 
+-#if __cplusplus > 201100L
++#if __cplusplus > 201103L
+ extern "C" {
+ char *gets(char *str);
+ }
