@@ -9,8 +9,8 @@ inherit eutils
 DESCRIPTION="A library to allow applications to export a menu into the Unity Menu bar"
 HOMEPAGE="http://launchpad.net/libappindicator"
 MY_PN="${PN#acestream-}"
-SRC_URI="x86? ( mirror://ubuntu/pool/main/liba/${MY_PN}/${MY_PN}1_${PV}-0ubuntu1_i386.deb )
-		amd64? ( mirror://ubuntu/pool/main/liba/${MY_PN}/${MY_PN}1_${PV}-0ubuntu1_amd64.deb ) "
+SRC_URI="amd64? ( https://launchpad.net/ubuntu/+source/libappindicator/12.10.0-0ubuntu1/+build/3649098/+files/libappindicator1_12.10.0-0ubuntu1_amd64.deb )
+	x86? ( https://launchpad.net/ubuntu/+source/libappindicator/12.10.0-0ubuntu1/+build/3649098/+files/libappindicator1_12.10.0-0ubuntu1_i386.deb )"
 
 LICENSE="LGPL-2.1 LGPL-3"
 SLOT="3"
