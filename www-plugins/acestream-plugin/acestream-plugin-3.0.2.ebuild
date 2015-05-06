@@ -19,7 +19,9 @@ IUSE=""
 
 DEPEND="~media-video/acestream-player-data-${PV}
 		net-p2p/acestream-engine
-	|| ( >=www-client/firefox-29.0.99 >=www-client/firefox-bin-29.0.99 )"
+	|| ( >=www-client/firefox-29.0.99 >=www-client/firefox-bin-29.0.99 )
+	dev-qt/qtdeclarative:4"
+
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}"

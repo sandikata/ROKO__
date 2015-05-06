@@ -14,7 +14,7 @@ SLOT="0"
 KEYWORDS="~amd64 ~x86"
 IUSE=""
 
-DEPEND=""
+DEPEND="dev-qt/qtdeclarative:4"
 RDEPEND="${DEPEND}"
 
 S="${WORKDIR}"
