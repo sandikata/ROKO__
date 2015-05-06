@@ -9,8 +9,8 @@ inherit eutils
 DESCRIPTION="A set of symbols and convience functions that all indicators would like to use"
 HOMEPAGE="http://launchpad.net/libindicator"
 MY_PN="${PN#acestream-}"
-SRC_URI="x86? ( mirror://ubuntu/pool/main/libi/${MY_PN}/${MY_PN}7_${PV}-0ubuntu1_i386.deb )
-		amd64? ( mirror://ubuntu/pool/main/libi/${MY_PN}/${MY_PN}7_${PV}-0ubuntu1_amd64.deb ) "
+SRC_URI="x86? ( https://launchpad.net/ubuntu/+source/libindicator/12.10.1-0ubuntu1/+build/3799239/+files/libindicator7_12.10.1-0ubuntu1_i386.deb )
+		amd64? ( https://launchpad.net/ubuntu/+source/libindicator/12.10.1-0ubuntu1/+build/3799239/+files/libindicator7_12.10.1-0ubuntu1_amd64.deb ) "
 
 LICENSE="GPL-3"
 SLOT="2"
