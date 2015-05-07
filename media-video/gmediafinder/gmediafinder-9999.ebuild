@@ -30,8 +30,8 @@ RDEPEND="dev-python/pygtk:2
 	 dev-python/gdata
 	 dev-python/configobj
 	 media-plugins/gst-plugins-ffmpeg
-	 media-plugins/gst-plugins-libvisual"
-
+	 media-plugins/gst-plugins-libvisual
+	 dev-python/python-xlib"
 
 src_prepare() {
         :
