@@ -15,6 +15,10 @@ IUSE=""
 
 DEPEND="dev-lang/python:3.4
 	x11-libs/libwnck:1[introspection]
+	mate-base/mate-panel[introspection]
+	dev-python/pygobject:3[python_targets_python3_4]
+	dev-python/pyxdg[python_targets_python3_4]
+	dev-python/pygtksourceview
 	sys-devel/automake:1.15"
 RDEPEND="${DEPEND}"
 
