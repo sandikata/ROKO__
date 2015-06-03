@@ -18,10 +18,3 @@ DEPEND="dev-lang/python:3.4
 	sys-devel/automake:1.15"
 RDEPEND="${DEPEND}"
 
-pkg_postinst() {
-	glib-compile-schemas /usr/share/glib-2.0/schemas
-}
-
-pkg_postrm() {
-	glib-compile-schemas /usr/share/glib-2.0/schemas
-}
