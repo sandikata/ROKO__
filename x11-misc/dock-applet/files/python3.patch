@@ -9,3 +9,10 @@
  Name=Dock Applet Factory
  Description=An application dock for the MATE panel
  
+--- dock-applet-9999/src/org.mate.panel.applet.DockAppletFactory.service.in.orig	2015-06-03 17:07:54.636071991 +0300
++++ dock-applet-9999/src/org.mate.panel.applet.DockAppletFactory.service.in	2015-06-03 17:08:36.128069098 +0300
+@@ -1,3 +1,3 @@
+ [D-BUS Service]
+ Name=org.mate.panel.applet.DockAppletFactory
+-Exec=@LOCATION@
++Exec=/usr/bin/python3 /usr/lib64/mate-applets/mate-dock-applet/dock_applet.py
