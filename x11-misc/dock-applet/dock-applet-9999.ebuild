@@ -14,7 +14,7 @@ KEYWORDS="~x86 ~amd64"
 IUSE=""
 
 DEPEND="dev-lang/python:3.4
-	x11-libs/libwnck:3[introspection]
+	x11-libs/libwnck:1[introspection]
 	sys-devel/automake:1.15"
 RDEPEND="${DEPEND}"
 
