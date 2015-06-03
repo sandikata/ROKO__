@@ -1,11 +1,11 @@
 --- dock-applet-9999/src/org.mate.panel.DockApplet.mate-panel-applet.in.orig	2015-06-03 16:53:58.146130303 +0300
-+++ dock-applet-9999/src/org.mate.panel.DockApplet.mate-panel-applet.in	2015-06-03 16:54:16.488129024 +0300
++++ dock-applet-9999/src/org.mate.panel.DockApplet.mate-panel-applet.in	2015-06-03 17:01:31.640098689 +0300
 @@ -1,7 +1,7 @@
  [Applet Factory]
  Id=DockAppletFactory
  InProcess=false
 -Location=@LOCATION@
-+Location=/usr/bin/python3 @LOCATION@
++Location=/usr/bin/python3 /usr/lib64/mate-applets/mate-dock-applet/dock_applet.py
  Name=Dock Applet Factory
  Description=An application dock for the MATE panel
  
