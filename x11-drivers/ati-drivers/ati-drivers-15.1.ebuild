@@ -312,7 +312,6 @@ src_prepare() {
 
 	# Fix for kernel 4.0.X
 	epatch "${FILESDIR}/kolasa_4.0-cr4-strn.patch"
-	epatch "${FILESDIR}/kolasa-3.19-get_cpu_var.patch"
 
 	cd "${MODULE_DIR}"
 
