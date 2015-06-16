@@ -1,6 +1,6 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: $
+# $Header: /var/cvsroot/gentoo-x86/x11-drivers/ati-drivers/ati-drivers-14.12-r3.ebuild,v 1.4 2015/02/19 08:52:17 ago Exp $
 
 EAPI=5
 
@@ -9,34 +9,51 @@ inherit eutils multilib-build linux-info linux-mod toolchain-funcs versionator p
 
 DESCRIPTION="Ati precompiled drivers for Radeon Evergreen (HD5000 Series) and newer chipsets"
 HOMEPAGE="http://www.amd.com"
-#RUN="${WORKDIR}/fglrx-14.501.1003/amd-driver-installer-14.501.1003-x86.x86_64.run"
+RUN="amd-catalyst-omega-15.5-linux-run-installers.run"
 SLOT="1"
 # Uses javascript for download YESSSS
-#DRIVERS_URI="http://www2.ati.com/drivers/linux/amd-catalyst-13.12-linux-x86.x86_64.zip"
-DRIVERS_URI="mirror://ubuntu/pool/restricted/f/fglrx-installer/fglrx-installer_15.200.orig.tar.gz"
+#DRIVERS_URI="http://www2.ati.com/drivers/linux/amd-catalyst-omega-15.5-linux-run-installers.zip"
+DRIVERS_URI="mirror://gentoo/amd-catalyst-omega-15.5-linux-run-installers.zip"
 XVBA_SDK_URI="http://developer.amd.com/wordpress/media/2012/10/xvba-sdk-0.74-404001.tar.gz"
 SRC_URI="${DRIVERS_URI} ${XVBA_SDK_URI}"
+RESTRICT="fetch strip"
 FOLDER_PREFIX="common/"
-IUSE="debug +modules qt4 static-libs pax_kernel gdm-hack"
+IUSE="debug +modules qt4 static-libs pax_kernel"
 
 LICENSE="AMD GPL-2 QPL-1.0"
-KEYWORDS="-* ~amd64 ~x86"
+KEYWORDS="-* amd64 x86"
 
 RESTRICT="bindist test"
 
 RDEPEND="
-	<=x11-base/xorg-server-1.17.49[-minimal]
+	<=x11-base/xorg-server-1.16.49[-minimal]
 	>=app-eselect/eselect-opengl-1.0.7
 	app-eselect/eselect-opencl
 	sys-power/acpid
 	x11-apps/xauth
+	x11-libs/libX11
+	x11-libs/libXext
+	x11-libs/libXinerama
+	x11-libs/libXrandr
+	x11-libs/libXrender
+	virtual/glu
 	!x11-libs/xvba-video
-	virtual/glu[${MULTILIB_USEDEP}]
-	x11-libs/libX11[${MULTILIB_USEDEP}]
-	x11-libs/libXext[${MULTILIB_USEDEP}]
-	x11-libs/libXinerama[${MULTILIB_USEDEP}]
-	x11-libs/libXrandr[${MULTILIB_USEDEP}]
-	x11-libs/libXrender[${MULTILIB_USEDEP}]
+	abi_x86_32? (
+			|| (
+				virtual/glu[abi_x86_32]
+				app-emulation/emul-linux-x86-opengl
+			)
+			|| (
+				(
+					x11-libs/libX11[abi_x86_32]
+					x11-libs/libXext[abi_x86_32]
+					x11-libs/libXinerama[abi_x86_32]
+					x11-libs/libXrandr[abi_x86_32]
+					x11-libs/libXrender[abi_x86_32]
+				)
+				app-emulation/emul-linux-x86-xlibs
+			)
+	)
 	qt4? (
 			x11-libs/libICE
 			x11-libs/libSM
@@ -45,9 +62,6 @@ RDEPEND="
 			x11-libs/libXxf86vm
 			dev-qt/qtcore:4
 			dev-qt/qtgui:4[accessibility]
-	)
-	gdm-hack? (
-		x11-base/xorg-server:=
 	)
 "
 if [[ legacy != ${SLOT} ]]; then
@@ -236,8 +250,6 @@ src_unpack() {
 
 	if [[ ${DRIVERS_DISTFILE} =~ .*\.tar\.gz ]]; then
 		unpack ${DRIVERS_DISTFILE}
-		mkdir -p common
-		mv etc lib usr common || die "Assumed to find etc lib and usr for common"
 	else
 		#please note, RUN may be insanely assigned at top near SRC_URI
 		if [[ ${DRIVERS_DISTFILE} =~ .*\.zip ]]; then
@@ -310,8 +322,12 @@ src_prepare() {
 	# Compile fix, #526602
 	epatch "${FILESDIR}/use-kernel_fpu_begin.patch"
 
-	# Fix for kernel 4.0.X
+	# Compile fix, kernel 3.19/4.0
+	epatch "${FILESDIR}/kolasa-3.19-get_cpu_var.patch"
 	epatch "${FILESDIR}/kolasa_4.0-cr4-strn.patch"
+
+	# Allow user patches so they can support RC kernels and whatever else
+	epatch_user
 
 	cd "${MODULE_DIR}"
 
@@ -392,11 +408,6 @@ src_install() {
 	exeinto /usr/$(get_libdir)/xorg/modules
 	doexe "${MY_BASE_DIR}"/usr/X11R6/${PKG_LIBDIR}/modules/{glesx.so,amdxmm.so}
 
-	#516816
-	if use gdm-hack; then
-		sed -i 's#/proc/%i/fd/0#/etc/ati/xvrn#g' "${D}/usr/$(get_libdir)/xorg/modules/drivers/fglrx_drv.so" || die "Applying gdm-hack failed"
-	fi
-
 	# Arch-specific files.
 	# (s)bin.
 	into /opt
@@ -461,9 +472,6 @@ src_install() {
 	doexe "${FILESDIR}"/switchlibGL || die "doexe switchlibGL failed"
 	cp "${FILESDIR}"/switchlibGL "${T}"/switchlibglx
 	doexe "${T}"/switchlibglx || die "doexe switchlibglx failed"
-
-	#516816
-	use gdm-hack && Xorg -version > "${D}/etc/ati/xvrn" 2>&1
 }
 
 src_install-libs() {
@@ -497,11 +505,6 @@ src_install-libs() {
 		exeinto ${ATI_ROOT}/extensions
 		doexe "${EX_BASE_DIR}"/usr/X11R6/${pkglibdir}/modules/extensions/fglrx/fglrx-libglx.so
 		mv "${D}"/${ATI_ROOT}/extensions/{fglrx-,}libglx.so
-
-		#516816
-		if use gdm-hack; then
-			sed -i 's#/proc/%i/fd/0#/etc/ati/xvrn#g' "${D}/${ATI_ROOT}/extensions/libglx.so" || die "Applying gdm-hack failed"
-		fi
 	fi
 
 	# other libs
