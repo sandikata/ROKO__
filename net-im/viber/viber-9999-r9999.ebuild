@@ -1,6 +1,4 @@
-# Copyright 1999-2014 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: $
+# Copyright open-overlay 2015 by Alex
 
 EAPI="5"
 
@@ -10,7 +8,7 @@ HOMEPAGE="http://www.viber.com"
 SRC_URI="http://download.cdn.viber.com/cdn/desktop/Linux/viber.deb"
 
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="amd64"
 IUSE=""
 RESTRICT="strip"
 S="${WORKDIR}"
@@ -18,7 +16,7 @@ S="${WORKDIR}"
 src_unpack() {
 	default_src_unpack
 	unpack ./data.tar.gz
-	epatch "${FILESDIR}/00-desktop.patch"
+	epatch "${FILESDIR}/viber-9999-desktop.patch"
 }
 
 src_install(){

@@ -1,10 +1,10 @@
-# Copyright 1999-2014 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 # $
 
-EAPI=5
+EAPI="5"
 CHROMIUM_LANGS="cs de en_US es fr it ja kk pt_BR pt_PT ru tr uk zh_CN zh_TW"
-inherit chromium multilib unpacker
+inherit chromium multilib unpacker gnome2-utils
 
 DESCRIPTION="Yandex Browser is a browser that combines a minimal design with sophisticated technology to make the web faster, safer, and easier."
 HOMEPAGE="http://browser.yandex.ru/beta/"
@@ -82,4 +82,26 @@ src_install() {
 	dodir /usr/$(get_libdir)/${PN}/lib
 	dosym /usr/$(get_libdir)/libudev.so /usr/$(get_libdir)/${PN}/lib/libudev.so.0
 	fperms 4711 /${YANDEX_HOME}/yandex_browser-sandbox
+	local size sizes
+	sizes="16 22 24 32 48 64 128 256 512"
+	for size in ${sizes}; do
+		insinto "/usr/share/icons/hicolor/${size}x${size}/apps"
+		newins "${D}/${YANDEX_HOME}/product_logo_${size}.png" "${PN}.png"
+	done
+
 }
+
+pkg_preinst() {
+        gnome2_icon_savelist
+}
+
+pkg_postinst() {
+        # Update mimedb for the new .desktop file
+        fdo-mime_desktop_database_update
+        gnome2_icon_cache_update
+}
+
+pkg_postrm() {
+        gnome2_icon_cache_update
+}
+
