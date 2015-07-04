@@ -12,3 +12,8 @@
 # Дата: 20150616 19:07
 # xf86-video-ati вече поддържа dri3 като трябва mesa-3d от ROKO__ overlay и в xorg.conf Option "DRI3"
 x11-drivers/xf86-video-ati-dri3
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20150704 14:40
+# Проблем с хардуерно ускорение
+>=www-client/firefox-40.0_beta1
