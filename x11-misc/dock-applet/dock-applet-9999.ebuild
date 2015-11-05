@@ -22,6 +22,3 @@ DEPEND="dev-lang/python:3.4
 	sys-devel/automake:1.15"
 RDEPEND="${DEPEND}"
 
-src_prepare() {
-	epatch "${FILESDIR}"/python3.patch
-}
