@@ -1,0 +1,14 @@
+diff -r b870df1b662c ui.c
+--- a/ui.c	Thu Jan 30 15:13:12 2014 +0200
++++ b/ui.c	Thu Jul 10 09:00:29 2014 +0200
+@@ -19,6 +19,10 @@
+ 
+ #include "ui.h"
+ 
++#if !GTK_CHECK_VERSION(2,18,0)
++#define gtk_widget_set_can_focus(widget, canfocus) {if (canfocus) GTK_WIDGET_SET_FLAGS (widget, GTK_CAN_FOCUS); else GTK_WIDGET_UNSET_FLAGS(widget, GTK_CAN_FOCUS);}
++#endif
++
+ static GtkWidget *infobar_tabs;
+ static GtkWidget *infobar_toggles;
+ 

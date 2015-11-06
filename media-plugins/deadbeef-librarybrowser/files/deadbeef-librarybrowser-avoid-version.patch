@@ -1,0 +1,18 @@
+--- Makefile.am.org	2015-02-25 09:28:23.422993265 +0300
++++ Makefile.am	2015-02-25 09:28:34.092965442 +0300
+@@ -21,13 +21,13 @@
+ # normal lib
+ if HAVE_GTK2
+ ddb_misc_filebrowser_GTK2_la_SOURCES = $(filebrowser_SOURCES)
+-ddb_misc_filebrowser_GTK2_la_LDFLAGS = -module
++ddb_misc_filebrowser_GTK2_la_LDFLAGS = -module -avoid-version
+ ddb_misc_filebrowser_GTK2_la_LIBADD  = $(LDADD) $(GTK2_DEPS_LIBS)
+ ddb_misc_filebrowser_GTK2_la_CFLAGS  = -std=c99 $(GTK2_DEPS_CFLAGS) -Wall -Werror -g
+ endif
+ if HAVE_GTK3
+ ddb_misc_filebrowser_GTK3_la_SOURCES = $(filebrowser_SOURCES)
+-ddb_misc_filebrowser_GTK3_la_LDFLAGS = -module
++ddb_misc_filebrowser_GTK3_la_LDFLAGS = -module -avoid-version
+ ddb_misc_filebrowser_GTK3_la_LIBADD  = $(LDADD) $(GTK3_DEPS_LIBS)
+ ddb_misc_filebrowser_GTK3_la_CFLAGS  = -std=c99 $(GTK3_DEPS_CFLAGS) -Wall -Werror -g
+ endif

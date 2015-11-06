@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer>
+		<email>damex.pp@gmail.com</email>
+		<name>Roman Kuzmitsky</name>
+	</maintainer>
+	<use>
+		<flag name='archive'>Reading media files from archived files</flag>
+		<flag name='bookmark-manager'>Resume playing files (after closing player) from the last timestamp</flag>
+		<flag name='bs2b'>bs2b dsp support. Useful for headphones</flag>
+		<flag name='decast'>Subscription for the podcasts</flag>
+		<flag name='filebrowser'>File browser plugin</flag>
+		<flag name='gnome-mmkeys'>Gnome multimedia keys support</flag>
+		<flag name='infobar'>Download and show lyrics</flag>
+		<flag name='jack'>Jack audio support</flag>
+		<flag name='librarybrowser'>File browser plugin that resemble foobar2k music library</flag>
+		<flag name='mpris'>MPRIS support</flag>
+		<flag name='musical-spectrum'>Draws musical spectrum for current track</flag>
+		<flag name='opus'>Ogg opus decoder support</flag>
+		<flag name='replaygain-control'>Advanced control of replaygain</flag>
+		<flag name='spectrogram'>Draws spectrogram for current track</flag>
+		<flag name='stereo-widener'>Widens stereo</flag>
+		<flag name='vk'>Play music from vk.com social network</flag>
+		<flag name='vu-meter'>Draws vu meter for current track</flag>
+		<flag name='waveform-seekbar'>Draws waveform seekbar for current track</flag>
+	</use>
+</pkgmetadata>
