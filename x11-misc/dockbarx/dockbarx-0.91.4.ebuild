@@ -22,7 +22,7 @@ IUSE="dockmanager"
 DEPEND="dev-python/pygobject
 	dev-python/pygtk
 	dev-python/gconf-python
-	dev-python/pillow
+	=dev-python/pillow-2.9.0
 	dev-python/libwnck-python
 	dev-libs/keybinder[python]
 	dev-python/pyxdg
