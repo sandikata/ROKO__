@@ -10,7 +10,7 @@ EGIT_REPO_URI="https://github.com/robint99/dock-applet.git"
 
 LICENSE=""
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+KEYWORDS=""
 IUSE=""
 
 DEPEND="dev-lang/python:3.4
