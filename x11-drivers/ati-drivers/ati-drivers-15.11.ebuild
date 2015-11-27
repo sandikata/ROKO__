@@ -1,58 +1,44 @@
 # Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/x11-drivers/ati-drivers/ati-drivers-14.12-r3.ebuild,v 1.4 2015/02/19 08:52:17 ago Exp $
+# $Id$
 
 EAPI=5
 
 MULTILIB_COMPAT=( abi_x86_{32,64} )
-inherit eutils multilib-build linux-info linux-mod toolchain-funcs versionator pax-utils
+inherit eutils multilib-build linux-info linux-mod systemd toolchain-funcs versionator pax-utils
 
-DESCRIPTION="Ati precompiled drivers for Radeon Evergreen (HD5000 Series) and newer chipsets"
+DESCRIPTION="Ati precompiled drivers for Radeon (HD7700+ HD8500+ Series) and newer chipsets"
 HOMEPAGE="http://www.amd.com"
-RUN="${WORKDIR}/fglrx-14.501.1003/amd-driver-installer-14.501.1003-x86.x86_64.run"
+RUN="${WORKDIR}/fglrx-15.30.1025/amd-driver-installer-15.30.1025-x86.x86_64.run"
 SLOT="1"
 # Uses javascript for download YESSSS
 #DRIVERS_URI="http://www2.ati.com/drivers/linux/amd-catalyst-13.12-linux-x86.x86_64.zip"
-DRIVERS_URI="mirror://gentoo/amd-catalyst-omega-14.12-linux-run-installers.zip"
-XVBA_SDK_URI="http://developer.amd.com/wordpress/media/2012/10/xvba-sdk-0.74-404001.tar.gz"
+DRV_VER="radeon-crimson-15.11-15.30.1025.zip"
+DRIVERS_URI="mirror://gentoo/${DRV_VER}"
+SDK_VER="xvba-sdk-0.74-404001.tar.gz"
+XVBA_SDK_URI="http://developer.amd.com/wordpress/media/2012/10/${SDK_VER}"
 SRC_URI="${DRIVERS_URI} ${XVBA_SDK_URI}"
 FOLDER_PREFIX="common/"
-IUSE="debug +modules qt4 static-libs pax_kernel"
+IUSE="debug +modules qt4 static-libs pax_kernel gdm-hack"
 
 LICENSE="AMD GPL-2 QPL-1.0"
-KEYWORDS="-* amd64 x86"
+KEYWORDS="-* ~amd64 ~x86"
 
-RESTRICT="bindist test"
+RESTRICT="bindist test fetch"
 
 RDEPEND="
-	<=x11-base/xorg-server-1.16.49[-minimal]
+	<=x11-base/xorg-server-1.17.49[-minimal]
 	>=app-eselect/eselect-opengl-1.0.7
 	app-eselect/eselect-opencl
 	sys-power/acpid
 	x11-apps/xauth
-	x11-libs/libX11
-	x11-libs/libXext
-	x11-libs/libXinerama
-	x11-libs/libXrandr
-	x11-libs/libXrender
-	virtual/glu
 	!x11-libs/xvba-video
-	abi_x86_32? (
-			|| (
-				virtual/glu[abi_x86_32]
-				app-emulation/emul-linux-x86-opengl
-			)
-			|| (
-				(
-					x11-libs/libX11[abi_x86_32]
-					x11-libs/libXext[abi_x86_32]
-					x11-libs/libXinerama[abi_x86_32]
-					x11-libs/libXrandr[abi_x86_32]
-					x11-libs/libXrender[abi_x86_32]
-				)
-				app-emulation/emul-linux-x86-xlibs
-			)
-	)
+	virtual/glu[${MULTILIB_USEDEP}]
+	x11-libs/libX11[${MULTILIB_USEDEP}]
+	x11-libs/libXext[${MULTILIB_USEDEP}]
+	x11-libs/libXinerama[${MULTILIB_USEDEP}]
+	x11-libs/libXrandr[${MULTILIB_USEDEP}]
+	x11-libs/libXrender[${MULTILIB_USEDEP}]
 	qt4? (
 			x11-libs/libICE
 			x11-libs/libSM
@@ -61,6 +47,9 @@ RDEPEND="
 			x11-libs/libXxf86vm
 			dev-qt/qtcore:4
 			dev-qt/qtgui:4[accessibility]
+	)
+	gdm-hack? (
+		x11-base/xorg-server:=
 	)
 "
 if [[ legacy != ${SLOT} ]]; then
@@ -162,19 +151,21 @@ pkg_nofetch() {
 	einfo "The driver packages"
 	einfo ${A}
 	einfo "need to be downloaded manually from"
-	einfo "http://support.amd.com/en-us/download/desktop?os=Linux%20x86_64"
+	einfo "http://support.amd.com/en-us/download/desktop?os=Linux+x86"
 	einfo "and ${XVBA_SDK_URI}"
 }
 
 pkg_pretend() {
-	local CONFIG_CHECK="~MTRR ~!DRM ACPI PCI_MSI !LOCKDEP !PAX_KERNEXEC_PLUGIN_METHOD_OR"
+	local CONFIG_CHECK="~MTRR ~!DRM ACPI PCI_MSI \
+		!LOCKDEP !PAX_KERNEXEC_PLUGIN_METHOD_OR"
 	use amd64 && CONFIG_CHECK+=" COMPAT"
 
 	local ERROR_MTRR="CONFIG_MTRR required for direct rendering."
-	local ERROR_DRM="CONFIG_DRM must be disabled or compiled as a module and not loaded for direct
-		rendering to work."
-	local ERROR_LOCKDEP="CONFIG_LOCKDEP (lock tracking) exports the symbol lock_acquire
-		as GPL-only. This prevents ${P} from compiling with an error like this:
+	local ERROR_DRM="CONFIG_DRM must be disabled or compiled as a
+		module and not loaded for direct rendering to work."
+	local ERROR_LOCKDEP="CONFIG_LOCKDEP (lock tracking) exports
+		the symbol lock_acquire as GPL-only. This prevents ${P} from
+		compiling with an error like this:
 		FATAL: modpost: GPL-incompatible module fglrx.ko uses GPL-only symbol 'lock_acquire'"
 	local ERROR_PAX_KERNEXEC_PLUGIN_METHOD_OR="This config option will cause
 		kernel to reject loading the fglrx module with
@@ -204,15 +195,18 @@ pkg_pretend() {
 
 pkg_setup() {
 	if use modules; then
-		MODULE_NAMES="fglrx(video:${S}/${FOLDER_PREFIX}/lib/modules/fglrx/build_mod/2.6.x)"
+		MODULE_PATH="${S}/${FOLDER_PREFIX}/lib/modules/fglrx/build_mod/2.6.x"
+		MODULE_NAMES="fglrx(video:${MODULE_PATH})"
 		BUILD_TARGETS="kmod_build"
 		linux-mod_pkg_setup
 		BUILD_PARAMS="GCC_VER_MAJ=$(gcc-major-version) KVER=${KV_FULL} KDIR=${KV_OUT_DIR}"
 		BUILD_PARAMS="${BUILD_PARAMS} CFLAGS_MODULE+=\"-DMODULE -DATI -DFGL\""
 		if grep -q arch_compat_alloc_user_space ${KV_DIR}/arch/x86/include/asm/compat.h ; then
-			BUILD_PARAMS="${BUILD_PARAMS} CFLAGS_MODULE+=-DCOMPAT_ALLOC_USER_SPACE=arch_compat_alloc_user_space"
+			BUILD_PARAMS="${BUILD_PARAMS} \
+				CFLAGS_MODULE+=-DCOMPAT_ALLOC_USER_SPACE=arch_compat_alloc_user_space"
 		else
-			BUILD_PARAMS="${BUILD_PARAMS} CFLAGS_MODULE+=-DCOMPAT_ALLOC_USER_SPACE=compat_alloc_user_space"
+			BUILD_PARAMS="${BUILD_PARAMS} \
+				CFLAGS_MODULE+=-DCOMPAT_ALLOC_USER_SPACE=compat_alloc_user_space"
 		fi
 	fi
 	# Define module dir.
@@ -238,7 +232,7 @@ pkg_setup() {
 	elog
 	elog "If your card is older then use ${CATEGORY}/xf86-video-ati"
 	elog "For migration informations please refer to:"
-	elog "http://www.gentoo.org/proj/en/desktop/x/x11/ati-migration-guide.xml"
+	elog "https://www.gentoo.org/proj/en/desktop/x/x11/ati-migration-guide.xml"
 	einfo
 }
 
@@ -249,6 +243,8 @@ src_unpack() {
 
 	if [[ ${DRIVERS_DISTFILE} =~ .*\.tar\.gz ]]; then
 		unpack ${DRIVERS_DISTFILE}
+		mkdir -p common
+		mv etc lib usr common || die "Assumed to find etc lib and usr for common"
 	else
 		#please note, RUN may be insanely assigned at top near SRC_URI
 		if [[ ${DRIVERS_DISTFILE} =~ .*\.zip ]]; then
@@ -315,20 +311,16 @@ src_prepare() {
 	# Fix #483400
 	epatch "${FILESDIR}/fgl_glxgears-do-not-include-glATI.patch"
 
-	# Fix #524658
-	epatch "${FILESDIR}/fix-the-linux-3.17-no_hotplug-error.patch"
-
 	# Compile fix, https://bugs.gentoo.org/show_bug.cgi?id=454870
 	use pax_kernel && epatch "${FILESDIR}/const-notifier-block.patch"
 
-	# Compile fix, #526602
-	epatch "${FILESDIR}/use-kernel_fpu_begin.patch"
+	# Fix #542320
+	epatch "${FILESDIR}/15.9-preempt.patch"
+	epatch "${FILESDIR}/15.9-kcl_str.patch"
+	epatch "${FILESDIR}/4.3-kolasa-seq_printf.patch"
+	epatch "${FILESDIR}/4.3-gentoo-mtrr.patch"
+	epatch "${FILESDIR}/crimson_i686_xg.patch"
 
-	# Compile fix, kernel 3.19/4.0
-	epatch "${FILESDIR}/kolasa-3.19-get_cpu_var.patch"
-	epatch "${FILESDIR}/kolasa_4.0-cr4-strn.patch"
-
-	# Allow user patches so they can support RC kernels and whatever else
 	epatch_user
 
 	cd "${MODULE_DIR}"
@@ -410,6 +402,13 @@ src_install() {
 	exeinto /usr/$(get_libdir)/xorg/modules
 	doexe "${MY_BASE_DIR}"/usr/X11R6/${PKG_LIBDIR}/modules/{glesx.so,amdxmm.so}
 
+	#516816
+	if use gdm-hack; then
+		sed -i 's#/proc/%i/fd/0#/etc/ati/xvrn#g' \
+			"${D}/usr/$(get_libdir)/xorg/modules/drivers/fglrx_drv.so" || \
+			die "Applying gdm-hack failed"
+	fi
+
 	# Arch-specific files.
 	# (s)bin.
 	into /opt
@@ -468,12 +467,16 @@ src_install() {
 	newinitd "${FILESDIR}"/atieventsd.init atieventsd
 	echo 'ATIEVENTSDOPTS=""' > "${T}"/atieventsd.conf
 	newconfd "${T}"/atieventsd.conf atieventsd
+	systemd_dounit "${FILESDIR}/atieventsd.service"
 
 	# PowerXpress stuff
 	exeinto /usr/$(get_libdir)/fglrx
 	doexe "${FILESDIR}"/switchlibGL || die "doexe switchlibGL failed"
 	cp "${FILESDIR}"/switchlibGL "${T}"/switchlibglx
 	doexe "${T}"/switchlibglx || die "doexe switchlibglx failed"
+
+	#516816
+	use gdm-hack && Xorg -version > "${D}/etc/ati/xvrn" 2>&1
 }
 
 src_install-libs() {
@@ -507,6 +510,13 @@ src_install-libs() {
 		exeinto ${ATI_ROOT}/extensions
 		doexe "${EX_BASE_DIR}"/usr/X11R6/${pkglibdir}/modules/extensions/fglrx/fglrx-libglx.so
 		mv "${D}"/${ATI_ROOT}/extensions/{fglrx-,}libglx.so
+
+		#516816
+		if use gdm-hack; then
+			sed -i 's#/proc/%i/fd/0#/etc/ati/xvrn#g' \
+				"${D}/${ATI_ROOT}/extensions/libglx.so" \
+				|| die "Applying gdm-hack failed"
+		fi
 	fi
 
 	# other libs
@@ -529,7 +539,6 @@ src_install-libs() {
 	dosym libOpenCL.so.${libmajor} /usr/$(get_libdir)/OpenCL/vendors/amd/libOpenCL.so
 	exeinto /usr/$(get_libdir)
 	doexe "${MY_ARCH_DIR}"/usr/${pkglibdir}/libati*.so*
-	doexe "${MY_ARCH_DIR}"/usr/${pkglibdir}/libamdhsasc*.so
 
 	# OpenCL vendor files
 	insinto /etc/OpenCL/vendors/
@@ -585,19 +594,17 @@ pkg_postinst() {
 	elog "Stopping Xorg, reloading fglrx kernel module and restart Xorg"
 	elog "might not work"
 	elog
-	elog "Some cards need acpid running to handle events"
-	elog "Please add it to boot runlevel with rc-update add acpid boot"
-	elog
 
 	use modules && linux-mod_pkg_postinst
 	"${ROOT}"/usr/bin/eselect opengl set --use-old ati
 	"${ROOT}"/usr/bin/eselect opencl set --use-old amd
 
 	if has_version "x11-drivers/xf86-video-intel[sna]"; then
-		ewarn "It is reported that xf86-video-intel built with USE=\"sna\" causes the X server"
-		ewarn "to crash on systems that use hybrid AMD/Intel graphics. If you experience"
-		ewarn "this crash, downgrade to xf86-video-intel-2.20.2 or earlier or"
-		ewarn "try disabling sna for xf86-video-intel."
+		ewarn "It is reported that xf86-video-intel built with USE=\"sna\""
+		ewarn "causes the X server to crash on systems that use hybrid"
+		ewarn "AMD/Intel graphics. If you experience this crash, downgrade"
+		ewarn "to xf86-video-intel-2.20.2 or earlier or try disabling sna"
+		ewarn "for xf86-video-intel."
 		ewarn "For details, see https://bugs.gentoo.org/show_bug.cgi?id=430000"
 	fi
 
