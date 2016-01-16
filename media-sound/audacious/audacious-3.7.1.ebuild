@@ -20,7 +20,7 @@ SRC_URI="!gtk3? ( http://distfiles.audacious-media-player.org/${P}.tar.bz2 )
 # bandeled libguess is BSD (3-clause)
 LICENSE="BSD-2 BSD"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 IUSE="+gtk -gtk3 qt5"
 REQUIRED_USE="|| ( gtk qt5 )
 	gtk3? ( gtk )"

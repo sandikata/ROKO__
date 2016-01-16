@@ -17,3 +17,9 @@ x11-drivers/xf86-video-ati-dri3
 # Дата: 201501106 14:52
 # dockbarx
 >dev-python/pillow-2.9.0
+
+# Маскиран от Росен Александров email: sandikata@yandex.ru jabber: roko@jabber.calculate-linux.org
+# Дата: 20160116 08:48
+# testing
+=media-sound/audacious-3.7.1
+=media-plugins/audacious-plugins-3.7.1
