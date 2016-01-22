@@ -13,13 +13,14 @@ SRC_URI="${HOMEPAGE}/archive/${PV}.tar.gz -> ${P}.tar.gz"
 LICENSE="LGPL-3.0"
 SLOT="0"
 KEYWORDS="~*"
-IUSE="gnome-shell +gtk2 gtk3 metacity unity xfwm transparency"
+IUSE="gnome-shell cinnamon +gtk2 gtk3 metacity unity xfwm transparency"
 REQUIRED_USE="|| ( gtk2 gtk3 )"
 
 DEPEND="x11-themes/gtk-engines-murrine
 		x11-libs/gdk-pixbuf"
 RDEPEND="${DEPEND}
 		gnome-shell? ( gnome-base/gnome-shell )
+		cinnamon? ( gnome-extra/cinnamon )
 		xfwm? ( xfce-base/xfwm4 )
 		gtk2? ( x11-libs/gtk+:2 )
 		gtk3? ( x11-libs/gtk+:3 )
@@ -41,6 +42,7 @@ src_configure(){
 	use !gtk2 && myconf+="--disable-gtk2 "
 	use !gtk3 && myconf+="--disable-gtk3 "
 	use !gnome-shell && myconf+="--disable-gnome-shell "
+	use !cinnamon && myconf+="--disable-cinnamon "
 	use !unity && myconf+="--disable-unity "
 	use !metacity && myconf+="--disable-metacity "
 	use !xfwm && myconf+="--disable-xfwm "

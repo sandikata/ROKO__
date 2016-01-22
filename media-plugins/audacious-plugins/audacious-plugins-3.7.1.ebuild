@@ -32,7 +32,7 @@ REQUIRED_USE="	|| ( gtk qt5 )
 
 COMMON_DEPEND=">=dev-libs/dbus-glib-0.60
 	dev-libs/libxml2:2
-	~media-sound/audacious-3.7[gtk=,gtk3=,qt5=]
+	>media-sound/audacious-3.7[gtk=,gtk3=,qt5=]
 	>=sys-apps/dbus-0.6.0
 	>=sys-devel/gcc-4.7.0:*
 	x11-libs/libXcomposite
@@ -94,7 +94,7 @@ pkg_pretend() {
 }
 
 src_prepare() {
-	epatch "${FILESDIR}/${P}-gl-spectrum-qt-include-glu.patch"
+	epatch "${FILESDIR}/audacious-plugins-3.7-gl-spectrum-qt-include-glu.patch"
 	l10n_for_each_disabled_locale_do remove_locales
 }
 

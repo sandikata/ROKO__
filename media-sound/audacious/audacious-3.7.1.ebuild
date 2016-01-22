@@ -42,7 +42,7 @@ DEPEND="${COMMON_DEPEND}
 	sys-devel/gettext
 	virtual/pkgconfig"
 RDEPEND=${COMMON_DEPEND}
-PDEPEND="~media-plugins/audacious-plugins-3.7[gtk=,gtk3=,qt5=]"
+PDEPEND=">media-plugins/audacious-plugins-3.7[gtk=,gtk3=,qt5=]"
 
 use gtk3 && S="${WORKDIR}/${P}-gtk3"
 RESTRICT="mirror"
