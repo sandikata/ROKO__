@@ -29,6 +29,8 @@ RDEPEND="dev-libs/fribidi
 	>=dev-qt/qtwidgets-5.3[-gles2]
 	>=dev-qt/qtx11extras-5.3
 	>=dev-qt/qtxml-5.3
+	>=dev-qt/linguist-tools-5.3
+	>=dev-qt/qtsvg-5.3
 	media-libs/alsa-lib
 	>=media-video/ffmpeg-2.4
 	media-libs/glew
