@@ -16,7 +16,7 @@ IUSE=""
 
 DEPEND="dev-python/requests
 	dev-python/beautifulsoup:4
-	dev-lang/python:3
+	dev-lang/python:3.4
 	dev-python/pygobject:3"
 RDEPEND="${DEPEND}"
 
