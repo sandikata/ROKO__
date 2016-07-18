@@ -16,7 +16,7 @@ RESTRICT="fetch strip"
 
 # We cannot use dkms from within ebuild as it tries to modify the live filesystem.
 LICENSE="AMD GPL-2 QPL-1.0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 SLOT="1"
 
 RDEPEND="
