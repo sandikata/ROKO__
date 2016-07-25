@@ -1,0 +1,297 @@
+diff --git a/media/avatars/default-non-register.jpg b/media/avatars/default-non-register.jpg
+deleted file mode 100644
+index b4ac687..0000000
+Binary files a/media/avatars/default-non-register.jpg and /dev/null differ
+diff --git a/media/avatars/default.jpg b/media/avatars/default.jpg
+deleted file mode 100644
+index 33bf499..0000000
+Binary files a/media/avatars/default.jpg and /dev/null differ
+diff --git a/media/avatars/groups/default.png b/media/avatars/groups/default.png
+deleted file mode 100644
+index ba18a32..0000000
+Binary files a/media/avatars/groups/default.png and /dev/null differ
+diff --git a/settings.py b/settings.py
+index 2a144cb..ecac925 100644
+--- a/settings.py
++++ b/settings.py
+@@ -62,15 +62,14 @@ SECRET_KEY = 'n*v0=jz-1rz@(4gx^tf%6^e7c&um@2)g-l=3_)t@19a69n1nv6'
+ 
+ # List of callables that know how to import templates from various sources.
+ TEMPLATE_LOADERS = (
+-    'django.template.loaders.filesystem.load_template_source',
+-    'django.template.loaders.app_directories.load_template_source',
++    'django.template.loaders.filesystem.Loader',
++    'django.template.loaders.app_directories.Loader',
+ #     'django.template.loaders.eggs.load_template_source',
+ )
+ 
+ MIDDLEWARE_CLASSES = (
+     'django.middleware.common.CommonMiddleware',
+     'django.middleware.csrf.CsrfViewMiddleware',
+-    'django.middleware.csrf.CsrfResponseMiddleware',
+     'django.contrib.sessions.middleware.SessionMiddleware',
+     'django.middleware.locale.LocaleMiddleware',
+     'django.contrib.messages.middleware.MessageMiddleware',
+@@ -110,7 +109,7 @@ LOCALE_PATHS = (
+ )
+ 
+ TEMPLATE_CONTEXT_PROCESSORS = (
+-    'django.core.context_processors.auth',
++    'django.contrib.auth.context_processors.auth',
+     'django.core.context_processors.debug',
+     'django.core.context_processors.i18n',
+     'django.core.context_processors.media',
+diff --git a/templates/add_user_form.html b/templates/add_user_form.html
+index 19c1155..e582ed1 100644
+--- a/templates/add_user_form.html
++++ b/templates/add_user_form.html
+@@ -6,6 +6,7 @@
+ <div class="narrow-panel">
+ <h3>{% trans "Add User" %}</h3>
+ <form action="" method="post">
++	{% csrf_token %}
+ 	<label for="id_email">{% trans "Email" %}</label>
+ 	{{ form.email }}	{{ form.email.errors }}
+ 	<label for="id_password1">{% trans "Password" %}</label>
+diff --git a/templates/decrypt_repo_form.html b/templates/decrypt_repo_form.html
+index ad2cd6a..5649134 100644
+--- a/templates/decrypt_repo_form.html
++++ b/templates/decrypt_repo_form.html
+@@ -8,6 +8,7 @@
+             <div class="repo-file-list-not-show">
+                 <p class="access-notice">{% trans "This library is encrypted. Please input the password if you want to browse it online. And the password will be kept on the server for only 1 hour." %}</p>
+                 <form action="{{ SITE_ROOT }}repo/{{ repo.id }}/?next={{ next }}" method="post">
++                    {% csrf_token %}
+                     <label>{% trans "Password: " %}</label>
+                     <input type="hidden" name="repo_id" value="{{ repo.id }}" />
+                     <input type="hidden" name="username" value="{{ request.user.username }}" />
+diff --git a/templates/file_view.html b/templates/file_view.html
+index 977739c..9e7a26e 100644
+--- a/templates/file_view.html
++++ b/templates/file_view.html
+@@ -86,6 +86,7 @@
+     </div>
+ 
+     <form id="link-send-form" action="" method="post" class="hide">
++        {% csrf_token %}
+         <h3>{% trans "Send Link" %}</h3>
+         <label>{% trans "Send to:"%}</label><br />
+         <textarea id="link-send-input" name="email" placeholder="{% trans "Emails, Seperated by ','"%}"></textarea><br />
+@@ -113,6 +114,7 @@
+     {% if request.user.is_authenticated %}
+     <div id="file-comment" class="hide">
+         <form id="file-comment-form" action="" method="post">
++            {% csrf_token %}
+             <div class="w100 ovhd">
+                 <a class="pic fleft" href="{% url 'user_profile' request.user.username %}">{% avatar request.user.username 48 %}</a>
+                 <div id="comment-container" class="txt fright">
+diff --git a/templates/registration/login.html b/templates/registration/login.html
+index 4c6a1cc..4cd1ccd 100644
+--- a/templates/registration/login.html
++++ b/templates/registration/login.html
+@@ -5,6 +5,7 @@
+ <div class="narrow-panel">
+ <h2>{% trans "Log In" %}</h2>
+ <form action="" method="post" class="login-form">
++    {% csrf_token %}
+     <label for="username">{% trans "Email" %}</label>
+ 	<input type="text" id="id_email" name="username" value="" />
+ 	<label for="password">{% trans "Password" %}</label>
+diff --git a/templates/registration/org_registration_form.html b/templates/registration/org_registration_form.html
+index 91bd56f..71878c6 100644
+--- a/templates/registration/org_registration_form.html
++++ b/templates/registration/org_registration_form.html
+@@ -7,6 +7,7 @@
+ {% else %}
+     <h2>注册企业帐号</h2>
+     <form action="" method="post">
++        {% csrf_token %}
+         <label for="id_email">邮箱：</label>
+         {{ form.email }}
+         <label for="id_password1">密码：</label>
+diff --git a/templates/registration/password_change_form.html b/templates/registration/password_change_form.html
+index 9d88d44..ae4a287 100644
+--- a/templates/registration/password_change_form.html
++++ b/templates/registration/password_change_form.html
+@@ -6,6 +6,7 @@
+ <div class="narrow-panel">
+   <h2>{% trans "Password Modification" %}</h2>
+   <form action="" method="post">
++    {% csrf_token %}
+     <label for="id_old_password">{% trans "Current Password: " %}</label>
+     {{ form.old_password }}    {{ form.old_password.errors }}
+     <label for="id_new_password1">{% trans "New Password: " %}</label>
+diff --git a/templates/registration/password_reset_confirm.html b/templates/registration/password_reset_confirm.html
+index 181a994..234f354 100644
+--- a/templates/registration/password_reset_confirm.html
++++ b/templates/registration/password_reset_confirm.html
+@@ -10,6 +10,7 @@
+ <div class="narrow-panel">
+     <h2>{% trans "Input new password" %}</h2>
+     <form action="" method="post">
++        {% csrf_token %}
+         <label for="id_new_password1">{% trans "New Password: " %}</label>
+         {{ form.new_password1 }}
+         {{ form.new_password1.errors }}
+diff --git a/templates/registration/password_reset_form.html b/templates/registration/password_reset_form.html
+index 8f2cc64..6f3f7d8 100644
+--- a/templates/registration/password_reset_form.html
++++ b/templates/registration/password_reset_form.html
+@@ -6,6 +6,7 @@
+ <div class="narrow-panel">
+     <h2>{% trans "Password Reset" %}</h2>
+     <form action="" method="post">
++        {% csrf_token %}
+         <label for="id_email">{% trans "Your email used in login: " %}</label>
+         {{ form.email }}
+         {{ form.email.errors }}
+diff --git a/templates/registration/registration_form.html b/templates/registration/registration_form.html
+index 995189b..d8427b8 100644
+--- a/templates/registration/registration_form.html
++++ b/templates/registration/registration_form.html
+@@ -8,6 +8,7 @@
+ {% else %}
+     <h2>{% trans "Signup" %}</h2>
+     <form action="" method="post">
++        {% csrf_token %}
+         <label for="id_email">{% trans "Email" %}</label>
+         {{ form.email }}            {{ form.email.errors }}
+         <label for="id_password1">{% trans "Password" %}</label>
+diff --git a/templates/repo.html b/templates/repo.html
+index 1cafca4..2b37dc3 100644
+--- a/templates/repo.html
++++ b/templates/repo.html
+@@ -209,6 +209,7 @@
+         <p class="error">{% trans "The owner of this library has ran out of space." %}</p>
+         {% else %}
+         <form id="upload-file-form" enctype="multipart/form-data" method="post" action="{{ upload_url }}">
++            {% csrf_token %}
+             <input type="hidden" name="parent_dir" id="parent_dir" value="{{ parent_dir }}" />
+             <div class="files-add">
+                 <span class="op add">{% trans "Add files" %}</span>
+@@ -234,6 +235,7 @@
+         <p class="error">{% trans "The owner of this library has ran out of space." %}</p>
+         {% else %}      
+         <form id="update-file-form" enctype="multipart/form-data" method="post" action="{{ update_url }}?head={{ head_id }}">
++            {% csrf_token %}
+             <input type="hidden" name="target_file" />
+             <input type="file" name="file" id="file-update-input" />
+             <p>({% trans "Smaller than" %} {{ max_upload_file_size|filesizeformat }})</p>          
+@@ -252,6 +254,7 @@
+ 
+     {% if is_repo_owner %}
+     <form id="repo-setting-form" action="" method="post" class="simple-input-popup hide">{% csrf_token %}
++        {% csrf_token %}
+         <h3>{% trans "Library Settings" %}</h3>
+         <label>{% trans "Name" %}</label><br />
+         <input type="text" name="repo_name" value="{{ repo.name }}" class="long-input" /><br />
+@@ -270,6 +273,7 @@
+     {% endif %}
+ 
+     <form id="add-new-dir-form" action="" method="post" class="simple-input-popup hide">{% csrf_token %}
++        {% csrf_token %}
+         <h3>{% trans "New Directory" %}</h3>
+         <label>{% trans "Directory Name" %}</label><br /><!-- <br/> for ie 7 -->
+         <input type="hidden" name="repo_id" value="{{ repo.id }}" />
+@@ -281,6 +285,7 @@
+     </form>
+ 
+     <form id="add-new-file-form" action="" method="post" class="simple-input-popup hide">{% csrf_token %}
++        {% csrf_token %}
+         <h3>{% trans "New File" %}</h3>
+         <div id="featured-filetype">
+             <label>{% trans "Featured File Type" %}</label><br />
+@@ -307,6 +312,7 @@
+     </form>
+ 
+     <form id="mv-form" action="{{ SITE_ROOT }}file/move/" method="post" class="hide">
++        {% csrf_token %}
+         <h3 id="mv-hd"></h3>
+         <h4 id="mv-detail"></h4>
+         <div id="mv-dir-list">
+@@ -328,6 +334,7 @@
+     </form>
+ 
+     <form id="rename-form" action="{{ SITE_ROOT}}repo/file_rename/" method="post" class="simple-input-popup hide">
++        {% csrf_token %}
+         <h3>{% trans 'Rename <span id="rename-type"></span>' %}</h3>
+         <p>{% trans 'Rename <span id="rename-obj" class="op-target"></span> as: ' %}</p>
+         <input type="hidden" name="repo_id" value="{{ repo.id }}" />
+@@ -344,6 +351,7 @@
+         <p>{% trans 'Link: ' %}<input type="text" readonly="readonly" id="shared-link-text" /></p>
+         <button id="send-link">{% trans 'Send' %}</button>
+         <form id="link-send-form" action="" method="post" class="hide">
++            {% csrf_token %}
+             <label>{% trans "Send to:"%}</label><br />
+             <textarea id="link-send-input" name="email" placeholder="{% trans "Emails, Seperated by ','"%}"></textarea><br />
+             <input type="hidden" name="file_shared_link" value="{{ dir_shared_link }}" />
+diff --git a/templates/snippets/group_recommend_form.html b/templates/snippets/group_recommend_form.html
+index 4850a56..fab14a2 100644
+--- a/templates/snippets/group_recommend_form.html
++++ b/templates/snippets/group_recommend_form.html
+@@ -1,6 +1,7 @@
+ {% load seahub_tags i18n %}
+ {% load url from future %}
+     <form action="{% url 'group_recommend' %}" method="post" id="discuss-to-group-form" class="hide">{% csrf_token %}
++        {% csrf_token %}
+         <h3>{% trans "Post a discussion to group" %}</h3>
+         <div class="groups">
+             {% for group in groups %}
+diff --git a/templates/snippets/repo_create_form.html b/templates/snippets/repo_create_form.html
+index 753a5ec..3f7985a 100644
+--- a/templates/snippets/repo_create_form.html
++++ b/templates/snippets/repo_create_form.html
+@@ -1,5 +1,6 @@
+ {% load i18n %}
+ <form id="repo-create-form" action="" method="post" class="hide">
++    {% csrf_token %}
+     <h3>{% trans "New Library"%}</h3>
+     <label>{% trans "Name"%}</label><br/>
+     <input id="repo-name" type="text" name="repo_name" value="" maxlength="{{max_file_name}}"/><br />
+diff --git a/templates/snippets/repo_share_form.html b/templates/snippets/repo_share_form.html
+index 8d5c9fa..74f989f 100644
+--- a/templates/snippets/repo_share_form.html
++++ b/templates/snippets/repo_share_form.html
+@@ -1,5 +1,6 @@
+ {% load i18n avatar_tags group_avatar_tags %}
+ <form id="repo-share-form" action="{{ post_url }}" method="post" name="repo-share-form" class="hide">
++    {% csrf_token %}
+     <h3>{% trans "Share Library"%}</h3>
+     <p>{% trans 'Share <span class="op-target"></span> to' %}</p>
+     <div id="repo-share-tabs">
+diff --git a/templates/snippets/user_profile_html.html b/templates/snippets/user_profile_html.html
+index e09b1f6..c7d35c7 100644
+--- a/templates/snippets/user_profile_html.html
++++ b/templates/snippets/user_profile_html.html
+@@ -24,6 +24,7 @@
+ 
+ {#if $T.new_user}
+ <form id="add-as-contact-form" class="hide" action="{{ SITE_ROOT }}contacts/add/" method="post">
++    {% csrf_token %}
+     <input type="hidden" name="user_email" value="{{ request.user.username }}" id="id_user_email" />
+     <label>{% trans "Email" %}</label><br />
+     <input id="id_contact_email" type="text" name="contact_email" maxlength="255" value="{$T.email}" /><br />
+diff --git a/templates/userinfo.html b/templates/userinfo.html
+index d8adf04..6d498e6 100644
+--- a/templates/userinfo.html
++++ b/templates/userinfo.html
+@@ -83,6 +83,7 @@
+ {% endif %}
+ 
+ <form id="set-quota-form" method="post" class="hide">{% csrf_token %}
++    {% csrf_token %}
+     <label>{% trans "Set user storage limit" %}</label><br />
+     <input type="hidden" name="email" value="{{ email }}" />
+     <input type="text" name="quota" /> MB <br />
+diff --git a/templates/view_file_base.html b/templates/view_file_base.html
+index b853d8f..8c71883 100644
+--- a/templates/view_file_base.html
++++ b/templates/view_file_base.html
+@@ -91,6 +91,7 @@
+     </div>
+ 
+     <form id="link-send-form" action="" method="post" class="hide">
++        {% csrf_token %}
+         <h3>{% trans "Send Link" %}</h3>
+         <label>{% trans "Send to:"%}</label><br />
+         <textarea id="link-send-input" name="email" placeholder="{% trans "Emails, Seperated by ','"%}"></textarea><br />
