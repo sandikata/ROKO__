@@ -14,7 +14,7 @@ SLOT="0"
 KEYWORDS="~amd64"
 IUSE="ffmpeg libav imagemagick unoconv"
 
-DEPEND="dev-lang/python:3
+DEPEND="dev-lang/python:3.4
 	dev-python/PyQt5
 	ffmpeg? ( media-video/ffmpeg )
 	libav? ( media-video/libav )
