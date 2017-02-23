@@ -3,7 +3,7 @@
 # $Header: $
 
 EAPI=5
-inherit  gnome2-utils distutils eutils python
+inherit  gnome2-utils eutils python
 
 PYTHON_DEPEND="2:2.7"
 RESTRICT_PYTHON_ABIS="3.*"
