@@ -1,11 +1,9 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
-# $Id$
 
 EAPI="5"
-inherit readme.gentoo toolchain-funcs versionator
+inherit readme.gentoo-r1 toolchain-funcs versionator
 
-COMPRESSTYPE=".xz"
 K_USEPV="yes"
 UNIPATCH_STRICTORDER="yes"
 K_SECURITY_UNSUPPORTED="1"
@@ -16,19 +14,19 @@ inherit kernel-2
 detect_version
 K_NOSETEXTRAVERSION="don't_set_it"
 
-DESCRIPTION="Linux kernel fork with new features, including the -ck patchset (BFS), BFQ, TuxOnIce and UKSM"
-HOMEPAGE="http://pf.natalenko.name/"
+DESCRIPTION="Linux kernel fork with new features (-ck patchset (BFS), BFQ, TuxOnIce and UKSM)"
+HOMEPAGE="https://pf.natalenko.name/"
 
 PF_VERS="1"
-PF_FILE="patch-${PV/_p*/}-pf${PV/*_p/}${COMPRESSTYPE}"
-PF_URI="http://pf.natalenko.name/sources/$(get_version_component_range 1-2)/${PF_FILE}"
-SRC_URI="${KERNEL_URI} ${PF_URI}" # \${EXPERIMENTAL_URI}
+PF_FILE="v$(get_version_component_range 1-2)...v$(get_version_component_range 1-2)-pf${PV/*_p/}.diff"
+PF_URI="https://github.com/pfactum/pf-kernel/compare/${PF_FILE}"
+SRC_URI="${KERNEL_URI} ${PF_URI}"
 
 KEYWORDS="-* ~amd64 ~ppc ~ppc64 ~x86"
 IUSE=""
 
 KV_FULL="${PVR}-pf"
-S="${WORKDIR}"/linux-"${KV_FULL}"
+S="${WORKDIR}/linux-${KV_FULL}"
 
 DISABLE_AUTOFORMATTING="yes"
 DOC_CONTENTS="
@@ -59,7 +57,9 @@ pkg_setup(){
 }
 
 src_prepare(){
-	epatch "${DISTDIR}"/"${PF_FILE}"
+	epatch "${DISTDIR}/${PF_FILE}"
+
+	default
 }
 
 src_install() {
