@@ -1,0 +1,3 @@
+fixes/Bug-1418598-Make-cargo-linker-properly-handle-quoted.patch
+debian-hacks/Don-t-build-image-gtests.patch
+debian-hacks/Don-t-err-on-tildes-when-using-shellutil.split.patch

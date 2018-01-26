@@ -1,0 +1,22 @@
+From: Mike Hommey <mh+mozilla@glandium.org>
+Date: Sat, 18 Nov 2017 20:24:12 +0900
+Subject: Bug 1418598 - Make cargo-linker properly handle quoted strings in
+ MOZ_CARGO_WRAP_LD and MOZ_CARGO_WRAP_LDFLAGS. r?build
+
+---
+ build/cargo-linker | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/build/cargo-linker b/build/cargo-linker
+index daba62f6c818..31864d2a86e8 100755
+--- a/build/cargo-linker
++++ b/build/cargo-linker
+@@ -16,5 +16,7 @@
+ # * MOZ_CARGO_WRAP_LDFLAGS contains space-separated arguments to pass,
+ #   and not quoting it ensures that either of those arguments is passed
+ #   as a separate argument to the actual LD.
++#
++# $@ is doubly quoted for the eval. See bug 1418598.
+ 
+-${MOZ_CARGO_WRAP_LD} ${MOZ_CARGO_WRAP_LDFLAGS} "$@"
++eval ${MOZ_CARGO_WRAP_LD} ${MOZ_CARGO_WRAP_LDFLAGS} '"$@"'

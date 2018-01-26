@@ -1,0 +1,12 @@
+*** a/security/sandbox/linux/SandboxOpenedFiles.cpp	2017-08-12 22:21:18.101139245 -0400
+--- b/security/sandbox/linux/SandboxOpenedFiles.cpp	2017-08-12 22:21:34.943140022 -0400
+***************
+*** 9,14 ****
+--- 9,15 ----
+  #include "mozilla/Move.h"
+  #include "SandboxLogging.h"
+  
++ #include <errno.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+  

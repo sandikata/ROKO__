@@ -1,0 +1,22 @@
+--- a/yandex-disk-indicator.py	2017-05-08 21:07:51.000000000 +0300
++++ b/yandex-disk-indicator.py	2017-09-16 22:47:48.596964782 +0300
+@@ -1482,8 +1482,8 @@
+   config['autostart'] = checkAutoStart(autoStartDst)
+   # Setup on-screen notification settings from config value
+   config.setdefault('notifications', True)
+-  config.setdefault('theme', False)
+-  config.setdefault('fmextensions', True)
++  config.setdefault('theme', True)
++  config.setdefault('fmextensions', False)
+   config.setdefault('daemons', '~/.config/yandex-disk/config.cfg')
+   # Is it a first run?
+   if not config.readSuccess:
+@@ -1506,8 +1506,6 @@
+       except:
+         logger.error('Can\'t activate indicator automatic start on system start-up')
+ 
+-    # Activate FM actions according to config (as it is first run)
+-    activateActions()
+     # Default settings should be saved (later)
+     config.changed = True
+ 
