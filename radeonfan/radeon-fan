@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Активиране на ръчен режим
+echo 1 | sudo tee /sys/class/drm/card0/device/hwmon/hwmon2/pwm1_enable
+
+GTEMP=$(cat /sys/class/drm/card0/device/hwmon/hwmon2/temp1_input)
+file="/etc/radeonfanspeed"
+while read -r LOWER UPPER VALUE;
+do
+if [[ "$GTEMP" -ge "$LOWER" && "$GTEMP" -lt "$UPPER" ]]
+then
+echo "$VALUE" | sudo tee /sys/class/drm/card0/device/hwmon/hwmon2/pwm1
+break
+fi
+done <"$file"
