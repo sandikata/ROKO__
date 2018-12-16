@@ -1,0 +1,81 @@
+diff '--exclude=.git' -urN a/data/org.gnome.nautilus.gschema.xml b/data/org.gnome.nautilus.gschema.xml
+--- a/data/org.gnome.nautilus.gschema.xml	2017-10-11 01:41:13.212127511 -0400
++++ b/data/org.gnome.nautilus.gschema.xml	2017-10-11 01:47:00.859419876 -0400
+@@ -112,7 +112,7 @@
+       <description>If set to true, then Nautilus will ask for confirmation when you attempt to delete files, or empty the Trash.</description>
+     </key>
+     <key type="b" name="automatic-decompression">
+-      <default>true</default>
++      <default>false</default>
+       <summary>Whether to extract compressed files instead of opening them in another application</summary>
+       <description>If set to true, then Nautilus will automatically extract compressed files instead of opening them in another application</description>
+     </key>
+diff '--exclude=.git' -urN a/src/nautilus-files-view.c b/src/nautilus-files-view.c
+--- a/src/nautilus-files-view.c	2017-10-11 01:41:13.212127511 -0400
++++ b/src/nautilus-files-view.c	2017-10-11 01:47:00.860419871 -0400
+@@ -7451,8 +7451,7 @@
+                                                                NAUTILUS_PREFERENCES_SHOW_DELETE_PERMANENTLY);
+     settings_show_create_link = g_settings_get_boolean (nautilus_preferences,
+                                                         NAUTILUS_PREFERENCES_SHOW_CREATE_LINK);
+-    settings_automatic_decompression = g_settings_get_boolean (nautilus_preferences,
+-                                                               NAUTILUS_PREFERENCES_AUTOMATIC_DECOMPRESSION);
++    settings_automatic_decompression = FALSE;
+ 
+     /* Right click actions */
+     /* Selection menu actions */
+diff '--exclude=.git' -urN a/src/resources/ui/nautilus-preferences-window.ui b/src/resources/ui/nautilus-preferences-window.ui
+--- a/src/resources/ui/nautilus-preferences-window.ui	2017-10-11 01:41:13.213127506 -0400
++++ b/src/resources/ui/nautilus-preferences-window.ui	2017-10-11 01:49:42.692628478 -0400
+@@ -647,52 +647,6 @@
+                     <property name="position">3</property>
+                   </packing>
+                 </child>
+-                <child>
+-                  <object class="GtkBox" id="vbox10">
+-                    <property name="visible">True</property>
+-                    <property name="can_focus">False</property>
+-                    <property name="orientation">vertical</property>
+-                    <property name="spacing">6</property>
+-                    <child>
+-                      <object class="GtkLabel" id="label17">
+-                        <property name="visible">True</property>
+-                        <property name="can_focus">False</property>
+-                        <property name="label" translatable="yes">Compressed Files</property>
+-                        <property name="xalign">0</property>
+-                        <attributes>
+-                          <attribute name="weight" value="bold"/>
+-                        </attributes>
+-                      </object>
+-                      <packing>
+-                        <property name="expand">False</property>
+-                        <property name="fill">False</property>
+-                        <property name="position">0</property>
+-                      </packing>
+-                    </child>
+-                    <child>
+-                      <object class="GtkCheckButton" id="automatic_decompression_checkbutton">
+-                        <property name="label" translatable="yes">E_xtract the files on open</property>
+-                        <property name="use_action_appearance">False</property>
+-                        <property name="visible">True</property>
+-                        <property name="can_focus">True</property>
+-                        <property name="receives_default">False</property>
+-                        <property name="use_underline">True</property>
+-                        <property name="xalign">0</property>
+-                        <property name="draw_indicator">True</property>
+-                      </object>
+-                      <packing>
+-                        <property name="expand">False</property>
+-                        <property name="fill">False</property>
+-                        <property name="position">2</property>
+-                      </packing>
+-                    </child>
+-                  </object>
+-                  <packing>
+-                    <property name="expand">False</property>
+-                    <property name="fill">True</property>
+-                    <property name="position">4</property>
+-                  </packing>
+-                </child>
+               </object>
+               <packing>
+                 <property name="position">1</property>

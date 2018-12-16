@@ -1,0 +1,12 @@
+diff '--exclude=.git' -urN a/meson.build b/meson.build
+--- a/meson.build	2017-09-12 09:51:04.000000000 -0400
++++ b/meson.build	2017-10-24 03:30:11.100292201 -0400
+@@ -53,7 +53,7 @@
+ gsettings_desktop_schemas = dependency ('gsettings-desktop-schemas',
+                                         version: schemas_ver)
+ 
+-libm = cc.find_library ('libm')
++libm = cc.find_library ('m', required: false)
+ 
+ conf = configuration_data ()
+ conf.set_quoted ('VERSION', meson.project_version ())

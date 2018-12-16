@@ -1,0 +1,27 @@
+diff '--exclude=.git' -urN b/src/resources/ui/nautilus-files-view-context-menus.ui c/src/resources/ui/nautilus-files-view-context-menus.ui
+--- b/src/resources/ui/nautilus-files-view-context-menus.ui	2016-09-27 14:08:21.284709558 -0400
++++ c/src/resources/ui/nautilus-files-view-context-menus.ui	2016-10-01 21:47:37.004588081 -0400
+@@ -240,23 +240,6 @@
+     </section>
+     <section>
+       <item>
+-        <attribute name="label" translatable="yes">_Extract Here</attribute>
+-        <attribute name="action">view.extract-here</attribute>
+-        <attribute name="hidden-when">action-disabled</attribute>
+-      </item>
+-      <item>
+-        <attribute name="label" translatable="yes">E_xtract to…</attribute>
+-        <attribute name="action">view.extract-to</attribute>
+-        <attribute name="hidden-when">action-disabled</attribute>
+-      </item>
+-      <item>
+-        <attribute name="label" translatable="yes">C_ompress…</attribute>
+-        <attribute name="action">view.compress</attribute>
+-        <attribute name="hidden-when">action-disabled</attribute>
+-      </item>
+-    </section>
+-    <section>
+-      <item>
+         <attribute name="label" translatable="yes">P_roperties</attribute>
+         <attribute name="action">view.properties</attribute>
+       </item>
