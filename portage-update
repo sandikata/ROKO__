@@ -1,0 +1,12 @@
+#!/bin/sh
+#update for funtoo/gentoo
+#ego sync/emerge --sync
+export XAUTHORITY="/home/$USER/.Xauthority"
+export DISPLAY=":0"
+eix-sync
+eix-remote update
+/usr/local/bin/portage-notify "Информация" "Portage e обновен на "$(date)". Налични "$(emerge -pavuDN world | grep -c - )" актуализации. Не забравяйте да изпълните emerge -avuDN @world!" 
+60000 normal /usr/share/icons/Tango/scalable/status/dialog-information.svg transfer.complete || /usr/local/bin/notify.sh "Внимание!" "Актуализацията беше неуспешна!" 
+60000 critical /usr/share/icons/Tango/scalable/status/dialog-error.svg transfer.error; 
+
+
