@@ -3,7 +3,7 @@
 
 EAPI=6
 
-inherit cmake-utils readme.gentoo-r1
+inherit cmake-utils
 
 DESCRIPTION="Friendly Interactive SHell"
 HOMEPAGE="http://fishshell.com/"
@@ -60,13 +60,9 @@ src_configure() {
 src_install() {
 	cmake-utils_src_install
 	keepdir /usr/share/fish/vendor_{completions,conf,functions}.d
-	readme.gentoo_create_doc
 }
 
 src_test() {
 	cmake-utils_src_make -j1 test
 }
 
-pkg_postinst() {
-	readme.gentoo_print_elog
-}
