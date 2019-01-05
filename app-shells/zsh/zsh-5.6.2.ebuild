@@ -31,7 +31,7 @@ RDEPEND="
 		static? ( >=dev-libs/libpcre-3.9[static-libs] )
 	)
 	gdbm? ( sys-libs/gdbm:= )
-	!<sys-apps/baselayout-2.4.1
+	!<sys-apps/baselayout-2.2.2
 "
 DEPEND="sys-apps/groff
 	${RDEPEND}"
