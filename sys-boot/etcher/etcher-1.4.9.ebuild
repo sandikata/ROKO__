@@ -34,6 +34,6 @@ src_unpack() {
 
 src_install() {
 	mv * "${D}" || die
-	sed -i "s/Utility/System/g" "${D}"usr/share/applications/"${PN}"-electron.desktop
-	fperms 0755 /opt/Etcher/"${PN}"-electron || die
+	sed -i "s/Utility/System/g" "${D}"usr/share/applications/balena-"${PN}"-electron.desktop
+	fperms 0755 /opt/balenaEtcher/balena-"${PN}"-electron || die
 }
