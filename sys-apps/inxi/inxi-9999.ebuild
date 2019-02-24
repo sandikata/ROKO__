@@ -38,7 +38,7 @@ RDEPEND="
 
 S="${WORKDIR}/${MY_P}"
 
-PATCHES=( "${FILESDIR}/${PN}-3.0.00_fix_disk_usage_calculation.patch" )
+#PATCHES=( "${FILESDIR}/${PN}-3.0.00_fix_disk_usage_calculation.patch" )
 
 get_recommended_packages() {
 	local inxi_bin="${ROOT}/usr/bin/inxi"
