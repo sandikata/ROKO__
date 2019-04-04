@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>OCZ</vendor>
+  <vendor_url>https://ocz.com/us/download/ssd-utility</vendor_url>
+
+  <action id="org.ocz.pkexec.ssdutility">
+    <description>Run OCZ SSD Utility as root</description>
+    <description xml:lang="ru">Запустить OCZ SSD Utility от суперпользователя</description>
+    <message>Authentication is required to run the OCZ SSD Utility</message>
+    <message xml:lang="ru">Требуется аутентификация для запуска OCZ SSD Utility от суперпользователя</message>
+    <icon_name>ssd-utility</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/opt/ssd-utility/SSDUtility</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+</policyconfig>
