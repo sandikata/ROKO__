@@ -1,8 +1,8 @@
-# Copyright 1999-2018 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
-PYTHON_COMPAT=( python3_{4,5,6} )
+PYTHON_COMPAT=( python3_{4,5,6,7} )
 PLOCALES="be bg el ru"
 
 inherit eutils gnome2-utils l10n xdg-utils python-r1
@@ -41,18 +41,13 @@ DEPEND="${RDEPEND}
 	nls? ( sys-devel/gettext )"
 
 src_prepare() {
-	mv todo.txt TODO || die
-	mv build/yd-tools/debian/changelog ChangeLog || die
+	mv -v todo.txt TODO || die
+	mv -v build/yd-tools/debian/changelog ChangeLog || die
 
 	# Change "Exec" path in *.desktop files
 	sed -i \
 		-e "s:Exec=yandex-disk-indicator:Exec=/usr/bin/yandex-disk-indicator.py:" \
 		Yandex.Disk-indicator.desktop || die "sed failed!"
-
-	# Disable activateActions() on starting
-	# because ${PN} freeze while is trying install another filemanagers
-	# ¯\_(ツ)_/¯
-	epatch "${FILESDIR}"/disable_activateActions.patch
 
 	if use nls; then
 		l10n_find_plocales_changes "translations" "yandex-disk-indicator_" ".po"
@@ -69,12 +64,12 @@ src_prepare() {
 		done
 	fi
 
+	# Fix bug: https://github.com/slytomcat/yandex-disk-indicator/issues/197
+	epatch "${FILESDIR}"/${P}_disable_show_synchronized_sub_menu_while_updating.patch
 	eapply_user
 }
 
 src_install() {
-	local x
-
 	if use nls; then
 		do_loc() {
 			insinto /usr/share/locale/${1}/LC_MESSAGES
@@ -106,6 +101,11 @@ pkg_preinst() {
 }
 
 pkg_postinst() {
+	xdg_desktop_database_update
+	gnome2_icon_cache_update
+}
+
+pkg_postrm() {
 	xdg_desktop_database_update
 	gnome2_icon_cache_update
 }
