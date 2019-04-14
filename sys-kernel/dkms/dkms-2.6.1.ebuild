@@ -1,10 +1,10 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2019 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="6"
 
 EGIT_REPO_URI="https://github.com/dell/dkms"
-EGIT_COMMIT=872b837d37fb50578731b69b135fac1ec6e0d67c
+EGIT_COMMIT=08dd4e13aceae4f37120aee7d8d55c8e22987740
 
 inherit eutils git-r3
 
@@ -12,7 +12,7 @@ DESCRIPTION="Dynamic Kernel Module Support"
 HOMEPAGE="https://github.com/dell/dkms"
 LICENSE="GPL-2"
 DEPEND=""
-KEYWORDS="~x86 ~amd64"
+KEYWORDS="~amd64 ~x86"
 SLOT="0"
 
 src_install () {
