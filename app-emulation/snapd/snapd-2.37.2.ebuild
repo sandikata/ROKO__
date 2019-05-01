@@ -11,7 +11,7 @@ SRC_URI="https://github.com/snapcore/${PN}/releases/download/${PV}/${PN}_${PV}.v
 
 LICENSE="GPL-3"
 SLOT="0"
-KEYWORDS="amd64"
+KEYWORDS="~amd64"
 IUSE=""
 RESTRICT="primaryuri"
 
@@ -163,6 +163,21 @@ src_install() {
 	doexe "${C}"/snap-confine/snap-device-helper
 	exeopts -m 6755
 	doexe "${C}"/snap-confine/snap-confine
+}
+
+pkg_postrm() {
+	debug-print-function $FUNCNAME "$@"
+
+	if systemctl is-active --quiet snapd.service snapd.socket; then
+		snapd_was_active=yes
+		systemctl stop snapd.socket snapd.service snapd.apparmor.service
+	fi
+	umount /var/lib/snapd/snaps/*.snap
+	rm -rf /var/lib/snapd/*
+	rm -f /etc/systemd/system/snap-*.mount
+	rm -f /etc/systemd/system/snap-*.service
+	rm -f /etc/systemd/system/multi-user.target.wants/snap-*.mount
+	rm -rf /snap/*
 }
 
 pkg_postinst() {
