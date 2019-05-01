@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>jamesb.fe80@gmail.com</email>
+		<name>James Browning</name>
+	</maintainer>
+	<longdescription lang="en">
+The snapd and snap tools enable systems to work with .snap files.
+
+Snaps are faster to install, easier to create, safer to run, and they update automatically and transactionally so your app is always fresh and never broken.
+	</longdescription>
+	<use>
+	</use>
+</pkgmetadata>

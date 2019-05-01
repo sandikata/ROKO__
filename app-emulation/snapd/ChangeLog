@@ -1,0 +1,137 @@
+# ChangeLog for app-emulation/snapd
+# Copyright 1999-2019 Gentoo Foundation; Distributed under the GPL v2
+# (auto-generated from git log)
+
+*snapd-2.38 (26 Apr 2019)
+
+  26 Apr 2019; James Browning <JamesB.fe80@gmail.com> +snapd-2.38.ebuild:
+  version bump to 2.38
+
+*snapd-2.37.2 (07 Feb 2019)
+
+  07 Feb 2019; James Browning <JamesB.fe80@gmail.com> +snapd-2.37.2.ebuild,
+  -snapd-9999.ebuild:
+  drop 9999 and verbump
+
+*snapd-2.36.1 (11 Nov 2018)
+*snapd-2.35.5 (11 Nov 2018)
+
+  11 Nov 2018; James Browning <JamesB.fe80@gmail.com> +snapd-2.35.5.ebuild,
+  +snapd-2.36.1.ebuild:
+  version bumps
+
+*snapd-2.35.2 (27 Sep 2018)
+
+  27 Sep 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-2.34.3.ebuild, +snapd-2.35.2.ebuild, snapd-9999.ebuild:
+  change to RESTRICT="primaryuri" which makes more sense and verbump
+
+  14 Aug 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-2.34.3.ebuild:
+  drop mirror restriction
+
+  03 Aug 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-2.34.3.ebuild, snapd-9999.ebuild:
+  formatting
+
+  03 Aug 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-2.34.3.ebuild, snapd-9999.ebuild:
+  replace mv in install split config checks and unify inherits
+
+*snapd-2.34 (03 Aug 2018)
+
+  03 Aug 2018; James Browning <JamesB.fe80@gmail.com> +snapd-2.34.ebuild,
+  snapd-2.34.3.ebuild, snapd-9999.ebuild:
+  Three way split.
+
+*snapd-2.34.3 (03 Aug 2018)
+
+  03 Aug 2018; James Browning <JamesB.fe80@gmail.com> -snapd-2.34.2.ebuild,
+  +snapd-2.34.3.ebuild:
+  version bump and simplification
+
+  30 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.2.ebuild,
+  snapd-9999.ebuild:
+  mark 9999 broken and minor enhancements.
+
+  29 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.2.ebuild,
+  snapd-9999.ebuild:
+  unroll mkversion.sh
+
+  29 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.2.ebuild,
+  snapd-9999.ebuild:
+  Add early translation support and replace MINE complex with MY_S
+
+  29 Jul 2018; James Browning <JamesB.fe80@gmail.com> +files/ebuild_diff.txt,
+  metadata.xml, snapd-2.34.2.ebuild, snapd-9999.ebuild:
+  shim the ebuild branches back toward each other.
+
+  29 Jul 2018; James Browning <JamesB.fe80@gmail.com> -snapd-2.30-r3.ebuild,
+  -snapd-2.34.ebuild, -snapd-2.34-r1.ebuild, -snapd-2.34-r2.ebuild:
+  remove older broken ebuilds.
+
+  29 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-2.34.2.ebuild:
+  make /usr/lib64/snapd/snap-confine set_UID and set_GID
+
+*snapd-2.34.2 (26 Jul 2018)
+*snapd-2.34-r2 (26 Jul 2018)
+
+  26 Jul 2018; James Browning <JamesB.fe80@gmail.com> +snapd-2.34-r2.ebuild,
+  +snapd-2.34.2.ebuild:
+  version bump and failed attempt at a version bump
+
+  22 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34-r1.ebuild:
+  fix copypasta error
+
+*snapd-2.34-r1 (21 Jul 2018)
+
+  21 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  +snapd-2.34-r1.ebuild:
+  add new variant (2.34-r1) to use some golang eclasses
+
+  09 Jul 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.34.ebuild,
+  snapd-9999.ebuild:
+  */*: automatc lint and
+  app-emulation/snapd: remove line in files repoman pointed at
+  net-misc/ntpsec: dropped as now in upstream
+  sys-fs/diod: dropped as broken
+  sys-apps/modprobe-db: dropped due to missing dep
+
+*snapd-2.34 (09 Jul 2018)
+
+  09 Jul 2018; James Browning <JamesB.fe80@gmail.com> +snapd-2.34.ebuild,
+  snapd-9999.ebuild:
+  version bump and update 9999
+
+  31 Jan 2018; James Browning <JamesB.fe80@gmail.com> snapd-9999.ebuild:
+  add dev-python/docutils and sys-apps/apparmor in DEPEND
+
+  this should fix another build bug reported by wendelltduncan
+
+  Package-Manager: Portage-2.3.19, Repoman-2.3.6
+
+  27 Jan 2018; James Browning <JamesB.fe80@gmail.com> snapd-9999.ebuild:
+  unkeyword 9999, make fry() more usefull and cleanup
+
+  26 Jan 2018; James Browning <JamesB.fe80@gmail.com> -snapd-2.30.ebuild:
+  trim some old cruft and add comments where new code is not ready
+
+  23 Jan 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.30-r3.ebuild:
+  update and lint
+
+*snapd-9999 (20 Jan 2018)
+*snapd-2.30-r3 (20 Jan 2018)
+
+  20 Jan 2018; James Browning <JamesB.fe80@gmail.com> snapd-2.30.ebuild,
+  +snapd-2.30-r3.ebuild, +snapd-9999.ebuild:
+  snapd: Try for new/updated ebuild (now w/ git)
+
+*snapd-2.30 (13 Jan 2018)
+
+  13 Jan 2018; James Browning <JamesB.fe80@gmail.com> +metadata.xml,
+  +snapd-2.30.ebuild:
+  add snapcraft snapd ebuild ...
+
+  ... most of this seems to be elsewhere. grrr
+
