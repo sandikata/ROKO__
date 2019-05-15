@@ -7,7 +7,7 @@ EAPI=5
 EGIT_REPO_URI='git://git.exherbo.org/paludis/paludis.git'
 PYTHON_COMPAT=( python2_7 )
 # matching profile defaults for now
-RUBY_VER=2.1
+RUBY_VER=2.6
 
 inherit autotools bash-completion-r1 eutils git-r3 python-single-r1 user
 
