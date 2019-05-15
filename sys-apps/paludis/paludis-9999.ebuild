@@ -18,7 +18,7 @@ SRC_URI=""
 IUSE="doc pbins pink python ruby search-index test +xml"
 LICENSE="GPL-2 vim"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~amd64"
 
 COMMON_DEPEND="
 	>=app-admin/eselect-1.2.13
