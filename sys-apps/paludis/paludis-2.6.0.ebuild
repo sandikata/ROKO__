@@ -4,7 +4,7 @@
 
 EAPI=5
 
-PYTHON_COMPAT=( python2_7 )
+PYTHON_COMPAT=( python3_6 )
 # matching profile defaults for now
 RUBY_VER=2.6
 
