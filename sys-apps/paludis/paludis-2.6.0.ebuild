@@ -1,36 +1,36 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2016 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
+# $Id$
 
-EAPI=6
+EAPI=5
 
-EGIT_REPO_URI="https://github.com/MageSlayer/paludis-gentoo-patches.git"
-EGIT_BRANCH="eapi7"
 PYTHON_COMPAT=( python2_7 )
-RUBY_VER=2.3
+# matching profile defaults for now
+RUBY_VER=2.4
 
-inherit bash-completion-r1 cmake-utils git-r3 python-single-r1 user
+inherit bash-completion-r1 eutils python-single-r1 user
 
 DESCRIPTION="paludis, the other package mangler"
 HOMEPAGE="http://paludis.exherbo.org/"
-SRC_URI=""
+SRC_URI="http://paludis.exherbo.org/download/${P}.tar.bz2"
 
-IUSE="doc pbins pink python ruby ruby_targets_ruby${RUBY_VER/./} search-index test +xml"
+IUSE="doc pbins pink python ruby search-index test +xml"
 LICENSE="GPL-2 vim"
 SLOT="0"
-KEYWORDS=""
+KEYWORDS="~alpha ~amd64 ~arm ~ia64 ~mips ~ppc ~ppc64 ~s390 ~sparc ~x86"
 
 COMMON_DEPEND="
 	>=app-admin/eselect-1.2.13
 	>=app-shells/bash-3.2:0
-	dev-libs/libpcre:=[cxx]
-	sys-apps/file:=
-	pbins? ( >=app-arch/libarchive-3.1.2:= )
+	dev-libs/libpcre[cxx]
+	sys-apps/file
+	pbins? ( >=app-arch/libarchive-3.1.2 )
 	python? (
 		${PYTHON_DEPS}
-		>=dev-libs/boost-1.41.0:=[python,${PYTHON_USEDEP}] )
+		>=dev-libs/boost-1.41.0[python,${PYTHON_USEDEP}] )
 	ruby? ( dev-lang/ruby:${RUBY_VER} )
-	search-index? ( >=dev-db/sqlite-3:= )
-	xml? ( >=dev-libs/libxml2-2.6:= )"
+	search-index? ( >=dev-db/sqlite-3 )
+	xml? ( >=dev-libs/libxml2-2.6 )"
 
 DEPEND="${COMMON_DEPEND}
 	>=app-text/asciidoc-8.6.3
@@ -50,9 +50,7 @@ RDEPEND="${COMMON_DEPEND}
 
 PDEPEND="app-eselect/eselect-package-manager"
 
-REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )
-	ruby? ( ruby_targets_ruby${RUBY_VER/./} )"
-RESTRICT="!test? ( test )"
+REQUIRED_USE="python? ( ${PYTHON_REQUIRED_USE} )"
 
 pkg_pretend() {
 	if [[ ${MERGE_TYPE} != buildonly ]]; then
@@ -79,38 +77,37 @@ src_prepare() {
 	# https://bugs.gentoo.org/show_bug.cgi?id=439372#c2
 	sed -i -e "1s/ruby/&${RUBY_VER/./}/" ruby/demos/*.rb || die
 
-	cmake-utils_src_prepare
+	epatch_user
 }
 
 src_configure() {
-	local mycmakeargs=(
-		-DENABLE_DOXYGEN=$(usex doc)
-		-DENABLE_GTEST=$(usex test)
-		-DENABLE_PBINS=$(usex pbins)
-		-DENABLE_PYTHON=$(usex python)
-		-DENABLE_PYTHON_DOCS=$(usex doc) # USE=python implicit
-		-DENABLE_RUBY=$(usex ruby)
-		-DENABLE_RUBY_DOCS=$(usex doc) # USE=ruby implicit
-		-DENABLE_SEARCH_INDEX=$(usex search-index)
-		-DENABLE_VIM=ON
-		-DENABLE_XML=$(usex xml)
+	local myconf=(
+		--htmldir=/usr/share/doc/${PF}/html
 
-		-DPALUDIS_COLOUR_PINK=$(usex pink)
-		-DRUBY_VERSION=${RUBY_VER}
-		-DPALUDIS_ENVIRONMENTS=all
-		-DPALUDIS_DEFAULT_DISTRIBUTION=gentoo
-		-DPALUDIS_CLIENTS=all
-		-DCONFIG_FRAMEWORK=eselect
+		$(use_enable doc doxygen)
+		$(use_enable test gtest)
+		$(use_enable pbins)
+		$(use_enable pink)
+		$(use_enable python)
+		$(use python && use_enable doc python-doc)
+		$(use_enable ruby)
+		$(use ruby && use_enable doc ruby-doc)
+		--with-ruby-version="${RUBY_VER}"
+		$(use_enable search-index)
+		$(use_enable xml)
 
-		# GNUInstallDirs
-		-DCMAKE_INSTALL_DOCDIR="${EPREFIX}/usr/share/doc/${PF}"
+		--enable-vim
+		--with-config-framework=eselect
+		--with-environments=default,portage
+		--with-vim-install-dir=/usr/share/vim/vimfiles
 	)
 
-	cmake-utils_src_configure
+	econf "${myconf[@]}"
 }
 
 src_install() {
-	cmake-utils_src_install
+	default
+	prune_libtool_files
 
 	dobashcomp bash-completion/cave
 
@@ -129,7 +126,13 @@ src_test() {
 		local -x PALUDIS_REDUCED_GID=0
 	fi
 
-	cmake-utils_src_test
+	if ! nonfatal emake -k check ; then
+		eerror "Tests failed. Looking for files for you to add to your bug report..."
+		find "${S}" -type f -name '*.epicfail' -or -name '*.log' | while read a ; do
+			eerror "    $a"
+		done
+		die "Make check failed"
+	fi
 }
 
 pkg_postinst() {
