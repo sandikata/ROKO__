@@ -1,0 +1,12 @@
+diff -Nuar debian/config/config debian-fixed/config/config
+--- debian/config/config	2018-05-25 18:27:54.000000000 -0000
++++ debian-fixed/config/config	2018-06-01 09:02:36.796595370 -0000
+@@ -72,7 +72,7 @@
+ #. Signatures are added in linux-signed
+ CONFIG_MODULE_SIG_KEY=""
+ #. Actually a file containing X.509 certificates, not keys
+-CONFIG_SYSTEM_TRUSTED_KEYS="debian/certs/test-signing-certs.pem"
++CONFIG_SYSTEM_TRUSTED_KEYS=""
+ 
+ ##
+ ## file: crypto/Kconfig

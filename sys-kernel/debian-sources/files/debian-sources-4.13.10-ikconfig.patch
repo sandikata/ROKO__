@@ -1,0 +1,13 @@
+diff -Nuar debian/config/config debian-fixed/config/config
+--- debian/config/config	2017-10-13 19:03:57.000000000 +0300
++++ debian-fixed/config/config	2017-10-31 15:52:40.918362761 +0200
+@@ -5856,7 +5856,8 @@
+ CONFIG_TASK_DELAY_ACCT=y
+ CONFIG_TASK_XACCT=y
+ CONFIG_TASK_IO_ACCOUNTING=y
+-# CONFIG_IKCONFIG is not set
++CONFIG_IKCONFIG=y
++CONFIG_IKCONFIG_PROC=y
+ CONFIG_LOG_BUF_SHIFT=17
+ CONFIG_LOG_CPU_MAX_BUF_SHIFT=12
+ CONFIG_NUMA_BALANCING=y
