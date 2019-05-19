@@ -73,11 +73,8 @@ src_prepare() {
 	## XFS LIBCRC kernel config fixes, FL-823
 	epatch "${FILESDIR}"/debian-sources-3.14.4-xfs-libcrc32c-fix.patch
 
-	## do not configure debian certs.
-	epatch "${FILESDIR}"/${PN}-4.16.12-nocerts.patch
-
 	## FL-3381. enable IKCONFIG
-	epatch "${FILESDIR}"/${P}-ikconfig.patch
+	epatch "${FILESDIR}"/${PN}-4.19.9-ikconfig.patch
 	
 	## FL-4424: enable legacy support for MCELOG.
 	epatch "${FILESDIR}"/${PN}-4.13.10-mcelog.patch
