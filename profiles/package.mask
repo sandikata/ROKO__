@@ -1,3 +1,3 @@
 # Absolutely unstable and vulnerable piece of shit, use at your own risc!
 # Masked at 22.05.2019 for testing.
-sys-kernel/debian-sources:5.0.2
+=sys-kernel/debian-sources-5.0.2
