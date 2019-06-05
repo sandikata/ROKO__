@@ -78,6 +78,8 @@ src_prepare() {
 	
 	## FL-4424: enable legacy support for MCELOG.
 	epatch "${FILESDIR}"/${PN}-4.13.10-mcelog.patch
+	## MQ Scheduler ext4 filesystem corruption fix.
+	epatch "{FILESDIR}"/fix-ext4-mq-scheduler-corruption-4.19.patch
 	
 	# ARCH definitions. Currently only amd64 and i386.
 	local arch featureset subarch
