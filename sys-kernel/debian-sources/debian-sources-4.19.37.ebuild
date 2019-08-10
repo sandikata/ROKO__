@@ -7,7 +7,7 @@ inherit check-reqs eutils mount-boot
 SLOT=$PVR
 CKV=${PV}
 KV_FULL=${PN}-${PVR}
-EXTRAVERSION=-1
+EXTRAVERSION=-6
 MODVER=${CKV}${EXTRAVERSION}
 KERNEL_ARCHIVE="linux_${PV}.orig.tar.xz"
 PATCH_ARCHIVE="linux_${PV}${EXTRAVERSION}.debian.tar.xz"
