@@ -1,7 +1,7 @@
 <pkgmetadata>
-	<herd>fork from funtoo core-kit</herd>
+	<herd>funtoo</herd>
 	<maintainer>
-  		<email>rosen.aleksandrov.1988@mail.ru</email>
+  		<email>funtoo-dev@googlegroups.com</email>
 	</maintainer>
 	<use>
 		<flag name='binary'>Builds and installs kernel automatically</flag>

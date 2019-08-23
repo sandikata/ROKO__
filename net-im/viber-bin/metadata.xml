@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>spiderx@spiderx.dp.ua</email>
+		<name>Vladimir Pavljuchenkov</name>
+	</maintainer>
+	<maintainer type="project">
+		<email>proxy-maint@gentoo.org</email>
+		<name>Proxy Maintainers</name>
+	</maintainer>
+	<longdescription lang="en">
+	Your phone number is your ID. Viber syncs with your mobile contact list,
+	automatically detecting which of your contacts have Viber.
+	Viber Desktop and the latest versions of the Viber mobile app were
+	designed for individuals using Viber on multiple devices, so you can
+	always use the app that's right for you, whether at home, in school,
+	at the office, or on the go.
+	</longdescription>
+	<use>
+		<flag name="apulse">Use PulseAudio emulation for ALSA</flag>
+		<flag name="pax_kernel">Triggers a paxmarking of the binary</flag>
+	</use>
+	<upstream>
+		<doc>https://support.viber.com</doc>
+	</upstream>
+</pkgmetadata>
