@@ -164,7 +164,7 @@ src_prepare() {
 	eapply_user
 
 	config_rpath_update "${S}/config.rpath"
-	eautoreconf
+	sh autogen.sh
 }
 
 src_configure() {
