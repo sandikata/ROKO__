@@ -1,0 +1,24 @@
+From 8fdeb8102d7a8be6773dc4accc5fe87901488724 Mon Sep 17 00:00:00 2001
+From: Alexey Yakovenko <wakeroid@gmail.com>
+Date: Wed, 9 May 2018 10:28:42 +0200
+Subject: [PATCH] sid: fix -Wnarrowing warning
+
+---
+ plugins/sid/sidplay-libs/libsidplay/src/xsid/xsid.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/plugins/sid/sidplay-libs/libsidplay/src/xsid/xsid.cpp b/plugins/sid/sidplay-libs/libsidplay/src/xsid/xsid.cpp
+index 29b5c9096..424cae4ea 100644
+--- a/plugins/sid/sidplay-libs/libsidplay/src/xsid/xsid.cpp
++++ b/plugins/sid/sidplay-libs/libsidplay/src/xsid/xsid.cpp
+@@ -83,8 +83,8 @@ const int8_t XSID::sampleConvertTable[16] =
+ */
+ const int8_t XSID::sampleConvertTable[16] =
+ {
+-    '\x80', '\x94', '\xa9', '\xbc', '\xce', '\xe1', '\xf2', '\x03',
+-    '\x1b', '\x2a', '\x3b', '\x49', '\x58', '\x66', '\x73', '\x7f'
++    -128, -108, -87, -68, -50, -31, -14,
++    3, 27, 42, 59, 73, 88, 102, 115, 127
+ };
+ 
+ const char *XSID::credit =

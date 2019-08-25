@@ -1,0 +1,10 @@
+--- a/Makefile.am	2014-09-13 12:56:05.997575732 +0400
++++ b/Makefile.am	2014-09-13 12:58:07.248012190 +0400
+@@ -60,7 +60,6 @@
+ 
+ docs_DATA = README help.txt about.txt translators.txt ChangeLog\
+-	COPYING.GPLv2 COPYING.LGPLv2.1\
+-	translation/help.ru.txt
++	COPYING.GPLv2 COPYING.LGPLv2.1
+ 
+ desktopdir = $(datadir)/applications

@@ -1,0 +1,21 @@
+From 7163099d55c64bf11c3dac4dadfd83a0495ea207 Mon Sep 17 00:00:00 2001
+From: Alexey Yakovenko <wakeroid@gmail.com>
+Date: Wed, 9 May 2018 10:49:09 +0200
+Subject: [PATCH] adplug: include stdint.h in s3m.h for int8_t
+
+---
+ plugins/adplug/adplug/s3m.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/plugins/adplug/adplug/s3m.h b/plugins/adplug/adplug/s3m.h
+index 708c635b9..85220467a 100644
+--- a/plugins/adplug/adplug/s3m.h
++++ b/plugins/adplug/adplug/s3m.h
+@@ -23,6 +23,7 @@
+ #define H_ADPLUG_S3M
+ 
+ #include "player.h"
++#include <stdint.h>
+ 
+ class Cs3mPlayer: public CPlayer
+ {
