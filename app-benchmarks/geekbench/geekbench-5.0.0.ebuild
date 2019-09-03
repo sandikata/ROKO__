@@ -9,13 +9,13 @@ SRC_URI="https://cdn.geekbench.com/Geekbench-${PV}-Linux.tar.gz"
 
 KEYWORDS="-* amd64 x86"
 LICENSE="geekbench"
-SLOT="4"
+SLOT="5"
 
 RESTRICT="bindist fetch mirror strip"
 
 S="${WORKDIR}/Geekbench-${PV}-Linux"
 
-QA_PREBUILT="opt/geekbench4/geekbench4 opt/geekbench4/geekbench_x86_32 opt/geekbench4/geekbench_x86_64"
+QA_PREBUILT="opt/geekbench5/geekbench5 opt/geekbench5/geekbench_x86_64"
 
 pkg_nofetch() {
 	elog "Please download ${A} from ${HOMEPAGE}/download/linux"
@@ -23,18 +23,18 @@ pkg_nofetch() {
 }
 
 src_install() {
-	exeinto "/opt/geekbench4"
-	doexe "geekbench4" "geekbench_x86_32" "geekbench_x86_64"
+	exeinto "/opt/geekbench5"
+	doexe "geekbench5" "geekbench_x86_64"
 
-	insinto "/opt/geekbench4"
+	insinto "/opt/geekbench5"
 	doins "geekbench.plar"
 
 	dodir "/opt/bin"
-	dosym "../geekbench4/geekbench4" "/opt/bin/geekbench4"
+	dosym "../geekbench5/geekbench5" "/opt/bin/geekbench5"
 }
 
 pkg_postinst() {
 	elog "If you have purchased a commercial license, you can enter"
 	elog "your email address and your license key with the following command:"
-	elog "geekbench4 -r <email address> <license key>"
+	elog "geekbench5 -r <email address> <license key>"
 }
