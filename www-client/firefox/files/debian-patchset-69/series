@@ -1,0 +1,16 @@
+fixes/Allow-.js-preference-files-to-set-locked-prefs-with-.patch
+fixes/Bug-1526653-Include-struct-definitions-for-user_vfp-.patch
+fixes/Bug-1574761-Avoid-race-condition-creating-old-config.patch
+fixes/Bug-1531309-Don-t-use-__PRETTY_FUNCTION__-or-__FUNCT.patch
+prefs/Set-javascript.options.showInConsole.patch
+prefs/Set-DPI-to-system-settings.patch
+prefs/Don-t-auto-disable-extensions-in-system-directories.patch
+debian-hacks/Avoid-wrong-sessionstore-data-to-keep-windows-out-of.patch
+debian-hacks/Add-another-preferences-directory-for-applications-p.patch
+debian-hacks/Don-t-register-plugins-if-the-MOZILLA_DISABLE_PLUGIN.patch
+debian-hacks/Don-t-error-out-when-run-time-libsqlite-is-older-tha.patch
+debian-hacks/Add-a-2-minutes-timeout-on-xpcshell-tests.patch
+debian-hacks/Don-t-build-image-gtests.patch
+debian-hacks/Allow-to-override-ICU_DATA_FILE-from-the-environment.patch
+debian-hacks/Set-program-name-from-the-remoting-name.patch
+debian-hacks/Use-remoting-name-for-call-to-gdk_set_program_class.patch

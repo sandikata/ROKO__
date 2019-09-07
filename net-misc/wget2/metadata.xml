@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+  <maintainer type="person">
+    <email>rosen.aleksandrov.1988@mail.ru</email>
+    <name>Rosen Aleksandrov [ROKO__] </name>
+  </maintainer>
+  <use>
+    <flag name="assert">Build with assert()s</flag>
+    <flag name="compression_brotli">Brotli compression support</flag>
+    <flag name="compression_bzip2">bzip2 compression support</flag>
+    <flag name="compression_lzma">LZMA compression support</flag>
+    <flag name="compression_zlib">gzip compression support</flag>
+    <flag name="gnutls">SSL support using GnuTLS</flag>
+    <flag name="libidn">Internationalized Domain Names (IDN) using libidn</flag>
+    <flag name="libidn2">Internationalized Domain Names (IDN) using libidn2</flag>
+    <flag name="libpcre">Support for Perl regexes using libpcre</flag>
+    <flag name="libpcre2">Support for Perl regexes using libpcre2</flag>
+    <flag name="libpsl">Support for libpsl cookie checking</flag>
+    <flag name="nghttp2">HTTP/2 support using Nghttp2</flag>
+    <flag name="openssl">Use libcrypto hash routines</flag>
+    <flag name="plugin-support">plugin support</flag>
+    <flag name="gpgme">gpgme support</flag>
+  </use>
+</pkgmetadata>

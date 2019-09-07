@@ -1,0 +1,12 @@
+{
+  "policies": {
+    "AppUpdateURL": "",
+    "DisableAppUpdate": true,
+    "DisableFeedbackCommands": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableSystemAddonUpdate": true,
+    "DisableTelemetry": true,
+    "DontCheckDefaultBrowser": true
+  }
+}
