@@ -1,0 +1,61 @@
+--- mkstage4.sh.orig	2017-03-22 18:56:13.000000000 +0200
++++ mkstage4.sh	2019-09-14 15:47:52.929409445 +0300
+@@ -7,6 +7,11 @@
+   exit 1
+ fi
+ 
++# checks if pbzip binary exist
++pbzip2=$(whereis pbzip2 | cut -d" " -f2)
++# if pbzip2 exist setting variable
++COMPRESSIONCOMMAND="--use-compress-program=pbzip2"
++
+ #set flag variables to null
+ EXCLUDE_BOOT=0
+ EXCLUDE_CONNMAN=0
+@@ -102,7 +107,7 @@
+ 
+ # Excludes:
+ EXCLUDES="\
+---exclude=${TARGET}home/*/.bash_history \
++--exclude=${TARGET}home/* \
+ --exclude=${TARGET}dev/* \
+ --exclude=${TARGET}media/* \
+ --exclude=${TARGET}mnt/*/* \
+@@ -110,7 +115,8 @@
+ --exclude=${TARGET}run/* \
+ --exclude=${TARGET}sys/* \
+ --exclude=${TARGET}tmp/* \
+---exclude=${TARGET}usr/portage/* \
++--exclude=${TARGET}portage/* \
++--exclude=${TARGET}var/db/repos/* \
+ --exclude=${TARGET}var/lock/* \
+ --exclude=${TARGET}var/log/* \
+ --exclude=${TARGET}var/run/*"
+@@ -136,7 +142,12 @@
+ fi
+ 
+ # Generic tar options:
+-TAR_OPTIONS="-cjpP --ignore-failed-read"
++
++if [ -f "$pbzip2" ]; then
++        echo "pbzip2 found on your system!" && TAR_OPTIONS="-cpP --use-compress-program=pbzip2 --ignore-failed-read"
++else
++    	echo "pbzip2 not found on your system, using bzip2 instead!" && TAR_OPTIONS="-cjpP --ignore-failed-read"
++fi
+ 
+ # if not in quiet mode, this message will be displayed:
+ if [ "$AGREE" != "yes" ]
+@@ -158,9 +169,10 @@
+ fi
+ 
+ # start stage4 creation:
+-if [ "$AGREE" == "yes" ]
++if [ "$AGREE" == "yes" ] && [ -f "$pbzip2" ]
+ then
+-  tar $TAR_OPTIONS $EXCLUDES $OPTIONS -f $STAGE4_FILENAME ${TARGET}*
++  echo "Starting stage4 compression process with parallel bzip!" && tar $TAR_OPTIONS $EXCLUDES $OPTIONS -f $STAGE4_FILENAME ${TARGET}*
++else
++  echo "Starting stage4 compression process with bzip!" && tar $TAR_OPTIONS $EXCLUDES $OPTIONS -f $STAGE4_FILENAME ${TARGET}*
+ fi
+-
+ exit 0

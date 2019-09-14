@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen.aleksandrov.1988@mail.ru</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<longdescription lang="en">
+		This is a bash script to create stage 4 tarballs either for the 
+		running system, or a system at a specified mount point. It is 
+		highly parameterized allowing the exclusion of sensitive user
+		data.
+	</longdescription>
+	<upstream>
+		<remote-id type="github">TheChymera/mkstage4</remote-id>
+	</upstream>
+	<use>
+		<flag name='pbzip2'>Enable parallel bzip2 support</flag>
+	</use>
+</pkgmetadata>
