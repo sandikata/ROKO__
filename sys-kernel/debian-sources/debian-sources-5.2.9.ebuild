@@ -101,6 +101,7 @@ pkg_setup() {
 
 src_prepare() {
 	cd "${S}"
+	epatch_user
 	for debpatch in $( get_patch_list "${WORKDIR}/debian/patches/series" ); do
 		epatch -p1 "${WORKDIR}/debian/patches/${debpatch}"
 	done
