@@ -12,9 +12,9 @@ inherit check-reqs eutils mount-boot
 SLOT=$PF
 CKV=${PV}
 KV_FULL=${PN}-${PVR}
-DEB_PV_BASE="4.19.37"
-DEB_EXTRAVERSION=-6
-EXTRAVERSION=_p6
+DEB_PV_BASE="4.19.67"
+DEB_EXTRAVERSION=-2
+EXTRAVERSION=_p2
 
 # install modules to /lib/modules/${DEB_PV_BASE}${EXTRAVERSION}-$MODULE_EXT
 MODULE_EXT=${EXTRAVERSION}
@@ -28,7 +28,7 @@ PATCH_ARCHIVE="linux_${DEB_PV}.debian.tar.xz"
 RESTRICT="binchecks strip mirror"
 LICENSE="GPL-2"
 KEYWORDS="*"
-IUSE="binary ec2 sign-modules btrfs zfs"
+IUSE="binary custom-cflags ec2 sign-modules btrfs zfs"
 DEPEND="
 	virtual/libelf
 	binary? ( >=sys-kernel/genkernel-3.4.40.7 )
@@ -130,15 +130,6 @@ src_prepare() {
 	## FL-3381. enable IKCONFIG
 	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-ikconfig.patch
 
-	# namespace version 3 support from upstream. See:
-	# https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=8db6c34f1dbc8e06aa016a9b829b06902c3e1340 and FL-4725.
-	# merged in 4.14 from what I can find
-	# epatch "${FILESDIR}"/namespace-v3-upstream.patch
-
-	# Updated driver support -- FL-6316
-	# need to updated patch for 4.19
-	# epatch "${FILESDIR}"/linux-4.20-e1000e.patch
-
 	local arch featureset subarch
 	featureset="standard"
 	if [[ ${REAL_ARCH} == x86 ]]; then
@@ -187,6 +178,12 @@ src_prepare() {
 		ewarn "To enable strict enforcement, YOU MUST add module.sig_enforce=1 as a kernel boot"
 		ewarn "parameter (to params in /etc/boot.conf, and re-run boot-update.)"
 		echo
+	fi
+	if use custom-cflags; then
+		MARCH="$(python -c "import portage; print(portage.settings[\"CFLAGS\"])" | sed 's/ /\n/g' | grep "march")"
+		if [ -n "$MARCH" ]; then
+			sed -i -e 's/-mtune=generic/$MARCH/g' arch/x86/Makefile || die "Canna optimize this kernel anymore, captain!"
+		fi
 	fi
 	# get config into good state:
 	yes "" | make oldconfig >/dev/null 2>&1 || die
