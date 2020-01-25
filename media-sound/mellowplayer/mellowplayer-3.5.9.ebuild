@@ -1,11 +1,11 @@
-# Copyright 1999-2019 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=7
 
 CMAKE_MIN_VERSION="3.10"
 
-inherit cmake-utils flag-o-matic toolchain-funcs xdg-utils
+inherit cmake-utils flag-o-matic toolchain-funcs xdg
 
 MY_PN="MellowPlayer"
 
@@ -45,6 +45,10 @@ RDEPEND="
 
 PATCHES=( "${FILESDIR}/widevine-path.patch" )
 
+src_prepare() {
+	cmake-utils_src_prepare
+}
+
 src_configure() {
 	if test-flags-CXX -std=c++17;then
 		if tc-is-gcc; then
@@ -65,18 +69,4 @@ src_install() {
 	dodir /usr/$(get_libdir)/qt5/plugins/ppapi
 	dosym "${EROOT}"/usr/$(get_libdir)/chromium-browser/WidevineCdm/_platform_specific/linux_x64/libwidevinecdm.so \
 		/usr/$(get_libdir)/qt5/plugins/ppapi/libwidevinecdm.so
-}
-
-pkg_preinst() {
-	xdg_environment_reset
-}
-
-pkg_postinst() {
-	xdg_icon_cache_update
-	xdg_desktop_database_update
-}
-
-pkg_postrm() {
-	xdg_icon_cache_update
-	xdg_desktop_database_update
 }
