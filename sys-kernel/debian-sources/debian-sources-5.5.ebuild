@@ -127,21 +127,6 @@ src_prepare() {
 	cd "${S}"
 	cp -aR "${WORKDIR}"/debian "${S}"/debian
 
-	## XFS LIBCRC kernel config fixes, FL-823
-	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-xfs-libcrc32c-fix.patch
-
-	## FL-4424: enable legacy support for MCELOG.
-	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-mcelog.patch
-
-	## do not configure debian devs certs.
-	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-nocerts.patch
-
-	## FL-3381. enable IKCONFIG
-	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-ikconfig.patch
-
-	## increase bluetooth polling patch
-	epatch "${FILESDIR}"/${DEB_PV_BASE}/${PN}-${DEB_PV_BASE}-fix-bluetooth-polling.patch
-
 	local arch featureset subarch
 	featureset="standard"
 	if [[ ${REAL_ARCH} == x86 ]]; then
