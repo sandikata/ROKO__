@@ -1,2 +1,4 @@
 # # Masked for remove.
 =sys-kernel/debian-sources-5.3.0
+# telegram 1.9.10 masked until released.
+=net-im/telegram-1.9.10
