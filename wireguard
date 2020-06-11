@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+
+VPNDIR=${VPNDIR:-/etc/wireguard}
+VPN=${SVCNAME#*.}
+
+depend() {
+	need localmount net
+		use dns
+			after bootmisc
+			}
+
+			checkconfig() {
+				# TODO: does wireguard module is loaded
+					return 0
+					}
+
+					start() {
+						ebegin "Starting ${SVCNAME}"
+
+							checkconfig || return 1
+
+									wg-quick up "${VPN}"
+										eend $?
+										}
+
+										stop() {
+											ebegin "Stopping ${SVCNAME}"
+												wg-quick down "${VPN}"
+													eend $?
+													}
+													
