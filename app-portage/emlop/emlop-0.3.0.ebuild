@@ -1,7 +1,7 @@
 # Copyright 2017-2018 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=7
 
 CRATES="
 aho-corasick-0.6.9
