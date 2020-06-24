@@ -12,7 +12,7 @@ inherit check-reqs eutils mount-boot
 SLOT=$PF
 CKV=${PV}
 KV_FULL=${PN}-${PVR}
-DEB_PV_BASE="5.5~rc5"
+DEB_PV_BASE="5.7~rc5"
 DEB_EXTRAVERSION="-1~exp1"
 EXTRAVERSION=""
 
