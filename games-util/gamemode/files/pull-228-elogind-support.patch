@@ -1,0 +1,247 @@
+From caa046de5ce9ad9fcc7a9d9d76f6d2b84ace3c52 Mon Sep 17 00:00:00 2001
+From: Stephan Lachnit <stephanlachnit@protonmail.com>
+Date: Sat, 25 Apr 2020 00:08:31 +0200
+Subject: [PATCH 1/2] Add option to use elogind
+
+Signed-off-by: Stephan Lachnit <stephanlachnit@protonmail.com>
+---
+ daemon/gamemode-dbus.c |  5 +++++
+ daemon/meson.build     |  1 +
+ meson.build            | 17 +++++++++++++++--
+ meson_options.txt      |  4 ++--
+ 4 files changed, 23 insertions(+), 4 deletions(-)
+
+diff --git a/daemon/gamemode-dbus.c b/daemon/gamemode-dbus.c
+index f3ba4e2..2767d8e 100644
+--- a/daemon/gamemode-dbus.c
++++ b/daemon/gamemode-dbus.c
+@@ -36,8 +36,13 @@ POSSIBILITY OF SUCH DAMAGE.
+ #include "common-logging.h"
+ #include "common-pidfds.h"
+ 
++#if USE_ELOGIND
++#include <elogind/sd-bus.h>
++#include <elogind/sd-daemon.h>
++#else
+ #include <systemd/sd-bus.h>
+ #include <systemd/sd-daemon.h>
++#endif
+ 
+ #include <assert.h>
+ #include <errno.h>
+diff --git a/daemon/meson.build b/daemon/meson.build
+index 5109db3..466204d 100644
+--- a/daemon/meson.build
++++ b/daemon/meson.build
+@@ -17,6 +17,7 @@ gamemoded_includes += config_h_dir
+ executable(
+     'gamemoded',
+     sources: daemon_sources,
++    c_args: elogind_args,
+     dependencies: [
+         link_daemon_common,
+         dep_threads,
+diff --git a/meson.build b/meson.build
+index a4fe817..99380e7 100644
+--- a/meson.build
++++ b/meson.build
+@@ -78,9 +78,22 @@ path_includedir = join_paths(path_prefix, get_option('includedir'))
+ path_libdir = join_paths(path_prefix, get_option('libdir'))
+ path_libexecdir = join_paths(path_prefix, get_option('libexecdir'))
+ 
+-# Find systemd via pkgconfig
++# Find systemd / elogind via pkgconfig
+ with_systemd = get_option('with-systemd')
+-dep_systemd = dependency('libsystemd')
++with_elogind = get_option('with-elogind')
++elogind_args = []
++dep_systemd = []
++if with_systemd == true
++    if with_elogind == true
++        error('you can\'t use systemd and elogind at the same time')
++    endif
++    dep_systemd = dependency('libsystemd')
++elif with_elogind == true
++    elogind_args += ['-DUSE_ELOGIND']
++    dep_systemd = dependency('libelogind')
++else
++    error('you need to use either sd-bus.h from systemd or elogind')
++endif
+ 
+ # For the client, libdbus is used
+ dep_dbus = dependency('dbus-1')
+diff --git a/meson_options.txt b/meson_options.txt
+index ef329a3..faee820 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,12 +1,12 @@
+-option('with-systemd', type: 'boolean', description: 'Use systemd support (unit, etc)', value: 'true')
+-
+ # limits.d
+ option('with-pam-group', type: 'string', description: 'Install the limits.d configuration file to allow renicing as an unpriviledged user being part of the specified group')
+ 
+ # systemd specific
++option('with-systemd', type: 'boolean', description: 'Use systemd support (unit, etc)', value: true)
+ option('with-systemd-user-unit-dir', type: 'string', description: 'Explicitly set the systemd user unit directory')
+ 
+ # Not using systemd
++option('with-elogind', type: 'boolean', description: 'Use elogind\'s Dbus library', value: false)
+ option('with-dbus-service-dir', type: 'string', description: 'Explicitly set the D-BUS session directory')
+ 
+ # General options
+
+From a4b58f81e5d9dffb8e456bddd4218787268526fd Mon Sep 17 00:00:00 2001
+From: Stephan Lachnit <stephanlachnit@protonmail.com>
+Date: Mon, 27 Apr 2020 10:20:49 +0200
+Subject: [PATCH 2/2] combine no-daemon, elogind and systemd option
+
+Signed-off-by: Stephan Lachnit <stephanlachnit@protonmail.com>
+---
+ daemon/meson.build |  6 +++---
+ data/meson.build   |  2 +-
+ meson.build        | 33 +++++++++++++--------------------
+ meson_options.txt  |  6 +++---
+ 4 files changed, 20 insertions(+), 27 deletions(-)
+
+diff --git a/daemon/meson.build b/daemon/meson.build
+index 466204d..41e6c40 100644
+--- a/daemon/meson.build
++++ b/daemon/meson.build
+@@ -17,11 +17,11 @@ gamemoded_includes += config_h_dir
+ executable(
+     'gamemoded',
+     sources: daemon_sources,
+-    c_args: elogind_args,
++    c_args: sd_bus_args,
+     dependencies: [
+         link_daemon_common,
+         dep_threads,
+-        dep_systemd,
++        sd_bus_dep,
+         inih_dependency,
+         libdl,
+     ],
+@@ -29,4 +29,4 @@ executable(
+         gamemoded_includes,
+     ],
+     install: true,
+-)
+\ No newline at end of file
++)
+diff --git a/data/meson.build b/data/meson.build
+index 3062d40..282d1d5 100644
+--- a/data/meson.build
++++ b/data/meson.build
+@@ -10,7 +10,7 @@ config_example = run_command(
+ ).stdout().strip()
+ data_conf.set('GAMEMODE_EXAMPLE_CONFIG', config_example)
+ 
+-if with_systemd == true
++if sd_bus_provider == 'systemd'
+     # Install systemd user unit
+     configure_file(
+         input: 'gamemoded.service.in',
+diff --git a/meson.build b/meson.build
+index 99380e7..fbf325e 100644
+--- a/meson.build
++++ b/meson.build
+@@ -79,20 +79,15 @@ path_libdir = join_paths(path_prefix, get_option('libdir'))
+ path_libexecdir = join_paths(path_prefix, get_option('libexecdir'))
+ 
+ # Find systemd / elogind via pkgconfig
+-with_systemd = get_option('with-systemd')
+-with_elogind = get_option('with-elogind')
+-elogind_args = []
+-dep_systemd = []
+-if with_systemd == true
+-    if with_elogind == true
+-        error('you can\'t use systemd and elogind at the same time')
+-    endif
+-    dep_systemd = dependency('libsystemd')
+-elif with_elogind == true
+-    elogind_args += ['-DUSE_ELOGIND']
+-    dep_systemd = dependency('libelogind')
+-else
+-    error('you need to use either sd-bus.h from systemd or elogind')
++sd_bus_provider = get_option('with-sd-bus-provider')
++
++sd_bus_args = []
++sd_bus_dep = []
++if sd_bus_provider == 'systemd'
++    sd_bus_dep = dependency('libsystemd')
++elif sd_bus_provider == 'elogind'
++    sd_bus_args += ['-DUSE_ELOGIND']
++    sd_bus_dep = dependency('libelogind')
+ endif
+ 
+ # For the client, libdbus is used
+@@ -105,7 +100,7 @@ dep_threads = dependency('threads')
+ libdl = cc.find_library('dl', required: false)
+ 
+ # Determine the location for the systemd unit
+-if with_systemd == true
++if sd_bus_provider == 'systemd'
+     # If the path isn't explicitly set, ask systemd for the systemd user unit directory
+     path_systemd_unit_dir = get_option('with-systemd-user-unit-dir')
+     if path_systemd_unit_dir == ''
+@@ -136,7 +131,6 @@ endif
+ 
+ path_polkit_action_dir = join_paths(path_datadir, 'polkit-1', 'actions')
+ 
+-with_daemon = get_option('with-daemon')
+ with_examples = get_option('with-examples')
+ with_util = get_option('with-util')
+ 
+@@ -168,7 +162,7 @@ endif
+ 
+ # The daemon can be disabled if necessary, allowing multilib builds of the
+ # main library
+-if with_daemon == true
++if sd_bus_provider != 'no-daemon'
+     # inih currently only needed by the daemon
+     inih_dependency = dependency(
+         'inih',
+@@ -199,7 +193,7 @@ report = [
+     '    includedir:                             @0@'.format(path_includedir),
+ ]
+ 
+-if with_systemd == true
++if sd_bus_provider == 'systemd'
+ report += [
+     '    systemd user unit directory:            @0@'.format(path_systemd_unit_dir),
+ ]
+@@ -215,10 +209,9 @@ report += [
+     '    Options:',
+     '    ========',
+     '',
+-    '    daemon:                                 @0@'.format(with_daemon),
++    '    sd-bus provier:                         @0@'.format(sd_bus_provider),
+     '    examples:                               @0@'.format(with_examples),
+     '    util:                                   @0@'.format(with_util),
+-    '    systemd:                                @0@'.format(with_systemd),
+ ]
+ 
+ # Output some stuff to validate the build config
+diff --git a/meson_options.txt b/meson_options.txt
+index faee820..e3cf976 100644
+--- a/meson_options.txt
++++ b/meson_options.txt
+@@ -1,15 +1,15 @@
+ # limits.d
+ option('with-pam-group', type: 'string', description: 'Install the limits.d configuration file to allow renicing as an unpriviledged user being part of the specified group')
+ 
++# sd-bus provider
++option('with-sd-bus-provider', type: 'combo', choices: ['systemd', 'elogind', 'no-daemon'], value: 'systemd')
++
+ # systemd specific
+-option('with-systemd', type: 'boolean', description: 'Use systemd support (unit, etc)', value: true)
+ option('with-systemd-user-unit-dir', type: 'string', description: 'Explicitly set the systemd user unit directory')
+ 
+ # Not using systemd
+-option('with-elogind', type: 'boolean', description: 'Use elogind\'s Dbus library', value: false)
+ option('with-dbus-service-dir', type: 'string', description: 'Explicitly set the D-BUS session directory')
+ 
+ # General options
+ option('with-examples', type: 'boolean', description: 'Build sample programs', value: 'true')
+-option('with-daemon', type: 'boolean', description: 'Build the daemon', value: 'true')
+ option('with-util', type: 'boolean', description: 'Build the utilities', value: 'true')
