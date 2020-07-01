@@ -217,7 +217,7 @@ src_unpack() {
 }
 
 src_prepare() {
-	eapply "${WORKDIR}"/mariadb-patches
+#	eapply "${WORKDIR}"/mariadb-patches
 
 	eapply_user
 
