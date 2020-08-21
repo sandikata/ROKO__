@@ -4,7 +4,7 @@
 EAPI="6"
 K_SECURITY_UNSUPPORTED="1"
 K_NOSETEXTRAVERSION="1"
-XANMOD_VERSION="1"
+XANMOD_VERSION="2"
 ETYPE="sources"
 inherit kernel-2-src-prepare-overlay
 detect_version
