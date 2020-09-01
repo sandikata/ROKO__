@@ -23,6 +23,6 @@ src_prepare() {
 
 	kernel-2-src-prepare-overlay_src_prepare
 
-	rm "${S}"/.config || die
-
+#	rm "${S}"/.config || die
+	mv "${S}"/.config config-xanmod || die
 }
