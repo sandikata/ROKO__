@@ -1,4 +1,4 @@
-# Copyright 1999-2019 Gentoo Foundation
+# Copyright 1999-2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=6
@@ -15,6 +15,7 @@ LICENSE="Yandex-EULA"
 SLOT="0"
 SRC_URI="
 	amd64? ( https://repo.yandex.ru/yandex-browser/deb/pool/main/y/yandex-browser-beta/yandex-browser-beta_${MY_PV}_amd64.deb -> ${P}.deb )
+	amd64? ( http://gpo.ws54.tk/gentoo-distfiles/${P}.deb -> ${P}.deb )
 "
 KEYWORDS="~amd64"
 IUSE="ffmpeg-codecs"
@@ -51,10 +52,10 @@ RDEPEND="
 	x11-libs/pango[X]
 	x11-misc/xdg-utils
 	sys-libs/libudev-compat
+	ffmpeg-codecs? (
+		=www-plugins/yandex-browser-ffmpeg-codecs-${PV/%_p*/}
+	)
 "
-	# ffmpeg-codecs? (
-	# 	=www-plugins/yandex-browser-ffmpeg-codecs-70.0.3538.102
-	# )
 DEPEND="
 	>=dev-util/patchelf-0.9
 "
@@ -80,7 +81,7 @@ src_prepare() {
 
 	gunzip usr/share/doc/${PN}/changelog.gz || die
 	gunzip usr/share/man/man1/${PN}.1.gz || die
-	
+
 	mv usr/share/doc/${PN} usr/share/doc/${PF} || die
 
 	pushd "${YANDEX_HOME}/locales" > /dev/null || die
