@@ -74,5 +74,5 @@ src_install() {
 	doexe "${FILESDIR}/updaters.d/22-haskell-updater.sh"
 	doexe "${FILESDIR}/updaters.d/23-eclean-packages.sh"
 	insinto "/etc/genup/updaters.d/examples"
-	doins "${FILESDIR}/updaters.d/README"
+#	doins "${FILESDIR}/updaters.d/README"
 }
