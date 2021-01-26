@@ -15,10 +15,10 @@ detect_version
 DESCRIPTION="Xanmod and CacULE sources including the Gentoo patchset for the ${KV_MAJOR}.${KV_MINOR} kernel tree"
 HOMEPAGE="https://github.com/hamadmarri/cacule-cpu-scheduler"
 LICENSE+=" CDDL"
-SRC_URI="${KERNEL_BASE_URI}/linux-5.10.tar.xz https://github.com/HougeLangley/customkernel/releases/download/Kernel-5.10-Patches/0001-patch-5.10.6-xanmod1-cacule.xz ${GENPATCHES_URI}"
+SRC_URI="${KERNEL_BASE_URI}/linux-5.10.tar.xz https://github.com/HougeLangley/customkernel/releases/download/Kernel-5.10-Patches/0001-patch-5.10.10-xanmod1-cacule.xz ${GENPATCHES_URI}"
 
 UNIPATCH_LIST_DEFAULT=""
-UNIPATCH_LIST="${DISTDIR}/0001-patch-5.10.6-xanmod1-cacule.xz"
+UNIPATCH_LIST="${DISTDIR}/0001-patch-5.10.10-xanmod1-cacule.xz"
 
 KEYWORDS="~amd64"
 
