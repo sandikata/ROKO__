@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>theevilskeleton@riseup.net</email>
+		<name>TheEvilSkeleton</name>
+	</maintainer>
+	<maintainer type="person">
+		<email>hedmoo@yahoo.com</email>
+		<name>Andreas Westman Dorcsak</name>
+	</maintainer>
+	<use>
+		<flag name="cacule"> CacULE is a newer version of Cachy. The CacULE CPU scheduler is based on interactivity score mechanism. The interactivity score is inspired by the ULE scheduler (FreeBSD scheduler). </flag>
+		<flag name="experimental"> adding experimental patches for CacULE. </flag>
+	</use>
+	<upstream>
+		<remote-id type="github">xanmod/linux</remote-id>
+	</upstream>
+</pkgmetadata>

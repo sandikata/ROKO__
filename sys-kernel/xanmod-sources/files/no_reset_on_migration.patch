@@ -1,0 +1,15 @@
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index 957e418f05f7..335efc1c6f06 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -6996,8 +6996,10 @@ static void migrate_task_rq_fair(struct task_struct *p, int new_cpu)
+ 	/* Tell new CPU we are migrated */
+ 	p->se.avg.last_update_time = 0;
+ 
++#if !defined(CONFIG_CACULE_SCHED)
+ 	/* We have migrated, no longer consider this task hot */
+ 	p->se.exec_start = 0;
++#endif
+ 
+ 	update_scan_period(p, new_cpu);
+ }

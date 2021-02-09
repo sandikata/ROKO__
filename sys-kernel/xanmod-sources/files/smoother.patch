@@ -1,0 +1,47 @@
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index 957e418f05f..8f2b1a9d0f1 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -44,6 +44,7 @@ static unsigned int normalized_sysctl_sched_latency	= 6000000ULL;
+ 
+ #ifdef CONFIG_CACULE_SCHED
+ int interactivity_factor				= 32768;
++#define MAX_LIFE_TIME_SMOOTHER				 10000000000ULL // 10 seconds
+ #endif
+ 
+ /*
+@@ -592,15 +593,15 @@ static inline unsigned int
+ calc_interactivity(u64 now, struct cacule_node *se)
+ {
+ 	u64 l_se, vr_se, sleep_se, u64_factor;
+-	unsigned int score_se;
++	unsigned int score_se, lifetime_smoother;
+ 
+ 	/*
+ 	 * in case of vruntime==0, logical OR with 1 would
+ 	 * make sure that the least sig. bit is 1
+ 	 */
+ 	l_se		= (now + 1ULL) - se->cacule_start_time;
+-	vr_se		= se->vruntime		| 1;
+-	sleep_se	= (l_se - vr_se)	| 1;
++	vr_se		= se->vruntime			| 1;
++	sleep_se	= (l_se - vr_se)		| 1;
+ 	u64_factor	= interactivity_factor;
+ 
+ 	if (sleep_se > vr_se)
+@@ -608,7 +609,14 @@ calc_interactivity(u64 now, struct cacule_node *se)
+ 	else
+ 		score_se = (u64_factor / (vr_se / sleep_se)) + u64_factor;
+ 
+-	return score_se;
++	if (l_se > MAX_LIFE_TIME_SMOOTHER)
++		return score_se;
++
++	u64_factor <<= 1;
++	lifetime_smoother = 
++		u64_factor - (u64_factor / (MAX_LIFE_TIME_SMOOTHER / (l_se | 1)));
++
++	return score_se + lifetime_smoother;
+ }
+ 
+ /*
