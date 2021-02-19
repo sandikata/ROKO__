@@ -3,7 +3,7 @@
 
 EAPI=7
 
-EGIT_REPO_URI="https://gitlab.com/iankelling/evhz.git"
+EGIT_REPO_URI="https://git.sr.ht/~iank/evhz"
 
 inherit git-r3 toolchain-funcs
 

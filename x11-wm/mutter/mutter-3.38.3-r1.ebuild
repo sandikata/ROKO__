@@ -102,6 +102,7 @@ PATCHES=(
 
 src_prepare() {
   eapply "${FILESDIR}/x11-Add-support-for-fractional-scaling-using-Randr.patch"
+  eapply "${FILESDIR}/mutter-mouse-stutter-fix.patch"
   eapply_user
 }
 
