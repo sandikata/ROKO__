@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>gazports@gmail.com</email>
+		<name>B. Gazotti</name>
+	</maintainer>
+	<longdescription>
+		XanMod kernel sources, with the Gentoo base patchset and an option to use the CacULE CPU scheduler.
+	</longdescription>
+	<use>
+		<flag name="cacule">Enable the CacULE CPU scheduler as a config option - EXPERIMENTAL and DEPRECATED!</flag>
+		<flag name="experimental">Include "experimental" genpatches</flag>
+		<flag name="tasktype">Enable the Task Type CPU scheduler, successor to CacULE, as a config option - EXPERIMENTAL!</flag>
+	</use>
+</pkgmetadata>
