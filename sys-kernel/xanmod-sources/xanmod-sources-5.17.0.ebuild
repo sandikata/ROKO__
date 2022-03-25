@@ -17,14 +17,13 @@ KEYWORDS="~amd64"
 inherit kernel-2
 detect_version
 
-DESCRIPTION="XanMod kernel sources, including the Gentoo patchset"
+DESCRIPTION="XanMod kernel sources, including the Gentoo patchset - LTS branch"
 SRC_URI="
 	${KERNEL_BASE_URI}/linux-${KV_MAJOR}.${KV_MINOR}.tar.xz
 	${XANMOD_URI}/${OKV}-xanmod${XANMOD_VERSION}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz
-	${GENPATCHES_URI}
-"
+	${GENPATCHES_URI}"
 
-UNIPATCH_LIST="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz"
+UNIPATCH_LIST+="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz"
 
 # excluding all minor kernel revision patches; XanMod will take care of that
 UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 1*_linux-${KV_MAJOR}.${KV_MINOR}.*.patch"
@@ -33,13 +32,7 @@ UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 1*_linux-${KV_MAJOR}.${KV_MINOR}.*.patch"
 UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 5*_*cpu-optimization*.patch"
 
 pkg_postinst() {
-	elog "The XanMod team strongly suggests the use of updated CPU microcodes"
-	elog "with its kernels. For details: see:"
-	elog "https://wiki.gentoo.org/wiki/Microcode"
+	elog "The XanMod team strongly suggests the use of updated CPU microcodes with its"
+	elog "kernels. For details, see https://wiki.gentoo.org/wiki/Microcode ."
 	kernel-2_pkg_postinst
-}
-
-# not sure if I need to define this
-pkg_postrm() {
-	kernel-2_pkg_postrm
 }
