@@ -4,7 +4,7 @@
 EAPI="8"
 ETYPE="sources"
 K_WANT_GENPATCHES="base extras"
-K_GENPATCHES_VER="4"
+K_GENPATCHES_VER="5"
 K_SECURITY_UNSUPPORTED="1"
 K_NOSETEXTRAVERSION="1"
 XANMOD_VERSION="1"
@@ -23,19 +23,16 @@ SRC_URI="
 	${XANMOD_URI}/${OKV}-xanmod${XANMOD_VERSION}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz
 	${GENPATCHES_URI}"
 
-UNIPATCH_LIST="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz"
+UNIPATCH_LIST+="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz"
 
 # excluding all minor kernel revision patches; XanMod will take care of that
 UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 1*_linux-${KV_MAJOR}.${KV_MINOR}.*.patch"
 
-pkg_postinst() {
-	elog "The XanMod team strongly suggests the use of updated CPU microcodes"
-	elog "with its kernels. For details: see:"
-	elog "https://wiki.gentoo.org/wiki/Microcode"
-	kernel-2_pkg_postinst
-}
+# excluding CPU optimizations patches, since it's included in XanMod too
+UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 5*_*cpu-optimization*.patch"
 
-# not sure if I need to define this
-pkg_postrm() {
-	kernel-2_pkg_postrm
+pkg_postinst() {
+	elog "The XanMod team strongly suggests the use of updated CPU microcodes with its"
+	elog "kernels. For details, see https://wiki.gentoo.org/wiki/Microcode ."
+	kernel-2_pkg_postinst
 }
