@@ -1,0 +1,14 @@
+<pkgmetadata>
+<maintainer type="person">
+<email>rosen@aleksandrov.tech</email>
+<name>Rosen Aleksandrov</name>
+</maintainer>
+<upstream>
+<bugs-to>https://github.com/Audio4Linux/JDSP4Linux/issues</bugs-to>
+<changelog>https://github.com/Audio4Linux/JDSP4Linux/releases</changelog>
+</upstream>
+<use>
+<flag name="pipewire">Build with PipeWire support.</flag>
+<flag name="pulseaudio">Build with PulseAudio support.</flag>
+</use>
+</pkgmetadata>
