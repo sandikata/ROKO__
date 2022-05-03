@@ -42,6 +42,7 @@ RDEPEND="${DEPEND}
 src_prepare() {
 	eapply "${FILESDIR}"/tidy-source-dir-location.patch
 	eapply "${FILESDIR}"/fix-build-script.patch
+	eapply "${FILESDIR}"/qmake-fix.patch
 	eapply_user
 }
 

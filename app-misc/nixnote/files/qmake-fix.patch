@@ -1,0 +1,13 @@
+diff --git a/nixnote-2.1.6/work/nixnote2-2.1.6/development/build-with-qmake.sh b/nixnote-2.1.6/work/nixnote2-2.1.6/development/build-with-qmake.sh
+index 74e290f..7aad7df 100755
+--- a/development/build-with-qmake.sh
++++ b/development/build-with-qmake.sh
+@@ -57,7 +57,7 @@ if [ -d "${APPDIR}" ]; then
+ fi
+ 
+ 
+-QMAKE_BINARY=qmake
++QMAKE_BINARY=/usr/lib64/qt5/bin/qmake
+ 
+ if [ "${TIDY_LIB_DIR}" == "/usr/lib" ] ; then
+   # at least on ubuntu pkgconfig for "libtidy-dev" is not installed - so we provide default
