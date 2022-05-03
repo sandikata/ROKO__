@@ -1,0 +1,784 @@
+/*********************************************************************************
+NixNote - An open-source client for the Evernote service.
+Copyright (C) 2013 Randy Baumgarte
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+***********************************************************************************/
+
+#include "startupconfig.h"
+#include <QDir>
+#include <QString>
+#include <iostream>
+#include "src/threads/syncrunner.h"
+#include "src/global.h"
+
+#include <QProcessEnvironment>
+
+extern Global global;
+
+StartupConfig::StartupConfig() {
+    // we first allow command line override and set-up final directory later in global.setup()
+    configDir = QString("");
+    programDataDir = QString("");
+    this->forceNoStartMinimized = false;
+    this->startupNewNote = false;
+    this->sqlExec = false;
+    this->sqlString = "";
+    this->forceStartMinimized = false;
+    this->enableIndexing = false;
+    this->startupNoteLid = 0;
+    this->forceSystemTrayAvailable = false;
+    this->disableEditing = false;
+    this->accountId = -1;
+
+    command = new QBitArray(STARTUP_OPTION_COUNT);
+    command->fill(false);
+    newNote = nullptr;
+    queryNotes = nullptr;
+    purgeTemporaryFiles = true;
+    delNote = nullptr;
+    email = nullptr;
+    extractText = nullptr;
+    exportNotes = nullptr;
+    importNotes = nullptr;
+    alter = nullptr;
+    signalGui = nullptr;
+}
+
+
+// Print out user help
+void StartupConfig::printHelp() {
+    QString help = QString(
+        "usage: " NN_APP_NAME " <command>\n"
+        + QString("  <command> options:\n\n")
+        + QString("  help or ? or --? or --help           Show this message\n")
+        + QString("  start <options>                      Start NixNote GUI with the specified options.\n")
+        + QString("                                       If no command is specified, this is the default.\n")
+        + QString("     start options:\n")
+        + QString("          --logLevel=<level>           Set initial logging level (0=trace,1=debug,2=info,3=error,..\n")
+        + QString("                                       This is ONLY valid at program startup until settings are read.\n")
+        + QString("          --accountId=<id>             Start with specified user account.\n")
+        // see FileManager.getConfigDir() for more info
+        + QString("          --configDir=<dir>            Directory containing config files.\n")
+        + QString("          --userDataDir=<dir>          Directory containing database, logs etc..\n")
+        + QString("                                       Warning: ff you set configDir, but don't set userDataDir; userDataDir defaults\n")
+        + QString("                                       to configDir.\n")
+        + QString("          --programDataDir=<dir>       Directory containing deployed fixed program data (like images).\n")
+        + QString("          --dontStartMinimized         Override option to start minimized.\n")
+        + QString("          --disableEditing             Disable note editing\n")
+        + QString("          --enableIndexing             Enable background Indexing (can cause problems)\n")
+        + QString("          --openNote=<lid>             Open a specific note on startup\n")
+        + QString("          --forceSystemTrayAvailable   Force the program to accept that\n")
+        + QString("                                       the desktop supports tray icons.\n")
+        + QString("          --startMinimized             Force a startup with NixNote minimized\n")
+        + QString("  sync                                 Synchronize with Evernote without showing GUI.\n")
+        + QString("  shutdown                             If running, ask NixNote to shutdown\n")
+        + QString("  show_window                          If running, ask NixNote to show the main window.\n")
+        + QString("  query <options>                      If running, search NixNote and display the results.\n")
+        + QString("     query options:\n")
+        + QString("          --search=\"search string\"     Search string.\n\n")
+        + QString("          --delimiter=\"character\"      Character to place between fields.  Defaults to |.\n")
+        + QString("          --noHeaders                  Do not show column headings.")
+        + QString("          --display=\"<output format>\"  Search string.\n\n")
+        + QString("             Output Format: <fieldID><padding><:>\n")
+        + QString("                %i                     Show the internal note ID.\n")
+        + QString("                %t                     Show the note title.\n")
+        + QString("                %n                     Show the notebook.\n")
+        + QString("                %g                     Show tags.\n")
+        + QString("                %c                     Show the date the note was created.\n")
+        + QString("                %u                     Show the last date updated.\n")
+        + QString("                %e                     Show if the note is synchronized with Evernote.\n")
+        + QString("                %s                     Show the source URL.\n")
+        + QString("                %a                     Show the author.\n")
+        + QString("                %x                     Show if the note has a todo item.\n")
+        + QString("                %r                     Show the reminder time.\n")
+        + QString("                %v                     Show the time the reminder was completed.\n")
+        + QString("                <padding>              Pad the field to this number of spaces on the display.\n")
+        + QString("                <:>                    Truncate the field if longer than the padding.\n")
+        + QString("  addNote <options>                    Add a new note via the command line.\n")
+        + QString("     addNote options:\n")
+        + QString("          --title=\"<title>\"            Title of the new note.\n")
+        + QString("          --notebook=\"<notebook>\"      Notebook for the new note.\n")
+        + QString("          --tag=\"<tag>\"                Assign a tag.\n")
+        + QString("                                       For multiple tags use multiple --tag statements.\n")
+        + QString("          --attachment=\"<file_path>\"   File to attach to the note.\n")
+        + QString("                                       For multiple files, use multiple --attachment statements.\n")
+        + QString("          --delimiter=\"<delmiiter>\"    Character string identifying attachment points.\n")
+        + QString("                                       Defaults to %%.\n")
+        + QString("          --created=\"<datetime>\"   Date & time created in yyyy-MM-ddTHH:mm:ss.zzzZ format.\n")
+        + QString("          --updated=\"<datetime>\"   Date & time updated in yyyy-MM-ddTHH:mm:ss.zzzZ format.\n")
+        + QString("          --reminder=\"<datetime>\"  Reminder date & time in yyyy-MM-ddTHH:mm:ss.zzzZ format.\n")
+        + QString("          --noteText=\"<text>\"          Text of the note.  If not provided input\n")
+        + QString("                                       is read from stdin.\n")
+        + QString("  appendNote <options>                 Append to an existing note.\n")
+        + QString("     appendNote options:\n")
+        + QString("          --id=\"<title>\"               ID of note to append.\n")
+        + QString("          --attachment=\"<file_path>\"   File to attach to the note.\n")
+        + QString("                                       For multiple files, use multiple --attachment statements.\n")
+        + QString("          --delimiter=\"<delmiiter>\"    Character string identifying attachment points.\n")
+        + QString("                                       Defaults to %%.\n")
+        + QString("          --noteText=\"<text>\"          Text of the note.  If not provided input\n")
+        + QString("                                       is read from stdin.\n")
+        + QString("  alterNote <options>                  Change a note's notebook or tags.\n")
+        + QString("     alterNote options:\n")
+        + QString("          --id=\"<note_ids>\"            Space separated list of note IDs to extract.\n")
+        + QString("          --search=\"search string\"     Alter notes matching search string.\n")
+        + QString("          --notebook=\"<notebook>\"      Move matching notes to this notebook.\n")
+        + QString("          --addTag=\"<tag_name>\"        Add this tag to matching notes.\n")
+        + QString("          --delTag=\"<tag_name>\"        Remove this tag from matching notes.\n")
+        + QString("          --reminder=\"<datetime>\"      Set a reminder in yyyy-MM-ddTHH:mm:ss.zzzZ format")
+        + QString("          --reminderClear              Clear the note's reminder.\n")
+        + QString("          --reminderComplete           Set the reminder as complete.\n")
+        + QString("                                       yyyy-MM-ddTHH:mm:ss.zzzZ format or the literal 'now' to default\n")
+        + QString("                                       to the current date & time.")
+        + QString("  readNote <options>                   Read the text contents of a note.\n")
+        + QString("          --id=\"<note_id>\"             ID of the note to read.\n")
+        + QString("  deleteNote <options>                 Move a note to the trash via the command line.\n")
+        + QString("     deleteNote options:\n")
+        + QString("          --id=\"<note_id>\"             ID of the note to delete.\n")
+        + QString("          --noVerify                   Do not prompt for verification.\n")
+        + QString("  emailNote <options>                  Email a note via the command line.\n")
+        + QString("     emailNote options:\n")
+        + QString("          --id=\"<note_id>\"             ID of the note to email.\n")
+        + QString("          --subject=\"<subject>\"        Subject for the email.\n")
+        + QString("          --to=\"<address list>\"        List of recipients for the email.\n")
+        + QString("          --cc=\"<address list>\"        List of recipients to carbon copy.\n")
+        + QString("          --bcc=\"<address list>\"       List of recipients to blind carbon copy.\n")
+        + QString("          --note=\"<note>\"              Additional comments.\n")
+        + QString("          --ccSelf                     Send a copy to yourself.\n")
+        + QString("  backup <options>                     Backup the NixNote database.\n")
+        + QString("     backup options:\n")
+        + QString("          --output=<filename>          Output filename.\n")
+        + QString("  export <options>                     Export notes from NixNote.\n")
+        + QString("     export options:\n")
+        + QString("          --id=\"<note_ids>\"            Space separated list of note IDs to extract.\n")
+        + QString("          --search=\"search string\"     Export notes matching search string.\n")
+        + QString("          --output=\"filename\"          Output file name.\n")
+        + QString("          --deleteAfterExtract         Delete notes after the extract completes.\n")
+        + QString("          --noVerifyDelete             Don't verify deletions.\n")
+        + QString("  import <options>                     Import notes from a NixNote extract (.nnex).\n")
+        + QString("     import options:\n")
+        + QString("          --input=\"filename\"           Input file name.\n")
+        + QString("  closeNotebook <options>              Close a notebook.\n")
+        + QString("     closeNotebook options:\n")
+        + QString("          --notebook=\"notebook\"        Notebook name.\n")
+        + QString("  openNotebook <options>               Open a closed notebook.\n")
+        + QString("     openNotebook options:\n")
+        + QString("          --notebook=\"notebook\"        Notebook name.\n")
+        + QString("  signalGui <options>                  Send command to a running NixNote.\n")
+        + QString("     signalGui options:\n")
+        + QString("          --show                       Show NixNote if hidden.\n")
+        + QString("          --synchronize                Synchronize with Evernote.\n")
+        + QString("          --shutdown                   Shutdown NixNote.\n")
+        + QString("          --openNote                   Open a note.  --id=<id> must be specified.\n")
+        + QString("          --openNoteNewTab             Open a note in a new tab.  --id=<id> must be specified.\n")
+        + QString("          --openExternalNote           Open a note in an external window.  --id=<id> must be specified.\n")
+        + QString("          --openNoteUrl                Open a note from a URL.  --url=<url> must be specified.\n")
+        + QString("          --openNoteNewTabUrl          Open a note in a new tab from a URL.  --url=<url> must be specified.\n")
+        + QString("          --openExternalNoteUrl        Open a note in an external window from a URL.  --url=<url> must be specified.\n")
+        + QString("          --id=<id>                    Note Id to open.\n")
+        + QString("          --url=<id>                   In-app or external URL for the Note to open.\n")
+        + QString("          --newNote                    Create a new note.\n")
+        + QString("          --newExternalNote            Create a new note in an external window.\n")
+        + QString("  Examples:\n\n")
+        + QString("     To start NixNote using a secondary account.\n")
+        + QString("     " NN_APP_NAME " --accountId=2\n\n")
+        + QString("     To close an open notebook.\n")
+        + QString("     " NN_APP_NAME " --closeNotebook notebook=\"My Notebook\"\n\n")
+        + QString("     To add a note to the notebook \"My Notebook\"\n")
+        + QString("     " NN_APP_NAME " addNote --notebook=\"My Stuff\" --title=\"My New Note\" --tag=\"Tag1\" --tag=\"Tag2\" --noteText=\"My Note Text\"\n\n")
+        + QString("     To append to an existing note.\n")
+        + QString("     " NN_APP_NAME " appendNote --id=3 --noteText=\"My Note Text\"\n\n")
+        + QString("     To add a tag to notes in the notebook \"Stuff\".\n")
+        + QString("     " NN_APP_NAME " alterNote --search=\"notebook:Stuff\" --addTag=\"NewTag\"\n\n")
+        + QString("     Query notes for the search text. Results show the ID, note title (padded to 10 characters but truncated longer) and the notebook\n")
+        + QString("     " NN_APP_NAME " query --search=\"Famous Authors\" --delimiter=\" * \" --display=\"\%i%t10:%n\"\n\n")
+        + QString("     To extract all notes in the \"Notes\" notebook.\n")
+        + QString("     " NN_APP_NAME " export --search=\"notebook:notes\" --output=/home/joe/exports.nnex\n\n")
+        + QString("     To signal NixNote to do a shutdown (NixNote must already be running).\n")
+        + QString("     " NN_APP_NAME " signalGui --shutdown\n\n")
+        + QString("\n\n")
+    );
+
+    std::cout << help.toStdString(); // ok to use cout => help text
+}
+
+
+//************************************************
+//* Set the user debug level.
+//************************************************
+void setDebugLevel(int level) {
+    // Setup the QLOG functions for debugging & messages
+    QsLogging::Logger &logger = QsLogging::Logger::instance();
+
+    if (level == QsLogging::TraceLevel) {
+        logger.setLoggingLevel(QsLogging::TraceLevel);
+    } else if (level == QsLogging::DebugLevel) {
+        logger.setLoggingLevel(QsLogging::DebugLevel);
+    } else if (level == QsLogging::InfoLevel || level == -1) {
+        logger.setLoggingLevel(QsLogging::InfoLevel);
+    } else if (level == QsLogging::WarnLevel) {
+        logger.setLoggingLevel(QsLogging::WarnLevel);
+    } else if (level == QsLogging::ErrorLevel) {
+        logger.setLoggingLevel(QsLogging::ErrorLevel);
+    } else if (level == QsLogging::FatalLevel) {
+        logger.setLoggingLevel(QsLogging::FatalLevel);
+    } else {
+        logger.setLoggingLevel(QsLogging::InfoLevel);
+        QLOG_WARN() << "Invalid message logging level " << level;
+    }
+}
+
+
+int StartupConfig::init(int argc, char *argv[], bool &guiAvailable) {
+    guiAvailable = true;
+
+    // Check if we have a GUI available. This is ugly, but it works.
+    // We check for a DISPLAY value, if one is found then we assume
+    // that the GUI is available. We can override this with the --forceNoGui
+    // as any parameter.
+
+// Windows Check
+#ifndef _WIN32
+#ifndef Q_OS_MACOS
+    QString display = QProcessEnvironment::systemEnvironment().value("DISPLAY", "");
+    if (display.trimmed() == "") {
+        QLOG_DEBUG() << "It seems no display was found => guiAvailable=false";
+        guiAvailable = false;
+    }
+#endif // end maxcOS
+#endif // end windows check
+
+    // although this will contain the path used to start the binary (even in case of AppImage)
+    // if the app was started via system path, then the path will not be present
+    QLOG_DEBUG() << "Param #0: " << argv[0];
+
+    for (int i = 1; i < argc; i++) {
+        QString parm(argv[i]);
+
+        QLOG_DEBUG() << "Param #" << i << ": " << parm;
+        if (parm == "--help" || parm == "-?" || parm == "help" || parm == "--?") {
+            printHelp();
+            return 1;
+        }
+        if (parm.startsWith("--logLevel=", Qt::CaseSensitive)) {
+            parm = parm.section('=', 1, 1); // 2nd part
+            int level = parm.toInt();
+            QLOG_INFO() << "Changed logLevel via command line option to " << level;
+            setDebugLevel(level);
+            continue;
+        }
+        if (parm.startsWith("--noLogTimestamps", Qt::CaseSensitive)) {
+            QLOG_INFO() << "Log timestamps turned off";
+            QsLogging::Logger &logger = QsLogging::Logger::instance();
+            logger.setDisplayTimestamp(false);
+            continue;
+        }
+        if (parm.startsWith("--accountId=", Qt::CaseSensitive)) {
+            parm = parm.section('=', 1, 1);
+            accountId = parm.toInt();
+            QLOG_DEBUG() << "Set accountId via command line option to " << accountId;
+            continue;
+        }
+
+        // directory overrides
+        if (parm.startsWith("--configDir=", Qt::CaseSensitive)) {
+            parm = parm.section('=', 1, 1);
+            configDir = parm;
+            QLOG_INFO() << "Set configDir via command line to " + configDir;
+            continue;
+        }
+        if (parm.startsWith("--programDataDir=", Qt::CaseSensitive)) {
+            parm = parm.section('=', 1, 1);
+            programDataDir = parm;
+            QLOG_INFO() << "Set programDataDir via command line to " + programDataDir;
+            continue;
+        }
+        if (parm.startsWith("--userDataDir=", Qt::CaseSensitive)) {
+            parm = parm.section('=', 1, 1);
+            userDataDir = parm;
+            QLOG_INFO() << "Set userDataDir via command line to " + userDataDir;
+            continue;
+        }
+
+
+        if (parm.startsWith("addNote")) {
+            activateCommand(STARTUP_ADDNOTE, true);
+            
+            if (newNote == nullptr)
+                newNote = new AddNote();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("appendNote")) {
+            activateCommand(STARTUP_APPENDNOTE, true);
+            if (newNote == nullptr)
+                newNote = new AddNote();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("emailNote")) {
+            activateCommand(STARTUP_EMAILNOTE, true);
+            if (email == nullptr)
+                email = new EmailNote();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("export")) {
+            activateCommand(STARTUP_EXPORT, true);
+            if (exportNotes == nullptr)
+                exportNotes = new ExtractNotes();
+            guiAvailable = false;
+            exportNotes->backup = false;
+        }
+        if (parm.startsWith("import")) {
+            activateCommand(STARTUP_IMPORT, true);
+            if (importNotes == nullptr)
+                importNotes = new ImportNotes();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("backup")) {
+            activateCommand(STARTUP_BACKUP, true);
+            if (exportNotes == nullptr)
+                exportNotes = new ExtractNotes();
+            exportNotes->backup = true;
+            guiAvailable = false;
+        }
+        if (parm.startsWith("query")) {
+            activateCommand(STARTUP_QUERY, true);
+            if (queryNotes == nullptr)
+                queryNotes = new CmdLineQuery();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("readNote")) {
+            activateCommand(STARTUP_READNOTE, true);
+            if (extractText == nullptr)
+                extractText = new ExtractNoteText();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("deleteNote")) {
+            activateCommand(STARTUP_DELETENOTE, true);
+            if (delNote == nullptr)
+                delNote = new DeleteNote();
+            guiAvailable = false;
+        }
+        if (parm.startsWith("sync")) {
+            activateCommand(STARTUP_SYNC, true);
+            guiAvailable = false;
+        }
+        if (parm.startsWith("show_window")) {
+            activateCommand(STARTUP_SHOW, true);
+        }
+        if (parm.startsWith("shutdown")) {
+            activateCommand(STARTUP_SHUTDOWN, true);
+        }
+        if (parm.startsWith("alterNote")) {
+            activateCommand(STARTUP_ALTERNOTE, true);
+            if (alter == nullptr)
+                alter = new AlterNote();
+        }
+        if (parm.startsWith("openNotebook")) {
+            activateCommand(STARTUP_OPENNOTEBOOK, true);
+            notebookList.clear();
+        }
+        if (parm.startsWith("closeNotebook")) {
+            activateCommand(STARTUP_CLOSENOTEBOOK, true);
+            notebookList.clear();
+        }
+        if (parm.startsWith("sqlExec", Qt::CaseSensitive)) {
+            activateCommand(STARTUP_SQLEXEC, true);
+            guiAvailable = false;
+        }
+        if (parm.startsWith("signalGui")) {
+            activateCommand(STARTUP_SIGNALGUI, true);
+            if (signalGui == nullptr) {
+                signalGui = new SignalGui();
+            }
+            guiAvailable = false;
+        }
+
+        // This should be last because it is the default
+        if (parm.startsWith("start")) {
+            activateCommand(STARTUP_GUI, true);
+            guiAvailable = true;
+        }
+
+        if (command->at(STARTUP_ADDNOTE)) {
+            if (parm.startsWith("--title=", Qt::CaseSensitive)) {
+                parm = parm.mid(8);
+                newNote->title = parm;
+            }
+            if (parm.startsWith("--notebook=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                newNote->notebook = parm;
+            }
+            if (parm.startsWith("--tag=", Qt::CaseSensitive)) {
+                parm = parm.mid(6);
+                newNote->tags.append(parm);
+            }
+            if (parm.startsWith("--attachment=", Qt::CaseSensitive)) {
+                parm = parm.mid(13);
+                newNote->attachments.append(parm);
+            }
+            if (parm.startsWith("--created=", Qt::CaseSensitive)) {
+                parm = parm.mid(10);
+                newNote->created = parm;
+            }
+            if (parm.startsWith("--updated=", Qt::CaseSensitive)) {
+                parm = parm.mid(10);
+                newNote->updated = parm;
+            }
+            if (parm.startsWith("--reminder=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                newNote->reminder = parm;
+            }
+            if (parm.startsWith("--noteText=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                newNote->content = parm;
+            }
+        }
+        if (command->at(STARTUP_APPENDNOTE)) {
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                newNote->lid = parm.toInt();
+            }
+            if (parm.startsWith("--noteText=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                newNote->content = parm;
+            }
+        }
+        if (command->at(STARTUP_QUERY)) {
+            if (parm.startsWith("--search=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                queryNotes->query = parm;
+            }
+            if (parm.startsWith("--display=", Qt::CaseSensitive)) {
+                parm = parm.mid(10);
+                queryNotes->outputFormat = parm;
+            }
+            if (parm.startsWith("--delimiter=", Qt::CaseSensitive)) {
+                parm = parm.mid(12);
+                queryNotes->delimiter = parm;
+            }
+            if (parm.startsWith("--noHeaders", Qt::CaseSensitive)) {
+                queryNotes->printHeaders = false;
+            }
+        }
+        if (command->at(STARTUP_GUI) || command->count(true) == 0) {
+            activateCommand(STARTUP_GUI, true);
+            if (parm.startsWith("--openNote=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                startupNoteLid = parm.toInt();
+            }
+            if (parm == "--disableEditing") {
+                disableEditing = true;
+            }
+            if (parm == "--dontStartMinimized") {
+                forceNoStartMinimized = true;
+            }
+            if (parm == "--startMinimized") {
+                forceStartMinimized = true;
+            }
+            if (parm == "--newNote") {
+                startupNewNote = true;
+            }
+            if (parm == "--enableIndexing") {
+                enableIndexing = true;
+            }
+            if (parm == "--forceSystemTrayAvailable") {
+                forceSystemTrayAvailable = true;
+            }
+        }
+        if (command->at(STARTUP_DELETENOTE)) {
+            if (parm == "--noVerify") {
+                delNote->verifyDelete = false;
+            }
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                delNote->lid = parm.toInt();
+            }
+        }
+        if (command->at(STARTUP_EXPORT)) {
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                QRegExp regExp("[ ,;]");
+                QStringList tokens = parm.split(regExp);
+                for (int i = 0; i < tokens.size(); i++) {
+                    if (tokens[i].trimmed() != "")
+                        exportNotes->lids.append(tokens[i].toInt());
+                }
+            }
+            if (parm.startsWith("--deleteAfterExport", Qt::CaseSensitive)) {
+                exportNotes->deleteAfterExtract = true;
+            }
+            if (parm.startsWith("--noVerifyDelete", Qt::CaseSensitive)) {
+                exportNotes->verifyDelete = false;
+            }
+            if (parm.startsWith("--search=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                exportNotes->query = parm;
+            }
+            if (parm.startsWith("--output=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                exportNotes->outputFile = parm;
+            }
+        }
+        if (command->at(STARTUP_IMPORT)) {
+            if (parm.startsWith("--input=", Qt::CaseSensitive)) {
+                parm = parm.mid(8);
+                importNotes->inputFile = parm;
+            }
+        }
+        if (command->at(STARTUP_BACKUP)) {
+            if (parm.startsWith("--output=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                exportNotes->outputFile = parm;
+            }
+        }
+        if (command->at(STARTUP_READNOTE)) {
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                extractText->lid = parm.toInt();
+            }
+        }
+        if (command->at(STARTUP_SIGNALGUI)) {
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                signalGui->lid = parm.toInt();
+            }
+            if (parm.startsWith("--url=", Qt::CaseSensitive)) {
+                parm = parm.mid(6);
+                signalGui->url = parm;
+                QLOG_DEBUG() << "got url from params: " << parm;
+            }
+            if (parm.startsWith("--show", Qt::CaseSensitive))
+                signalGui->show = true;
+            if (parm.startsWith("--synchronize", Qt::CaseSensitive))
+                signalGui->synchronize = true;
+            if (parm.startsWith("--screenshot", Qt::CaseSensitive))
+                signalGui->takeScreenshot = true;
+            if (parm.startsWith("--openNote", Qt::CaseSensitive))
+                signalGui->openNote = true;
+            if (parm.startsWith("--openNoteUrl", Qt::CaseSensitive))
+                signalGui->openNoteUrl = true;
+            if (parm.startsWith("--openExternalNote", Qt::CaseSensitive))
+                signalGui->openExternalNote = true;
+            if (parm.startsWith("--openExternalNoteUrl", Qt::CaseSensitive))
+                signalGui->openExternalNoteUrl = true;
+            if (parm.startsWith("--openNoteNewTab", Qt::CaseSensitive))
+                signalGui->openNoteNewTab = true;
+            if (parm.startsWith("--openNoteNewTabUrl", Qt::CaseSensitive))
+                signalGui->openNoteNewTabUrl = true;
+            if (parm.startsWith("--newNote", Qt::CaseSensitive))
+                signalGui->newNote = true;
+            if (parm.startsWith("--newExternalNote", Qt::CaseSensitive))
+                signalGui->newExternalNote = true;
+            if (parm.startsWith("--shutdown", Qt::CaseSensitive))
+                signalGui->shutdown = true;
+        }
+        if (command->at(STARTUP_ALTERNOTE)) {
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                QRegExp regExp("[ ,;]");
+                QStringList tokens = parm.split(regExp);
+                for (int i = 0; i < tokens.size(); i++) {
+                    if (tokens[i].trimmed() != "")
+                        alter->lids.append(tokens[i].toInt());
+                }
+            }
+            if (parm.startsWith("--search=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                alter->query = parm;
+            }
+            if (parm.startsWith("--notebook=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                alter->notebook = parm;
+            }
+            if (parm.startsWith("--addTag=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                alter->addTagNames.append(parm);
+            }
+            if (parm.startsWith("--delTag=", Qt::CaseSensitive)) {
+                parm = parm.mid(9);
+                alter->delTagNames.append(parm);
+            }
+            if (parm == "--clearReminder") {
+                alter->clearReminder = true;
+            }
+            if (parm == "--reminderComplete") {
+                alter->reminderCompleted = true;
+            }
+        }
+        if (command->at(STARTUP_EMAILNOTE)) {
+            if (parm == "--ccSelf") {
+                email->ccSelf = true;
+            }
+            if (parm.startsWith("--to=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                email->to = parm;
+            }
+            if (parm.startsWith("--cc=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                email->cc = parm;
+            }
+            if (parm.startsWith("--bcc=", Qt::CaseSensitive)) {
+                parm = parm.mid(6);
+                email->bcc = parm;
+            }
+            if (parm.startsWith("--note=", Qt::CaseSensitive)) {
+                parm = parm.mid(7);
+                email->note = parm;
+            }
+            if (parm.startsWith("--subject=", Qt::CaseSensitive)) {
+                parm = parm.mid(10);
+                email->subject = parm;
+            }
+            if (parm.startsWith("--id=", Qt::CaseSensitive)) {
+                parm = parm.mid(5);
+                email->lid = parm.toInt();
+            }
+        }
+        if (command->at(STARTUP_OPENNOTEBOOK)) {
+            if (parm.startsWith("--notebook=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                notebookList.append(parm);
+            }
+        }
+        if (command->at(STARTUP_CLOSENOTEBOOK)) {
+            if (parm.startsWith("--notebook=", Qt::CaseSensitive)) {
+                parm = parm.mid(11);
+                notebookList.append(parm);
+            }
+        }
+        if (command->at(STARTUP_SQLEXEC)) {
+            this->sqlExec = true;
+            if (parm.startsWith("--query", Qt::CaseSensitive)) {
+                parm = parm.mid(8);
+            }
+            if (!parm.startsWith("sqlExec", Qt::CaseInsensitive)) {
+                sqlString = sqlString + " " + parm;
+            }
+        }
+    }
+
+    if ((!configDir.isEmpty()) && userDataDir.isEmpty()) {
+        QLOG_WARN()
+            << "As you provided configDir but not provided userDataDir, userDataDir will fallback to configDir: "
+            << configDir;
+        userDataDir = configDir;
+    }
+
+
+    if (command->count(true) == 0)
+        activateCommand(STARTUP_GUI, true);
+
+    if (command->count(true) > 1) {
+        QLOG_FATAL() << "\nInvalid options specified.  Only one command may be specified at a time.\n";
+        return 16;
+    }
+
+    // Check for GUI overrides
+    for (int i = 0; i < argc; i++) {
+        QString value = QString(argv[i]);
+        if (value == "--forceNoGui") {
+            guiAvailable = false;
+            activateCommand(STARTUP_GUI, false);
+            i = argc;
+        }
+        if (value == "--forceGui") {
+            guiAvailable = true;
+            activateCommand(STARTUP_GUI, true);
+            i = argc;
+        }
+    }
+
+    return 0;
+}
+
+void StartupConfig::activateCommand(int commandCode, bool commandValue) const {
+    QLOG_DEBUG() << "Setting command: #" << commandCode << " to value=" << commandValue;
+    command->setBit(commandCode, commandValue);
+}
+
+bool StartupConfig::query() {
+    return command->at(STARTUP_QUERY);
+}
+
+bool StartupConfig::gui() {
+    return command->at(STARTUP_GUI);
+}
+
+bool StartupConfig::sync() {
+    return command->at(STARTUP_SYNC);
+}
+
+bool StartupConfig::addNote() {
+    return command->at(STARTUP_ADDNOTE);
+}
+
+bool StartupConfig::appendNote() {
+    return command->at(STARTUP_APPENDNOTE);
+}
+
+bool StartupConfig::show() {
+    return command->at(STARTUP_SHOW);
+}
+
+bool StartupConfig::shutdown() {
+    return command->at(STARTUP_SHUTDOWN);
+}
+
+bool StartupConfig::deleteNote() {
+    return command->at(STARTUP_DELETENOTE);
+}
+
+
+bool StartupConfig::readNote() {
+    return command->at(STARTUP_READNOTE);
+}
+
+bool StartupConfig::emailNote() {
+    return command->at(STARTUP_EMAILNOTE);
+}
+
+
+bool StartupConfig::exports() {
+    return command->at(STARTUP_EXPORT);
+}
+
+bool StartupConfig::import() {
+    return command->at(STARTUP_IMPORT);
+}
+
+bool StartupConfig::backup() {
+    return command->at(STARTUP_BACKUP);
+}
+
+
+bool StartupConfig::alterNote() {
+    return command->at(STARTUP_ALTERNOTE);
+}
+
+bool StartupConfig::openNotebook() {
+    return command->at(STARTUP_OPENNOTEBOOK);
+}
+
+bool StartupConfig::closeNotebook() {
+    return command->at(STARTUP_CLOSENOTEBOOK);
+}
+
+bool StartupConfig::signalOtherGui() {
+    return command->at(STARTUP_SIGNALGUI);
+}
+
+
+
