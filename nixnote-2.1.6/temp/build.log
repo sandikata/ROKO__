@@ -1,0 +1,47 @@
+[32m * [39;49;00mPackage:    app-misc/nixnote-2.1.6
+[32m * [39;49;00mRepository: ROKO__
+[32m * [39;49;00mUSE:        abi_x86_64 amd64 elibc_glibc kernel_linux userland_GNU
+[32m * [39;49;00mFEATURES:   network-sandbox preserve-libs sandbox userpriv usersandbox
+[32m * [39;49;00mPackage:    app-misc/nixnote-2.1.6
+[32m * [39;49;00mRepository: ROKO__
+[32m * [39;49;00mUSE:        abi_x86_64 amd64 elibc_glibc kernel_linux userland_GNU
+[32m * [39;49;00mFEATURES:   network-sandbox preserve-libs sandbox userpriv usersandbox
+]0;emerge 13:39:19 1651574054:  *** terminating. nixnote (root@aleksandrov.internal.tech)>>> Unpacking source...
+>>> Unpacking nixnote2-2.1.6.tar.gz to /var/tmp/portage/app-misc/nixnote-2.1.6/work
+>>> Source unpacked in /var/tmp/portage/app-misc/nixnote-2.1.6/work
+>>> Preparing source in /var/tmp/portage/app-misc/nixnote-2.1.6/work/nixnote2-2.1.6 ...
+ [32m*[0m Applying tidy-source-dir-location.patch ...
+[A[203C [34;01m[ [32;01mok[34;01m ][0m
+ [32m*[0m Applying fix-build-script.patch ...
+[A[203C [34;01m[ [32;01mok[34;01m ][0m
+ [32m*[0m Applying qmake-fix.patch ...
+can't find file to patch at input line 5
+Perhaps you used the wrong -p or --strip option?
+The text leading up to this was:
+--------------------------
+|diff --git a/nixnote2-2.1.6/development/build-with-qmake.sh b/nixnote2-2.1.6/development/build-with-qmake.sh
+|index 74e290f..7aad7df 100755
+|--- a/nixnote2-2.1.6/development/build-with-qmake.sh
+|+++ b/nixnote2-2.1.6/development/build-with-qmake.sh
+--------------------------
+No file to patch.  Skipping patch.
+1 out of 1 hunk ignored
+[A[203C [34;01m[ [31;01m!![34;01m ][0m
+ [31;01m*[0m ERROR: app-misc/nixnote-2.1.6::ROKO__ failed (prepare phase):
+ [31;01m*[0m   patch -p1  failed with /var/tmp/portage/app-misc/nixnote-2.1.6/files/qmake-fix.patch
+ [31;01m*[0m 
+ [31;01m*[0m Call stack:
+ [31;01m*[0m               ebuild.sh, line  127:  Called src_prepare
+ [31;01m*[0m             environment, line 1765:  Called eapply '/var/tmp/portage/app-misc/nixnote-2.1.6/files/qmake-fix.patch'
+ [31;01m*[0m             environment, line 1044:  Called _eapply_patch '/var/tmp/portage/app-misc/nixnote-2.1.6/files/qmake-fix.patch'
+ [31;01m*[0m             environment, line  982:  Called __helpers_die 'patch -p1  failed with /var/tmp/portage/app-misc/nixnote-2.1.6/files/qmake-fix.patch'
+ [31;01m*[0m   isolated-functions.sh, line  112:  Called die
+ [31;01m*[0m The specific snippet of code:
+ [31;01m*[0m   		die "$@"
+ [31;01m*[0m 
+ [31;01m*[0m If you need support, post the output of `emerge --info '=app-misc/nixnote-2.1.6::ROKO__'`,
+ [31;01m*[0m the complete build log and the output of `emerge -pqv '=app-misc/nixnote-2.1.6::ROKO__'`.
+ [31;01m*[0m The complete build log is located at '/var/tmp/portage/app-misc/nixnote-2.1.6/temp/build.log'.
+ [31;01m*[0m The ebuild environment file is located at '/var/tmp/portage/app-misc/nixnote-2.1.6/temp/environment'.
+ [31;01m*[0m Working directory: '/var/tmp/portage/app-misc/nixnote-2.1.6/work/nixnote2-2.1.6'
+ [31;01m*[0m S: '/var/tmp/portage/app-misc/nixnote-2.1.6/work/nixnote2-2.1.6'

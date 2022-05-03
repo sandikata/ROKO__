@@ -1,0 +1,44 @@
+Source: nixnote2
+Section: utils
+Priority: optional
+Maintainer: Robert Spiegel <nightingale7@gmail.com>
+Build-Depends:
+ debhelper (>= 9),
+ default-jdk,
+ javahelper,
+ pkg-config,
+ libboost-dev,
+ libcurl4-openssl-dev | libcurl-dev | libcurl4-nss-dev | libcurl4-gnutls-dev,
+ libhunspell-dev,
+ libpoppler-qt5-dev,
+ libqt5webkit5-dev,
+ libqt5sql5-sqlite,
+ libswscale-dev,
+ nixnote2-tidy,
+ qml,
+ qt5-qmake,
+ qtbase5-dev,
+ qttools5-dev-tools,
+ git
+Standards-Version: 3.9.8
+Homepage: https://github.com/robert7/nixnote2
+
+Package: nixnote2
+Architecture: any
+Depends:
+ nixnote2-tidy,
+ libqt5sql5-sqlite,
+ ${java:Depends},
+ ${misc:Depends},
+ ${shlibs:Depends},
+Recommends:
+ mimetex,
+ ${java:Recommends},
+Suggests:
+ cups,
+Description: Open Source Evernote desktop client
+ Nixnote is Evernote desktop client for Linux.
+ It will allow synchronization and editing of notes from your local system.
+ .
+ Once known as "NeverNote", this software was rewritten in C++/Qt to
+ provide a native user experience.
