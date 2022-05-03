@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit git-r3 qmake-utils
+inherit desktop git-r3 qmake-utils
 
 EGIT_REPO_URI="https://github.com/Audio4Linux/JDSP4Linux.git"
 EGIT_SUBMODULES=(
@@ -58,5 +58,20 @@ src_configure() {
 		CONFIG$(usex pipewire - $(usex pulseaudio + -))=USE_PULSEAUDIO
 		DEFINES$(usex elibc_musl + -)=NO_CRASH_HANDLER
 	)
-	eqmake5 "${eqmakeargs[@]}"
+
+	eqmake5 JDSP4Linux.pro "${eqmakeargs[@]}"
+}
+
+src_install() {
+	dobin src/jamesdsp
+	doicon resources/icons/icon.svg
+	make_desktop_entry \
+		"/usr/bin/jamesdsp" \
+		"JamesDSP" \
+		"jamesdsp" \
+		"AudioVideo;Audio;" \
+		"GenericName=Audio effect processor\n\
+		 Keywords=equalizer;audio;effect\n\
+		 StartupNotify=false\n\
+		 Terminal=false\n"
 }
