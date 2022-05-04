@@ -1,0 +1,3 @@
+mkdir -p ~/.var/app/com.gitlab.ColinDuquesnoy.MellowPlayer/plugins/ppapi
+cp /usr/lib/chromium/libwidevinecdm.so ~/.var/app/com.gitlab.ColinDuquesnoy.MellowPlayer/plugins/ppapi/
+sudo flatpak override --env=QTWEBENGINE_CHROMIUM_FLAGS="--widevine-path=$HOME/.var/app/com.gitlab.ColinDuquesnoy.MellowPlayer/plugins/ppapi/libwidevinecdm.so --no-sandbox" com.gitlab.ColinDuquesnoy.MellowPlayer
