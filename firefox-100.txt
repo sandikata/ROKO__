@@ -1,0 +1,1 @@
+about:config -> dom.ipc.forkserver.enable true
