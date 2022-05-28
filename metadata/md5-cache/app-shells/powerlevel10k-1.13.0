@@ -1,0 +1,12 @@
+DEFINED_PHASES=configure install postinst
+DESCRIPTION=A theme for Zsh. It emphasizes speed, flexibility and out-of-the-box experience.
+EAPI=7
+HOMEPAGE=https://github.com/romkatv/powerlevel10k
+IUSE=nerd-fonts
+KEYWORDS=~amd64 ~x86
+LICENSE=MIT GPL-3
+RDEPEND=app-shells/zsh nerd-fonts? ( media-fonts/meslo-nerd )
+RESTRICT=mirror
+SLOT=0
+SRC_URI=https://github.com/romkatv/powerlevel10k/archive/v1.13.0.tar.gz -> powerlevel10k-1.13.0.tar.gz https://github.com/romkatv/libgit2/archive/tag-82cefe2b42300224ad3c148f8b1a569757cc617a.tar.gz
+_md5_=3061832509cec347d5092e1cc948b19c

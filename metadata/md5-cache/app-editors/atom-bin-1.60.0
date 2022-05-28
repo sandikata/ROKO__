@@ -1,0 +1,12 @@
+DEFINED_PHASES=install postinst postrm setup unpack
+DESCRIPTION=A hackable text editor for the 21st Century
+EAPI=7
+HOMEPAGE=https://atom.io/
+INHERIT=python-any-r1 unpacker xdg-utils
+KEYWORDS=~amd64
+LICENSE=MIT
+RDEPEND=!app-editors/atom || ( >=dev-lang/python-3.10.0_p1-r1:3.10 >=dev-lang/python-3.9.9-r1:3.9 >=dev-lang/python-3.8.12_p1-r1:3.8 ) dev-vcs/git x11-libs/gtk+:3 virtual/libudev dev-libs/libgcrypt x11-libs/libnotify x11-libs/libXtst dev-libs/nss gnome-base/gvfs x11-misc/xdg-utils sys-libs/libcap x11-libs/libX11 x11-libs/libXScrnSaver media-libs/alsa-lib x11-libs/libxkbfile net-misc/curl
+SLOT=0
+SRC_URI=https://github.com/atom/atom/releases/download/v1.60.0/atom-amd64.deb -> atom-bin-1.60.0.deb
+_eclasses_=eapi8-dosym	cd7d420bb5be5ee079f27239ce76b8f5	multiprocessing	b4e253ab22cef7b1085e9b67c7a3b730	toolchain-funcs	fd9cde67030b26e479eeadaced488253	multilib	4fbbbc98f236f1b43acd99476bc3cd85	python-utils-r1	5dc84801daa87406aafaf535cb947a64	python-any-r1	9006edf4b9c90f9ba1dc9ea9fee1b0bd	unpacker	79f7c61dc45eb850319a8c576ebc7b8d	xdg-utils	fffb53a53cf17c9c0c998a3c0a590c7e
+_md5_=5019387ec6d35d123a9812e059f3c5f0

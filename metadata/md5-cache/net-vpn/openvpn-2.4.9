@@ -1,0 +1,17 @@
+BDEPEND=sys-devel/gnuconfig >=app-portage/elt-patches-20170815 || ( >=sys-devel/automake-1.16.5:1.16 ) >=sys-devel/autoconf-2.71 >=sys-devel/libtool-2.4 virtual/pkgconfig
+DEFINED_PHASES=configure install postinst prepare setup test
+DEPEND=kernel_linux? ( iproute2? ( sys-apps/iproute2[-minimal] ) !iproute2? ( >=sys-apps/net-tools-1.60_p20160215155418 ) ) pam? ( sys-libs/pam ) ssl? ( !mbedtls? ( !libressl? ( >=dev-libs/openssl-0.9.8:0= ) libressl? ( dev-libs/libressl:0= ) ) mbedtls? ( net-libs/mbedtls:= ) ) lz4? ( app-arch/lz4 ) lzo? ( >=dev-libs/lzo-1.07 ) pkcs11? ( >=dev-libs/pkcs11-helper-1.11 ) systemd? ( sys-apps/systemd ) test? ( dev-util/cmocka )
+DESCRIPTION=Robust and highly flexible tunneling application compatible with many OSes
+EAPI=7
+HOMEPAGE=https://openvpn.net/
+INHERIT=autotools flag-o-matic systemd linux-info
+IUSE=down-root examples inotify iproute2 libressl lz4 +lzo mbedtls pam pkcs11 +plugins selinux +ssl systemd test userland_BSD
+KEYWORDS=~alpha amd64 arm arm64 ~hppa ~ia64 ~mips ppc ppc64 ~s390 ~sparc x86 ~amd64-linux ~x86-linux
+LICENSE=GPL-2
+RDEPEND=kernel_linux? ( iproute2? ( sys-apps/iproute2[-minimal] ) !iproute2? ( >=sys-apps/net-tools-1.60_p20160215155418 ) ) pam? ( sys-libs/pam ) ssl? ( !mbedtls? ( !libressl? ( >=dev-libs/openssl-0.9.8:0= ) libressl? ( dev-libs/libressl:0= ) ) mbedtls? ( net-libs/mbedtls:= ) ) lz4? ( app-arch/lz4 ) lzo? ( >=dev-libs/lzo-1.07 ) pkcs11? ( >=dev-libs/pkcs11-helper-1.11 ) systemd? ( sys-apps/systemd ) acct-group/openvpn acct-user/openvpn selinux? ( sec-policy/selinux-openvpn )
+REQUIRED_USE=pkcs11? ( ssl ) !plugins? ( !pam !down-root ) inotify? ( plugins )
+RESTRICT=!test? ( test )
+SLOT=0
+SRC_URI=https://github.com/OpenVPN/openvpn/archive/v2.4.9.tar.gz -> openvpn-2.4.9.tar.gz
+_eclasses_=gnuconfig	b6b3e92f8b8c996400074b5f61a59256	toolchain-funcs	fd9cde67030b26e479eeadaced488253	multilib	4fbbbc98f236f1b43acd99476bc3cd85	libtool	241a8f577b9781a42a7421e53448a44e	autotools	136117fb43a9bf5598530e9cc642f710	edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4a1902f969e5718126434fc35f3a0d9c	eutils	dab5d8ec471d025b79c9e6906bcf3bff	flag-o-matic	a500d7cc40da3de38c361e889153bdf7	systemd	2736b403a83f194b59b767f3b344c2c1	linux-info	dcbf4f67bc38bee48e9d69a4344e8059
+_md5_=3a81ee308487cc9de5d9322e202f455a

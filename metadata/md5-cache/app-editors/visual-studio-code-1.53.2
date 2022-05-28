@@ -1,0 +1,14 @@
+DEFINED_PHASES=install postinst postrm preinst prepare setup
+DEPEND=>=media-libs/libpng-1.2.46:0 x11-libs/gtk+:3 x11-libs/cairo x11-libs/libXtst dev-util/desktop-file-utils x11-misc/shared-mime-info
+DESCRIPTION=Multiplatform Visual Studio Code from Microsoft
+EAPI=7
+HOMEPAGE=https://code.visualstudio.com
+INHERIT=desktop eutils pax-utils xdg
+KEYWORDS=amd64
+LICENSE=MIT
+RDEPEND=>=media-libs/libpng-1.2.46:0 x11-libs/gtk+:3 x11-libs/cairo x11-libs/libXtst app-crypt/libsecret[crypt] >=net-print/cups-2.0.0 x11-libs/libnotify x11-libs/libXScrnSaver
+RESTRICT=mirror strip bindist
+SLOT=0
+SRC_URI=https://vscode-update.azurewebsites.net/1.53.2/linux-x64/stable -> visual-studio-code-1.53.2-amd64.tar.gz
+_eclasses_=desktop	c0d27bf73aa08ca05b663dbd31fbef28	edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4a1902f969e5718126434fc35f3a0d9c	eutils	dab5d8ec471d025b79c9e6906bcf3bff	pax-utils	91d47e5d20627c717aa878b9167c62a8	xdg-utils	fffb53a53cf17c9c0c998a3c0a590c7e	xdg	6024fbc93167fad782e2032933654857
+_md5_=26efcd07ed8ee174aa494450e9b362e8

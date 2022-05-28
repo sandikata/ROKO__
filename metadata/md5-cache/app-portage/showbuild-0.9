@@ -1,0 +1,11 @@
+DEFINED_PHASES=install
+DESCRIPTION=Script to follow log of running portage builds
+EAPI=5
+HOMEPAGE=http://cj-overlay.googlecode.com
+IUSE=+tailf
+KEYWORDS=amd64 arm x86 ~amd64-linux ~x86-linux ~x64-macos ~x86-macos
+LICENSE=GPL-2
+RDEPEND=tailf? ( sys-apps/util-linux ) !tailf? ( sys-apps/coreutils ) sys-apps/portage app-shells/bash
+REQUIRED_USE=tailf? ( !x86-macos !x64-macos )
+SLOT=0
+_md5_=d89e8b5572a2acb4c932b5b6d57c6d4e

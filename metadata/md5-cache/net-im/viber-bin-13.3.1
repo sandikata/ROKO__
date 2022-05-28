@@ -1,0 +1,13 @@
+DEFINED_PHASES=install postinst postrm prepare unpack
+DESCRIPTION=Free calls, text and picture sharing with anyone, anywhere!
+EAPI=7
+HOMEPAGE=http://www.viber.com
+INHERIT=desktop unpacker xdg-utils
+IUSE=+pulseaudio xscreensaver
+KEYWORDS=~amd64
+LICENSE=viber
+RDEPEND=dev-libs/icu dev-libs/nss media-libs/alsa-lib media-libs/gst-plugins-base media-libs/gst-plugins-good media-libs/gst-plugins-ugly media-plugins/gst-plugins-libav media-plugins/gst-plugins-pulse sys-libs/zlib pulseaudio? ( media-sound/pulseaudio ) xscreensaver? ( x11-libs/libXScrnSaver )
+SLOT=0
+SRC_URI=http://webly3d.net/static/edgets-overlay/net-im/viber-bin/viber-bin-13.3.1.deb
+_eclasses_=desktop	c0d27bf73aa08ca05b663dbd31fbef28	unpacker	79f7c61dc45eb850319a8c576ebc7b8d	xdg-utils	fffb53a53cf17c9c0c998a3c0a590c7e
+_md5_=5ae25206b2f2ae49eb5bc3f454688bcc
