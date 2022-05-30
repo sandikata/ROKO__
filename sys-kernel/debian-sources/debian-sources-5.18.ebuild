@@ -27,14 +27,14 @@ DEPEND="
 	btrfs? ( sys-fs/btrfs-progs sys-kernel/genkernel[btrfs] )
 	zfs? ( sys-fs/zfs )
 	luks? ( sys-kernel/genkernel[cryptsetup] )"
-#REQUIRED_USE="
-#btrfs? ( binary )
-#custom-cflags? ( binary )
-#luks? ( binary )
-#lvm? ( binary )
-#sign-modules? ( binary )
-#zfs? ( binary )
-#"
+REQUIRED_USE="
+btrfs? ( binary )
+custom-cflags? ( binary )
+luks? ( binary )
+lvm? ( binary )
+sign-modules? ( binary )
+zfs? ( binary )
+"
 DESCRIPTION="Debian Sources (and optional binary kernel)"
 DEB_UPSTREAM="http://http.debian.net/debian/pool/main/l/linux"
 HOMEPAGE="https://packages.debian.org/unstable/kernel/"
