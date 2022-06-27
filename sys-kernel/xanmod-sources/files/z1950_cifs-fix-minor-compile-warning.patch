@@ -1,0 +1,33 @@
+From 93ed91c020aa4f021600a633f1f87790a5e50b91 Mon Sep 17 00:00:00 2001
+From: Steve French <stfrench@microsoft.com>
+Date: Sun, 22 May 2022 21:25:24 -0500
+Subject: cifs: fix minor compile warning
+
+Add ifdef around nodfs variable from patch:
+  "cifs: don't call cifs_dfs_query_info_nonascii_quirk() if nodfs was set"
+which is unused when CONFIG_DFS_UPCALL is not set.
+
+Signed-off-by: Steve French <stfrench@microsoft.com>
+---
+ fs/cifs/connect.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+(limited to 'fs/cifs/connect.c')
+
+diff --git a/fs/cifs/connect.c b/fs/cifs/connect.c
+index 44dc66f21d832..0b08693d1af8f 100644
+--- a/fs/cifs/connect.c
++++ b/fs/cifs/connect.c
+@@ -3433,7 +3433,9 @@ static int is_path_remote(struct mount_ctx *mnt_ctx)
+ 	struct cifs_tcon *tcon = mnt_ctx->tcon;
+ 	struct smb3_fs_context *ctx = mnt_ctx->fs_ctx;
+ 	char *full_path;
++#ifdef CONFIG_CIFS_DFS_UPCALL
+ 	bool nodfs = cifs_sb->mnt_cifs_flags & CIFS_MOUNT_NO_DFS;
++#endif
+ 
+ 	if (!server->ops->is_path_accessible)
+ 		return -EOPNOTSUPP;
+-- 
+cgit 1.2.3-1.el7
+
