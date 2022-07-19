@@ -4,7 +4,7 @@
 EAPI="8"
 ETYPE="sources"
 K_WANT_GENPATCHES="base extras experimental"
-K_GENPATCHES_VER="9"
+K_GENPATCHES_VER="14"
 K_SECURITY_UNSUPPORTED="1"
 K_NOSETEXTRAVERSION="1"
 XANMOD_VERSION="1"
@@ -24,17 +24,13 @@ SRC_URI="
 	${GENPATCHES_URI}"
 IUSE="+experimental"
 
-UNIPATCH_LIST+="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz ${FILESDIR}/z1950_cifs-fix-minor-compile-warning.patch"
+UNIPATCH_LIST+="${DISTDIR}/patch-${OKV}-xanmod${XANMOD_VERSION}.xz "
 
 # excluding all minor kernel revision patches; XanMod will take care of that
 UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 1*_linux-${KV_MAJOR}.${KV_MINOR}.*.patch"
 
 # excluding CPU optimizations patches, since it's included in XanMod too
 UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 5*_*cpu-optimization*.patch"
-
-# this patch needs to be applied after the minor version patches - i.e. after the xanmod patch. We do a little trolling and ignore it for now, just to re-add it with a Z at the end and apply it after the minor version has been fixed.
-UNIPATCH_EXCLUDE="${UNIPATCH_EXCLUDE} 1950_cifs-fix-minor-compile-warning.patch"
-
 
 pkg_postinst() {
 	elog "The XanMod team strongly suggests the use of updated CPU microcodes with its"

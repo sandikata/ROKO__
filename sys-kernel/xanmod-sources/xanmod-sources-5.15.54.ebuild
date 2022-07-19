@@ -4,7 +4,7 @@
 EAPI="8"
 ETYPE="sources"
 K_WANT_GENPATCHES="base extras"
-K_GENPATCHES_VER="53"
+K_GENPATCHES_VER="58"
 K_SECURITY_UNSUPPORTED="1"
 K_NOSETEXTRAVERSION="1"
 XANMOD_VERSION="1"
@@ -12,7 +12,7 @@ XANMOD_URI="https://github.com/xanmod/linux/releases/download/"
 
 HOMEPAGE="https://xanmod.org"
 LICENSE+=" CDDL"
-KEYWORDS="amd64"
+KEYWORDS="~amd64"
 IUSE="tasktype"
 
 inherit kernel-2
