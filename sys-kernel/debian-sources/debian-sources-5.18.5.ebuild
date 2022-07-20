@@ -7,7 +7,7 @@ inherit check-reqs eutils
 SLOT=$PF
 CKV=${PV}
 KV_FULL=${PN}-${PVR}
-DEB_EXTRAVERSION="1"
+DEB_EXTRAVERSION="5"
 # Debian version -1 becomes _p1 in Funtoo:
 EXTRAVERSION="-gentoo"
 
@@ -19,7 +19,7 @@ LINUX_SRCDIR=linux-${PF}
 DEB_PV="5.18-${DEB_EXTRAVERSION}"
 RESTRICT="binchecks strip"
 LICENSE="GPL-2"
-KEYWORDS=""
+KEYWORDS="~amd64"
 IUSE="binary btrfs custom-cflags ec2 luks lvm sign-modules zfs"
 DEPEND="
 	virtual/libelf
@@ -38,8 +38,8 @@ zfs? ( binary )
 DESCRIPTION="Debian Sources (and optional binary kernel)"
 DEB_UPSTREAM="http://http.debian.net/debian/pool/main/l/linux"
 HOMEPAGE="https://packages.debian.org/unstable/kernel/"
-SRC_URI="https://deb.debian.org/debian/pool/main/l/linux/linux_5.18.orig.tar.xz https://deb.debian.org/debian/pool/main/l/linux/linux_5.18-1~exp1.debian.tar.xz"
-S="$WORKDIR/linux-5.18"
+SRC_URI="https://deb.debian.org/debian/pool/main/l/linux/linux_5.18.5.orig.tar.xz https://deb.debian.org/debian/pool/main/l/linux/linux_5.18.5-1.debian.tar.xz"
+S="$WORKDIR/linux-5.18.5"
 
 get_patch_list() {
 	[[ -z "${1}" ]] && die "No patch series file specified"
