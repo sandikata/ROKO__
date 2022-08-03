@@ -12,12 +12,15 @@ DESCRIPTION="CachyOS are improved kernels that improve performance and other asp
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.19.tar.xz
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/all/0001-cachyos-base-all.patch
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-bore.patch
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-cacULE-cachy.patch
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-tt-cachy.patch
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/misc/0001-high-hz.patch"
 
 LICENSE=""
 SLOT="5.19"
 KEYWORDS="~amd64"
-IUSE="high-hz"
+IUSE="bore cacule high-hz tt"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -29,6 +32,19 @@ src_prepare() {
 	if use high-hz; then
 		eapply "${DISTDIR}/0001-high-hz.patch"
 	fi
+
+	if use bore; then
+		eapply "${DISTDIR}/0001-bore.patch"
+	fi
+
+	if use cacule; then
+		eapply "{DISTDIR}/0001-cacULE-cachy.patch"
+	fi
+
+	if use tt; then
+		eapply "{DISTDIR}/0001-tt-cachy.patch"
+	fi
+
 	eapply_user
 }
 
