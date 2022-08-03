@@ -10,17 +10,18 @@ detect_version
 
 DESCRIPTION="CachyOS are improved kernels that improve performance and other aspects."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
-SRC_URI="https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.19.tar.xz
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/all/0001-cachyos-base-all.patch
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-bore.patch
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-cacULE-cachy.patch
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/sched/0001-tt-cachy.patch
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/5.19/misc/0001-high-hz.patch"
+SRC_URI="${KERNEL_URI} \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-cacULE-cachy.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch"
 
 LICENSE=""
 SLOT="5.19"
 KEYWORDS="~amd64"
 IUSE="bore cacule high-hz tt"
+REQUIRED_USE="bore? ( !cacule !tt ) cacule? ( !bore !tt ) tt? ( !bore !cacule )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
