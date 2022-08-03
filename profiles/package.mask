@@ -1,2 +1,5 @@
 # Masked for testing
 =dev-db/mariadb-10.5.4
+
+# Testing new patches
+=sys-kernel/cachyos-sources-5.19.0-r1

@@ -13,14 +13,15 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI} \
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all.patch \
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-cacULE-cachy.patch \
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch \
 		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch"
 
 LICENSE=""
-SLOT="5.19"
+SLOT="testing"
 KEYWORDS="~amd64"
-IUSE="bore high-hz tt"
-REQUIRED_USE="bore? ( !tt ) tt? ( high-hz !bore )"
+IUSE="bore cacule high-hz tt"
+REQUIRED_USE="bore? ( !cacule !tt ) cacule? ( !bore !tt ) tt? ( high-hz !bore !cacule )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -37,23 +38,14 @@ src_prepare() {
 		eapply "${DISTDIR}/0001-bore.patch"
 	fi
 
+	if use cacule; then
+		eapply "${DISTDIR}/0001-cacULE-cachy.patch"
+	fi
+
 	if use tt; then
 		eapply "${DISTDIR}/0001-tt-cachy.patch"
 	fi
 
 	eapply_user
-
-	# prepare default config
-	if use bore; then
-		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
-	fi
-
-	if use tt; then
-		cp "${FILESDIR}/config-x86_64-tt" .config && elog "TaskType config applied" || die
-	fi
 }
 
-pkg_postinst() {
-	elog "Default kernel config depending on selected scheduler has been applied."
-	elog "You have to build kernel manually!"
-}

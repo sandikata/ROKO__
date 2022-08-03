@@ -15,3 +15,6 @@
 
 # Маскиран от: Росен Александров sandikata@yandex.ru roko@jabber.calculate-linux.org (02.07.2011)
 >=gnome-extra/gnome-packagekit-3.0.3
+
+# Testing new patches
+sys-kernel/cachyos-sources:testing
