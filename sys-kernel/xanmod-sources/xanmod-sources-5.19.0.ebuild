@@ -6,7 +6,7 @@ EAPI=7
 inherit kernel-build python-any-r1
 
 MY_P=linux-${PV%.*}
-GENPATCHES_P=genpatches-${PV%.*}-$((${PV##*.} + 3))
+GENPATCHES_P=genpatches-${PV%.*}-$((${PV##*.} + 1))
 XV="1"
 
 DESCRIPTION="XanMod lts kernel built with Gentoo patches and cjktty"
@@ -21,7 +21,7 @@ S=${WORKDIR}/${MY_P}
 LICENSE="GPL-2"
 KEYWORDS="~amd64"
 IUSE="cjk debug"
-SLOT="unstable"
+SLOT="edge"
 
 PDEPEND="
 	>=virtual/dist-kernel-${PV}"
