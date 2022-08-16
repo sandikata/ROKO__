@@ -1,0 +1,10 @@
+--- a/kernel/nvidia-drm/nvidia-drm-helper.c	2022-08-16 14:20:58.931650379 +0300
++++ b/kernel/nvidia-drm/nvidia-drm-helper.c	2022-08-16 14:21:12.628438964 +0300
+@@ -27,6 +27,7 @@
+  * present simplifies nvidia-drm.ko source.
+  */
+ 
++#include <drm/drm_framebuffer.h>
+ #include "nvidia-drm-helper.h"
+ 
+ #include "nvmisc.h"
