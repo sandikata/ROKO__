@@ -11,14 +11,14 @@ detect_version
 DESCRIPTION="CachyOS are improved kernels that improve performance and other aspects."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI} \
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all.patch \
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch \
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch \
-		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch"
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all.patch -> 5.19-cachyos-base-all.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch -> 5.19-bore.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch -> 5.19-tt-cachy.patch \
+		https://raw.githubusercontent.com/ptr1337/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch -> 5.19-high-hz.patch"
 
 LICENSE=""
-SLOT="5.19"
-KEYWORDS="~amd64"
+SLOT="5.19-stable"
+KEYWORDS="amd64"
 IUSE="bore high-hz tt"
 REQUIRED_USE="bore? ( !tt ) tt? ( high-hz !bore )"
 
@@ -27,18 +27,18 @@ RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${DISTDIR}/0001-cachyos-base-all.patch"
+	eapply "${DISTDIR}/5.19-cachyos-base-all.patch"
 
 	if use high-hz; then
-		eapply "${DISTDIR}/0001-high-hz.patch"
+		eapply "${DISTDIR}/5.19-high-hz.patch"
 	fi
 
 	if use bore; then
-		eapply "${DISTDIR}/0001-bore.patch"
+		eapply "${DISTDIR}/5.19-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${DISTDIR}/0001-tt-cachy.patch"
+		eapply "${DISTDIR}/5.19-tt-cachy.patch"
 	fi
 
 	eapply_user
@@ -56,4 +56,5 @@ src_prepare() {
 pkg_postinst() {
 	elog "Default kernel config depending on selected scheduler has been applied."
 	elog "You have to build kernel manually!"
+	elog "Initramfs is required for all default configurations (dracut or genkernel)"
 }
