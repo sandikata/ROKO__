@@ -13,7 +13,7 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI} \
 		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all-dev.patch -> 5.19-cachyos-base-all-dev.patch \
 		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch -> 5.19-bore.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy-dev.patch -> 5.19-tt-cachy-dev.patch \
+		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch -> 5.19-tt-cachy.patch \
 		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch -> 5.19-high-hz.patch \
 		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-cacULE-cachy.patch -> 5.19-cacULE-cachy.patch \
 		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-prjc-cachy.patch -> 5.19-prjc-cachy.patch"
@@ -40,7 +40,7 @@ src_prepare() {
 	fi
 
 	if use tt; then
-		eapply "${DISTDIR}/5.19-tt-cachy-dev.patch"
+		eapply "${DISTDIR}/5.19-tt-cachy.patch"
 	fi
 
 	if use cacule; then
