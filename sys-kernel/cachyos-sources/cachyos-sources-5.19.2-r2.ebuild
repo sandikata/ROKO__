@@ -10,13 +10,7 @@ detect_version
 
 DESCRIPTION="CachyOS are improved kernels that improve performance and other aspects."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
-SRC_URI="${KERNEL_URI} \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all-dev.patch -> 5.19-cachyos-base-all-dev.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch -> 5.19-bore.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch -> 5.19-tt-cachy.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/misc/0001-high-hz.patch -> 5.19-high-hz.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-cacULE-cachy.patch -> 5.19-cacULE-cachy.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/${KV_MAJOR}.${KV_MINOR}/sched/0001-prjc-cachy.patch -> 5.19-prjc-cachy.patch"
+SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
 SLOT="5.19-testing"
@@ -29,26 +23,26 @@ RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${DISTDIR}/5.19-cachyos-base-all-dev.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-cachyos-base-all-dev.patch"
 
 	if use high-hz; then
-		eapply "${DISTDIR}/5.19-high-hz.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
 	fi
 
 	if use bore; then
-		eapply "${DISTDIR}/5.19-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${DISTDIR}/5.19-tt-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-tt-cachy.patch"
 	fi
 
 	if use cacule; then
-		eapply "${DISTDIR}/5.19-cacULE-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-cacULE-cachy.patch"
 	fi
 
 	if use prjc; then
-		eapply "${DISTDIR}/5.19-prjc-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-prjc-cachy.patch"
 	fi
 
 	eapply_user

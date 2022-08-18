@@ -11,11 +11,7 @@ inherit kernel-2
 
 DESCRIPTION="CachyOS are improved kernels that improve performance and other aspects."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
-SRC_URI="https://git.kernel.org/torvalds/t/linux-6.0-rc1.tar.gz \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/6.0/all/0001-cachyos-base-all.patch -> 6.0-cachyos-base-all.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/6.0/sched/0001-bore.patch -> 6.0-bore.patch \
-		https://raw.githubusercontent.com/CachyOS/kernel-patches/master/6.0/sched/0001-tt-cachy.patch -> 6.0-tt-cachy.patch \
-		"
+SRC_URI="https://git.kernel.org/torvalds/t/linux-6.0-rc1.tar.gz"
 
 LICENSE=""
 SLOT="6.0-testing"
@@ -34,26 +30,26 @@ src_unpack() {
 }
 
 src_prepare() {
-	eapply "${DISTDIR}/6.0-cachyos-base-all.patch"
+	eapply "${FILESDIR}/6.0/6.0-cachyos-base-all.patch"
 
 #	if use high-hz; then
-#		eapply "${DISTDIR}/0001-high-hz.patch"
+#		eapply "${FILESDIR}/0001-high-hz.patch"
 #	fi
 
 	if use bore; then
-		eapply "${DISTDIR}/6.0-bore.patch"
+		eapply "${FILESDIR}/6.0/6.0-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${DISTDIR}/6.0-tt-cachy-dev.patch"
+		eapply "${FILESDIR}/6.0/6.0-tt-cachy-dev.patch"
 	fi
 
 #	if use cacule; then
-#		eapply "${DISTDIR}/0001-cacULE-cachy.patch"
+#		eapply "${FILESDIR}/0001-cacULE-cachy.patch"
 #	fi
 
 #	if use prjc; then
-#		eapply "${DISTDIR}/0001-prjc-cachy.patch"
+#		eapply "${FILESDIR}/0001-prjc-cachy.patch"
 #	fi
 
 	eapply_user
