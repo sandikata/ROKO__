@@ -63,15 +63,7 @@ src_configure() {
 }
 
 src_install() {
-	dobin src/jamesdsp
-	doicon resources/icons/icon.svg
-	make_desktop_entry \
-		"/usr/bin/jamesdsp" \
-		"JamesDSP" \
-		"jamesdsp" \
-		"AudioVideo;Audio;" \
-		"GenericName=Audio effect processor\n\
-		 Keywords=equalizer;audio;effect\n\
-		 StartupNotify=false\n\
-		 Terminal=false\n"
+	dobin "${S}/src/jamesdsp"
+	newicon ${S}/resources/icons/icon.svg jamesdsp.svg
+	make_desktop_entry /usr/bin/jamesdsp JamesDSP /usr/share/pixmaps/jamesdsp.svg "Audio;AudioVideo"
 }
