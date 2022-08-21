@@ -16,7 +16,7 @@ LICENSE=""
 SLOT="5.19-unstable"
 KEYWORDS="~amd64"
 IUSE="bore high-hz prjc tt"
-REQUIRED_USE="bore? ( !high-hz !prjc !tt ) prjc? ( !bore !high-hz !tt ) tt? ( high-hz !bore !prjc )"
+REQUIRED_USE="bore? ( !prjc !tt ) prjc? ( !bore !tt ) tt? ( high-hz !bore !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"

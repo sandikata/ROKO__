@@ -16,7 +16,7 @@ LICENSE=""
 SLOT="5.19-testing"
 KEYWORDS=""
 IUSE="bore cacule high-hz prjc tt"
-REQUIRED_USE="bore? ( !cacule !high-hz !prjc !tt ) cacule? ( !bore !high-hz !prjc !tt ) prjc? ( !bore !cacule !high-hz !tt ) tt? ( high-hz !bore !cacule !prjc )"
+REQUIRED_USE="bore? ( !cacule !prjc !tt ) cacule? ( !bore !prjc !tt ) prjc? ( !bore !cacule !tt ) tt? ( high-hz !bore !cacule !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
