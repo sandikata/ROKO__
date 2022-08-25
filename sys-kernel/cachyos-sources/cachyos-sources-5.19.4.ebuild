@@ -15,26 +15,30 @@ SRC_URI="${KERNEL_URI}"
 LICENSE=""
 SLOT="5.19-unstable"
 KEYWORDS="~amd64"
-IUSE="bore high-hz tt"
-REQUIRED_USE="bore? ( !tt ) tt? ( high-hz !bore )"
+IUSE="bore high-hz prjc tt"
+REQUIRED_USE="bore? ( !prjc !tt ) prjc? ( !bore !tt ) tt? ( high-hz !bore !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-cachyos-base-all-dev.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-cachyos-base-all.patch"
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
 	fi
 
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-tt-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-tt-cachy.patch"
+	fi
+
+	if use prjc; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-prjc-cachy.patch"
 	fi
 
 	eapply_user
@@ -42,6 +46,10 @@ src_prepare() {
 	# prepare default config
 	if use bore; then
 		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
+	fi
+
+	if use prjc; then
+		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied"
 	fi
 
 	if use tt; then
