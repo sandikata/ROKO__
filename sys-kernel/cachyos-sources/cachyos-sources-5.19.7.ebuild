@@ -23,7 +23,7 @@ RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-cachyos-base-all.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.7-cachyos-base-all.patch"
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
