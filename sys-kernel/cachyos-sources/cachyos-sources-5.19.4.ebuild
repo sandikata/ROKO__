@@ -13,8 +13,8 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
-SLOT="5.19-unstable"
-KEYWORDS="~amd64"
+SLOT="5.19-stable"
+KEYWORDS="amd64"
 IUSE="bore high-hz prjc tt"
 REQUIRED_USE="bore? ( !prjc !tt ) prjc? ( !bore !tt ) tt? ( high-hz !bore !prjc )"
 
@@ -23,7 +23,7 @@ RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.7-cachyos-base-all.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-cachyos-base-all.patch"
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
