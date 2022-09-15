@@ -2,4 +2,4 @@
 =dev-db/mariadb-10.5.4
 
 # Testing new patches
-=sys-kernel/cachyos-sources-5.19.8
+#=sys-kernel/cachyos-sources-5.19.8
