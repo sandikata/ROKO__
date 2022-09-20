@@ -15,8 +15,8 @@ SRC_URI="${KERNEL_URI}"
 LICENSE=""
 SLOT="5.19-unstable"
 KEYWORDS="~amd64"
-IUSE="bore high-hz prjc tt"
-REQUIRED_USE="bore? ( !prjc !tt ) prjc? ( !bore !tt ) tt? ( high-hz !bore !prjc )"
+IUSE="bore high-hz latency prjc tt"
+REQUIRED_USE="bore? ( !latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -27,6 +27,10 @@ src_prepare() {
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
+	fi
+
+	if use latency; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-Add-latency-nice-prio.patch"
 	fi
 
 	if use bore; then

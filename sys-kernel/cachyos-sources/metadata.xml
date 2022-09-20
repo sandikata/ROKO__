@@ -6,6 +6,10 @@
 		<name>Rosen Aleksandrov</name>
 	</maintainer>
 	<use>
-		<flag name="high-hz"> CONFIG_HZ=1666 patch - EXPERIMENTAL! </flag>
+		<flag name="bore"> BORE (Burst-Oriented Response Enhancer) CPU Scheduler by firelzrd (BORE) </flag>
+		<flag name="high-hz"> CONFIG_HZ=833/1666 patch - EXPERIMENTAL! </flag>
+		<flag name="latency"> latency priority for CFS </flag>
+		<flag name="prjc"> Project C patch set </flag>
+		<flag name="tt"> Task Type Scheduler by Hamad Marri (TT) </flag>
 	</use>
 </pkgmetadata>
