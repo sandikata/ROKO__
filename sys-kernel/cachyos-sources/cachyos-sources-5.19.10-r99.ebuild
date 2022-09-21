@@ -13,32 +13,36 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
-SLOT="5.19-stable"
-KEYWORDS="amd64"
-IUSE="bore high-hz prjc tt"
-REQUIRED_USE="bore? ( !prjc !tt ) prjc? ( !bore !tt ) tt? ( high-hz !bore !prjc )"
+SLOT="testing"
+KEYWORDS=""
+IUSE="bore cacule high-hz prjc tt"
+REQUIRED_USE="bore? ( !cacule !prjc !tt ) cacule? ( !bore !prjc !tt ) prjc? ( !bore !cacule !tt ) tt? ( high-hz !bore !cacule !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-cachyos-base-all.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19/5.19.10-cachyos-base-all.patch"
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
 	fi
 
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-tt-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-tt-cachy.patch"
+	fi
+
+	if use cacule; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-cacULE-cachy.patch"
 	fi
 
 	if use prjc; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-prjc-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-prjc-cachy.patch"
 	fi
 
 	eapply_user

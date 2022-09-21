@@ -13,36 +13,36 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
-SLOT="5.19-testing"
-KEYWORDS=""
-IUSE="bore cacule high-hz prjc tt"
-REQUIRED_USE="bore? ( !cacule !prjc !tt ) cacule? ( !bore !prjc !tt ) prjc? ( !bore !cacule !tt ) tt? ( high-hz !bore !cacule !prjc )"
+SLOT="5.19-unstable"
+KEYWORDS="~amd64"
+IUSE="bore high-hz latency prjc tt"
+REQUIRED_USE="bore? ( !latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19/5.19.9-cachyos-base-all.patch"
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.9-cachyos-base-all.patch"
 
 	if use high-hz; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
 	fi
 
+	if use latency; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-Add-latency-nice-prio.patch"
+	fi
+
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-tt-cachy.patch"
-	fi
-
-	if use cacule; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-cacULE-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-tt-cachy.patch"
 	fi
 
 	if use prjc; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-prjc-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-prjc-cachy.patch"
 	fi
 
 	eapply_user

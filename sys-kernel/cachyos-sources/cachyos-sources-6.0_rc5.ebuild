@@ -14,7 +14,7 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="https://git.kernel.org/torvalds/t/linux-6.0-rc4.tar.gz"
 
 LICENSE=""
-SLOT="6.0-testing"
+SLOT="testing"
 KEYWORDS=""
 IUSE="bore tt"
 REQUIRED_USE="bore? ( !tt ) tt? ( !bore )"
