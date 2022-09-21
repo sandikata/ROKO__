@@ -1,0 +1,69 @@
+--- a/plugins/CMakeLists.txt	2022-09-21 15:18:39.740954415 +0300
++++ b/plugins/CMakeLists.txt	2022-09-21 15:19:20.866356890 +0300
+@@ -4,14 +4,6 @@
+   return()
+ endif()
+ 
+-function(check_obs_browser)
+-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/obs-browser/CMakeLists.txt)
+-    add_subdirectory(obs-browser)
+-  else()
+-    obs_status(FATAL_ERROR "obs-browser submodule not available.")
+-  endif()
+-endfunction()
+-
+ # APPLE/WIN32/UNIX are soft-deprecated:
+ # https://discourse.cmake.org/t/platform-id-vs-win32-vs-cmake-system-name/1226/2
+ if(OS_WINDOWS)
+@@ -35,7 +27,6 @@
+     add_subdirectory(win-ivcam)
+   endif()
+ 
+-  check_obs_browser()
+ elseif(OS_MACOS)
+   add_subdirectory(coreaudio-encoder)
+   add_subdirectory(mac-avcapture)
+@@ -48,7 +39,6 @@
+   add_subdirectory(linux-jack)
+   add_subdirectory(obs-vst)
+ 
+-  check_obs_browser()
+ elseif(OS_LINUX)
+   add_subdirectory(linux-capture)
+   add_subdirectory(linux-pulseaudio)
+@@ -61,7 +51,6 @@
+   add_subdirectory(sndio)
+   add_subdirectory(obs-vst)
+ 
+-  check_obs_browser()
+ elseif(OS_FREEBSD)
+   add_subdirectory(linux-capture)
+   add_subdirectory(linux-pulseaudio)
+@@ -72,22 +61,14 @@
+   add_subdirectory(oss-audio)
+   add_subdirectory(sndio)
+ 
+-  obs_status(STATUS "obs-browser plugin not available.")
+   obs_status(STATUS "obs-vst plugin not available.")
+ elseif(OS_OPENBSD)
+   add_subdirectory(linux-capture)
+   add_subdirectory(sndio)
+ 
+-  obs_status(STATUS "obs-browser plugin not available.")
+   obs_status(STATUS "obs-vst plugin not available.")
+ endif()
+ 
+-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/CMakeLists.txt)
+-  add_subdirectory(obs-websocket)
+-else()
+-  obs_status(FATAL_ERROR "obs-websocket submodule not available.")
+-endif()
+-
+ add_subdirectory(image-source)
+ add_subdirectory(obs-x264)
+ add_subdirectory(obs-libfdk)
+@@ -97,4 +78,3 @@
+ add_subdirectory(obs-transitions)
+ add_subdirectory(rtmp-services)
+ add_subdirectory(text-freetype2)
+-add_subdirectory(aja)
