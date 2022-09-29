@@ -13,8 +13,8 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE=""
-SLOT="5.19-unstable"
-KEYWORDS="~amd64"
+SLOT="5.19-stable"
+KEYWORDS="amd64"
 IUSE="bore high-hz latency prjc tt"
 REQUIRED_USE="bore? ( !latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
 

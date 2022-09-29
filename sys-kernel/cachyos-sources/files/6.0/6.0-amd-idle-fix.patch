@@ -1,0 +1,243 @@
+From 5515d21c6817bc27b0b13c61edf22b09b58bc647 Mon Sep 17 00:00:00 2001
+From: Tony Luck <tony.luck@intel.com>
+Date: Wed, 24 Aug 2022 10:57:18 -0700
+Subject: x86/cpu: Add CPU model numbers for Meteor Lake
+
+Add model numbers for client and mobile parts.
+
+Signed-off-by: Tony Luck <tony.luck@intel.com>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Link: https://lkml.kernel.org/r/20220824175718.232384-1-tony.luck@intel.com
+---
+ arch/x86/include/asm/intel-family.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/arch/x86/include/asm/intel-family.h b/arch/x86/include/asm/intel-family.h
+index aeb38023a7039..5d75fe2293421 100644
+--- a/arch/x86/include/asm/intel-family.h
++++ b/arch/x86/include/asm/intel-family.h
+@@ -115,6 +115,9 @@
+ #define INTEL_FAM6_RAPTORLAKE_P		0xBA
+ #define INTEL_FAM6_RAPTORLAKE_S		0xBF
+ 
++#define INTEL_FAM6_METEORLAKE		0xAC
++#define INTEL_FAM6_METEORLAKE_L		0xAA
++
+ /* "Small Core" Processors (Atom) */
+ 
+ #define INTEL_FAM6_ATOM_BONNELL		0x1C /* Diamondville, Pineview */
+-- 
+cgit 
+
+
+From 133e049a3f8c91b175029fb6a59b6039d5e79cba Mon Sep 17 00:00:00 2001
+From: Jarkko Sakkinen <jarkko@kernel.org>
+Date: Tue, 6 Sep 2022 03:02:20 +0300
+Subject: x86/sgx: Do not fail on incomplete sanitization on premature stop of
+ ksgxd
+
+Unsanitized pages trigger WARN_ON() unconditionally, which can panic the
+whole computer, if /proc/sys/kernel/panic_on_warn is set.
+
+In sgx_init(), if misc_register() fails or misc_register() succeeds but
+neither sgx_drv_init() nor sgx_vepc_init() succeeds, then ksgxd will be
+prematurely stopped. This may leave unsanitized pages, which will result a
+false warning.
+
+Refine __sgx_sanitize_pages() to return:
+
+1. Zero when the sanitization process is complete or ksgxd has been
+   requested to stop.
+2. The number of unsanitized pages otherwise.
+
+Fixes: 51ab30eb2ad4 ("x86/sgx: Replace section->init_laundry_list with sgx_dirty_page_list")
+Reported-by: Paul Menzel <pmenzel@molgen.mpg.de>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Reviewed-by: Reinette Chatre <reinette.chatre@intel.com>
+Cc: stable@vger.kernel.org
+Link: https://lore.kernel.org/linux-sgx/20220825051827.246698-1-jarkko@kernel.org/T/#u
+Link: https://lkml.kernel.org/r/20220906000221.34286-2-jarkko@kernel.org
+---
+ arch/x86/kernel/cpu/sgx/main.c | 15 +++++++++------
+ 1 file changed, 9 insertions(+), 6 deletions(-)
+
+diff --git a/arch/x86/kernel/cpu/sgx/main.c b/arch/x86/kernel/cpu/sgx/main.c
+index 515e2a5f25bbc..0aad028f04d40 100644
+--- a/arch/x86/kernel/cpu/sgx/main.c
++++ b/arch/x86/kernel/cpu/sgx/main.c
+@@ -49,9 +49,13 @@ static LIST_HEAD(sgx_dirty_page_list);
+  * Reset post-kexec EPC pages to the uninitialized state. The pages are removed
+  * from the input list, and made available for the page allocator. SECS pages
+  * prepending their children in the input list are left intact.
++ *
++ * Return 0 when sanitization was successful or kthread was stopped, and the
++ * number of unsanitized pages otherwise.
+  */
+-static void __sgx_sanitize_pages(struct list_head *dirty_page_list)
++static unsigned long __sgx_sanitize_pages(struct list_head *dirty_page_list)
+ {
++	unsigned long left_dirty = 0;
+ 	struct sgx_epc_page *page;
+ 	LIST_HEAD(dirty);
+ 	int ret;
+@@ -59,7 +63,7 @@ static void __sgx_sanitize_pages(struct list_head *dirty_page_list)
+ 	/* dirty_page_list is thread-local, no need for a lock: */
+ 	while (!list_empty(dirty_page_list)) {
+ 		if (kthread_should_stop())
+-			return;
++			return 0;
+ 
+ 		page = list_first_entry(dirty_page_list, struct sgx_epc_page, list);
+ 
+@@ -92,12 +96,14 @@ static void __sgx_sanitize_pages(struct list_head *dirty_page_list)
+ 		} else {
+ 			/* The page is not yet clean - move to the dirty list. */
+ 			list_move_tail(&page->list, &dirty);
++			left_dirty++;
+ 		}
+ 
+ 		cond_resched();
+ 	}
+ 
+ 	list_splice(&dirty, dirty_page_list);
++	return left_dirty;
+ }
+ 
+ static bool sgx_reclaimer_age(struct sgx_epc_page *epc_page)
+@@ -395,10 +401,7 @@ static int ksgxd(void *p)
+ 	 * required for SECS pages, whose child pages blocked EREMOVE.
+ 	 */
+ 	__sgx_sanitize_pages(&sgx_dirty_page_list);
+-	__sgx_sanitize_pages(&sgx_dirty_page_list);
+-
+-	/* sanity check: */
+-	WARN_ON(!list_empty(&sgx_dirty_page_list));
++	WARN_ON(__sgx_sanitize_pages(&sgx_dirty_page_list));
+ 
+ 	while (!kthread_should_stop()) {
+ 		if (try_to_freeze())
+-- 
+cgit 
+
+
+From 81fa6fd13b5c43601fba8486f2385dbd7c1935e2 Mon Sep 17 00:00:00 2001
+From: Haitao Huang <haitao.huang@linux.intel.com>
+Date: Tue, 6 Sep 2022 03:02:21 +0300
+Subject: x86/sgx: Handle VA page allocation failure for EAUG on PF.
+
+VM_FAULT_NOPAGE is expected behaviour for -EBUSY failure path, when
+augmenting a page, as this means that the reclaimer thread has been
+triggered, and the intention is just to round-trip in ring-3, and
+retry with a new page fault.
+
+Fixes: 5a90d2c3f5ef ("x86/sgx: Support adding of pages to an initialized enclave")
+Signed-off-by: Haitao Huang <haitao.huang@linux.intel.com>
+Signed-off-by: Jarkko Sakkinen <jarkko@kernel.org>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Reviewed-by: Reinette Chatre <reinette.chatre@intel.com>
+Tested-by: Vijay Dhanraj <vijay.dhanraj@intel.com>
+Cc: stable@vger.kernel.org
+Link: https://lkml.kernel.org/r/20220906000221.34286-3-jarkko@kernel.org
+---
+ arch/x86/kernel/cpu/sgx/encl.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/arch/x86/kernel/cpu/sgx/encl.c b/arch/x86/kernel/cpu/sgx/encl.c
+index 24c1bb8eb1962..8bdeae2fc3091 100644
+--- a/arch/x86/kernel/cpu/sgx/encl.c
++++ b/arch/x86/kernel/cpu/sgx/encl.c
+@@ -344,8 +344,11 @@ static vm_fault_t sgx_encl_eaug_page(struct vm_area_struct *vma,
+ 	}
+ 
+ 	va_page = sgx_encl_grow(encl, false);
+-	if (IS_ERR(va_page))
++	if (IS_ERR(va_page)) {
++		if (PTR_ERR(va_page) == -EBUSY)
++			vmret = VM_FAULT_NOPAGE;
+ 		goto err_out_epc;
++	}
+ 
+ 	if (va_page)
+ 		list_add(&va_page->list, &encl->va_pages);
+-- 
+cgit 
+
+
+From e400ad8b7e6a1b9102123c6240289a811501f7d9 Mon Sep 17 00:00:00 2001
+From: Dave Hansen <dave.hansen@intel.com>
+Date: Thu, 22 Sep 2022 11:47:45 -0700
+Subject: ACPI: processor idle: Practically limit "Dummy wait" workaround to
+ old Intel systems
+
+Old, circa 2002 chipsets have a bug: they don't go idle when they are
+supposed to.  So, a workaround was added to slow the CPU down and
+ensure that the CPU waits a bit for the chipset to actually go idle.
+This workaround is ancient and has been in place in some form since
+the original kernel ACPI implementation.
+
+But, this workaround is very painful on modern systems.  The "inl()"
+can take thousands of cycles (see Link: for some more detailed
+numbers and some fun kernel archaeology).
+
+First and foremost, modern systems should not be using this code.
+Typical Intel systems have not used it in over a decade because it is
+horribly inferior to MWAIT-based idle.
+
+Despite this, people do seem to be tripping over this workaround on
+AMD system today.
+
+Limit the "dummy wait" workaround to Intel systems.  Keep Modern AMD
+systems from tripping over the workaround.  Remotely modern Intel
+systems use intel_idle instead of this code and will, in practice,
+remain unaffected by the dummy wait.
+
+Reported-by: K Prateek Nayak <kprateek.nayak@amd.com>
+Suggested-by: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
+Signed-off-by: Dave Hansen <dave.hansen@linux.intel.com>
+Reviewed-by: Mario Limonciello <mario.limonciello@amd.com>
+Tested-by: K Prateek Nayak <kprateek.nayak@amd.com>
+Link: https://lore.kernel.org/all/20220921063638.2489-1-kprateek.nayak@amd.com/
+Link: https://lkml.kernel.org/r/20220922184745.3252932-1-dave.hansen@intel.com
+---
+ drivers/acpi/processor_idle.c | 23 ++++++++++++++++++++---
+ 1 file changed, 20 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/acpi/processor_idle.c b/drivers/acpi/processor_idle.c
+index 16a1663d02d46..9f40917c49efb 100644
+--- a/drivers/acpi/processor_idle.c
++++ b/drivers/acpi/processor_idle.c
+@@ -531,10 +531,27 @@ static void wait_for_freeze(void)
+ 	/* No delay is needed if we are in guest */
+ 	if (boot_cpu_has(X86_FEATURE_HYPERVISOR))
+ 		return;
++	/*
++	 * Modern (>=Nehalem) Intel systems use ACPI via intel_idle,
++	 * not this code.  Assume that any Intel systems using this
++	 * are ancient and may need the dummy wait.  This also assumes
++	 * that the motivating chipset issue was Intel-only.
++	 */
++	if (boot_cpu_data.x86_vendor != X86_VENDOR_INTEL)
++		return;
+ #endif
+-	/* Dummy wait op - must do something useless after P_LVL2 read
+-	   because chipsets cannot guarantee that STPCLK# signal
+-	   gets asserted in time to freeze execution properly. */
++	/*
++	 * Dummy wait op - must do something useless after P_LVL2 read
++	 * because chipsets cannot guarantee that STPCLK# signal gets
++	 * asserted in time to freeze execution properly
++	 *
++	 * This workaround has been in place since the original ACPI
++	 * implementation was merged, circa 2002.
++	 *
++	 * If a profile is pointing to this instruction, please first
++	 * consider moving your system to a more modern idle
++	 * mechanism.
++	 */
+ 	inl(acpi_gbl_FADT.xpm_timer_block.address);
+ }
+ 
+-- 
+cgit 
+

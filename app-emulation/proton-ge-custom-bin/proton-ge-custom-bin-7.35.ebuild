@@ -3,10 +3,10 @@
 
 EAPI=8
 
+_internal_name=GE-Proton${PV//./-}
 DESCRIPTION="A fancy custom distribution of Valves Proton with various patches"
 HOMEPAGE="https://github.com/GloriousEggroll/proton-ge-custom"
-SRC_URI="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton7-18/GE-Proton7-18.tar.gz -> ${P}.tar.gz"
-_internal_name=GE-Proton7-18
+SRC_URI="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${_internal_name}/${_internal_name}.tar.gz -> ${P}.tar.gz"
 
 LICENSE=('BSD' 'LGPL' 'zlib' 'MIT' 'MPL' 'OFL' 'Proton')
 SLOT="${PV}"
@@ -19,11 +19,13 @@ RDEPEND="
 
 QA_PREBUILT="*"
 S="${WORKDIR}"
-PATCHES=("${FILESDIR}/proton-ge-custom-bin-7.18-create-dosdevices.patch")
 
 pkg_pretend() {
-	einfo "I choose to not depend on many other packages to simplify the packing process, and this package indeed have a lot of bundled libraries. According to the document of upstream, it is enough to do so."
-	einfo "However, practically, it is not enough to run some games, mostly because abi_x86_32 is not enabled for many media libraries. You could pull-in them all by emerge app-emulation/proton-ge-custom-meta."
+	einfo "To actually run some games, you may additionally need a bunch of 32bit libraries."
+	einfo "Merge app-emulation/proton-ge-custom-meta to pull them in."
+	einfo ""
+	einfo "Some games will only run with old versions of proton-ge. You should try them by your self."
+	einfo "As my experience, you could try the following versions first: the lastest, 7.24, 6.21."
 }
 
 src_install() {
