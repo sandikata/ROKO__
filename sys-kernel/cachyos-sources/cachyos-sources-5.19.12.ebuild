@@ -12,11 +12,11 @@ DESCRIPTION="CachyOS are improved kernels that improve performance and other asp
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
-LICENSE=""
+LICENSE="GPL"
 SLOT="5.19-unstable"
 KEYWORDS="~amd64"
-IUSE="bore high-hz latency prjc tt"
-REQUIRED_USE="bore? ( !latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
+IUSE="bore high-hz +nest +latency prjc tt"
+REQUIRED_USE="bore? ( !latency !prjc !tt ) nest? ( !bore latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -31,6 +31,10 @@ src_prepare() {
 
 	if use latency; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-Add-latency-nice-prio.patch"
+	fi
+
+	if use nest; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-NEST.patch"
 	fi
 
 	if use bore; then
@@ -52,8 +56,12 @@ src_prepare() {
 		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
 	fi
 
+	if use nest; then
+		cp "${FILESDIR}/config-x86_64-nest" .config && elog "NEST config applied" || die
+	fi
+
 	if use prjc; then
-		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied"
+		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied" || die
 	fi
 
 	if use tt; then

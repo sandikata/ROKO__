@@ -13,11 +13,11 @@ DESCRIPTION="CachyOS are improved kernels that improve performance and other asp
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="https://git.kernel.org/torvalds/t/linux-6.0-rc7.tar.gz"
 
-LICENSE=""
+LICENSE="GPL"
 SLOT="testing"
 KEYWORDS=""
-IUSE="bore tt"
-REQUIRED_USE="bore? ( !tt ) tt? ( !bore )"
+IUSE="bore cacule high-hz +latency +nest prjc tt"
+REQUIRED_USE="bore? ( !cacule !nest !prjc !tt ) cacule? ( !bore !nest !prjc !tt ) nest? ( !bore !cacule latency !prjc !tt ) prjc? ( !bore !cacule latency !nest !tt ) tt? ( !bore !cacule high-hz !nest !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -32,26 +32,35 @@ src_unpack() {
 src_prepare() {
 	eapply "${FILESDIR}/6.0/6.0-cachyos-base-all.patch"
 	eapply "${FILESDIR}/6.0/6.0-amd-idle-fix.patch" # A performance fix for recent large AMD systems that avoids an ancient cpu idle hardware workaround. https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=a1375562c0a87f0fa2eaf3e8ce15824696d4170a
+#	eapply "${FILESDIR}/6.0/6.0-amd-pstate-epp-enhancement.patch"
 
-#	if use high-hz; then
-#		eapply "${FILESDIR}/0001-high-hz.patch"
-#	fi
+	if use high-hz; then
+		eapply "${FILESDIR}/6.0/6.0-high-hz.patch"
+	fi
+
+	if use latency; then
+		eapply "${FILESDIR}/6.0/6.0-latency-fix.patch"
+	fi
+
+	if use nest; then
+		eapply "${FILESDIR}/6.0/6.0-NEST.patch"
+	fi
 
 	if use bore; then
 		eapply "${FILESDIR}/6.0/6.0-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${FILESDIR}/6.0/6.0-tt-cachy-dev.patch"
+		eapply "${FILESDIR}/6.0/6.0-tt.patch"
 	fi
 
-#	if use cacule; then
-#		eapply "${FILESDIR}/0001-cacULE-cachy.patch"
-#	fi
+	if use cacule; then
+		eapply "${FILESDIR}/6.0/6.0-cacULE-cachy.patch"
+	fi
 
-#	if use prjc; then
-#		eapply "${FILESDIR}/0001-prjc-cachy.patch"
-#	fi
+	if use prjc; then
+		eapply "${FILESDIR}/6.0/6.0-prjc.patch"
+	fi
 
 	eapply_user
 
@@ -60,9 +69,17 @@ src_prepare() {
 		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
 	fi
 
-#	if use prjc; then
-#		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied"
-#	fi
+	if use cacule; then
+		cp "${FILESDIR}/config-x86_64-cacule" .config && elog "CaCULE config applied" || die
+	fi
+
+	if use nest; then
+		cp "${FILESDIR}/config-x86_64-nest" .config && elog "NEST config applied" || die
+	fi
+
+	if use prjc; then
+		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied" || die
+	fi
 
 	if use tt; then
 		cp "${FILESDIR}/config-x86_64-tt" .config && elog "TaskType config applied" || die
