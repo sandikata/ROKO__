@@ -16,7 +16,7 @@ LICENSE="GPL"
 SLOT="5.19-stable"
 KEYWORDS="amd64"
 IUSE="bore high-hz +nest +latency prjc tt"
-REQUIRED_USE="bore? ( !latency !prjc !tt ) nest? ( !bore latency !prjc !tt ) prjc? ( !bore latency !tt ) tt? ( high-hz !bore !latency !prjc )"
+REQUIRED_USE="bore? ( latency !nest !prjc !tt ) nest? ( !bore latency !prjc !tt ) prjc? ( !bore !latency !nest !tt ) tt? ( high-hz !bore !latency !nest !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"

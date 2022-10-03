@@ -16,7 +16,7 @@ LICENSE="GPL"
 SLOT="6.0-unstable"
 KEYWORDS="~amd64"
 IUSE="bore cacule high-hz +nest +latency prjc tt"
-REQUIRED_USE="bore? ( !cacule latency !nest !prjc !tt ) cacule? ( !bore latency !nest !prjc !tt ) nest? ( !bore !cacule latency !prjc !tt ) prjc? ( !bore !cacule latency !nest !tt ) tt? ( !bore !cacule high-hz latency !nest !prjc )"
+REQUIRED_USE="bore? ( !cacule latency !nest !prjc !tt ) cacule? ( !bore !latency !nest !prjc !tt ) nest? ( !bore !cacule latency !prjc !tt ) prjc? ( !bore !cacule !latency !nest !tt ) tt? ( !bore !cacule high-hz !latency !nest !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
