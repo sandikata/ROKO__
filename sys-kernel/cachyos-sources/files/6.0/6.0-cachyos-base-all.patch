@@ -1,7 +1,7 @@
-From 4ee5774d519ab3d21a214f4aa94e3f2ddc6ceb81 Mon Sep 17 00:00:00 2001
+From 2fa4f73d2e50a4a2c2c2873f08ac131c10717317 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
-Date: Tue, 27 Sep 2022 15:12:20 +0200
-Subject: [PATCH 01/16] cachy
+Date: Sun, 2 Oct 2022 23:51:09 +0200
+Subject: [PATCH 01/17] cachy
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -71,11 +71,12 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  include/linux/user_namespace.h              |    4 +
  include/linux/wait.h                        |    2 +
  include/uapi/linux/if_bonding.h             |    2 +-
- init/Kconfig                                |   26 +
+ init/Kconfig                                |   39 +
  init/do_mounts.c                            |   16 +-
  kernel/Kconfig.hz                           |   24 +
  kernel/fork.c                               |   14 +
  kernel/locking/rwsem.c                      |    4 +-
+ kernel/module/Kconfig                       |   25 +
  kernel/module/internal.h                    |    2 +
  kernel/module/main.c                        |    1 +
  kernel/module/procfs.c                      |   13 +
@@ -91,8 +92,8 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  lib/raid6/algos.c                           |    4 +-
  lib/string.c                                |   62 +-
  lib/zstd/Makefile                           |   16 +-
- lib/zstd/common/entropy_common.c            |    4 +-
- lib/zstd/common/zstd_common.c               |    7 +
+ lib/zstd/common/entropy_common.c            |    5 +-
+ lib/zstd/common/zstd_common.c               |   10 +
  lib/zstd/compress/zstd_double_fast.c        |   61 +-
  lib/zstd/compress/zstd_fast.c               |   69 +-
  lib/zstd/compress/zstd_lazy.c               |  223 ++---
@@ -106,7 +107,9 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  mm/vmscan.c                                 |    4 +
  net/ipv4/inet_connection_sock.c             |    2 +-
  net/ipv4/tcp.c                              |    4 +-
- 101 files changed, 2400 insertions(+), 349 deletions(-)
+ scripts/Makefile.lib                        |   13 +-
+ scripts/Makefile.modinst                    |    7 +-
+ 104 files changed, 2458 insertions(+), 353 deletions(-)
  create mode 100644 arch/x86/Makefile.postlink
 
 diff --git a/.gitignore b/.gitignore
@@ -152,7 +155,7 @@ index 83b58eb4ab4d..d0f0e115013b 100644
  ``/sys/devices/system/cpu/cpuX/acpi_cppc/``, see :ref:`cppc_sysfs`.
  
 diff --git a/Makefile b/Makefile
-index 647a42a1f800..5c327c29ef12 100644
+index 8478e13e9424..30320363622c 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -758,6 +758,8 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
@@ -1011,7 +1014,7 @@ index 75884d2cdec3..4e6a08d4c7e5 100644
  #define MODULE_PROC_FAMILY "ELAN "
  #elif defined CONFIG_MCRUSOE
 diff --git a/arch/x86/kernel/alternative.c b/arch/x86/kernel/alternative.c
-index 62f6b8b7c4a5..f9c9b5850847 100644
+index 4f3204364caa..097a6cfad8b4 100644
 --- a/arch/x86/kernel/alternative.c
 +++ b/arch/x86/kernel/alternative.c
 @@ -936,7 +936,9 @@ void __init alternative_instructions(void)
@@ -1304,7 +1307,7 @@ index 30b15a9a47c4..144bca006463 100644
  #endif /* CONFIG_BFQ_CGROUP_DEBUG */
  
 diff --git a/block/bfq-iosched.c b/block/bfq-iosched.c
-index c740b41fe0a4..5ea6245f0208 100644
+index c740b41fe0a4..adf6cd94fd4a 100644
 --- a/block/bfq-iosched.c
 +++ b/block/bfq-iosched.c
 @@ -1925,7 +1925,7 @@ static void bfq_bfqq_handle_idle_busy_switch(struct bfq_data *bfqd,
@@ -1367,7 +1370,7 @@ index c740b41fe0a4..5ea6245f0208 100644
  static int __init bfq_init(void)
  {
  	int ret;
-+	char msg[60] = "BFQ I/O-scheduler: BFQ-CachyOS v5.19";
++	char msg[60] = "BFQ I/O-scheduler: BFQ-CachyOS v6.0.0";
  
  #ifdef CONFIG_BFQ_GROUP_IOSCHED
  	ret = blkcg_policy_register(&blkcg_policy_bfq);
@@ -3334,7 +3337,7 @@ index f82ad7419508..5e8faa70aad6 100644
  /* fake multicast ability */
  static void set_multicast_list(struct net_device *dev)
 diff --git a/drivers/nvme/host/core.c b/drivers/nvme/host/core.c
-index 66446f1e06cf..c65b03f91ecf 100644
+index 8d5a7ae19844..56d1780d1337 100644
 --- a/drivers/nvme/host/core.c
 +++ b/drivers/nvme/host/core.c
 @@ -58,7 +58,7 @@ static u8 nvme_max_retries = 5;
@@ -3606,7 +3609,7 @@ index d174914a837d..bf8e2af101a3 100644
  #define BOND_DEFAULT_TX_QUEUES 16   /* Default number of tx queues per device */
  
 diff --git a/init/Kconfig b/init/Kconfig
-index 532362fcfe31..442a945ca6ae 100644
+index 532362fcfe31..f5bd72b39352 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
 @@ -112,6 +112,10 @@ config THREAD_INFO_IN_TASK
@@ -3620,7 +3623,27 @@ index 532362fcfe31..442a945ca6ae 100644
  config BROKEN
  	bool
  
-@@ -1241,6 +1245,22 @@ config USER_NS
+@@ -334,6 +338,19 @@ config KERNEL_UNCOMPRESSED
+ 
+ endchoice
+ 
++menu "ZSTD compression options"
++	depends on KERNEL_ZSTD
++
++config ZSTD_COMP_VAL
++	int "Compression level (1-22)"
++	range 1 22
++	default "22"
++	help
++	  Choose a compression level for zstd kernel compression.
++	  Default is 22, which is the maximum.
++
++endmenu
++
+ config DEFAULT_INIT
+ 	string "Default init path"
+ 	default ""
+@@ -1241,6 +1258,22 @@ config USER_NS
  
  	  If unsure, say N.
  
@@ -3643,7 +3666,7 @@ index 532362fcfe31..442a945ca6ae 100644
  config PID_NS
  	bool "PID Namespaces"
  	default y
-@@ -1407,6 +1427,12 @@ config CC_OPTIMIZE_FOR_PERFORMANCE
+@@ -1407,6 +1440,12 @@ config CC_OPTIMIZE_FOR_PERFORMANCE
  	  with the "-O2" compiler flag for best performance and most
  	  helpful compile-time warnings.
  
@@ -3794,6 +3817,42 @@ index 65f0262f635e..8a8f77930818 100644
  	}
  
  	return state;
+diff --git a/kernel/module/Kconfig b/kernel/module/Kconfig
+index 26ea5d04f56c..e5311101b93d 100644
+--- a/kernel/module/Kconfig
++++ b/kernel/module/Kconfig
+@@ -219,6 +219,31 @@ config MODULE_COMPRESS_ZSTD
+ 
+ endchoice
+ 
++menu "ZSTD module compression options"
++    depends on MODULE_COMPRESS_ZSTD
++
++config MODULE_COMPRESS_ZSTD_LEVEL
++	int "Compression level (1-19)"
++	range 1 19
++	default 9
++	help
++	  Compression level used by zstd for compressing modules.
++
++config MODULE_COMPRESS_ZSTD_ULTRA
++	bool "Enable ZSTD ultra compression"
++	help
++	  Compress modules with ZSTD using the highest possible compression.
++
++config MODULE_COMPRESS_ZSTD_LEVEL_ULTRA
++	int "Compression level (20-22)"
++	depends on MODULE_COMPRESS_ZSTD_ULTRA
++	range 20 22
++	default 20
++	help
++	  Ultra compression level used by zstd for compressing modules.
++
++endmenu
++
+ config MODULE_DECOMPRESS
+ 	bool "Support in-kernel module decompression"
+ 	depends on MODULE_COMPRESS_GZIP || MODULE_COMPRESS_XZ
 diff --git a/kernel/module/internal.h b/kernel/module/internal.h
 index 680d980a4fb2..8a3abfff9fe9 100644
 --- a/kernel/module/internal.h
@@ -4255,7 +4314,7 @@ index fc45339fc3a3..440bd0007ae2 100644
 -		decompress/zstd_decompress.o \
 -		decompress/zstd_decompress_block.o \
 diff --git a/lib/zstd/common/entropy_common.c b/lib/zstd/common/entropy_common.c
-index 53b47a2b52ff..f84612627471 100644
+index 53b47a2b52ff..a311808c0d56 100644
 --- a/lib/zstd/common/entropy_common.c
 +++ b/lib/zstd/common/entropy_common.c
 @@ -15,6 +15,7 @@
@@ -4283,8 +4342,13 @@ index 53b47a2b52ff..f84612627471 100644
  
  FORCE_INLINE_TEMPLATE size_t
  HUF_readStats_body(BYTE* huffWeight, size_t hwSize, U32* rankStats,
+@@ -355,3 +357,4 @@ size_t HUF_readStats_wksp(BYTE* huffWeight, size_t hwSize, U32* rankStats,
+     (void)bmi2;
+     return HUF_readStats_body_default(huffWeight, hwSize, rankStats, nbSymbolsPtr, tableLogPtr, src, srcSize, workSpace, wkspSize);
+ }
++EXPORT_SYMBOL_GPL(HUF_readStats_wksp);
 diff --git a/lib/zstd/common/zstd_common.c b/lib/zstd/common/zstd_common.c
-index 3d7e35b309b5..06f62b2026d5 100644
+index 3d7e35b309b5..0f1f63be25d9 100644
 --- a/lib/zstd/common/zstd_common.c
 +++ b/lib/zstd/common/zstd_common.c
 @@ -13,6 +13,7 @@
@@ -4295,7 +4359,25 @@ index 3d7e35b309b5..06f62b2026d5 100644
  #define ZSTD_DEPS_NEED_MALLOC
  #include "zstd_deps.h"   /* ZSTD_malloc, ZSTD_calloc, ZSTD_free, ZSTD_memset */
  #include "error_private.h"
-@@ -59,6 +60,7 @@ void* ZSTD_customMalloc(size_t size, ZSTD_customMem customMem)
+@@ -35,14 +36,17 @@ const char* ZSTD_versionString(void) { return ZSTD_VERSION_STRING; }
+  *  tells if a return value is an error code
+  *  symbol is required for external callers */
+ unsigned ZSTD_isError(size_t code) { return ERR_isError(code); }
++EXPORT_SYMBOL_GPL(ZSTD_isError);
+ 
+ /*! ZSTD_getErrorName() :
+  *  provides error code string from function result (useful for debugging) */
+ const char* ZSTD_getErrorName(size_t code) { return ERR_getErrorName(code); }
++EXPORT_SYMBOL_GPL(ZSTD_getErrorName);
+ 
+ /*! ZSTD_getError() :
+  *  convert a `size_t` function result into a proper ZSTD_errorCode enum */
+ ZSTD_ErrorCode ZSTD_getErrorCode(size_t code) { return ERR_getErrorCode(code); }
++EXPORT_SYMBOL_GPL(ZSTD_getErrorCode);
+ 
+ /*! ZSTD_getErrorString() :
+  *  provides error code string from enum */
+@@ -59,6 +63,7 @@ void* ZSTD_customMalloc(size_t size, ZSTD_customMem customMem)
          return customMem.customAlloc(customMem.opaque, size);
      return ZSTD_malloc(size);
  }
@@ -4303,7 +4385,7 @@ index 3d7e35b309b5..06f62b2026d5 100644
  
  void* ZSTD_customCalloc(size_t size, ZSTD_customMem customMem)
  {
-@@ -71,6 +73,7 @@ void* ZSTD_customCalloc(size_t size, ZSTD_customMem customMem)
+@@ -71,6 +76,7 @@ void* ZSTD_customCalloc(size_t size, ZSTD_customMem customMem)
      }
      return ZSTD_calloc(1, size);
  }
@@ -4311,7 +4393,7 @@ index 3d7e35b309b5..06f62b2026d5 100644
  
  void ZSTD_customFree(void* ptr, ZSTD_customMem customMem)
  {
-@@ -81,3 +84,7 @@ void ZSTD_customFree(void* ptr, ZSTD_customMem customMem)
+@@ -81,3 +87,7 @@ void ZSTD_customFree(void* ptr, ZSTD_customMem customMem)
              ZSTD_free(ptr);
      }
  }
@@ -4935,10 +5017,10 @@ index 032a7bf8d259..cbcecd565c16 100644
  EXPORT_SYMBOL_GPL(dirty_writeback_interval);
  
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index e5486d47406e..cf131d6e08fb 100644
+index d04211f0ef0b..cc6179d3a7dc 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -6982,11 +6982,11 @@ static int zone_batchsize(struct zone *zone)
+@@ -7027,11 +7027,11 @@ static int zone_batchsize(struct zone *zone)
  
  	/*
  	 * The number of pages to batch allocate is either ~0.1%
@@ -4952,7 +5034,7 @@ index e5486d47406e..cf131d6e08fb 100644
  	batch /= 4;		/* We effectively *= 4 below */
  	if (batch < 1)
  		batch = 1;
-@@ -7064,6 +7064,7 @@ static int zone_highsize(struct zone *zone, int batch, int cpu_online)
+@@ -7109,6 +7109,7 @@ static int zone_highsize(struct zone *zone, int batch, int cpu_online)
  	 * historical relationship between high and batch.
  	 */
  	high = max(high, batch << 2);
@@ -4998,7 +5080,7 @@ index b52644771cc4..11a4b0e3b583 100644
  
  /*
 diff --git a/mm/vmscan.c b/mm/vmscan.c
-index b2b1431352dc..0fc65ace3a4e 100644
+index 382dbe97329f..fbc8c8f4fe60 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
 @@ -178,7 +178,11 @@ struct scan_control {
@@ -5041,13 +5123,61 @@ index e373dde1f46f..3fc8ca6a264e 100644
  
  	init_net.ipv4.sysctl_tcp_wmem[0] = PAGE_SIZE;
  	init_net.ipv4.sysctl_tcp_wmem[1] = 16*1024;
+diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
+index 3fb6a99e78c4..f62770a0a84f 100644
+--- a/scripts/Makefile.lib
++++ b/scripts/Makefile.lib
+@@ -504,14 +504,21 @@ quiet_cmd_xzmisc = XZMISC  $@
+ # decompression is used, like initramfs decompression, zstd22 should likely not
+ # be used because it would require zstd to allocate a 128 MB buffer.
+ 
++ifdef CONFIG_ZSTD_COMP_VAL
++zstd_comp_val	:= $(CONFIG_ZSTD_COMP_VAL)
++ifeq ($(shell test $(zstd_comp_val) -gt 19; echo $$?),0)
++zstd_comp_val	+= --ultra
++endif
++endif
++
+ quiet_cmd_zstd = ZSTD    $@
+-      cmd_zstd = cat $(real-prereqs) | $(ZSTD) -19 > $@
++      cmd_zstd = cat $(real-prereqs) | $(ZSTD) -T0 -19 > $@
+ 
+ quiet_cmd_zstd22 = ZSTD22  $@
+-      cmd_zstd22 = cat $(real-prereqs) | $(ZSTD) -22 --ultra > $@
++      cmd_zstd22 = cat $(real-prereqs) | $(ZSTD) -T0 -22 --ultra > $@
+ 
+ quiet_cmd_zstd22_with_size = ZSTD22  $@
+-      cmd_zstd22_with_size = { cat $(real-prereqs) | $(ZSTD) -22 --ultra; $(size_append); } > $@
++      cmd_zstd22_with_size = { cat $(real-prereqs) | $(ZSTD) -T0 -$(zstd_comp_val); $(size_append); } > $@
+ 
+ # ASM offsets
+ # ---------------------------------------------------------------------------
+diff --git a/scripts/Makefile.modinst b/scripts/Makefile.modinst
+index a4c987c23750..132863cf3183 100644
+--- a/scripts/Makefile.modinst
++++ b/scripts/Makefile.modinst
+@@ -96,8 +96,13 @@ quiet_cmd_gzip = GZIP    $@
+       cmd_gzip = $(KGZIP) -n -f $<
+ quiet_cmd_xz = XZ      $@
+       cmd_xz = $(XZ) --lzma2=dict=2MiB -f $<
++ifdef CONFIG_MODULE_COMPRESS_ZSTD_ULTRA
+ quiet_cmd_zstd = ZSTD    $@
+-      cmd_zstd = $(ZSTD) -T0 --rm -f -q $<
++      cmd_zstd = $(ZSTD) -$(CONFIG_MODULE_COMPRESS_ZSTD_LEVEL_ULTRA) --ultra --zstd=wlog=21 -T0 --rm -f -q $<
++else
++quiet_cmd_zstd = ZSTD    $@
++      cmd_zstd = $(ZSTD) -$(CONFIG_MODULE_COMPRESS_ZSTD_LEVEL) --zstd=wlog=21 -T0 --rm -f -q $<
++endif
+ 
+ $(dst)/%.ko.gz: $(dst)/%.ko FORCE
+ 	$(call cmd,gzip)
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 0feaada45827f920b03a53edea1d34597614db84 Mon Sep 17 00:00:00 2001
+From 141640e23fd2ab7f136bf64267472cc06f74e7e5 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 5 Sep 2022 08:34:43 +0200
-Subject: [PATCH 02/16] bbr2
+Subject: [PATCH 02/17] bbr2
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -8714,12 +8844,12 @@ index b4dfb82d6ecb..bb613fc8948a 100644
  	event = icsk->icsk_pending;
  
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 3a2a43e0dc41577b2d9262692c628362129d539d Mon Sep 17 00:00:00 2001
+From a4b23da78754ee7604440d04fc79b263c397cb5c Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Sun, 25 Sep 2022 23:49:46 +0200
-Subject: [PATCH 03/16] futex-winesync
+Subject: [PATCH 03/17] futex-winesync
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -9236,10 +9366,10 @@ index 000000000000..f0110d2744c7
 +  ``objs`` and in ``alert`` If this is attempted, the function fails
 +  with ``EINVAL``.
 diff --git a/MAINTAINERS b/MAINTAINERS
-index f5ca4aefd184..31a7aa60cdc3 100644
+index 72b9654f764c..ff31beb17835 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -21921,6 +21921,15 @@ M:	David Härdeman <david@hardeman.nu>
+@@ -21920,6 +21920,15 @@ M:	David Härdeman <david@hardeman.nu>
  S:	Maintained
  F:	drivers/media/rc/winbond-cir.c
  
@@ -12116,12 +12246,12 @@ index 000000000000..169e922484b0
 +
 +TEST_HARNESS_MAIN
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 0905ce4d17bc19b8ec54ef87ed8f42e365a2bcc2 Mon Sep 17 00:00:00 2001
+From b09871d4f5597879fd54097962968b4a35785967 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 5 Aug 2022 19:33:47 +0200
-Subject: [PATCH 04/16] Introducing-OpenVPN-Data-Channel-Offload
+Subject: [PATCH 04/17] Introducing-OpenVPN-Data-Channel-Offload
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -12195,10 +12325,10 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  create mode 100644 include/uapi/linux/ovpn_dco.h
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 31a7aa60cdc3..a29c9731350c 100644
+index ff31beb17835..594e31ec15cb 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -15320,6 +15320,14 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/mszeredi/vfs.git
+@@ -15319,6 +15319,14 @@ T:	git git://git.kernel.org/pub/scm/linux/kernel/git/mszeredi/vfs.git
  F:	Documentation/filesystems/overlayfs.rst
  F:	fs/overlayfs/
  
@@ -18283,12 +18413,12 @@ index 4828794efcf8..8008c762e6b8 100644
  
  #endif /* _UAPI_LINUX_UDP_H */
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 14903eee0b5577711272732705260cb83e5e0777 Mon Sep 17 00:00:00 2001
+From 25b27cf5b605ab3b63df5a163037e6c8beadb5ca Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 28 Sep 2022 00:26:01 +0200
-Subject: [PATCH 05/16] mm/demotion: Memory tiers and demotion
+Subject: [PATCH 05/17] mm/demotion: Memory tiers and demotion
 
 The current kernel has the basic memory tiering support: Inactive pages on
 a higher tier NUMA node can be migrated (demoted) to a lower tier NUMA
@@ -18791,7 +18921,7 @@ index 9a564f836403..488f604e77e0 100644
  obj-$(CONFIG_TRANSPARENT_HUGEPAGE) += huge_memory.o khugepaged.o
  obj-$(CONFIG_PAGE_COUNTER) += page_counter.o
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index e9414ee57c5b..6eb4b1799b79 100644
+index f42bb51e023a..9efa67e45534 100644
 --- a/mm/huge_memory.c
 +++ b/mm/huge_memory.c
 @@ -36,6 +36,7 @@
@@ -19541,7 +19671,7 @@ index 000000000000..f116b7b6333e
 +#endif /* CONFIG_SYSFS */
 +#endif
 diff --git a/mm/memory.c b/mm/memory.c
-index 4ba73f5aa8bb..3a3d8721bf4c 100644
+index a78814413ac0..7032db10622b 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -66,6 +66,7 @@
@@ -20034,7 +20164,7 @@ index bc6bddd156ca..eb8982bde7ee 100644
  #include <asm/mmu_context.h>
  #include <asm/tlbflush.h>
 diff --git a/mm/vmscan.c b/mm/vmscan.c
-index 0fc65ace3a4e..e673be68cea3 100644
+index fbc8c8f4fe60..710dcb1e253f 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
 @@ -43,6 +43,7 @@
@@ -20165,12 +20295,12 @@ index 90af9a8572f5..0b8098e8296b 100644
  	proc_create_seq("buddyinfo", 0444, NULL, &fragmentation_op);
  	proc_create_seq("pagetypeinfo", 0400, NULL, &pagetypeinfo_op);
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 30817d963bfdddf095e330e41317c9efceec642a Mon Sep 17 00:00:00 2001
+From b7d5db9b461acbef045b7be4c93ac44be1bce034 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 28 Sep 2022 00:26:29 +0200
-Subject: [PATCH 06/16] mm/khugepaged: add struct collapse_control
+Subject: [PATCH 06/17] mm/khugepaged: add struct collapse_control
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -20340,7 +20470,7 @@ index 6c1aa92a92e4..6ce1f1ceb432 100644
  #define MAP_FILE	0
  
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index 6eb4b1799b79..42cdc3338adc 100644
+index 9efa67e45534..dc2faf99f4f2 100644
 --- a/mm/huge_memory.c
 +++ b/mm/huge_memory.c
 @@ -71,9 +71,8 @@ static atomic_t huge_zero_refcount;
@@ -20413,7 +20543,7 @@ index 785409805ed7..55ce10e4d0c0 100644
  /*
   * in mm/page_alloc.c
 diff --git a/mm/khugepaged.c b/mm/khugepaged.c
-index 01f71786d530..5f7c60b8b269 100644
+index 70b7ac66411c..0bcba493ebb4 100644
 --- a/mm/khugepaged.c
 +++ b/mm/khugepaged.c
 @@ -28,6 +28,7 @@ enum scan_result {
@@ -20994,7 +21124,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		goto out_up_write;
  
  	anon_vma_lock_write(vma->anon_vma);
-@@ -1093,11 +1081,11 @@ static void collapse_huge_page(struct mm_struct *mm,
+@@ -1095,11 +1083,11 @@ static void collapse_huge_page(struct mm_struct *mm,
  	mmu_notifier_invalidate_range_end(&range);
  
  	spin_lock(pte_ptl);
@@ -21009,7 +21139,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		pte_unmap(pte);
  		spin_lock(pmd_ptl);
  		BUG_ON(!pmd_none(*pmd));
-@@ -1109,7 +1097,6 @@ static void collapse_huge_page(struct mm_struct *mm,
+@@ -1111,7 +1099,6 @@ static void collapse_huge_page(struct mm_struct *mm,
  		pmd_populate(mm, pmd, pmd_pgtable(_pmd));
  		spin_unlock(pmd_ptl);
  		anon_vma_unlock_write(vma->anon_vma);
@@ -21017,7 +21147,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		goto out_up_write;
  	}
  
-@@ -1119,8 +1106,8 @@ static void collapse_huge_page(struct mm_struct *mm,
+@@ -1121,8 +1108,8 @@ static void collapse_huge_page(struct mm_struct *mm,
  	 */
  	anon_vma_unlock_write(vma->anon_vma);
  
@@ -21028,7 +21158,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	pte_unmap(pte);
  	/*
  	 * spin_lock() below is not the equivalent of smp_wmb(), but
-@@ -1128,42 +1115,43 @@ static void collapse_huge_page(struct mm_struct *mm,
+@@ -1130,42 +1117,43 @@ static void collapse_huge_page(struct mm_struct *mm,
  	 * avoid the copy_huge_page writes to become visible after
  	 * the set_pmd_at() write.
  	 */
@@ -21087,7 +21217,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	int none_or_zero = 0, shared = 0;
  	struct page *page = NULL;
  	unsigned long _address;
-@@ -1173,19 +1161,19 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
+@@ -1175,19 +1163,19 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
  
  	VM_BUG_ON(address & ~HPAGE_PMD_MASK);
  
@@ -21113,7 +21243,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				/*
  				 * Always be strict with uffd-wp
  				 * enabled swap entries.  Please see
-@@ -1203,8 +1191,10 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
+@@ -1205,8 +1193,10 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
  			}
  		}
  		if (pte_none(pteval) || is_zero_pfn(pte_pfn(pteval))) {
@@ -21125,7 +21255,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				continue;
  			} else {
  				result = SCAN_EXCEED_NONE_PTE;
-@@ -1234,27 +1224,30 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
+@@ -1236,27 +1226,30 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
  			goto out_unmap;
  		}
  
@@ -21164,7 +21294,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		if (!PageLRU(page)) {
  			result = SCAN_PAGE_LRU;
  			goto out_unmap;
-@@ -1289,31 +1282,38 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
+@@ -1291,31 +1284,38 @@ static int khugepaged_scan_pmd(struct mm_struct *mm,
  			result = SCAN_PAGE_COUNT;
  			goto out_unmap;
  		}
@@ -21213,7 +21343,7 @@ index 01f71786d530..5f7c60b8b269 100644
  }
  
  static void collect_mm_slot(struct mm_slot *mm_slot)
-@@ -1322,7 +1322,7 @@ static void collect_mm_slot(struct mm_slot *mm_slot)
+@@ -1324,7 +1324,7 @@ static void collect_mm_slot(struct mm_slot *mm_slot)
  
  	lockdep_assert_held(&khugepaged_mm_lock);
  
@@ -21222,7 +21352,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		/* free mm_slot */
  		hash_del(&mm_slot->hash);
  		list_del(&mm_slot->mm_node);
-@@ -1400,12 +1400,13 @@ void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr)
+@@ -1402,12 +1402,13 @@ void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr)
  		return;
  
  	/*
@@ -21241,7 +21371,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		return;
  
  	/* Keep pmd pgtable for uffd-wp; see comment in retract_page_tables() */
-@@ -1420,8 +1421,7 @@ void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr)
+@@ -1422,8 +1423,7 @@ void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr)
  	if (!PageHead(hpage))
  		goto drop_hpage;
  
@@ -21251,7 +21381,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		goto drop_hpage;
  
  	start_pte = pte_offset_map_lock(mm, pmd, haddr, &ptl);
-@@ -1495,7 +1495,7 @@ static void khugepaged_collapse_pte_mapped_thps(struct mm_slot *mm_slot)
+@@ -1497,7 +1497,7 @@ static void khugepaged_collapse_pte_mapped_thps(struct mm_slot *mm_slot)
  	if (!mmap_write_trylock(mm))
  		return;
  
@@ -21260,7 +21390,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		goto out;
  
  	for (i = 0; i < mm_slot->nr_pte_mapped_thp; i++)
-@@ -1539,8 +1539,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
+@@ -1541,8 +1541,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
  		if (vma->vm_end < addr + HPAGE_PMD_SIZE)
  			continue;
  		mm = vma->vm_mm;
@@ -21270,7 +21400,7 @@ index 01f71786d530..5f7c60b8b269 100644
  			continue;
  		/*
  		 * We need exclusive mmap_lock to retract page table.
-@@ -1558,7 +1557,8 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
+@@ -1560,7 +1559,8 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
  			 * it'll always mapped in small page size for uffd-wp
  			 * registered ranges.
  			 */
@@ -21280,7 +21410,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				collapse_and_free_pmd(mm, vma, addr, pmd);
  			mmap_write_unlock(mm);
  		} else {
-@@ -1575,8 +1575,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
+@@ -1577,8 +1577,7 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
   * @mm: process address space where collapse happens
   * @file: file that collapse on
   * @start: collapse start address
@@ -21290,7 +21420,7 @@ index 01f71786d530..5f7c60b8b269 100644
   *
   * Basic scheme is simple, details are more complex:
   *  - allocate and lock a new huge page;
-@@ -1593,13 +1592,11 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
+@@ -1595,13 +1594,11 @@ static void retract_page_tables(struct address_space *mapping, pgoff_t pgoff)
   *    + restore gaps in the page cache;
   *    + unlock and free huge page;
   */
@@ -21307,7 +21437,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	pgoff_t index, end = start + HPAGE_PMD_NR;
  	LIST_HEAD(pagelist);
  	XA_STATE_ORDER(xas, &mapping->i_pages, start, HPAGE_PMD_ORDER);
-@@ -1610,20 +1607,9 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1612,20 +1609,9 @@ static void collapse_file(struct mm_struct *mm,
  	VM_BUG_ON(!IS_ENABLED(CONFIG_READ_ONLY_THP_FOR_FS) && !is_shmem);
  	VM_BUG_ON(start & (HPAGE_PMD_NR - 1));
  
@@ -21330,7 +21460,7 @@ index 01f71786d530..5f7c60b8b269 100644
  
  	/*
  	 * Ensure we have slots for all the pages in the range.  This is
-@@ -1641,14 +1627,14 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1643,14 +1629,14 @@ static void collapse_file(struct mm_struct *mm,
  		}
  	} while (1);
  
@@ -21350,7 +21480,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	 * It's safe to insert it into the page cache, because nobody would
  	 * be able to map it or use it in another way until we unlock it.
  	 */
-@@ -1676,7 +1662,7 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1678,7 +1664,7 @@ static void collapse_file(struct mm_struct *mm,
  					result = SCAN_FAIL;
  					goto xa_locked;
  				}
@@ -21359,7 +21489,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				nr_none++;
  				continue;
  			}
-@@ -1818,19 +1804,19 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1820,19 +1806,19 @@ static void collapse_file(struct mm_struct *mm,
  		list_add_tail(&page->lru, &pagelist);
  
  		/* Finally, replace with the new page. */
@@ -21383,7 +21513,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		filemap_nr_thps_inc(mapping);
  		/*
  		 * Paired with smp_mb() in do_dentry_open() to ensure
-@@ -1841,21 +1827,21 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1843,21 +1829,21 @@ static void collapse_file(struct mm_struct *mm,
  		smp_mb();
  		if (inode_is_open_for_write(mapping->host)) {
  			result = SCAN_FAIL;
@@ -21409,7 +21539,7 @@ index 01f71786d530..5f7c60b8b269 100644
  xa_locked:
  	xas_unlock_irq(&xas);
  xa_unlocked:
-@@ -1877,11 +1863,11 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1879,11 +1865,11 @@ static void collapse_file(struct mm_struct *mm,
  		index = start;
  		list_for_each_entry_safe(page, tmp, &pagelist, lru) {
  			while (index < page->index) {
@@ -21424,7 +21554,7 @@ index 01f71786d530..5f7c60b8b269 100644
  			list_del(&page->lru);
  			page->mapping = NULL;
  			page_ref_unfreeze(page, 1);
-@@ -1892,23 +1878,22 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1894,23 +1880,22 @@ static void collapse_file(struct mm_struct *mm,
  			index++;
  		}
  		while (index < end) {
@@ -21455,7 +21585,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	} else {
  		struct page *page;
  
-@@ -1947,19 +1932,23 @@ static void collapse_file(struct mm_struct *mm,
+@@ -1949,19 +1934,23 @@ static void collapse_file(struct mm_struct *mm,
  		VM_BUG_ON(nr_none);
  		xas_unlock_irq(&xas);
  
@@ -21485,7 +21615,7 @@ index 01f71786d530..5f7c60b8b269 100644
  {
  	struct page *page = NULL;
  	struct address_space *mapping = file->f_mapping;
-@@ -1970,14 +1959,16 @@ static void khugepaged_scan_file(struct mm_struct *mm,
+@@ -1972,14 +1961,16 @@ static void khugepaged_scan_file(struct mm_struct *mm,
  
  	present = 0;
  	swap = 0;
@@ -21504,7 +21634,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				result = SCAN_EXCEED_SWAP_PTE;
  				count_vm_event(THP_SCAN_EXCEED_SWAP_PTE);
  				break;
-@@ -1995,11 +1986,11 @@ static void khugepaged_scan_file(struct mm_struct *mm,
+@@ -1997,11 +1988,11 @@ static void khugepaged_scan_file(struct mm_struct *mm,
  		}
  
  		node = page_to_nid(page);
@@ -21518,7 +21648,7 @@ index 01f71786d530..5f7c60b8b269 100644
  
  		if (!PageLRU(page)) {
  			result = SCAN_PAGE_LRU;
-@@ -2028,20 +2019,21 @@ static void khugepaged_scan_file(struct mm_struct *mm,
+@@ -2030,20 +2021,21 @@ static void khugepaged_scan_file(struct mm_struct *mm,
  	rcu_read_unlock();
  
  	if (result == SCAN_SUCCEED) {
@@ -21545,7 +21675,7 @@ index 01f71786d530..5f7c60b8b269 100644
  {
  	BUILD_BUG();
  }
-@@ -2051,8 +2043,8 @@ static void khugepaged_collapse_pte_mapped_thps(struct mm_slot *mm_slot)
+@@ -2053,8 +2045,8 @@ static void khugepaged_collapse_pte_mapped_thps(struct mm_slot *mm_slot)
  }
  #endif
  
@@ -21556,7 +21686,7 @@ index 01f71786d530..5f7c60b8b269 100644
  	__releases(&khugepaged_mm_lock)
  	__acquires(&khugepaged_mm_lock)
  {
-@@ -2063,6 +2055,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2065,6 +2057,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  
  	VM_BUG_ON(!pages);
  	lockdep_assert_held(&khugepaged_mm_lock);
@@ -21564,7 +21694,7 @@ index 01f71786d530..5f7c60b8b269 100644
  
  	if (khugepaged_scan.mm_slot)
  		mm_slot = khugepaged_scan.mm_slot;
-@@ -2083,7 +2076,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2085,7 +2078,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  	vma = NULL;
  	if (unlikely(!mmap_read_trylock(mm)))
  		goto breakouterloop_mmap_lock;
@@ -21573,7 +21703,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		vma = find_vma(mm, khugepaged_scan.address);
  
  	progress++;
-@@ -2091,11 +2084,11 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2093,11 +2086,11 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  		unsigned long hstart, hend;
  
  		cond_resched();
@@ -21587,7 +21717,7 @@ index 01f71786d530..5f7c60b8b269 100644
  skip:
  			progress++;
  			continue;
-@@ -2109,9 +2102,10 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2111,9 +2104,10 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  		VM_BUG_ON(khugepaged_scan.address & ~HPAGE_PMD_MASK);
  
  		while (khugepaged_scan.address < hend) {
@@ -21600,7 +21730,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				goto breakouterloop;
  
  			VM_BUG_ON(khugepaged_scan.address < hstart ||
-@@ -2123,19 +2117,29 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2125,19 +2119,29 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  						khugepaged_scan.address);
  
  				mmap_read_unlock(mm);
@@ -21637,7 +21767,7 @@ index 01f71786d530..5f7c60b8b269 100644
  				goto breakouterloop_mmap_lock;
  			if (progress >= pages)
  				goto breakouterloop;
-@@ -2151,7 +2155,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
+@@ -2153,7 +2157,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages,
  	 * Release the current mm_slot if this mm is about to die, or
  	 * if we scanned all vmas of this mm.
  	 */
@@ -21646,7 +21776,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		/*
  		 * Make sure that if mm_users is reaching zero while
  		 * khugepaged runs here, khugepaged_exit will find
-@@ -2185,19 +2189,16 @@ static int khugepaged_wait_event(void)
+@@ -2187,19 +2191,16 @@ static int khugepaged_wait_event(void)
  		kthread_should_stop();
  }
  
@@ -21669,7 +21799,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		cond_resched();
  
  		if (unlikely(kthread_should_stop() || try_to_freeze()))
-@@ -2209,14 +2210,25 @@ static void khugepaged_do_scan(void)
+@@ -2211,14 +2212,25 @@ static void khugepaged_do_scan(void)
  		if (khugepaged_has_work() &&
  		    pass_through_head < 2)
  			progress += khugepaged_scan_mm_slot(pages - progress,
@@ -21699,7 +21829,7 @@ index 01f71786d530..5f7c60b8b269 100644
  }
  
  static bool khugepaged_should_wakeup(void)
-@@ -2253,7 +2265,7 @@ static int khugepaged(void *none)
+@@ -2255,7 +2267,7 @@ static int khugepaged(void *none)
  	set_user_nice(current, MAX_NICE);
  
  	while (!kthread_should_stop()) {
@@ -21708,7 +21838,7 @@ index 01f71786d530..5f7c60b8b269 100644
  		khugepaged_wait_work();
  	}
  
-@@ -2352,3 +2364,120 @@ void khugepaged_min_free_kbytes_update(void)
+@@ -2354,3 +2366,120 @@ void khugepaged_min_free_kbytes_update(void)
  		set_recommended_min_free_kbytes();
  	mutex_unlock(&khugepaged_mutex);
  }
@@ -21858,7 +21988,7 @@ index 4e64adb9adee..dde27d7e92d4 100644
  	mmu_notifier_range_init(&range, MMU_NOTIFY_CLEAR, 0, vma, mm, addr,
  				addr + PAGE_SIZE);
 diff --git a/mm/madvise.c b/mm/madvise.c
-index 5f0f0948a50e..af97100a0727 100644
+index 9ff51650f4f0..4f86eb7f554d 100644
 --- a/mm/madvise.c
 +++ b/mm/madvise.c
 @@ -59,6 +59,7 @@ static int madvise_need_mmap_write(int behavior)
@@ -21869,7 +21999,7 @@ index 5f0f0948a50e..af97100a0727 100644
  		return 0;
  	default:
  		/* be safe, default to 1. list exceptions explicitly */
-@@ -1057,6 +1058,8 @@ static int madvise_vma_behavior(struct vm_area_struct *vma,
+@@ -1060,6 +1061,8 @@ static int madvise_vma_behavior(struct vm_area_struct *vma,
  		if (error)
  			goto out;
  		break;
@@ -21878,7 +22008,7 @@ index 5f0f0948a50e..af97100a0727 100644
  	}
  
  	anon_name = anon_vma_name(vma);
-@@ -1150,6 +1153,7 @@ madvise_behavior_valid(int behavior)
+@@ -1153,6 +1156,7 @@ madvise_behavior_valid(int behavior)
  #ifdef CONFIG_TRANSPARENT_HUGEPAGE
  	case MADV_HUGEPAGE:
  	case MADV_NOHUGEPAGE:
@@ -21886,7 +22016,7 @@ index 5f0f0948a50e..af97100a0727 100644
  #endif
  	case MADV_DONTDUMP:
  	case MADV_DODUMP:
-@@ -1166,13 +1170,13 @@ madvise_behavior_valid(int behavior)
+@@ -1169,13 +1173,13 @@ madvise_behavior_valid(int behavior)
  	}
  }
  
@@ -21902,7 +22032,7 @@ index 5f0f0948a50e..af97100a0727 100644
  		return true;
  	default:
  		return false;
-@@ -1339,6 +1343,7 @@ int madvise_set_anon_name(struct mm_struct *mm, unsigned long start,
+@@ -1342,6 +1346,7 @@ int madvise_set_anon_name(struct mm_struct *mm, unsigned long start,
   *  MADV_NOHUGEPAGE - mark the given range as not worth being backed by
   *		transparent huge pages so the existing pages will not be
   *		coalesced into THP and new pages will not be allocated as THP.
@@ -21911,10 +22041,10 @@ index 5f0f0948a50e..af97100a0727 100644
   *		from being included in its core dump.
   *  MADV_DODUMP - cancel MADV_DONTDUMP: no longer exclude from core dump.
 diff --git a/mm/memory.c b/mm/memory.c
-index 3a3d8721bf4c..e58d5d522467 100644
+index 7032db10622b..eccc236d1351 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -4986,7 +4986,7 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+@@ -4992,7 +4992,7 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
  		return VM_FAULT_OOM;
  retry_pud:
  	if (pud_none(*vmf.pud) &&
@@ -21923,7 +22053,7 @@ index 3a3d8721bf4c..e58d5d522467 100644
  		ret = create_huge_pud(&vmf);
  		if (!(ret & VM_FAULT_FALLBACK))
  			return ret;
-@@ -5020,7 +5020,7 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
+@@ -5026,7 +5026,7 @@ static vm_fault_t __handle_mm_fault(struct vm_area_struct *vma,
  		goto retry_pud;
  
  	if (pmd_none(*vmf.pmd) &&
@@ -22908,12 +23038,12 @@ index 155120b67a16..b77b1e28cdb3 100644
  	restore_settings(0);
  }
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 3430d4868012555c67c2ec34b073b0e4ecda986d Mon Sep 17 00:00:00 2001
+From 34110cc92398bd9e82b17a78b64f1f1db3d297ca Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
-Date: Wed, 28 Sep 2022 00:26:48 +0200
-Subject: [PATCH 07/16] mm: multi-gen LRU
+Date: Thu, 29 Sep 2022 14:28:01 +0200
+Subject: [PATCH 07/17] mm: multi-gen LRU
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -22954,9 +23084,9 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  mm/mmzone.c                                   |    2 +
  mm/rmap.c                                     |    6 +
  mm/swap.c                                     |   54 +-
- mm/vmscan.c                                   | 3253 +++++++++++++++--
+ mm/vmscan.c                                   | 3250 +++++++++++++++--
  mm/workingset.c                               |  110 +-
- 39 files changed, 4252 insertions(+), 286 deletions(-)
+ 39 files changed, 4249 insertions(+), 286 deletions(-)
  create mode 100644 Documentation/admin-guide/mm/multigen_lru.rst
  create mode 100644 Documentation/mm/multigen_lru.rst
 
@@ -23505,7 +23635,7 @@ index ac5d0515680e..9179463c3c9f 100644
  					 struct task_struct *t) { return 0; }
  static inline int cgroupstats_build(struct cgroupstats *stats,
 diff --git a/include/linux/memcontrol.h b/include/linux/memcontrol.h
-index 6257867fbf95..207cfd3b42e5 100644
+index 567f12323f55..877cbcbc6ed9 100644
 --- a/include/linux/memcontrol.h
 +++ b/include/linux/memcontrol.h
 @@ -350,6 +350,11 @@ struct mem_cgroup {
@@ -24495,7 +24625,7 @@ index 0331f1461f81..96cd3ae25c6f 100644
  
  endmenu
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index 42cdc3338adc..786497dd5f26 100644
+index dc2faf99f4f2..324c2d68610b 100644
 --- a/mm/huge_memory.c
 +++ b/mm/huge_memory.c
 @@ -2423,7 +2423,8 @@ static void __split_huge_page_tail(struct page *head, int tail,
@@ -24588,7 +24718,7 @@ index 7eadbafc006b..48588e89867a 100644
  	.post_attach = mem_cgroup_move_task,
  	.dfl_cftypes = memory_files,
 diff --git a/mm/memory.c b/mm/memory.c
-index e58d5d522467..bc4dc2e45dcc 100644
+index eccc236d1351..2c0e794b8093 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -126,18 +126,6 @@ int randomize_va_space __read_mostly =
@@ -24619,7 +24749,7 @@ index e58d5d522467..bc4dc2e45dcc 100644
  		pte_t entry;
  
  		vmf->pte = pte_offset_map_lock(mm, vmf->pmd, addr, &vmf->ptl);
-@@ -5115,6 +5103,27 @@ static inline void mm_account_fault(struct pt_regs *regs,
+@@ -5121,6 +5109,27 @@ static inline void mm_account_fault(struct pt_regs *regs,
  		perf_sw_event(PERF_COUNT_SW_PAGE_FAULTS_MIN, 1, regs, address);
  }
  
@@ -24647,7 +24777,7 @@ index e58d5d522467..bc4dc2e45dcc 100644
  /*
   * By the time we get here, we already hold the mm semaphore
   *
-@@ -5146,11 +5155,15 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
+@@ -5152,11 +5161,15 @@ vm_fault_t handle_mm_fault(struct vm_area_struct *vma, unsigned long address,
  	if (flags & FAULT_FLAG_USER)
  		mem_cgroup_enter_user_fault();
  
@@ -24824,7 +24954,7 @@ index 186b4e5dcecf..027943b341a0 100644
  
  		folio_get(folio);
 diff --git a/mm/vmscan.c b/mm/vmscan.c
-index e673be68cea3..feb8416d8edd 100644
+index 710dcb1e253f..d4926208fe86 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
 @@ -50,6 +50,10 @@
@@ -24989,7 +25119,7 @@ index e673be68cea3..feb8416d8edd 100644
  /*
   * Determine how aggressively the anon and file LRU lists should be
   * scanned.
-@@ -2980,159 +3103,2912 @@ static bool can_age_anon_pages(struct pglist_data *pgdat,
+@@ -2980,159 +3103,2909 @@ static bool can_age_anon_pages(struct pglist_data *pgdat,
  	return can_demote(pgdat->node_id, sc);
  }
  
@@ -26445,8 +26575,6 @@ index e673be68cea3..feb8416d8edd 100644
 +	if (wq_has_sleeper(&lruvec->mm_state.wait))
 +		wake_up_all(&lruvec->mm_state.wait);
 +
-+	wakeup_flusher_threads(WB_REASON_VMSCAN);
-+
 +	return true;
 +}
 +
@@ -27110,7 +27238,7 @@ index e673be68cea3..feb8416d8edd 100644
 +	DEFINE_MAX_SEQ(lruvec);
 +
 +	if (!current_is_kswapd()) {
-+		/* age each memcg once to ensure fairness */
++		/* age each memcg at most once to ensure fairness */
 +		if (max_seq - seq > 1)
 +			return true;
 +
@@ -27135,10 +27263,9 @@ index e673be68cea3..feb8416d8edd 100644
 +
 +	/*
 +	 * A minimum amount of work was done under global memory pressure. For
-+	 * kswapd, it may be overshooting. For direct reclaim, the target isn't
-+	 * met, and yet the allocation may still succeed, since kswapd may have
-+	 * caught up. In either case, it's better to stop now, and restart if
-+	 * necessary.
++	 * kswapd, it may be overshooting. For direct reclaim, the allocation
++	 * may succeed if all suitable zones are somewhat safe. In either case,
++	 * it's better to stop now, and restart later if necessary.
 +	 */
 +	for (i = 0; i <= sc->reclaim_idx; i++) {
 +		unsigned long wmark;
@@ -28030,7 +28157,7 @@ index e673be68cea3..feb8416d8edd 100644
  	 * where always a non-zero amount of pages were scanned.
  	 */
  	if (!nr_reclaimed)
-@@ -3230,109 +6106,16 @@ static void shrink_node(pg_data_t *pgdat, struct scan_control *sc)
+@@ -3230,109 +6103,16 @@ static void shrink_node(pg_data_t *pgdat, struct scan_control *sc)
  	unsigned long nr_reclaimed, nr_scanned;
  	struct lruvec *target_lruvec;
  	bool reclaimable = false;
@@ -28141,7 +28268,7 @@ index e673be68cea3..feb8416d8edd 100644
  
  	shrink_node_memcgs(pgdat, sc);
  
-@@ -3590,11 +6373,14 @@ static void snapshot_refaults(struct mem_cgroup *target_memcg, pg_data_t *pgdat)
+@@ -3590,11 +6370,14 @@ static void snapshot_refaults(struct mem_cgroup *target_memcg, pg_data_t *pgdat)
  	struct lruvec *target_lruvec;
  	unsigned long refaults;
  
@@ -28158,7 +28285,7 @@ index e673be68cea3..feb8416d8edd 100644
  }
  
  /*
-@@ -3956,12 +6742,16 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
+@@ -3956,12 +6739,16 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *memcg,
  }
  #endif
  
@@ -28177,7 +28304,7 @@ index e673be68cea3..feb8416d8edd 100644
  	if (!can_age_anon_pages(pgdat, sc))
  		return;
  
-@@ -4281,12 +7071,11 @@ static int balance_pgdat(pg_data_t *pgdat, int order, int highest_zoneidx)
+@@ -4281,12 +7068,11 @@ static int balance_pgdat(pg_data_t *pgdat, int order, int highest_zoneidx)
  		sc.may_swap = !nr_boost_reclaim;
  
  		/*
@@ -28345,12 +28472,12 @@ index a5e84862fc86..ae7e984b23c6 100644
  	rcu_read_lock();
  	/*
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From f7046da0d2b40d6725122f9d3ed897a12a8fda63 Mon Sep 17 00:00:00 2001
+From 390083dc23a0cad9d4870a1f4bd5984760f94bf4 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 28 Sep 2022 00:27:32 +0200
-Subject: [PATCH 08/16] Introducing the Maple Tree
+Subject: [PATCH 08/17] Introducing the Maple Tree
 
 The maple tree is an RCU-safe range based B-tree designed to use modern
 processor cache efficiently.  There are a number of places in the kernel
@@ -28772,10 +28899,10 @@ index 000000000000..45defcf15da7
 +.. kernel-doc:: include/linux/maple_tree.h
 +.. kernel-doc:: lib/maple_tree.c
 diff --git a/MAINTAINERS b/MAINTAINERS
-index a29c9731350c..96a09757feb3 100644
+index 594e31ec15cb..9a5a422817af 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -12094,6 +12094,18 @@ L:	linux-man@vger.kernel.org
+@@ -12093,6 +12093,18 @@ L:	linux-man@vger.kernel.org
  S:	Maintained
  W:	http://www.kernel.org/doc/man-pages
  
@@ -29367,10 +29494,10 @@ index e88e8f6f0a33..fae50a24630b 100644
  
  		if (!vma || (msg->va != vma->vm_start) || vma->vm_private_data)
 diff --git a/fs/coredump.c b/fs/coredump.c
-index 9f4aae202109..35f2af85b9bc 100644
+index 1ab4f5b76a1e..debcebabcd73 100644
 --- a/fs/coredump.c
 +++ b/fs/coredump.c
-@@ -1072,30 +1072,20 @@ static unsigned long vma_dump_size(struct vm_area_struct *vma,
+@@ -1100,30 +1100,20 @@ static unsigned long vma_dump_size(struct vm_area_struct *vma,
  	return vma->vm_end - vma->vm_start;
  }
  
@@ -29408,7 +29535,7 @@ index 9f4aae202109..35f2af85b9bc 100644
  	return gate_vma;
  }
  
-@@ -1119,9 +1109,10 @@ static void free_vma_snapshot(struct coredump_params *cprm)
+@@ -1147,9 +1137,10 @@ static void free_vma_snapshot(struct coredump_params *cprm)
   */
  static bool dump_vma_snapshot(struct coredump_params *cprm)
  {
@@ -29421,7 +29548,7 @@ index 9f4aae202109..35f2af85b9bc 100644
  
  	/*
  	 * Once the stack expansion code is fixed to not change VMA bounds
-@@ -1141,8 +1132,7 @@ static bool dump_vma_snapshot(struct coredump_params *cprm)
+@@ -1169,8 +1160,7 @@ static bool dump_vma_snapshot(struct coredump_params *cprm)
  		return false;
  	}
  
@@ -29431,7 +29558,7 @@ index 9f4aae202109..35f2af85b9bc 100644
  		struct core_vma_metadata *m = cprm->vma_meta + i;
  
  		m->start = vma->vm_start;
-@@ -1150,10 +1140,10 @@ static bool dump_vma_snapshot(struct coredump_params *cprm)
+@@ -1178,10 +1168,10 @@ static bool dump_vma_snapshot(struct coredump_params *cprm)
  		m->flags = vma->vm_flags;
  		m->dump_size = vma_dump_size(vma, cprm->mm_flags);
  		m->pgoff = vma->vm_pgoff;
@@ -31470,10 +31597,10 @@ index 7beceb447211..d5e9ccde3ab8 100644
  	flush_icache_range(addr, addr + BREAK_INSTR_SIZE);
  }
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 2621fd24ad26..101c5912c3fc 100644
+index ff4bffc502c6..7a23df62d2e4 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
-@@ -10229,8 +10229,9 @@ static void perf_addr_filter_apply(struct perf_addr_filter *filter,
+@@ -10238,8 +10238,9 @@ static void perf_addr_filter_apply(struct perf_addr_filter *filter,
  				   struct perf_addr_filter_range *fr)
  {
  	struct vm_area_struct *vma;
@@ -77436,7 +77563,7 @@ index bef329bf28f0..0fd15ba70d16 100644
  		atomic_read(&mm->mm_count),
  		mm_pgtables_bytes(mm),
 diff --git a/mm/gup.c b/mm/gup.c
-index 5abdaf487460..5f3c464dbce1 100644
+index 00926abb4426..4da7f1e3bba2 100644
 --- a/mm/gup.c
 +++ b/mm/gup.c
 @@ -1667,10 +1667,11 @@ int __mm_populate(unsigned long start, unsigned long len, int ignore_errors)
@@ -77455,7 +77582,7 @@ index 5abdaf487460..5f3c464dbce1 100644
  		/*
  		 * Set [nstart; nend) to intersection of desired address
 diff --git a/mm/huge_memory.c b/mm/huge_memory.c
-index 786497dd5f26..cca500fcfb64 100644
+index 324c2d68610b..51f8e41b6568 100644
 --- a/mm/huge_memory.c
 +++ b/mm/huge_memory.c
 @@ -2319,11 +2319,11 @@ void vma_adjust_trans_huge(struct vm_area_struct *vma,
@@ -77520,10 +77647,10 @@ index cf134d58fd6d..0f106a3982e7 100644
  
  #ifdef CONFIG_MMU
 diff --git a/mm/khugepaged.c b/mm/khugepaged.c
-index 5f7c60b8b269..df890338daed 100644
+index 0bcba493ebb4..256a9c7976f9 100644
 --- a/mm/khugepaged.c
 +++ b/mm/khugepaged.c
-@@ -1387,7 +1387,7 @@ static void collapse_and_free_pmd(struct mm_struct *mm, struct vm_area_struct *v
+@@ -1389,7 +1389,7 @@ static void collapse_and_free_pmd(struct mm_struct *mm, struct vm_area_struct *v
  void collapse_pte_mapped_thp(struct mm_struct *mm, unsigned long addr)
  {
  	unsigned long haddr = addr & HPAGE_PMD_MASK;
@@ -77532,7 +77659,7 @@ index 5f7c60b8b269..df890338daed 100644
  	struct page *hpage;
  	pte_t *start_pte, *pte;
  	pmd_t *pmd;
-@@ -2048,6 +2048,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages, int *result,
+@@ -2050,6 +2050,7 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages, int *result,
  	__releases(&khugepaged_mm_lock)
  	__acquires(&khugepaged_mm_lock)
  {
@@ -77540,7 +77667,7 @@ index 5f7c60b8b269..df890338daed 100644
  	struct mm_slot *mm_slot;
  	struct mm_struct *mm;
  	struct vm_area_struct *vma;
-@@ -2076,11 +2077,13 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages, int *result,
+@@ -2078,11 +2079,13 @@ static unsigned int khugepaged_scan_mm_slot(unsigned int pages, int *result,
  	vma = NULL;
  	if (unlikely(!mmap_read_trylock(mm)))
  		goto breakouterloop_mmap_lock;
@@ -77613,10 +77740,10 @@ index dde27d7e92d4..b7ee3c87a059 100644
  		ksm_scan.rmap_list = &slot->rmap_list;
  	}
 diff --git a/mm/madvise.c b/mm/madvise.c
-index af97100a0727..682e1d161aef 100644
+index 4f86eb7f554d..a3fc4cd32ed3 100644
 --- a/mm/madvise.c
 +++ b/mm/madvise.c
-@@ -1242,7 +1242,7 @@ int madvise_walk_vmas(struct mm_struct *mm, unsigned long start,
+@@ -1245,7 +1245,7 @@ int madvise_walk_vmas(struct mm_struct *mm, unsigned long start,
  		if (start >= end)
  			break;
  		if (prev)
@@ -77650,7 +77777,7 @@ index 48588e89867a..454a283b9e85 100644
  	atomic_dec(&mc.from->moving_account);
  }
 diff --git a/mm/memory.c b/mm/memory.c
-index bc4dc2e45dcc..acc2e88f4984 100644
+index 2c0e794b8093..de427784f29d 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
 @@ -391,12 +391,21 @@ void free_pgd_range(struct mmu_gather *tlb,
@@ -81568,7 +81695,7 @@ index 1fdccd2f1422..5c8681a3f1d9 100644
  	}
  	mmap_read_unlock(mm);
 diff --git a/mm/util.c b/mm/util.c
-index c9439c66d8cf..1266a33a49ea 100644
+index 346e40177bc6..50427596f208 100644
 --- a/mm/util.c
 +++ b/mm/util.c
 @@ -272,38 +272,6 @@ void *memdup_user_nul(const void __user *src, size_t len)
@@ -81734,7 +81861,7 @@ index 01a6e6688ec1..000000000000
 -}
 -#endif
 diff --git a/mm/vmscan.c b/mm/vmscan.c
-index feb8416d8edd..f85a9c915d75 100644
+index d4926208fe86..301f38d3165b 100644
 --- a/mm/vmscan.c
 +++ b/mm/vmscan.c
 @@ -3778,23 +3778,17 @@ static bool get_next_vma(unsigned long mask, unsigned long size, struct mm_walk
@@ -82178,12 +82305,12 @@ index 000000000000..97d0e1ddcf08
 +#define trace_ma_read(a, b) do {} while (0)
 +#define trace_ma_write(a, b, c, d) do {} while (0)
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 79eeeac092d265211e4f6ce60f69ad549d8a201c Mon Sep 17 00:00:00 2001
+From a18e54491eba670bdaea5b3d27131fea0e96726b Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 26 Sep 2022 00:18:41 +0200
-Subject: [PATCH 09/16] mm-cleanup
+Subject: [PATCH 09/17] mm-cleanup
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -82320,7 +82447,7 @@ index 0f106a3982e7..4ea69814259a 100644
  
  static inline bool vma_soft_dirty_enabled(struct vm_area_struct *vma)
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index cf131d6e08fb..292ed1bb6a5a 100644
+index cc6179d3a7dc..65ffd285db54 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -870,7 +870,8 @@ static inline bool set_page_guard(struct zone *zone, struct page *page,
@@ -82381,7 +82508,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
   */
  static inline void zone_statistics(struct zone *preferred_zone, struct zone *z,
  				   long nr_account)
-@@ -5121,7 +5115,8 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+@@ -5147,7 +5141,8 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
  
  	reserve_flags = __gfp_pfmemalloc_flags(gfp_mask);
  	if (reserve_flags)
@@ -82391,7 +82518,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  
  	/*
  	 * Reset the nodemask and zonelist iterators if memory policies can be
-@@ -5238,7 +5233,7 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
+@@ -5272,7 +5267,7 @@ __alloc_pages_slowpath(gfp_t gfp_mask, unsigned int order,
  		 * so that we can identify them and convert them to something
  		 * else.
  		 */
@@ -82400,7 +82527,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  
  		/*
  		 * Help non-failing allocations by giving them access to memory
-@@ -6507,7 +6502,7 @@ static void per_cpu_pages_init(struct per_cpu_pages *pcp, struct per_cpu_zonesta
+@@ -6553,7 +6548,7 @@ static void per_cpu_pages_init(struct per_cpu_pages *pcp, struct per_cpu_zonesta
  #define BOOT_PAGESET_BATCH	1
  static DEFINE_PER_CPU(struct per_cpu_pages, boot_pageset);
  static DEFINE_PER_CPU(struct per_cpu_zonestat, boot_zonestats);
@@ -82409,7 +82536,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  
  static void __build_all_zonelists(void *data)
  {
-@@ -6810,7 +6805,7 @@ void __ref memmap_init_zone_device(struct zone *zone,
+@@ -6855,7 +6850,7 @@ void __ref memmap_init_zone_device(struct zone *zone,
  	unsigned long start = jiffies;
  	int nid = pgdat->node_id;
  
@@ -82418,7 +82545,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  		return;
  
  	/*
-@@ -6986,7 +6981,7 @@ static int zone_batchsize(struct zone *zone)
+@@ -7031,7 +7026,7 @@ static int zone_batchsize(struct zone *zone)
  	 * size is striking a balance between allocation latency
  	 * and zone lock contention.
  	 */
@@ -82427,7 +82554,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  	batch /= 4;		/* We effectively *= 4 below */
  	if (batch < 1)
  		batch = 1;
-@@ -7171,6 +7166,17 @@ void __meminit setup_zone_pageset(struct zone *zone)
+@@ -7216,6 +7211,17 @@ void __meminit setup_zone_pageset(struct zone *zone)
  	zone_set_pageset_high_and_batch(zone, 0);
  }
  
@@ -82445,7 +82572,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  /*
   * Allocate per cpu pagesets and initialize them.
   * Before this call only boot pagesets were available.
-@@ -8461,8 +8467,8 @@ void __init mem_init_print_info(void)
+@@ -8506,8 +8512,8 @@ void __init mem_init_print_info(void)
  #endif
  		")\n",
  		K(nr_free_pages()), K(physpages),
@@ -82456,7 +82583,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  		K(physpages - totalram_pages() - totalcma_pages),
  		K(totalcma_pages)
  #ifdef	CONFIG_HIGHMEM
-@@ -8987,8 +8993,8 @@ void *__init alloc_large_system_hash(const char *tablename,
+@@ -9032,8 +9038,8 @@ void *__init alloc_large_system_hash(const char *tablename,
  		numentries -= arch_reserved_kernel_pages();
  
  		/* It isn't necessary when PAGE_SIZE >= 1MB */
@@ -82467,7 +82594,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  
  #if __BITS_PER_LONG > 32
  		if (!high_limit) {
-@@ -9412,17 +9418,6 @@ void free_contig_range(unsigned long pfn, unsigned long nr_pages)
+@@ -9457,17 +9463,6 @@ void free_contig_range(unsigned long pfn, unsigned long nr_pages)
  }
  EXPORT_SYMBOL(free_contig_range);
  
@@ -82485,7 +82612,7 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  /*
   * Effectively disable pcplists for the zone by setting the high limit to 0
   * and draining all cpus. A concurrent page freeing on another CPU that's about
-@@ -9455,9 +9450,11 @@ void zone_pcp_reset(struct zone *zone)
+@@ -9500,9 +9495,11 @@ void zone_pcp_reset(struct zone *zone)
  			drain_zonestat(zone, pzstats);
  		}
  		free_percpu(zone->per_cpu_pageset);
@@ -82500,12 +82627,1194 @@ index cf131d6e08fb..292ed1bb6a5a 100644
  }
  
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 6257c94a850dc4b3faa5a55be5831de4f8777cac Mon Sep 17 00:00:00 2001
+From f5b84ebf4e16a85f85aad297a18df2f6d58a7ace Mon Sep 17 00:00:00 2001
+From: Peter Jung <admin@ptr1337.dev>
+Date: Wed, 28 Sep 2022 19:47:35 +0200
+Subject: [PATCH 10/17] THP Shrinker
+
+Transparent Hugepages use a larger page size of 2MB in comparison to
+normal sized pages that are 4kb. A larger page size allows for fewer TLB
+cache misses and thus more efficient use of the CPU. Using a larger page
+size also results in more memory waste, which can hurt performance in some
+use cases. THPs are currently enabled in the Linux Kernel by applications
+in limited virtual address ranges via the madvise system call.  The THP
+shrinker tries to find a balance between increased use of THPs, and
+increased use of memory. It shrinks the size of memory by removing the
+underutilized THPs that are identified by the thp_utilization scanner.
+
+In our experiments we have noticed that the least utilized THPs are almost
+entirely unutilized.
+
+Sample Output:
+
+Utilized[0-50]: 1331 680884
+Utilized[51-101]: 9 3983
+Utilized[102-152]: 3 1187
+Utilized[153-203]: 0 0
+Utilized[204-255]: 2 539
+Utilized[256-306]: 5 1135
+Utilized[307-357]: 1 192
+Utilized[358-408]: 0 0
+Utilized[409-459]: 1 57
+Utilized[460-512]: 400 13
+Last Scan Time: 223.98s
+Last Scan Duration: 70.65s
+
+Above is a sample obtained from one of our test machines when THP is always
+enabled. Of the 1331 THPs in this thp_utilization sample that have from
+0-50 utilized subpages, we see that there are 680884 free pages. This
+comes out to 680884 / (512 * 1331) = 99.91% zero pages in the least
+utilized bucket. This represents 680884 * 4KB = 2.7GB memory waste.
+
+Also note that the vast majority of pages are either in the least utilized
+[0-50] or most utilized [460-512] buckets. The least utilized THPs are
+responsible for almost all of the memory waste when THP is always
+enabled. Thus by clearing out THPs in the lowest utilization bucket
+we extract most of the improvement in CPU efficiency. We have seen
+similar results on our production hosts.
+
+This patchset introduces the THP shrinker we have developed to identify
+and split the least utilized THPs. It includes the thp_utilization
+changes that groups anonymous THPs into buckets, the split_huge_page()
+changes that identify and zap zero 4KB pages within THPs and the shrinker
+changes. It should be noted that the split_huge_page() changes are based
+off previous work done by Yu Zhao.
+
+In the future, we intend to allow additional tuning to the shrinker
+based on workload depending on CPU/IO/Memory pressure and the
+amount of anonymous memory. The long term goal is to eventually always
+enable THP for all applications and deprecate madvise entirely.
+
+In production we thus far have observed 2-3% reduction in overall cpu
+usage on stateless web servers when THP is always enabled.
+
+Signed-off-by: Peter Jung <admin@ptr1337.dev>
+---
+ Documentation/admin-guide/mm/transhuge.rst    |   9 +
+ include/linux/huge_mm.h                       |  10 +
+ include/linux/list_lru.h                      |  24 ++
+ include/linux/mm_types.h                      |   5 +
+ include/linux/rmap.h                          |   2 +-
+ include/linux/vm_event_item.h                 |   3 +
+ mm/huge_memory.c                              | 342 +++++++++++++++++-
+ mm/list_lru.c                                 |  49 +++
+ mm/migrate.c                                  |  72 +++-
+ mm/migrate_device.c                           |   4 +-
+ mm/page_alloc.c                               |   6 +
+ mm/vmstat.c                                   |   3 +
+ .../selftests/vm/split_huge_page_test.c       | 113 +++++-
+ tools/testing/selftests/vm/vm_util.c          |  23 ++
+ tools/testing/selftests/vm/vm_util.h          |   1 +
+ 15 files changed, 648 insertions(+), 18 deletions(-)
+
+diff --git a/Documentation/admin-guide/mm/transhuge.rst b/Documentation/admin-guide/mm/transhuge.rst
+index c9c37f16eef8..d883ff9fddc7 100644
+--- a/Documentation/admin-guide/mm/transhuge.rst
++++ b/Documentation/admin-guide/mm/transhuge.rst
+@@ -297,6 +297,15 @@ To identify what applications are mapping file transparent huge pages, it
+ is necessary to read ``/proc/PID/smaps`` and count the FileHugeMapped fields
+ for each mapping.
+ 
++The utilization of transparent hugepages can be viewed by reading
++``/sys/kernel/debug/thp_utilization``. The utilization of a THP is defined
++as the ratio of non zero filled 4kb pages to the total number of pages in a
++THP. The buckets are labelled by the range of total utilized 4kb pages with
++one line per utilization bucket. Each line contains the total number of
++THPs in that bucket and the total number of zero filled 4kb pages summed
++over all THPs in that bucket. The last two lines show the timestamp and
++duration respectively of the most recent scan over all of physical memory.
++
+ Note that reading the smaps file is expensive and reading it
+ frequently will incur overhead.
+ 
+diff --git a/include/linux/huge_mm.h b/include/linux/huge_mm.h
+index 38265f9f782e..c5400a89ce67 100644
+--- a/include/linux/huge_mm.h
++++ b/include/linux/huge_mm.h
+@@ -178,6 +178,9 @@ bool hugepage_vma_check(struct vm_area_struct *vma, unsigned long vm_flags,
+ unsigned long thp_get_unmapped_area(struct file *filp, unsigned long addr,
+ 		unsigned long len, unsigned long pgoff, unsigned long flags);
+ 
++int thp_number_utilized_pages(struct page *page);
++int thp_utilization_bucket(int num_utilized_pages);
++
+ void prep_transhuge_page(struct page *page);
+ void free_transhuge_page(struct page *page);
+ 
+@@ -189,6 +192,8 @@ static inline int split_huge_page(struct page *page)
+ }
+ void deferred_split_huge_page(struct page *page);
+ 
++void add_underutilized_thp(struct page *page);
++
+ void __split_huge_pmd(struct vm_area_struct *vma, pmd_t *pmd,
+ 		unsigned long address, bool freeze, struct folio *folio);
+ 
+@@ -302,6 +307,11 @@ static inline struct list_head *page_deferred_list(struct page *page)
+ 	return &page[2].deferred_list;
+ }
+ 
++static inline struct list_head *page_underutilized_thp_list(struct page *page)
++{
++       return &page[3].underutilized_thp_list;
++}
++
+ #else /* CONFIG_TRANSPARENT_HUGEPAGE */
+ #define HPAGE_PMD_SHIFT ({ BUILD_BUG(); 0; })
+ #define HPAGE_PMD_MASK ({ BUILD_BUG(); 0; })
+diff --git a/include/linux/list_lru.h b/include/linux/list_lru.h
+index b35968ee9fb5..c2cf146ea880 100644
+--- a/include/linux/list_lru.h
++++ b/include/linux/list_lru.h
+@@ -89,6 +89,18 @@ void memcg_reparent_list_lrus(struct mem_cgroup *memcg, struct mem_cgroup *paren
+  */
+ bool list_lru_add(struct list_lru *lru, struct list_head *item);
+ 
++/**
++ * list_lru_add_page: add an element to the lru list's tail
++ * @list_lru: the lru pointer
++ * @page: the page containing the item
++ * @item: the item to be deleted.
++ *
++ * This function works the same as list_lru_add in terms of list
++ * manipulation. Used for non slab objects contained in the page.
++ *
++ * Return value: true if the list was updated, false otherwise
++ */
++bool list_lru_add_page(struct list_lru *lru, struct page *page, struct list_head *item);
+ /**
+  * list_lru_del: delete an element to the lru list
+  * @list_lru: the lru pointer
+@@ -102,6 +114,18 @@ bool list_lru_add(struct list_lru *lru, struct list_head *item);
+  */
+ bool list_lru_del(struct list_lru *lru, struct list_head *item);
+ 
++/**
++ * list_lru_del_page: delete an element to the lru list
++ * @list_lru: the lru pointer
++ * @page: the page containing the item
++ * @item: the item to be deleted.
++ *
++ * This function works the same as list_lru_del in terms of list
++ * manipulation. Used for non slab objects contained in the page.
++ *
++ * Return value: true if the list was updated, false otherwise
++ */
++bool list_lru_del_page(struct list_lru *lru, struct page *page, struct list_head *item);
+ /**
+  * list_lru_count_one: return the number of objects currently held by @lru
+  * @lru: the lru pointer.
+diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
+index 5e32211cb5a9..a2a26fc8e89f 100644
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -152,6 +152,11 @@ struct page {
+ 			/* For both global and memcg */
+ 			struct list_head deferred_list;
+ 		};
++		struct { /* Third tail page of compound page */
++			unsigned long _compound_pad_3; /* compound_head */
++			unsigned long _compound_pad_4;
++			struct list_head underutilized_thp_list;
++		};
+ 		struct {	/* Page table pages */
+ 			unsigned long _pt_pad_1;	/* compound_head */
+ 			pgtable_t pmd_huge_pte; /* protected by page->ptl */
+diff --git a/include/linux/rmap.h b/include/linux/rmap.h
+index b89b4b86951f..f7d5d5639dea 100644
+--- a/include/linux/rmap.h
++++ b/include/linux/rmap.h
+@@ -372,7 +372,7 @@ int folio_mkclean(struct folio *);
+ int pfn_mkclean_range(unsigned long pfn, unsigned long nr_pages, pgoff_t pgoff,
+ 		      struct vm_area_struct *vma);
+ 
+-void remove_migration_ptes(struct folio *src, struct folio *dst, bool locked);
++void remove_migration_ptes(struct folio *src, struct folio *dst, bool locked, bool unmap_clean);
+ 
+ int page_mapped_in_vma(struct page *page, struct vm_area_struct *vma);
+ 
+diff --git a/include/linux/vm_event_item.h b/include/linux/vm_event_item.h
+index 3518dba1e02f..3618b10ddec9 100644
+--- a/include/linux/vm_event_item.h
++++ b/include/linux/vm_event_item.h
+@@ -111,6 +111,9 @@ enum vm_event_item { PGPGIN, PGPGOUT, PSWPIN, PSWPOUT,
+ #ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
+ 		THP_SPLIT_PUD,
+ #endif
++		THP_SPLIT_FREE,
++		THP_SPLIT_UNMAP,
++		THP_SPLIT_REMAP_READONLY_ZERO_PAGE,
+ 		THP_ZERO_PAGE_ALLOC,
+ 		THP_ZERO_PAGE_ALLOC_FAILED,
+ 		THP_SWPOUT,
+diff --git a/mm/huge_memory.c b/mm/huge_memory.c
+index 51f8e41b6568..05428ae7cf2d 100644
+--- a/mm/huge_memory.c
++++ b/mm/huge_memory.c
+@@ -46,6 +46,16 @@
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/thp.h>
+ 
++/*
++ * The number of utilization buckets THPs will be grouped in
++ * under /sys/kernel/debug/thp_utilization.
++ */
++#define THP_UTIL_BUCKET_NR 10
++/*
++ * The number of PFNs (and hence hugepages) to scan through on each periodic
++ * run of the scanner that generates /sys/kernel/debug/thp_utilization.
++ */
++#define THP_UTIL_SCAN_SIZE 256
+ /*
+  * By default, transparent hugepage support is disabled in order to avoid
+  * risking an increased memory footprint for applications that are not
+@@ -71,6 +81,27 @@ static atomic_t huge_zero_refcount;
+ struct page *huge_zero_page __read_mostly;
+ unsigned long huge_zero_pfn __read_mostly = ~0UL;
+ 
++struct list_lru huge_low_util_page_lru;
++
++static void thp_utilization_workfn(struct work_struct *work);
++static DECLARE_DELAYED_WORK(thp_utilization_work, thp_utilization_workfn);
++
++struct thp_scan_info_bucket {
++	int nr_thps;
++	int nr_zero_pages;
++};
++
++struct thp_scan_info {
++	struct thp_scan_info_bucket buckets[THP_UTIL_BUCKET_NR];
++	struct zone *scan_zone;
++	struct timespec64 last_scan_duration;
++	struct timespec64 last_scan_time;
++	unsigned long pfn;
++};
++
++static struct thp_scan_info thp_scan_debugfs;
++static struct thp_scan_info thp_scan;
++
+ bool hugepage_vma_check(struct vm_area_struct *vma, unsigned long vm_flags,
+ 			bool smaps, bool in_pf, bool enforce_sysfs)
+ {
+@@ -234,6 +265,51 @@ static struct shrinker huge_zero_page_shrinker = {
+ 	.seeks = DEFAULT_SEEKS,
+ };
+ 
++static enum lru_status low_util_free_page(struct list_head *item,
++					  struct list_lru_one *lru,
++					  spinlock_t *lock,
++					  void *cb_arg)
++{
++	int bucket, num_utilized_pages;
++	struct page *head = compound_head(list_entry(item,
++									struct page,
++									underutilized_thp_list));
++
++	if (get_page_unless_zero(head)) {
++		lock_page(head);
++		list_lru_isolate(lru, item);
++		num_utilized_pages = thp_number_utilized_pages(head);
++		bucket = thp_utilization_bucket(num_utilized_pages);
++		if (bucket < THP_UTIL_BUCKET_NR - 1)
++			split_huge_page(head);
++		unlock_page(head);
++		put_page(head);
++	}
++
++	return LRU_REMOVED_RETRY;
++}
++
++static unsigned long shrink_huge_low_util_page_count(struct shrinker *shrink,
++						     struct shrink_control *sc)
++{
++	return HPAGE_PMD_NR * list_lru_shrink_count(&huge_low_util_page_lru, sc);
++}
++
++static unsigned long shrink_huge_low_util_page_scan(struct shrinker *shrink,
++						    struct shrink_control *sc)
++{
++	return HPAGE_PMD_NR * list_lru_shrink_walk(&huge_low_util_page_lru,
++							sc, low_util_free_page, NULL);
++}
++
++static struct shrinker huge_low_util_page_shrinker = {
++	.count_objects = shrink_huge_low_util_page_count,
++	.scan_objects = shrink_huge_low_util_page_scan,
++	.seeks = DEFAULT_SEEKS,
++	.flags = SHRINKER_NUMA_AWARE | SHRINKER_MEMCG_AWARE |
++		SHRINKER_NONSLAB,
++};
++
+ #ifdef CONFIG_SYSFS
+ static ssize_t enabled_show(struct kobject *kobj,
+ 			    struct kobj_attribute *attr, char *buf)
+@@ -485,13 +561,19 @@ static int __init hugepage_init(void)
+ 	if (err)
+ 		goto err_slab;
+ 
++	schedule_delayed_work(&thp_utilization_work, HZ);
++	err = register_shrinker(&huge_low_util_page_shrinker, "thp-low-util");
++	if (err)
++		goto err_low_util_shrinker;
+ 	err = register_shrinker(&huge_zero_page_shrinker, "thp-zero");
+ 	if (err)
+ 		goto err_hzp_shrinker;
+ 	err = register_shrinker(&deferred_split_shrinker, "thp-deferred_split");
+ 	if (err)
+ 		goto err_split_shrinker;
+-
++	err = list_lru_init_memcg(&huge_low_util_page_lru, &huge_low_util_page_shrinker);
++	if (err)
++		goto err_low_util_list_lru;
+ 	/*
+ 	 * By default disable transparent hugepages on smaller systems,
+ 	 * where the extra memory used could hurt more than TLB overhead
+@@ -507,11 +589,16 @@ static int __init hugepage_init(void)
+ 		goto err_khugepaged;
+ 
+ 	return 0;
++
+ err_khugepaged:
++	list_lru_destroy(&huge_low_util_page_lru);
++err_low_util_list_lru:
+ 	unregister_shrinker(&deferred_split_shrinker);
+ err_split_shrinker:
+ 	unregister_shrinker(&huge_zero_page_shrinker);
+ err_hzp_shrinker:
++	unregister_shrinker(&huge_low_util_page_shrinker);
++err_low_util_shrinker:
+ 	khugepaged_destroy();
+ err_slab:
+ 	hugepage_exit_sysfs(hugepage_kobj);
+@@ -586,6 +673,7 @@ void prep_transhuge_page(struct page *page)
+ 	 */
+ 
+ 	INIT_LIST_HEAD(page_deferred_list(page));
++	INIT_LIST_HEAD(page_underutilized_thp_list(page));
+ 	set_compound_page_dtor(page, TRANSHUGE_PAGE_DTOR);
+ }
+ 
+@@ -599,6 +687,11 @@ static inline bool is_transparent_hugepage(struct page *page)
+ 	       page[1].compound_dtor == TRANSHUGE_PAGE_DTOR;
+ }
+ 
++static inline bool is_anon_transparent_hugepage(struct page *page)
++{
++	return PageAnon(page) && is_transparent_hugepage(page);
++}
++
+ static unsigned long __thp_get_unmapped_area(struct file *filp,
+ 		unsigned long addr, unsigned long len,
+ 		loff_t off, unsigned long flags, unsigned long size)
+@@ -649,6 +742,49 @@ unsigned long thp_get_unmapped_area(struct file *filp, unsigned long addr,
+ }
+ EXPORT_SYMBOL_GPL(thp_get_unmapped_area);
+ 
++int thp_number_utilized_pages(struct page *page)
++{
++	struct folio *folio;
++	unsigned long page_offset, value;
++	int thp_nr_utilized_pages = HPAGE_PMD_NR;
++	int step_size = sizeof(unsigned long);
++	bool is_all_zeroes;
++	void *kaddr;
++	int i;
++
++	if (!page || !is_anon_transparent_hugepage(page))
++		return -1;
++
++	folio = page_folio(page);
++	for (i = 0; i < folio_nr_pages(folio); i++) {
++		kaddr = kmap_local_folio(folio, i);
++		is_all_zeroes = true;
++		for (page_offset = 0; page_offset < PAGE_SIZE; page_offset += step_size) {
++			value = *(unsigned long *)(kaddr + page_offset);
++			if (value != 0) {
++				is_all_zeroes = false;
++				break;
++			}
++		}
++		if (is_all_zeroes)
++			thp_nr_utilized_pages--;
++
++		kunmap_local(kaddr);
++	}
++	return thp_nr_utilized_pages;
++}
++
++int thp_utilization_bucket(int num_utilized_pages)
++{
++	int bucket;
++
++	if (num_utilized_pages < 0 || num_utilized_pages > HPAGE_PMD_NR)
++		return -1;
++	/* Group THPs into utilization buckets */
++	bucket = num_utilized_pages * THP_UTIL_BUCKET_NR / HPAGE_PMD_NR;
++	return min(bucket, THP_UTIL_BUCKET_NR - 1);
++}
++
+ static vm_fault_t __do_huge_pmd_anonymous_page(struct vm_fault *vmf,
+ 			struct page *page, gfp_t gfp)
+ {
+@@ -2349,7 +2485,7 @@ static void unmap_page(struct page *page)
+ 		try_to_unmap(folio, ttu_flags | TTU_IGNORE_MLOCK);
+ }
+ 
+-static void remap_page(struct folio *folio, unsigned long nr)
++static void remap_page(struct folio *folio, unsigned long nr, bool unmap_clean)
+ {
+ 	int i = 0;
+ 
+@@ -2357,7 +2493,7 @@ static void remap_page(struct folio *folio, unsigned long nr)
+ 	if (!folio_test_anon(folio))
+ 		return;
+ 	for (;;) {
+-		remove_migration_ptes(folio, folio, true);
++		remove_migration_ptes(folio, folio, true, unmap_clean);
+ 		i += folio_nr_pages(folio);
+ 		if (i >= nr)
+ 			break;
+@@ -2427,8 +2563,7 @@ static void __split_huge_page_tail(struct page *head, int tail,
+ 			 LRU_GEN_MASK | LRU_REFS_MASK));
+ 
+ 	/* ->mapping in first tail page is compound_mapcount */
+-	VM_BUG_ON_PAGE(tail > 2 && page_tail->mapping != TAIL_MAPPING,
+-			page_tail);
++	VM_BUG_ON_PAGE(tail > 3 && page_tail->mapping != TAIL_MAPPING, page_tail);
+ 	page_tail->mapping = head->mapping;
+ 	page_tail->index = head->index + tail;
+ 	page_tail->private = 0;
+@@ -2472,6 +2607,8 @@ static void __split_huge_page(struct page *page, struct list_head *list,
+ 	struct address_space *swap_cache = NULL;
+ 	unsigned long offset = 0;
+ 	unsigned int nr = thp_nr_pages(head);
++	LIST_HEAD(pages_to_free);
++	int nr_pages_to_free = 0;
+ 	int i;
+ 
+ 	/* complete memcg works before add pages to LRU */
+@@ -2534,7 +2671,7 @@ static void __split_huge_page(struct page *page, struct list_head *list,
+ 	}
+ 	local_irq_enable();
+ 
+-	remap_page(folio, nr);
++	remap_page(folio, nr, PageAnon(head));
+ 
+ 	if (PageSwapCache(head)) {
+ 		swp_entry_t entry = { .val = page_private(head) };
+@@ -2548,6 +2685,33 @@ static void __split_huge_page(struct page *page, struct list_head *list,
+ 			continue;
+ 		unlock_page(subpage);
+ 
++		/*
++		 * If a tail page has only two references left, one inherited
++		 * from the isolation of its head and the other from
++		 * lru_add_page_tail() which we are about to drop, it means this
++		 * tail page was concurrently zapped. Then we can safely free it
++		 * and save page reclaim or migration the trouble of trying it.
++		 */
++		if (list && page_ref_freeze(subpage, 2)) {
++			VM_BUG_ON_PAGE(PageLRU(subpage), subpage);
++			VM_BUG_ON_PAGE(PageCompound(subpage), subpage);
++			VM_BUG_ON_PAGE(page_mapped(subpage), subpage);
++
++			ClearPageActive(subpage);
++			ClearPageUnevictable(subpage);
++			list_move(&subpage->lru, &pages_to_free);
++			nr_pages_to_free++;
++			continue;
++		}
++		/*
++		 * If a tail page has only one reference left, it will be freed
++		 * by the call to free_page_and_swap_cache below. Since zero
++		 * subpages are no longer remapped, there will only be one
++		 * reference left in cases outside of reclaim or migration.
++		 */
++		if (page_ref_count(subpage) == 1)
++			nr_pages_to_free++;
++
+ 		/*
+ 		 * Subpages may be freed if there wasn't any mapping
+ 		 * like if add_to_swap() is running on a lru page that
+@@ -2557,6 +2721,13 @@ static void __split_huge_page(struct page *page, struct list_head *list,
+ 		 */
+ 		free_page_and_swap_cache(subpage);
+ 	}
++
++	if (!nr_pages_to_free)
++		return;
++
++	mem_cgroup_uncharge_list(&pages_to_free);
++	free_unref_page_list(&pages_to_free);
++	count_vm_events(THP_SPLIT_FREE, nr_pages_to_free);
+ }
+ 
+ /* Racy check whether the huge page can be split */
+@@ -2599,6 +2770,7 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
+ 	struct folio *folio = page_folio(page);
+ 	struct page *head = &folio->page;
+ 	struct deferred_split *ds_queue = get_deferred_split_queue(head);
++	struct list_head *underutilized_thp_list = page_underutilized_thp_list(head);
+ 	XA_STATE(xas, &head->mapping->i_pages, head->index);
+ 	struct anon_vma *anon_vma = NULL;
+ 	struct address_space *mapping = NULL;
+@@ -2697,6 +2869,8 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
+ 			list_del(page_deferred_list(head));
+ 		}
+ 		spin_unlock(&ds_queue->split_queue_lock);
++		if (!list_empty(underutilized_thp_list))
++			list_lru_del_page(&huge_low_util_page_lru, head, underutilized_thp_list);
+ 		if (mapping) {
+ 			int nr = thp_nr_pages(head);
+ 
+@@ -2719,7 +2893,7 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
+ 		if (mapping)
+ 			xas_unlock(&xas);
+ 		local_irq_enable();
+-		remap_page(folio, folio_nr_pages(folio));
++		remap_page(folio, folio_nr_pages(folio), false);
+ 		ret = -EBUSY;
+ 	}
+ 
+@@ -2739,6 +2913,7 @@ int split_huge_page_to_list(struct page *page, struct list_head *list)
+ void free_transhuge_page(struct page *page)
+ {
+ 	struct deferred_split *ds_queue = get_deferred_split_queue(page);
++	struct list_head *underutilized_thp_list = page_underutilized_thp_list(page);
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&ds_queue->split_queue_lock, flags);
+@@ -2747,6 +2922,12 @@ void free_transhuge_page(struct page *page)
+ 		list_del(page_deferred_list(page));
+ 	}
+ 	spin_unlock_irqrestore(&ds_queue->split_queue_lock, flags);
++	if (!list_empty(underutilized_thp_list))
++		list_lru_del_page(&huge_low_util_page_lru, page, underutilized_thp_list);
++
++	if (PageLRU(page))
++		__clear_page_lru_flags(page);
++
+ 	free_compound_page(page);
+ }
+ 
+@@ -2787,6 +2968,26 @@ void deferred_split_huge_page(struct page *page)
+ 	spin_unlock_irqrestore(&ds_queue->split_queue_lock, flags);
+ }
+ 
++void add_underutilized_thp(struct page *page)
++{
++	VM_BUG_ON_PAGE(!PageTransHuge(page), page);
++
++	if (PageSwapCache(page))
++		return;
++
++	/*
++	 * Need to take a reference on the page to prevent the page from getting free'd from
++	 * under us while we are adding the THP to the shrinker.
++	 */
++	if (!get_page_unless_zero(page))
++		return;
++
++	if (!is_huge_zero_page(page) && is_anon_transparent_hugepage(page))
++		list_lru_add_page(&huge_low_util_page_lru, page, page_underutilized_thp_list(page));
++
++	put_page(page);
++}
++
+ static unsigned long deferred_split_count(struct shrinker *shrink,
+ 		struct shrink_control *sc)
+ {
+@@ -3141,6 +3342,42 @@ static int __init split_huge_pages_debugfs(void)
+ 	return 0;
+ }
+ late_initcall(split_huge_pages_debugfs);
++
++static int thp_utilization_show(struct seq_file *seqf, void *pos)
++{
++	int i;
++	int start;
++	int end;
++
++	for (i = 0; i < THP_UTIL_BUCKET_NR; i++) {
++		start = i * HPAGE_PMD_NR / THP_UTIL_BUCKET_NR;
++		end = (i + 1 == THP_UTIL_BUCKET_NR)
++			   ? HPAGE_PMD_NR
++			   : ((i + 1) * HPAGE_PMD_NR / THP_UTIL_BUCKET_NR - 1);
++		/* The last bucket will need to contain 100 */
++		seq_printf(seqf, "Utilized[%d-%d]: %d %d\n", start, end,
++			   thp_scan_debugfs.buckets[i].nr_thps,
++			   thp_scan_debugfs.buckets[i].nr_zero_pages);
++	}
++	seq_printf(seqf, "Last Scan Time: %lu.%02lus\n",
++		   (unsigned long)thp_scan_debugfs.last_scan_time.tv_sec,
++		   (thp_scan_debugfs.last_scan_time.tv_nsec / (NSEC_PER_SEC / 100)));
++
++	seq_printf(seqf, "Last Scan Duration: %lu.%02lus\n",
++		   (unsigned long)thp_scan_debugfs.last_scan_duration.tv_sec,
++		   (thp_scan_debugfs.last_scan_duration.tv_nsec / (NSEC_PER_SEC / 100)));
++
++	return 0;
++}
++DEFINE_SHOW_ATTRIBUTE(thp_utilization);
++
++static int __init thp_utilization_debugfs(void)
++{
++	debugfs_create_file("thp_utilization", 0200, NULL, NULL,
++			    &thp_utilization_fops);
++	return 0;
++}
++late_initcall(thp_utilization_debugfs);
+ #endif
+ 
+ #ifdef CONFIG_ARCH_ENABLE_THP_MIGRATION
+@@ -3226,3 +3463,94 @@ void remove_migration_pmd(struct page_vma_mapped_walk *pvmw, struct page *new)
+ 	trace_remove_migration_pmd(address, pmd_val(pmde));
+ }
+ #endif
++
++static void thp_scan_next_zone(void)
++{
++	struct timespec64 current_time;
++	int i;
++	bool update_debugfs;
++	/*
++	 * THP utilization worker thread has reached the end
++	 * of the memory zone. Proceed to the next zone.
++	 */
++	thp_scan.scan_zone = next_zone(thp_scan.scan_zone);
++	update_debugfs = !thp_scan.scan_zone;
++	thp_scan.scan_zone = update_debugfs ? (first_online_pgdat())->node_zones
++			: thp_scan.scan_zone;
++	thp_scan.pfn = (thp_scan.scan_zone->zone_start_pfn + HPAGE_PMD_NR - 1)
++			& ~(HPAGE_PMD_SIZE - 1);
++	if (!update_debugfs)
++		return;
++	/*
++	 * If the worker has scanned through all of physical
++	 * memory. Then update information displayed in /sys/kernel/debug/thp_utilization
++	 */
++	ktime_get_ts64(&current_time);
++	thp_scan_debugfs.last_scan_duration = timespec64_sub(current_time,
++							     thp_scan_debugfs.last_scan_time);
++	thp_scan_debugfs.last_scan_time = current_time;
++
++	for (i = 0; i < THP_UTIL_BUCKET_NR; i++) {
++		thp_scan_debugfs.buckets[i].nr_thps = thp_scan.buckets[i].nr_thps;
++		thp_scan_debugfs.buckets[i].nr_zero_pages = thp_scan.buckets[i].nr_zero_pages;
++		thp_scan.buckets[i].nr_thps = 0;
++		thp_scan.buckets[i].nr_zero_pages = 0;
++	}
++}
++
++static void thp_util_scan(unsigned long pfn_end)
++{
++	struct page *page = NULL;
++	int bucket, num_utilized_pages, current_pfn;
++	int i;
++	/*
++	 * Scan through each memory zone in chunks of THP_UTIL_SCAN_SIZE
++	 * PFNs every second looking for anonymous THPs.
++	 */
++	for (i = 0; i < THP_UTIL_SCAN_SIZE; i++) {
++		current_pfn = thp_scan.pfn;
++		thp_scan.pfn += HPAGE_PMD_NR;
++		if (current_pfn >= pfn_end)
++			return;
++
++		if (!pfn_valid(current_pfn))
++			continue;
++
++		page = pfn_to_page(current_pfn);
++		num_utilized_pages = thp_number_utilized_pages(page);
++		bucket = thp_utilization_bucket(num_utilized_pages);
++		if (bucket < 0)
++			continue;
++
++		if (bucket < THP_UTIL_BUCKET_NR - 1)
++			add_underutilized_thp(page);
++
++		thp_scan.buckets[bucket].nr_thps++;
++		thp_scan.buckets[bucket].nr_zero_pages += (HPAGE_PMD_NR - num_utilized_pages);
++	}
++}
++
++static void thp_utilization_workfn(struct work_struct *work)
++{
++	unsigned long pfn_end;
++
++	if (!thp_scan.scan_zone)
++		thp_scan.scan_zone = (first_online_pgdat())->node_zones;
++	/*
++	 * Worker function that scans through all of physical memory
++	 * for anonymous THPs.
++	 */
++	pfn_end = (thp_scan.scan_zone->zone_start_pfn +
++			thp_scan.scan_zone->spanned_pages + HPAGE_PMD_NR - 1)
++			& ~(HPAGE_PMD_SIZE - 1);
++	/* If we have reached the end of the zone or end of physical memory
++	 * move on to the next zone. Otherwise, scan the next PFNs in the
++	 * current zone.
++	 */
++	if (!populated_zone(thp_scan.scan_zone) || thp_scan.pfn >= pfn_end)
++		thp_scan_next_zone();
++	else
++		thp_util_scan(pfn_end);
++
++	schedule_delayed_work(&thp_utilization_work, HZ);
++}
+diff --git a/mm/list_lru.c b/mm/list_lru.c
+index a05e5bef3b40..7e8b324cc840 100644
+--- a/mm/list_lru.c
++++ b/mm/list_lru.c
+@@ -140,6 +140,32 @@ bool list_lru_add(struct list_lru *lru, struct list_head *item)
+ }
+ EXPORT_SYMBOL_GPL(list_lru_add);
+ 
++bool list_lru_add_page(struct list_lru *lru, struct page *page, struct list_head *item)
++{
++	int nid = page_to_nid(page);
++	struct list_lru_node *nlru = &lru->node[nid];
++	struct list_lru_one *l;
++	struct mem_cgroup *memcg;
++
++	spin_lock(&nlru->lock);
++	if (list_empty(item)) {
++		memcg = page_memcg(page);
++		memcg_list_lru_alloc(memcg, lru, GFP_KERNEL);
++		l = list_lru_from_memcg_idx(lru, nid, memcg_kmem_id(memcg));
++		list_add_tail(item, &l->list);
++		/* Set shrinker bit if the first element was added */
++		if (!l->nr_items++)
++			set_shrinker_bit(memcg, nid,
++					 lru_shrinker_id(lru));
++		nlru->nr_items++;
++		spin_unlock(&nlru->lock);
++		return true;
++	}
++	spin_unlock(&nlru->lock);
++	return false;
++}
++EXPORT_SYMBOL_GPL(list_lru_add_page);
++
+ bool list_lru_del(struct list_lru *lru, struct list_head *item)
+ {
+ 	int nid = page_to_nid(virt_to_page(item));
+@@ -160,6 +186,29 @@ bool list_lru_del(struct list_lru *lru, struct list_head *item)
+ }
+ EXPORT_SYMBOL_GPL(list_lru_del);
+ 
++bool list_lru_del_page(struct list_lru *lru, struct page *page, struct list_head *item)
++{
++	int nid = page_to_nid(page);
++	struct list_lru_node *nlru = &lru->node[nid];
++	struct list_lru_one *l;
++	struct mem_cgroup *memcg;
++
++	spin_lock(&nlru->lock);
++	if (!list_empty(item)) {
++		memcg = page_memcg(page);
++		memcg_list_lru_alloc(memcg, lru, GFP_KERNEL);
++		l = list_lru_from_memcg_idx(lru, nid, memcg_kmem_id(memcg));
++		list_del_init(item);
++		l->nr_items--;
++		nlru->nr_items--;
++		spin_unlock(&nlru->lock);
++		return true;
++	}
++	spin_unlock(&nlru->lock);
++	return false;
++}
++EXPORT_SYMBOL_GPL(list_lru_del_page);
++
+ void list_lru_isolate(struct list_lru_one *list, struct list_head *item)
+ {
+ 	list_del_init(item);
+diff --git a/mm/migrate.c b/mm/migrate.c
+index 55e7718cfe45..57908d680276 100644
+--- a/mm/migrate.c
++++ b/mm/migrate.c
+@@ -168,13 +168,62 @@ void putback_movable_pages(struct list_head *l)
+ 	}
+ }
+ 
++static bool try_to_unmap_clean(struct page_vma_mapped_walk *pvmw, struct page *page)
++{
++	void *addr;
++	bool dirty;
++	pte_t newpte;
++
++	VM_BUG_ON_PAGE(PageCompound(page), page);
++	VM_BUG_ON_PAGE(!PageAnon(page), page);
++	VM_BUG_ON_PAGE(!PageLocked(page), page);
++	VM_BUG_ON_PAGE(pte_present(*pvmw->pte), page);
++
++	if (PageMlocked(page) || (pvmw->vma->vm_flags & VM_LOCKED))
++		return false;
++
++	/*
++	 * The pmd entry mapping the old thp was flushed and the pte mapping
++	 * this subpage has been non present. Therefore, this subpage is
++	 * inaccessible. We don't need to remap it if it contains only zeros.
++	 */
++	addr = kmap_local_page(page);
++	dirty = memchr_inv(addr, 0, PAGE_SIZE);
++	kunmap_local(addr);
++
++	if (dirty)
++		return false;
++
++	pte_clear_not_present_full(pvmw->vma->vm_mm, pvmw->address, pvmw->pte, false);
++
++	if (userfaultfd_armed(pvmw->vma)) {
++		newpte = pte_mkspecial(pfn_pte(page_to_pfn(ZERO_PAGE(pvmw->address)),
++					       pvmw->vma->vm_page_prot));
++		ptep_clear_flush(pvmw->vma, pvmw->address, pvmw->pte);
++		set_pte_at(pvmw->vma->vm_mm, pvmw->address, pvmw->pte, newpte);
++		dec_mm_counter(pvmw->vma->vm_mm, MM_ANONPAGES);
++		count_vm_event(THP_SPLIT_REMAP_READONLY_ZERO_PAGE);
++		return true;
++	}
++
++	dec_mm_counter(pvmw->vma->vm_mm, mm_counter(page));
++	count_vm_event(THP_SPLIT_UNMAP);
++	return true;
++}
++
++struct rmap_walk_arg {
++	struct folio *folio;
++	bool unmap_clean;
++};
++
+ /*
+  * Restore a potential migration pte to a working pte entry
+  */
+ static bool remove_migration_pte(struct folio *folio,
+-		struct vm_area_struct *vma, unsigned long addr, void *old)
++		struct vm_area_struct *vma, unsigned long addr, void *arg)
+ {
+-	DEFINE_FOLIO_VMA_WALK(pvmw, old, vma, addr, PVMW_SYNC | PVMW_MIGRATION);
++	struct rmap_walk_arg *rmap_walk_arg = arg;
++	DEFINE_FOLIO_VMA_WALK(pvmw, rmap_walk_arg->folio, vma, addr, PVMW_SYNC | PVMW_MIGRATION);
+ 
+ 	while (page_vma_mapped_walk(&pvmw)) {
+ 		rmap_t rmap_flags = RMAP_NONE;
+@@ -197,6 +246,8 @@ static bool remove_migration_pte(struct folio *folio,
+ 			continue;
+ 		}
+ #endif
++		if (rmap_walk_arg->unmap_clean && try_to_unmap_clean(&pvmw, new))
++			continue;
+ 
+ 		folio_get(folio);
+ 		pte = pte_mkold(mk_pte(new, READ_ONCE(vma->vm_page_prot)));
+@@ -268,13 +319,20 @@ static bool remove_migration_pte(struct folio *folio,
+  * Get rid of all migration entries and replace them by
+  * references to the indicated page.
+  */
+-void remove_migration_ptes(struct folio *src, struct folio *dst, bool locked)
++void remove_migration_ptes(struct folio *src, struct folio *dst, bool locked, bool unmap_clean)
+ {
++	struct rmap_walk_arg rmap_walk_arg = {
++		.folio = src,
++		.unmap_clean = unmap_clean,
++	};
++
+ 	struct rmap_walk_control rwc = {
+ 		.rmap_one = remove_migration_pte,
+-		.arg = src,
++		.arg = &rmap_walk_arg,
+ 	};
+ 
++	VM_BUG_ON_FOLIO(unmap_clean && src != dst, src);
++
+ 	if (locked)
+ 		rmap_walk_locked(dst, &rwc);
+ 	else
+@@ -850,7 +908,7 @@ static int writeout(struct address_space *mapping, struct folio *folio)
+ 	 * At this point we know that the migration attempt cannot
+ 	 * be successful.
+ 	 */
+-	remove_migration_ptes(folio, folio, false);
++	remove_migration_ptes(folio, folio, false, false);
+ 
+ 	rc = mapping->a_ops->writepage(&folio->page, &wbc);
+ 
+@@ -1109,7 +1167,7 @@ static int __unmap_and_move(struct page *page, struct page *newpage,
+ 
+ 	if (page_was_mapped)
+ 		remove_migration_ptes(folio,
+-			rc == MIGRATEPAGE_SUCCESS ? dst : folio, false);
++			rc == MIGRATEPAGE_SUCCESS ? dst : folio, false, false);
+ 
+ out_unlock_both:
+ 	unlock_page(newpage);
+@@ -1319,7 +1377,7 @@ static int unmap_and_move_huge_page(new_page_t get_new_page,
+ 
+ 	if (page_was_mapped)
+ 		remove_migration_ptes(src,
+-			rc == MIGRATEPAGE_SUCCESS ? dst : src, false);
++			rc == MIGRATEPAGE_SUCCESS ? dst : src, false, false);
+ 
+ unlock_put_anon:
+ 	unlock_page(new_hpage);
+diff --git a/mm/migrate_device.c b/mm/migrate_device.c
+index dbf6c7a7a7c9..518aacc914c9 100644
+--- a/mm/migrate_device.c
++++ b/mm/migrate_device.c
+@@ -413,7 +413,7 @@ static void migrate_vma_unmap(struct migrate_vma *migrate)
+ 			continue;
+ 
+ 		folio = page_folio(page);
+-		remove_migration_ptes(folio, folio, false);
++		remove_migration_ptes(folio, folio, false, false);
+ 
+ 		migrate->src[i] = 0;
+ 		folio_unlock(folio);
+@@ -789,7 +789,7 @@ void migrate_vma_finalize(struct migrate_vma *migrate)
+ 
+ 		src = page_folio(page);
+ 		dst = page_folio(newpage);
+-		remove_migration_ptes(src, dst, false);
++		remove_migration_ptes(src, dst, false, false);
+ 		folio_unlock(src);
+ 
+ 		if (is_zone_device_page(page))
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 65ffd285db54..8536bb6f655b 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -1328,6 +1328,12 @@ static int free_tail_pages_check(struct page *head_page, struct page *page)
+ 		 * deferred_list.next -- ignore value.
+ 		 */
+ 		break;
++	case 3:
++		/*
++		 * the third tail page: ->mapping is
++		 * underutilized_thp_list.next -- ignore value.
++		 */
++		break;
+ 	default:
+ 		if (page->mapping != TAIL_MAPPING) {
+ 			bad_page(page, "corrupted mapping in tail page");
+diff --git a/mm/vmstat.c b/mm/vmstat.c
+index 33091a67627e..f6c5d0e97499 100644
+--- a/mm/vmstat.c
++++ b/mm/vmstat.c
+@@ -1369,6 +1369,9 @@ const char * const vmstat_text[] = {
+ #ifdef CONFIG_HAVE_ARCH_TRANSPARENT_HUGEPAGE_PUD
+ 	"thp_split_pud",
+ #endif
++	"thp_split_free",
++	"thp_split_unmap",
++	"thp_split_remap_readonly_zero_page",
+ 	"thp_zero_page_alloc",
+ 	"thp_zero_page_alloc_failed",
+ 	"thp_swpout",
+diff --git a/tools/testing/selftests/vm/split_huge_page_test.c b/tools/testing/selftests/vm/split_huge_page_test.c
+index 6aa2b8253aed..2c669aadbfd0 100644
+--- a/tools/testing/selftests/vm/split_huge_page_test.c
++++ b/tools/testing/selftests/vm/split_huge_page_test.c
+@@ -16,6 +16,9 @@
+ #include <sys/mount.h>
+ #include <malloc.h>
+ #include <stdbool.h>
++#include <sys/syscall.h> /* Definition of SYS_* constants */
++#include <linux/userfaultfd.h>
++#include <sys/ioctl.h>
+ #include "vm_util.h"
+ 
+ uint64_t pagesize;
+@@ -88,6 +91,113 @@ static void write_debugfs(const char *fmt, ...)
+ 	}
+ }
+ 
++static char *allocate_zero_filled_hugepage(size_t len)
++{
++	char *result;
++	size_t i;
++
++	result = memalign(pmd_pagesize, len);
++	if (!result) {
++		printf("Fail to allocate memory\n");
++		exit(EXIT_FAILURE);
++	}
++	madvise(result, len, MADV_HUGEPAGE);
++
++	for (i = 0; i < len; i++)
++		result[i] = (char)0;
++
++	return result;
++}
++
++static void verify_rss_anon_split_huge_page_all_zeroes(char *one_page, size_t len)
++{
++	uint64_t thp_size, rss_anon_before, rss_anon_after;
++	size_t i;
++
++	thp_size = check_huge(one_page);
++	if (!thp_size) {
++		printf("No THP is allocated\n");
++		exit(EXIT_FAILURE);
++	}
++
++	rss_anon_before = rss_anon();
++	if (!rss_anon_before) {
++		printf("No RssAnon is allocated before split\n");
++		exit(EXIT_FAILURE);
++	}
++	/* split all THPs */
++	write_debugfs(PID_FMT, getpid(), (uint64_t)one_page,
++		      (uint64_t)one_page + len);
++
++	for (i = 0; i < len; i++)
++		if (one_page[i] != (char)0) {
++			printf("%ld byte corrupted\n", i);
++			exit(EXIT_FAILURE);
++		}
++
++	thp_size = check_huge(one_page);
++	if (thp_size) {
++		printf("Still %ld kB AnonHugePages not split\n", thp_size);
++		exit(EXIT_FAILURE);
++	}
++
++	rss_anon_after = rss_anon();
++	if (rss_anon_after >= rss_anon_before) {
++		printf("Incorrect RssAnon value. Before: %ld After: %ld\n",
++		       rss_anon_before, rss_anon_after);
++		exit(EXIT_FAILURE);
++	}
++}
++
++void split_pmd_zero_pages(void)
++{
++	char *one_page;
++	size_t len = 4 * pmd_pagesize;
++
++	one_page = allocate_zero_filled_hugepage(len);
++	verify_rss_anon_split_huge_page_all_zeroes(one_page, len);
++	printf("Split zero filled huge pages successful\n");
++	free(one_page);
++}
++
++void split_pmd_zero_pages_uffd(void)
++{
++	char *one_page;
++	size_t len = 4 * pmd_pagesize;
++	long uffd; /* userfaultfd file descriptor */
++	struct uffdio_api uffdio_api;
++	struct uffdio_register uffdio_register;
++
++	/* Create and enable userfaultfd object. */
++
++	uffd = syscall(__NR_userfaultfd, O_CLOEXEC | O_NONBLOCK);
++	if (uffd == -1) {
++		perror("userfaultfd");
++		exit(1);
++	}
++
++	uffdio_api.api = UFFD_API;
++	uffdio_api.features = 0;
++	if (ioctl(uffd, UFFDIO_API, &uffdio_api) == -1) {
++		perror("ioctl-UFFDIO_API");
++		exit(1);
++	}
++
++	one_page = allocate_zero_filled_hugepage(len);
++
++	uffdio_register.range.start = (unsigned long)one_page;
++	uffdio_register.range.len = len;
++	uffdio_register.mode = UFFDIO_REGISTER_MODE_WP;
++	if (ioctl(uffd, UFFDIO_REGISTER, &uffdio_register) == -1) {
++		perror("ioctl-UFFDIO_REGISTER");
++		exit(1);
++	}
++
++	verify_rss_anon_split_huge_page_all_zeroes(one_page, len);
++	printf("Split zero filled huge pages with uffd successful\n");
++	free(one_page);
++}
++
+ void split_pmd_thp(void)
+ {
+ 	char *one_page;
+@@ -123,7 +233,6 @@ void split_pmd_thp(void)
+ 			exit(EXIT_FAILURE);
+ 		}
+ 
+-
+ 	thp_size = check_huge(one_page);
+ 	if (thp_size) {
+ 		printf("Still %ld kB AnonHugePages not split\n", thp_size);
+@@ -305,6 +414,8 @@ int main(int argc, char **argv)
+ 	pageshift = ffs(pagesize) - 1;
+ 	pmd_pagesize = read_pmd_pagesize();
+ 
++	split_pmd_zero_pages();
++	split_pmd_zero_pages_uffd();
+ 	split_pmd_thp();
+ 	split_pte_mapped_thp();
+ 	split_file_backed_thp();
+diff --git a/tools/testing/selftests/vm/vm_util.c b/tools/testing/selftests/vm/vm_util.c
+index b58ab11a7a30..c6a785a67fc9 100644
+--- a/tools/testing/selftests/vm/vm_util.c
++++ b/tools/testing/selftests/vm/vm_util.c
+@@ -6,6 +6,7 @@
+ 
+ #define PMD_SIZE_FILE_PATH "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size"
+ #define SMAP_FILE_PATH "/proc/self/smaps"
++#define STATUS_FILE_PATH "/proc/self/status"
+ #define MAX_LINE_LENGTH 500
+ 
+ uint64_t pagemap_get_entry(int fd, char *start)
+@@ -72,6 +73,28 @@ uint64_t read_pmd_pagesize(void)
+ 	return strtoul(buf, NULL, 10);
+ }
+ 
++uint64_t rss_anon(void)
++{
++	uint64_t rss_anon = 0;
++	int ret;
++	FILE *fp;
++	char buffer[MAX_LINE_LENGTH];
++
++	fp = fopen(STATUS_FILE_PATH, "r");
++	if (!fp)
++		ksft_exit_fail_msg("%s: Failed to open file %s\n", __func__, STATUS_FILE_PATH);
++
++	if (!check_for_pattern(fp, "RssAnon:", buffer))
++		goto err_out;
++
++	if (sscanf(buffer, "RssAnon:%10ld kB", &rss_anon) != 1)
++		ksft_exit_fail_msg("Reading status error\n");
++
++err_out:
++	fclose(fp);
++	return rss_anon;
++}
++
+ uint64_t check_huge(void *addr)
+ {
+ 	uint64_t thp = 0;
+diff --git a/tools/testing/selftests/vm/vm_util.h b/tools/testing/selftests/vm/vm_util.h
+index 2e512bd57ae1..00b92ccef20d 100644
+--- a/tools/testing/selftests/vm/vm_util.h
++++ b/tools/testing/selftests/vm/vm_util.h
+@@ -6,4 +6,5 @@ uint64_t pagemap_get_entry(int fd, char *start);
+ bool pagemap_is_softdirty(int fd, char *start);
+ void clear_softdirty(void);
+ uint64_t read_pmd_pagesize(void);
++uint64_t rss_anon(void);
+ uint64_t check_huge(void *addr);
+-- 
+2.38.0.rc2
+
+From 548ee3c5ecb6abba92c8a237187bac104b55850b Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 19 Aug 2022 17:06:47 +0200
-Subject: [PATCH 10/16] rtw88
+Subject: [PATCH 11/17] rtw88
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -84988,86 +86297,12 @@ index 0c23b5069be0..dc8965525400 100644
  {
  	__le16 fc = hdr->frame_control;
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 953761366f999b9035f8fff70c214426ad9f027b Mon Sep 17 00:00:00 2001
-From: Peter Jung <admin@ptr1337.dev>
-Date: Wed, 14 Sep 2022 14:40:34 +0200
-Subject: [PATCH 11/16] rcu
-
-Signed-off-by: Peter Jung <admin@ptr1337.dev>
----
- kernel/rcu/tree_nocb.h | 34 +++++++++++-----------------------
- 1 file changed, 11 insertions(+), 23 deletions(-)
-
-diff --git a/kernel/rcu/tree_nocb.h b/kernel/rcu/tree_nocb.h
-index a8f574d8850d..4017ebecec91 100644
---- a/kernel/rcu/tree_nocb.h
-+++ b/kernel/rcu/tree_nocb.h
-@@ -1210,45 +1210,33 @@ EXPORT_SYMBOL_GPL(rcu_nocb_cpu_offload);
- void __init rcu_init_nohz(void)
- {
- 	int cpu;
--	bool need_rcu_nocb_mask = false;
--	bool offload_all = false;
- 	struct rcu_data *rdp;
--
--#if defined(CONFIG_RCU_NOCB_CPU_DEFAULT_ALL)
--	if (!rcu_state.nocb_is_setup) {
--		need_rcu_nocb_mask = true;
--		offload_all = true;
--	}
--#endif /* #if defined(CONFIG_RCU_NOCB_CPU_DEFAULT_ALL) */
-+	const struct cpumask *cpumask = NULL;
- 
- #if defined(CONFIG_NO_HZ_FULL)
--	if (tick_nohz_full_running && !cpumask_empty(tick_nohz_full_mask)) {
--		need_rcu_nocb_mask = true;
--		offload_all = false; /* NO_HZ_FULL has its own mask. */
--	}
--#endif /* #if defined(CONFIG_NO_HZ_FULL) */
-+	if (tick_nohz_full_running && !cpumask_empty(tick_nohz_full_mask))
-+		cpumask = tick_nohz_full_mask;
-+#endif
-+
-+	if (IS_ENABLED(CONFIG_RCU_NOCB_CPU_DEFAULT_ALL) &&
-+	    !rcu_state.nocb_is_setup && !cpumask)
-+		cpumask = cpu_possible_mask;
- 
--	if (need_rcu_nocb_mask) {
-+	if (cpumask) {
- 		if (!cpumask_available(rcu_nocb_mask)) {
- 			if (!zalloc_cpumask_var(&rcu_nocb_mask, GFP_KERNEL)) {
- 				pr_info("rcu_nocb_mask allocation failed, callback offloading disabled.\n");
- 				return;
- 			}
- 		}
-+
-+		cpumask_or(rcu_nocb_mask, rcu_nocb_mask, cpumask);
- 		rcu_state.nocb_is_setup = true;
- 	}
- 
- 	if (!rcu_state.nocb_is_setup)
- 		return;
- 
--#if defined(CONFIG_NO_HZ_FULL)
--	if (tick_nohz_full_running)
--		cpumask_or(rcu_nocb_mask, rcu_nocb_mask, tick_nohz_full_mask);
--#endif /* #if defined(CONFIG_NO_HZ_FULL) */
--
--	if (offload_all)
--		cpumask_setall(rcu_nocb_mask);
--
- 	if (!cpumask_subset(rcu_nocb_mask, cpu_possible_mask)) {
- 		pr_info("\tNote: kernel parameter 'rcu_nocbs=', 'nohz_full', or 'isolcpus=' contains nonexistent CPUs.\n");
- 		cpumask_and(rcu_nocb_mask, cpu_possible_mask,
--- 
-2.38.0.rc1.8.g2a7d63a245
-
-From e2af20ddb7f4e410c25c3deb9dd579d56e340a0b Mon Sep 17 00:00:00 2001
+From 2407936bbc22b2c76fb8517aee9c24764fe02697 Mon Sep 17 00:00:00 2001
 From: Piotr Gorski <lucjan.lucjanov@gmail.com>
 Date: Tue, 6 Sep 2022 20:04:11 +0200
-Subject: [PATCH 12/16] lrng
+Subject: [PATCH 12/17] lrng
 
 Signed-off-by: Piotr Gorski <lucjan.lucjanov@gmail.com>
 ---
@@ -85196,10 +86431,10 @@ Signed-off-by: Piotr Gorski <lucjan.lucjanov@gmail.com>
  create mode 100644 include/linux/lrng.h
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 96a09757feb3..e3c1b29c60a0 100644
+index 9a5a422817af..14556e749fb6 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11741,6 +11741,13 @@ F:	Documentation/litmus-tests/
+@@ -11740,6 +11740,13 @@ F:	Documentation/litmus-tests/
  F:	Documentation/memory-barriers.txt
  F:	tools/memory-model/
  
@@ -95661,12 +96896,12 @@ index 265944f14948..e9f0ec6c9aeb 100644
  		return;
  
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From e1f1e6838dfabd0b23fc9a7ee4dc0d0a91d27680 Mon Sep 17 00:00:00 2001
+From 0271dda9e4999127b4f97f499a71e7a601135b0e Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 19 Sep 2022 14:40:14 +0200
-Subject: [PATCH 13/16] folios
+Subject: [PATCH 13/17] folios
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -97675,12 +98910,12 @@ index 027943b341a0..29bf97746da0 100644
   * Perform any setup for the swap system
   */
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From da70f4396195cb2e56bcfe68c95ea4e31c933e6b Mon Sep 17 00:00:00 2001
+From 11580e94028d127bbf458c642c5b62f8e3d73328 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 19 Sep 2022 14:42:00 +0200
-Subject: [PATCH 14/16] fixes
+Subject: [PATCH 14/17] fixes
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -99367,12 +100602,12 @@ index e55fdf952a3a..445741f36d6d 100644
  	}
  
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 1c95ad8820155c71485f71b29697ed823bcce3b2 Mon Sep 17 00:00:00 2001
+From 26b540787c916d1cb1759f1c106870a0ca2afc11 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 26 Sep 2022 00:19:51 +0200
-Subject: [PATCH 15/16] kallsyms
+Subject: [PATCH 15/17] kallsyms
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -99437,10 +100672,10 @@ index 518296ea7f73..6e1a531d78e7 100644
  
  #endif /* _LINUX_MODULE_H */
 diff --git a/init/Kconfig b/init/Kconfig
-index 442a945ca6ae..b3a9ec8aa753 100644
+index f5bd72b39352..274cabde40ab 100644
 --- a/init/Kconfig
 +++ b/init/Kconfig
-@@ -1742,6 +1742,19 @@ config KALLSYMS
+@@ -1755,6 +1755,19 @@ config KALLSYMS
  	  symbolic stack backtraces. This increases the size of the kernel
  	  somewhat, as all symbols have to be loaded into the kernel image.
  
@@ -100508,12 +101743,12 @@ index f18e6dfc68c5..40a6fe6d14ef 100644
  		}
  }
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
 
-From 2fc2cb736eb578dcdd96ebc321ef6fe31971e7a3 Mon Sep 17 00:00:00 2001
+From ac75e856b8158802ecf741048b59ad6a91d7d087 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 28 Sep 2022 00:34:04 +0200
-Subject: [PATCH 16/16] bitmap
+Subject: [PATCH 16/17] bitmap
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
@@ -102556,5 +103791,1855 @@ index ba4b8d94e004..6a3dc167d30e 100644
  }
  #endif
 -- 
-2.38.0.rc1.8.g2a7d63a245
+2.38.0.rc2
+
+From 4fcdfc4036203abf0175a8ae39586cd3ff86e31f Mon Sep 17 00:00:00 2001
+From: Peter Jung <admin@ptr1337.dev>
+Date: Sun, 2 Oct 2022 19:11:33 +0200
+Subject: [PATCH 17/17] rcu
+
+Signed-off-by: Peter Jung <admin@ptr1337.dev>
+---
+ Documentation/RCU/checklist.rst       |  15 +-
+ Documentation/RCU/rcu_dereference.rst |  14 +-
+ Documentation/RCU/whatisRCU.rst       |  47 ++--
+ include/linux/rcupdate.h              |  42 +++-
+ include/linux/rcutiny.h               |  50 ++++
+ include/linux/rcutree.h               |  40 ++++
+ include/linux/srcutiny.h              |  10 +-
+ kernel/rcu/rcutorture.c               | 290 ++++++++++++++++++----
+ kernel/rcu/srcutiny.c                 |  14 +-
+ kernel/rcu/tasks.h                    |   5 +-
+ kernel/rcu/tiny.c                     |  27 ++-
+ kernel/rcu/tree.c                     | 330 ++++++++++++++++++++------
+ kernel/rcu/tree_exp.h                 |  57 ++++-
+ kernel/rcu/tree_nocb.h                |  10 +-
+ kernel/rcu/tree_plugin.h              |  26 +-
+ kernel/rcu/tree_stall.h               |   5 +-
+ kernel/sched/core.c                   |  14 ++
+ kernel/smp.c                          |   3 +-
+ 18 files changed, 813 insertions(+), 186 deletions(-)
+
+diff --git a/Documentation/RCU/checklist.rst b/Documentation/RCU/checklist.rst
+index 42cc5d891bd2..178ca7547b98 100644
+--- a/Documentation/RCU/checklist.rst
++++ b/Documentation/RCU/checklist.rst
+@@ -66,8 +66,13 @@ over a rather long period of time, but improvements are always welcome!
+ 	As a rough rule of thumb, any dereference of an RCU-protected
+ 	pointer must be covered by rcu_read_lock(), rcu_read_lock_bh(),
+ 	rcu_read_lock_sched(), or by the appropriate update-side lock.
+-	Disabling of preemption can serve as rcu_read_lock_sched(), but
+-	is less readable and prevents lockdep from detecting locking issues.
++	Explicit disabling of preemption (preempt_disable(), for example)
++	can serve as rcu_read_lock_sched(), but is less readable and
++	prevents lockdep from detecting locking issues.
++
++	Please not that you *cannot* rely on code known to be built
++	only in non-preemptible kernels.  Such code can and will break,
++	especially in kernels built with CONFIG_PREEMPT_COUNT=y.
+ 
+ 	Letting RCU-protected pointers "leak" out of an RCU read-side
+ 	critical section is every bit as bad as letting them leak out
+@@ -185,6 +190,9 @@ over a rather long period of time, but improvements are always welcome!
+ 
+ 5.	If call_rcu() or call_srcu() is used, the callback function will
+ 	be called from softirq context.  In particular, it cannot block.
++	If you need the callback to block, run that code in a workqueue
++	handler scheduled from the callback.  The queue_rcu_work()
++	function does this for you in the case of call_rcu().
+ 
+ 6.	Since synchronize_rcu() can block, it cannot be called
+ 	from any sort of irq context.  The same rule applies
+@@ -297,7 +305,8 @@ over a rather long period of time, but improvements are always welcome!
+ 		the machine.
+ 
+ 	d.	Periodically invoke synchronize_rcu(), permitting a limited
+-		number of updates per grace period.
++		number of updates per grace period.  Better yet, periodically
++		invoke rcu_barrier() to wait for all outstanding callbacks.
+ 
+ 	The same cautions apply to call_srcu() and kfree_rcu().
+ 
+diff --git a/Documentation/RCU/rcu_dereference.rst b/Documentation/RCU/rcu_dereference.rst
+index 0b418a5b243c..81e828c8313b 100644
+--- a/Documentation/RCU/rcu_dereference.rst
++++ b/Documentation/RCU/rcu_dereference.rst
+@@ -128,10 +128,16 @@ Follow these rules to keep your RCU code working properly:
+ 		This sort of comparison occurs frequently when scanning
+ 		RCU-protected circular linked lists.
+ 
+-		Note that if checks for being within an RCU read-side
+-		critical section are not required and the pointer is never
+-		dereferenced, rcu_access_pointer() should be used in place
+-		of rcu_dereference().
++		Note that if the pointer comparison is done outside
++		of an RCU read-side critical section, and the pointer
++		is never dereferenced, rcu_access_pointer() should be
++		used in place of rcu_dereference().  In most cases,
++		it is best to avoid accidental dereferences by testing
++		the rcu_access_pointer() return value directly, without
++		assigning it to a variable.
++
++		Within an RCU read-side critical section, there is little
++		reason to use rcu_access_pointer().
+ 
+ 	-	The comparison is against a pointer that references memory
+ 		that was initialized "a long time ago."  The reason
+diff --git a/Documentation/RCU/whatisRCU.rst b/Documentation/RCU/whatisRCU.rst
+index 77ea260efd12..1c747ac3f2c8 100644
+--- a/Documentation/RCU/whatisRCU.rst
++++ b/Documentation/RCU/whatisRCU.rst
+@@ -6,13 +6,15 @@ What is RCU?  --  "Read, Copy, Update"
+ Please note that the "What is RCU?" LWN series is an excellent place
+ to start learning about RCU:
+ 
+-| 1.	What is RCU, Fundamentally?  http://lwn.net/Articles/262464/
+-| 2.	What is RCU? Part 2: Usage   http://lwn.net/Articles/263130/
+-| 3.	RCU part 3: the RCU API      http://lwn.net/Articles/264090/
+-| 4.	The RCU API, 2010 Edition    http://lwn.net/Articles/418853/
+-| 	2010 Big API Table           http://lwn.net/Articles/419086/
+-| 5.	The RCU API, 2014 Edition    http://lwn.net/Articles/609904/
+-|	2014 Big API Table           http://lwn.net/Articles/609973/
++| 1.	What is RCU, Fundamentally?  https://lwn.net/Articles/262464/
++| 2.	What is RCU? Part 2: Usage   https://lwn.net/Articles/263130/
++| 3.	RCU part 3: the RCU API      https://lwn.net/Articles/264090/
++| 4.	The RCU API, 2010 Edition    https://lwn.net/Articles/418853/
++| 	2010 Big API Table           https://lwn.net/Articles/419086/
++| 5.	The RCU API, 2014 Edition    https://lwn.net/Articles/609904/
++|	2014 Big API Table           https://lwn.net/Articles/609973/
++| 6.	The RCU API, 2019 Edition    https://lwn.net/Articles/777036/
++|	2019 Big API Table           https://lwn.net/Articles/777165/
+ 
+ 
+ What is RCU?
+@@ -915,13 +917,18 @@ which an RCU reference is held include:
+ The understanding that RCU provides a reference that only prevents a
+ change of type is particularly visible with objects allocated from a
+ slab cache marked ``SLAB_TYPESAFE_BY_RCU``.  RCU operations may yield a
+-reference to an object from such a cache that has been concurrently
+-freed and the memory reallocated to a completely different object,
+-though of the same type.  In this case RCU doesn't even protect the
+-identity of the object from changing, only its type.  So the object
+-found may not be the one expected, but it will be one where it is safe
+-to take a reference or spinlock and then confirm that the identity
+-matches the expectations.
++reference to an object from such a cache that has been concurrently freed
++and the memory reallocated to a completely different object, though of
++the same type.  In this case RCU doesn't even protect the identity of the
++object from changing, only its type.  So the object found may not be the
++one expected, but it will be one where it is safe to take a reference
++(and then potentially acquiring a spinlock), allowing subsequent code
++to check whether the identity matches expectations.  It is tempting
++to simply acquire the spinlock without first taking the reference, but
++unfortunately any spinlock in a ``SLAB_TYPESAFE_BY_RCU`` object must be
++initialized after each and every call to kmem_cache_alloc(), which renders
++reference-free spinlock acquisition completely unsafe.  Therefore, when
++using ``SLAB_TYPESAFE_BY_RCU``, make proper use of a reference counter.
+ 
+ With traditional reference counting -- such as that implemented by the
+ kref library in Linux -- there is typically code that runs when the last
+@@ -1057,14 +1064,20 @@ SRCU: Initialization/cleanup::
+ 	init_srcu_struct
+ 	cleanup_srcu_struct
+ 
+-All: lockdep-checked RCU-protected pointer access::
++All: lockdep-checked RCU utility APIs::
+ 
+-	rcu_access_pointer
+-	rcu_dereference_raw
+ 	RCU_LOCKDEP_WARN
+ 	rcu_sleep_check
+ 	RCU_NONIDLE
+ 
++All: Unchecked RCU-protected pointer access::
++
++	rcu_dereference_raw
++
++All: Unchecked RCU-protected pointer access with dereferencing prohibited::
++
++	rcu_access_pointer
++
+ See the comment headers in the source code (or the docbook generated
+ from them) for more information.
+ 
+diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
+index f527f27e6438..08605ce7379d 100644
+--- a/include/linux/rcupdate.h
++++ b/include/linux/rcupdate.h
+@@ -42,7 +42,31 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func);
+ void rcu_barrier_tasks(void);
+ void rcu_barrier_tasks_rude(void);
+ void synchronize_rcu(void);
++
++struct rcu_gp_oldstate;
+ unsigned long get_completed_synchronize_rcu(void);
++void get_completed_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
++
++// Maximum number of unsigned long values corresponding to
++// not-yet-completed RCU grace periods.
++#define NUM_ACTIVE_RCU_POLL_OLDSTATE 2
++
++/**
++ * same_state_synchronize_rcu - Are two old-state values identical?
++ * @oldstate1: First old-state value.
++ * @oldstate2: Second old-state value.
++ *
++ * The two old-state values must have been obtained from either
++ * get_state_synchronize_rcu(), start_poll_synchronize_rcu(), or
++ * get_completed_synchronize_rcu().  Returns @true if the two values are
++ * identical and @false otherwise.  This allows structures whose lifetimes
++ * are tracked by old-state values to push these values to a list header,
++ * allowing those structures to be slightly smaller.
++ */
++static inline bool same_state_synchronize_rcu(unsigned long oldstate1, unsigned long oldstate2)
++{
++	return oldstate1 == oldstate2;
++}
+ 
+ #ifdef CONFIG_PREEMPT_RCU
+ 
+@@ -496,13 +520,21 @@ do {									      \
+  * against NULL.  Although rcu_access_pointer() may also be used in cases
+  * where update-side locks prevent the value of the pointer from changing,
+  * you should instead use rcu_dereference_protected() for this use case.
++ * Within an RCU read-side critical section, there is little reason to
++ * use rcu_access_pointer().
++ *
++ * It is usually best to test the rcu_access_pointer() return value
++ * directly in order to avoid accidental dereferences being introduced
++ * by later inattentive changes.  In other words, assigning the
++ * rcu_access_pointer() return value to a local variable results in an
++ * accident waiting to happen.
+  *
+  * It is also permissible to use rcu_access_pointer() when read-side
+- * access to the pointer was removed at least one grace period ago, as
+- * is the case in the context of the RCU callback that is freeing up
+- * the data, or after a synchronize_rcu() returns.  This can be useful
+- * when tearing down multi-linked structures after a grace period
+- * has elapsed.
++ * access to the pointer was removed at least one grace period ago, as is
++ * the case in the context of the RCU callback that is freeing up the data,
++ * or after a synchronize_rcu() returns.  This can be useful when tearing
++ * down multi-linked structures after a grace period has elapsed.  However,
++ * rcu_dereference_protected() is normally preferred for this use case.
+  */
+ #define rcu_access_pointer(p) __rcu_access_pointer((p), __UNIQUE_ID(rcu), __rcu)
+ 
+diff --git a/include/linux/rcutiny.h b/include/linux/rcutiny.h
+index 62815c0a2dce..768196a5f39d 100644
+--- a/include/linux/rcutiny.h
++++ b/include/linux/rcutiny.h
+@@ -14,25 +14,75 @@
+ 
+ #include <asm/param.h> /* for HZ */
+ 
++struct rcu_gp_oldstate {
++	unsigned long rgos_norm;
++};
++
++// Maximum number of rcu_gp_oldstate values corresponding to
++// not-yet-completed RCU grace periods.
++#define NUM_ACTIVE_RCU_POLL_FULL_OLDSTATE 2
++
++/*
++ * Are the two oldstate values the same?  See the Tree RCU version for
++ * docbook header.
++ */
++static inline bool same_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp1,
++						   struct rcu_gp_oldstate *rgosp2)
++{
++	return rgosp1->rgos_norm == rgosp2->rgos_norm;
++}
++
+ unsigned long get_state_synchronize_rcu(void);
++
++static inline void get_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	rgosp->rgos_norm = get_state_synchronize_rcu();
++}
++
+ unsigned long start_poll_synchronize_rcu(void);
++
++static inline void start_poll_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	rgosp->rgos_norm = start_poll_synchronize_rcu();
++}
++
+ bool poll_state_synchronize_rcu(unsigned long oldstate);
+ 
++static inline bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	return poll_state_synchronize_rcu(rgosp->rgos_norm);
++}
++
+ static inline void cond_synchronize_rcu(unsigned long oldstate)
+ {
+ 	might_sleep();
+ }
+ 
++static inline void cond_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	cond_synchronize_rcu(rgosp->rgos_norm);
++}
++
+ static inline unsigned long start_poll_synchronize_rcu_expedited(void)
+ {
+ 	return start_poll_synchronize_rcu();
+ }
+ 
++static inline void start_poll_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp)
++{
++	rgosp->rgos_norm = start_poll_synchronize_rcu_expedited();
++}
++
+ static inline void cond_synchronize_rcu_expedited(unsigned long oldstate)
+ {
+ 	cond_synchronize_rcu(oldstate);
+ }
+ 
++static inline void cond_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp)
++{
++	cond_synchronize_rcu_expedited(rgosp->rgos_norm);
++}
++
+ extern void rcu_barrier(void);
+ 
+ static inline void synchronize_rcu_expedited(void)
+diff --git a/include/linux/rcutree.h b/include/linux/rcutree.h
+index 47eaa4cb0df7..5efb51486e8a 100644
+--- a/include/linux/rcutree.h
++++ b/include/linux/rcutree.h
+@@ -40,12 +40,52 @@ bool rcu_eqs_special_set(int cpu);
+ void rcu_momentary_dyntick_idle(void);
+ void kfree_rcu_scheduler_running(void);
+ bool rcu_gp_might_be_stalled(void);
++
++struct rcu_gp_oldstate {
++	unsigned long rgos_norm;
++	unsigned long rgos_exp;
++};
++
++// Maximum number of rcu_gp_oldstate values corresponding to
++// not-yet-completed RCU grace periods.
++#define NUM_ACTIVE_RCU_POLL_FULL_OLDSTATE 4
++
++/**
++ * same_state_synchronize_rcu_full - Are two old-state values identical?
++ * @rgosp1: First old-state value.
++ * @rgosp2: Second old-state value.
++ *
++ * The two old-state values must have been obtained from either
++ * get_state_synchronize_rcu_full(), start_poll_synchronize_rcu_full(),
++ * or get_completed_synchronize_rcu_full().  Returns @true if the two
++ * values are identical and @false otherwise.  This allows structures
++ * whose lifetimes are tracked by old-state values to push these values
++ * to a list header, allowing those structures to be slightly smaller.
++ *
++ * Note that equality is judged on a bitwise basis, so that an
++ * @rcu_gp_oldstate structure with an already-completed state in one field
++ * will compare not-equal to a structure with an already-completed state
++ * in the other field.  After all, the @rcu_gp_oldstate structure is opaque
++ * so how did such a situation come to pass in the first place?
++ */
++static inline bool same_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp1,
++						   struct rcu_gp_oldstate *rgosp2)
++{
++	return rgosp1->rgos_norm == rgosp2->rgos_norm && rgosp1->rgos_exp == rgosp2->rgos_exp;
++}
++
+ unsigned long start_poll_synchronize_rcu_expedited(void);
++void start_poll_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp);
+ void cond_synchronize_rcu_expedited(unsigned long oldstate);
++void cond_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp);
+ unsigned long get_state_synchronize_rcu(void);
++void get_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
+ unsigned long start_poll_synchronize_rcu(void);
++void start_poll_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
+ bool poll_state_synchronize_rcu(unsigned long oldstate);
++bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
+ void cond_synchronize_rcu(unsigned long oldstate);
++void cond_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp);
+ 
+ bool rcu_is_idle_cpu(int cpu);
+ 
+diff --git a/include/linux/srcutiny.h b/include/linux/srcutiny.h
+index 6cfaa0a9a9b9..5aa5e0faf6a1 100644
+--- a/include/linux/srcutiny.h
++++ b/include/linux/srcutiny.h
+@@ -15,10 +15,10 @@
+ 
+ struct srcu_struct {
+ 	short srcu_lock_nesting[2];	/* srcu_read_lock() nesting depth. */
+-	unsigned short srcu_idx;	/* Current reader array element in bit 0x2. */
+-	unsigned short srcu_idx_max;	/* Furthest future srcu_idx request. */
+ 	u8 srcu_gp_running;		/* GP workqueue running? */
+ 	u8 srcu_gp_waiting;		/* GP waiting for readers? */
++	unsigned long srcu_idx;		/* Current reader array element in bit 0x2. */
++	unsigned long srcu_idx_max;	/* Furthest future srcu_idx request. */
+ 	struct swait_queue_head srcu_wq;
+ 					/* Last srcu_read_unlock() wakes GP. */
+ 	struct rcu_head *srcu_cb_head;	/* Pending callbacks: Head. */
+@@ -82,10 +82,12 @@ static inline void srcu_torture_stats_print(struct srcu_struct *ssp,
+ 	int idx;
+ 
+ 	idx = ((data_race(READ_ONCE(ssp->srcu_idx)) + 1) & 0x2) >> 1;
+-	pr_alert("%s%s Tiny SRCU per-CPU(idx=%d): (%hd,%hd)\n",
++	pr_alert("%s%s Tiny SRCU per-CPU(idx=%d): (%hd,%hd) gp: %lu->%lu\n",
+ 		 tt, tf, idx,
+ 		 data_race(READ_ONCE(ssp->srcu_lock_nesting[!idx])),
+-		 data_race(READ_ONCE(ssp->srcu_lock_nesting[idx])));
++		 data_race(READ_ONCE(ssp->srcu_lock_nesting[idx])),
++		 data_race(READ_ONCE(ssp->srcu_idx)),
++		 data_race(READ_ONCE(ssp->srcu_idx_max)));
+ }
+ 
+ #endif
+diff --git a/kernel/rcu/rcutorture.c b/kernel/rcu/rcutorture.c
+index d8e1b270a065..503c2aa845a4 100644
+--- a/kernel/rcu/rcutorture.c
++++ b/kernel/rcu/rcutorture.c
+@@ -84,10 +84,15 @@ torture_param(int, fwd_progress_holdoff, 60, "Time between forward-progress test
+ torture_param(bool, fwd_progress_need_resched, 1, "Hide cond_resched() behind need_resched()");
+ torture_param(bool, gp_cond, false, "Use conditional/async GP wait primitives");
+ torture_param(bool, gp_cond_exp, false, "Use conditional/async expedited GP wait primitives");
++torture_param(bool, gp_cond_full, false, "Use conditional/async full-state GP wait primitives");
++torture_param(bool, gp_cond_exp_full, false,
++		    "Use conditional/async full-stateexpedited GP wait primitives");
+ torture_param(bool, gp_exp, false, "Use expedited GP wait primitives");
+ torture_param(bool, gp_normal, false, "Use normal (non-expedited) GP wait primitives");
+ torture_param(bool, gp_poll, false, "Use polling GP wait primitives");
+ torture_param(bool, gp_poll_exp, false, "Use polling expedited GP wait primitives");
++torture_param(bool, gp_poll_full, false, "Use polling full-state GP wait primitives");
++torture_param(bool, gp_poll_exp_full, false, "Use polling full-state expedited GP wait primitives");
+ torture_param(bool, gp_sync, false, "Use synchronous GP wait primitives");
+ torture_param(int, irqreader, 1, "Allow RCU readers from irq handlers");
+ torture_param(int, leakpointer, 0, "Leak pointer dereferences from readers");
+@@ -194,16 +199,24 @@ static int rcu_torture_writer_state;
+ #define RTWS_DEF_FREE		3
+ #define RTWS_EXP_SYNC		4
+ #define RTWS_COND_GET		5
+-#define RTWS_COND_GET_EXP	6
+-#define RTWS_COND_SYNC		7
+-#define RTWS_COND_SYNC_EXP	8
+-#define RTWS_POLL_GET		9
+-#define RTWS_POLL_GET_EXP	10
+-#define RTWS_POLL_WAIT		11
+-#define RTWS_POLL_WAIT_EXP	12
+-#define RTWS_SYNC		13
+-#define RTWS_STUTTER		14
+-#define RTWS_STOPPING		15
++#define RTWS_COND_GET_FULL	6
++#define RTWS_COND_GET_EXP	7
++#define RTWS_COND_GET_EXP_FULL	8
++#define RTWS_COND_SYNC		9
++#define RTWS_COND_SYNC_FULL	10
++#define RTWS_COND_SYNC_EXP	11
++#define RTWS_COND_SYNC_EXP_FULL	12
++#define RTWS_POLL_GET		13
++#define RTWS_POLL_GET_FULL	14
++#define RTWS_POLL_GET_EXP	15
++#define RTWS_POLL_GET_EXP_FULL	16
++#define RTWS_POLL_WAIT		17
++#define RTWS_POLL_WAIT_FULL	18
++#define RTWS_POLL_WAIT_EXP	19
++#define RTWS_POLL_WAIT_EXP_FULL	20
++#define RTWS_SYNC		21
++#define RTWS_STUTTER		22
++#define RTWS_STOPPING		23
+ static const char * const rcu_torture_writer_state_names[] = {
+ 	"RTWS_FIXED_DELAY",
+ 	"RTWS_DELAY",
+@@ -211,13 +224,21 @@ static const char * const rcu_torture_writer_state_names[] = {
+ 	"RTWS_DEF_FREE",
+ 	"RTWS_EXP_SYNC",
+ 	"RTWS_COND_GET",
++	"RTWS_COND_GET_FULL",
+ 	"RTWS_COND_GET_EXP",
++	"RTWS_COND_GET_EXP_FULL",
+ 	"RTWS_COND_SYNC",
++	"RTWS_COND_SYNC_FULL",
+ 	"RTWS_COND_SYNC_EXP",
++	"RTWS_COND_SYNC_EXP_FULL",
+ 	"RTWS_POLL_GET",
++	"RTWS_POLL_GET_FULL",
+ 	"RTWS_POLL_GET_EXP",
++	"RTWS_POLL_GET_EXP_FULL",
+ 	"RTWS_POLL_WAIT",
++	"RTWS_POLL_WAIT_FULL",
+ 	"RTWS_POLL_WAIT_EXP",
++	"RTWS_POLL_WAIT_EXP_FULL",
+ 	"RTWS_SYNC",
+ 	"RTWS_STUTTER",
+ 	"RTWS_STOPPING",
+@@ -332,13 +353,21 @@ struct rcu_torture_ops {
+ 	void (*exp_sync)(void);
+ 	unsigned long (*get_gp_state_exp)(void);
+ 	unsigned long (*start_gp_poll_exp)(void);
++	void (*start_gp_poll_exp_full)(struct rcu_gp_oldstate *rgosp);
+ 	bool (*poll_gp_state_exp)(unsigned long oldstate);
+ 	void (*cond_sync_exp)(unsigned long oldstate);
++	void (*cond_sync_exp_full)(struct rcu_gp_oldstate *rgosp);
+ 	unsigned long (*get_gp_state)(void);
++	void (*get_gp_state_full)(struct rcu_gp_oldstate *rgosp);
+ 	unsigned long (*get_gp_completed)(void);
++	void (*get_gp_completed_full)(struct rcu_gp_oldstate *rgosp);
+ 	unsigned long (*start_gp_poll)(void);
++	void (*start_gp_poll_full)(struct rcu_gp_oldstate *rgosp);
+ 	bool (*poll_gp_state)(unsigned long oldstate);
++	bool (*poll_gp_state_full)(struct rcu_gp_oldstate *rgosp);
++	bool (*poll_need_2gp)(bool poll, bool poll_full);
+ 	void (*cond_sync)(unsigned long oldstate);
++	void (*cond_sync_full)(struct rcu_gp_oldstate *rgosp);
+ 	call_rcu_func_t call;
+ 	void (*cb_barrier)(void);
+ 	void (*fqs)(void);
+@@ -489,6 +518,11 @@ static void rcu_sync_torture_init(void)
+ 	INIT_LIST_HEAD(&rcu_torture_removed);
+ }
+ 
++static bool rcu_poll_need_2gp(bool poll, bool poll_full)
++{
++	return poll;
++}
++
+ static struct rcu_torture_ops rcu_ops = {
+ 	.ttype			= RCU_FLAVOR,
+ 	.init			= rcu_sync_torture_init,
+@@ -502,12 +536,19 @@ static struct rcu_torture_ops rcu_ops = {
+ 	.sync			= synchronize_rcu,
+ 	.exp_sync		= synchronize_rcu_expedited,
+ 	.get_gp_state		= get_state_synchronize_rcu,
++	.get_gp_state_full	= get_state_synchronize_rcu_full,
+ 	.get_gp_completed	= get_completed_synchronize_rcu,
++	.get_gp_completed_full	= get_completed_synchronize_rcu_full,
+ 	.start_gp_poll		= start_poll_synchronize_rcu,
++	.start_gp_poll_full	= start_poll_synchronize_rcu_full,
+ 	.poll_gp_state		= poll_state_synchronize_rcu,
++	.poll_gp_state_full	= poll_state_synchronize_rcu_full,
++	.poll_need_2gp		= rcu_poll_need_2gp,
+ 	.cond_sync		= cond_synchronize_rcu,
++	.cond_sync_full		= cond_synchronize_rcu_full,
+ 	.get_gp_state_exp	= get_state_synchronize_rcu,
+ 	.start_gp_poll_exp	= start_poll_synchronize_rcu_expedited,
++	.start_gp_poll_exp_full	= start_poll_synchronize_rcu_expedited_full,
+ 	.poll_gp_state_exp	= poll_state_synchronize_rcu,
+ 	.cond_sync_exp		= cond_synchronize_rcu_expedited,
+ 	.call			= call_rcu,
+@@ -709,6 +750,9 @@ static struct rcu_torture_ops srcud_ops = {
+ 	.deferred_free	= srcu_torture_deferred_free,
+ 	.sync		= srcu_torture_synchronize,
+ 	.exp_sync	= srcu_torture_synchronize_expedited,
++	.get_gp_state	= srcu_torture_get_gp_state,
++	.start_gp_poll	= srcu_torture_start_gp_poll,
++	.poll_gp_state	= srcu_torture_poll_gp_state,
+ 	.call		= srcu_torture_call,
+ 	.cb_barrier	= srcu_torture_barrier,
+ 	.stats		= srcu_torture_stats,
+@@ -1148,15 +1192,35 @@ static int nsynctypes;
+  */
+ static void rcu_torture_write_types(void)
+ {
+-	bool gp_cond1 = gp_cond, gp_cond_exp1 = gp_cond_exp, gp_exp1 = gp_exp;
+-	bool gp_poll_exp1 = gp_poll_exp, gp_normal1 = gp_normal, gp_poll1 = gp_poll;
+-	bool gp_sync1 = gp_sync;
++	bool gp_cond1 = gp_cond, gp_cond_exp1 = gp_cond_exp, gp_cond_full1 = gp_cond_full;
++	bool gp_cond_exp_full1 = gp_cond_exp_full, gp_exp1 = gp_exp, gp_poll_exp1 = gp_poll_exp;
++	bool gp_poll_exp_full1 = gp_poll_exp_full, gp_normal1 = gp_normal, gp_poll1 = gp_poll;
++	bool gp_poll_full1 = gp_poll_full, gp_sync1 = gp_sync;
+ 
+ 	/* Initialize synctype[] array.  If none set, take default. */
+-	if (!gp_cond1 && !gp_cond_exp1 && !gp_exp1 && !gp_poll_exp &&
+-	    !gp_normal1 && !gp_poll1 && !gp_sync1)
+-		gp_cond1 = gp_cond_exp1 = gp_exp1 = gp_poll_exp1 =
+-			   gp_normal1 = gp_poll1 = gp_sync1 = true;
++	if (!gp_cond1 &&
++	    !gp_cond_exp1 &&
++	    !gp_cond_full1 &&
++	    !gp_cond_exp_full1 &&
++	    !gp_exp1 &&
++	    !gp_poll_exp1 &&
++	    !gp_poll_exp_full1 &&
++	    !gp_normal1 &&
++	    !gp_poll1 &&
++	    !gp_poll_full1 &&
++	    !gp_sync1) {
++		gp_cond1 = true;
++		gp_cond_exp1 = true;
++		gp_cond_full1 = true;
++		gp_cond_exp_full1 = true;
++		gp_exp1 = true;
++		gp_poll_exp1 = true;
++		gp_poll_exp_full1 = true;
++		gp_normal1 = true;
++		gp_poll1 = true;
++		gp_poll_full1 = true;
++		gp_sync1 = true;
++	}
+ 	if (gp_cond1 && cur_ops->get_gp_state && cur_ops->cond_sync) {
+ 		synctype[nsynctypes++] = RTWS_COND_GET;
+ 		pr_info("%s: Testing conditional GPs.\n", __func__);
+@@ -1169,6 +1233,19 @@ static void rcu_torture_write_types(void)
+ 	} else if (gp_cond_exp && (!cur_ops->get_gp_state_exp || !cur_ops->cond_sync_exp)) {
+ 		pr_alert("%s: gp_cond_exp without primitives.\n", __func__);
+ 	}
++	if (gp_cond_full1 && cur_ops->get_gp_state && cur_ops->cond_sync_full) {
++		synctype[nsynctypes++] = RTWS_COND_GET_FULL;
++		pr_info("%s: Testing conditional full-state GPs.\n", __func__);
++	} else if (gp_cond_full && (!cur_ops->get_gp_state || !cur_ops->cond_sync_full)) {
++		pr_alert("%s: gp_cond_full without primitives.\n", __func__);
++	}
++	if (gp_cond_exp_full1 && cur_ops->get_gp_state_exp && cur_ops->cond_sync_exp_full) {
++		synctype[nsynctypes++] = RTWS_COND_GET_EXP_FULL;
++		pr_info("%s: Testing conditional full-state expedited GPs.\n", __func__);
++	} else if (gp_cond_exp_full &&
++		   (!cur_ops->get_gp_state_exp || !cur_ops->cond_sync_exp_full)) {
++		pr_alert("%s: gp_cond_exp_full without primitives.\n", __func__);
++	}
+ 	if (gp_exp1 && cur_ops->exp_sync) {
+ 		synctype[nsynctypes++] = RTWS_EXP_SYNC;
+ 		pr_info("%s: Testing expedited GPs.\n", __func__);
+@@ -1187,12 +1264,25 @@ static void rcu_torture_write_types(void)
+ 	} else if (gp_poll && (!cur_ops->start_gp_poll || !cur_ops->poll_gp_state)) {
+ 		pr_alert("%s: gp_poll without primitives.\n", __func__);
+ 	}
++	if (gp_poll_full1 && cur_ops->start_gp_poll_full && cur_ops->poll_gp_state_full) {
++		synctype[nsynctypes++] = RTWS_POLL_GET_FULL;
++		pr_info("%s: Testing polling full-state GPs.\n", __func__);
++	} else if (gp_poll_full && (!cur_ops->start_gp_poll_full || !cur_ops->poll_gp_state_full)) {
++		pr_alert("%s: gp_poll_full without primitives.\n", __func__);
++	}
+ 	if (gp_poll_exp1 && cur_ops->start_gp_poll_exp && cur_ops->poll_gp_state_exp) {
+ 		synctype[nsynctypes++] = RTWS_POLL_GET_EXP;
+ 		pr_info("%s: Testing polling expedited GPs.\n", __func__);
+ 	} else if (gp_poll_exp && (!cur_ops->start_gp_poll_exp || !cur_ops->poll_gp_state_exp)) {
+ 		pr_alert("%s: gp_poll_exp without primitives.\n", __func__);
+ 	}
++	if (gp_poll_exp_full1 && cur_ops->start_gp_poll_exp_full && cur_ops->poll_gp_state_full) {
++		synctype[nsynctypes++] = RTWS_POLL_GET_EXP_FULL;
++		pr_info("%s: Testing polling full-state expedited GPs.\n", __func__);
++	} else if (gp_poll_exp_full &&
++		   (!cur_ops->start_gp_poll_exp_full || !cur_ops->poll_gp_state_full)) {
++		pr_alert("%s: gp_poll_exp_full without primitives.\n", __func__);
++	}
+ 	if (gp_sync1 && cur_ops->sync) {
+ 		synctype[nsynctypes++] = RTWS_SYNC;
+ 		pr_info("%s: Testing normal GPs.\n", __func__);
+@@ -1201,6 +1291,40 @@ static void rcu_torture_write_types(void)
+ 	}
+ }
+ 
++/*
++ * Do the specified rcu_torture_writer() synchronous grace period,
++ * while also testing out the polled APIs.  Note well that the single-CPU
++ * grace-period optimizations must be accounted for.
++ */
++static void do_rtws_sync(struct torture_random_state *trsp, void (*sync)(void))
++{
++	unsigned long cookie;
++	struct rcu_gp_oldstate cookie_full;
++	bool dopoll;
++	bool dopoll_full;
++	unsigned long r = torture_random(trsp);
++
++	dopoll = cur_ops->get_gp_state && cur_ops->poll_gp_state && !(r & 0x300);
++	dopoll_full = cur_ops->get_gp_state_full && cur_ops->poll_gp_state_full && !(r & 0xc00);
++	if (dopoll || dopoll_full)
++		cpus_read_lock();
++	if (dopoll)
++		cookie = cur_ops->get_gp_state();
++	if (dopoll_full)
++		cur_ops->get_gp_state_full(&cookie_full);
++	if (cur_ops->poll_need_2gp && cur_ops->poll_need_2gp(dopoll, dopoll_full))
++		sync();
++	sync();
++	WARN_ONCE(dopoll && !cur_ops->poll_gp_state(cookie),
++		  "%s: Cookie check 3 failed %pS() online %*pbl.",
++		  __func__, sync, cpumask_pr_args(cpu_online_mask));
++	WARN_ONCE(dopoll_full && !cur_ops->poll_gp_state_full(&cookie_full),
++		  "%s: Cookie check 4 failed %pS() online %*pbl",
++		  __func__, sync, cpumask_pr_args(cpu_online_mask));
++	if (dopoll || dopoll_full)
++		cpus_read_unlock();
++}
++
+ /*
+  * RCU torture writer kthread.  Repeatedly substitutes a new structure
+  * for that pointed to by rcu_torture_current, freeing the old structure
+@@ -1212,8 +1336,10 @@ rcu_torture_writer(void *arg)
+ 	bool boot_ended;
+ 	bool can_expedite = !rcu_gp_is_expedited() && !rcu_gp_is_normal();
+ 	unsigned long cookie;
++	struct rcu_gp_oldstate cookie_full;
+ 	int expediting = 0;
+ 	unsigned long gp_snap;
++	struct rcu_gp_oldstate gp_snap_full;
+ 	int i;
+ 	int idx;
+ 	int oldnice = task_nice(current);
+@@ -1261,11 +1387,12 @@ rcu_torture_writer(void *arg)
+ 			atomic_inc(&rcu_torture_wcount[i]);
+ 			WRITE_ONCE(old_rp->rtort_pipe_count,
+ 				   old_rp->rtort_pipe_count + 1);
++
++			// Make sure readers block polled grace periods.
+ 			if (cur_ops->get_gp_state && cur_ops->poll_gp_state) {
+ 				idx = cur_ops->readlock();
+ 				cookie = cur_ops->get_gp_state();
+-				WARN_ONCE(rcu_torture_writer_state != RTWS_DEF_FREE &&
+-					  cur_ops->poll_gp_state(cookie),
++				WARN_ONCE(cur_ops->poll_gp_state(cookie),
+ 					  "%s: Cookie check 1 failed %s(%d) %lu->%lu\n",
+ 					  __func__,
+ 					  rcu_torture_writer_state_getname(),
+@@ -1277,6 +1404,21 @@ rcu_torture_writer(void *arg)
+ 				}
+ 				cur_ops->readunlock(idx);
+ 			}
++			if (cur_ops->get_gp_state_full && cur_ops->poll_gp_state_full) {
++				idx = cur_ops->readlock();
++				cur_ops->get_gp_state_full(&cookie_full);
++				WARN_ONCE(cur_ops->poll_gp_state_full(&cookie_full),
++					  "%s: Cookie check 5 failed %s(%d) online %*pbl\n",
++					  __func__,
++					  rcu_torture_writer_state_getname(),
++					  rcu_torture_writer_state,
++					  cpumask_pr_args(cpu_online_mask));
++				if (cur_ops->get_gp_completed_full) {
++					cur_ops->get_gp_completed_full(&cookie_full);
++					WARN_ON_ONCE(!cur_ops->poll_gp_state_full(&cookie_full));
++				}
++				cur_ops->readunlock(idx);
++			}
+ 			switch (synctype[torture_random(&rand) % nsynctypes]) {
+ 			case RTWS_DEF_FREE:
+ 				rcu_torture_writer_state = RTWS_DEF_FREE;
+@@ -1284,12 +1426,7 @@ rcu_torture_writer(void *arg)
+ 				break;
+ 			case RTWS_EXP_SYNC:
+ 				rcu_torture_writer_state = RTWS_EXP_SYNC;
+-				if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-					cookie = cur_ops->get_gp_state();
+-				cur_ops->exp_sync();
+-				cur_ops->exp_sync();
+-				if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-					WARN_ON_ONCE(!cur_ops->poll_gp_state(cookie));
++				do_rtws_sync(&rand, cur_ops->exp_sync);
+ 				rcu_torture_pipe_update(old_rp);
+ 				break;
+ 			case RTWS_COND_GET:
+@@ -1308,6 +1445,22 @@ rcu_torture_writer(void *arg)
+ 				cur_ops->cond_sync_exp(gp_snap);
+ 				rcu_torture_pipe_update(old_rp);
+ 				break;
++			case RTWS_COND_GET_FULL:
++				rcu_torture_writer_state = RTWS_COND_GET_FULL;
++				cur_ops->get_gp_state_full(&gp_snap_full);
++				torture_hrtimeout_jiffies(torture_random(&rand) % 16, &rand);
++				rcu_torture_writer_state = RTWS_COND_SYNC_FULL;
++				cur_ops->cond_sync_full(&gp_snap_full);
++				rcu_torture_pipe_update(old_rp);
++				break;
++			case RTWS_COND_GET_EXP_FULL:
++				rcu_torture_writer_state = RTWS_COND_GET_EXP_FULL;
++				cur_ops->get_gp_state_full(&gp_snap_full);
++				torture_hrtimeout_jiffies(torture_random(&rand) % 16, &rand);
++				rcu_torture_writer_state = RTWS_COND_SYNC_EXP_FULL;
++				cur_ops->cond_sync_exp_full(&gp_snap_full);
++				rcu_torture_pipe_update(old_rp);
++				break;
+ 			case RTWS_POLL_GET:
+ 				rcu_torture_writer_state = RTWS_POLL_GET;
+ 				gp_snap = cur_ops->start_gp_poll();
+@@ -1317,6 +1470,15 @@ rcu_torture_writer(void *arg)
+ 								  &rand);
+ 				rcu_torture_pipe_update(old_rp);
+ 				break;
++			case RTWS_POLL_GET_FULL:
++				rcu_torture_writer_state = RTWS_POLL_GET_FULL;
++				cur_ops->start_gp_poll_full(&gp_snap_full);
++				rcu_torture_writer_state = RTWS_POLL_WAIT_FULL;
++				while (!cur_ops->poll_gp_state_full(&gp_snap_full))
++					torture_hrtimeout_jiffies(torture_random(&rand) % 16,
++								  &rand);
++				rcu_torture_pipe_update(old_rp);
++				break;
+ 			case RTWS_POLL_GET_EXP:
+ 				rcu_torture_writer_state = RTWS_POLL_GET_EXP;
+ 				gp_snap = cur_ops->start_gp_poll_exp();
+@@ -1326,14 +1488,18 @@ rcu_torture_writer(void *arg)
+ 								  &rand);
+ 				rcu_torture_pipe_update(old_rp);
+ 				break;
++			case RTWS_POLL_GET_EXP_FULL:
++				rcu_torture_writer_state = RTWS_POLL_GET_EXP_FULL;
++				cur_ops->start_gp_poll_exp_full(&gp_snap_full);
++				rcu_torture_writer_state = RTWS_POLL_WAIT_EXP_FULL;
++				while (!cur_ops->poll_gp_state_full(&gp_snap_full))
++					torture_hrtimeout_jiffies(torture_random(&rand) % 16,
++								  &rand);
++				rcu_torture_pipe_update(old_rp);
++				break;
+ 			case RTWS_SYNC:
+ 				rcu_torture_writer_state = RTWS_SYNC;
+-				if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-					cookie = cur_ops->get_gp_state();
+-				cur_ops->sync();
+-				cur_ops->sync();
+-				if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-					WARN_ON_ONCE(!cur_ops->poll_gp_state(cookie));
++				do_rtws_sync(&rand, cur_ops->sync);
+ 				rcu_torture_pipe_update(old_rp);
+ 				break;
+ 			default:
+@@ -1400,6 +1566,7 @@ static int
+ rcu_torture_fakewriter(void *arg)
+ {
+ 	unsigned long gp_snap;
++	struct rcu_gp_oldstate gp_snap_full;
+ 	DEFINE_TORTURE_RANDOM(rand);
+ 
+ 	VERBOSE_TOROUT_STRING("rcu_torture_fakewriter task started");
+@@ -1438,6 +1605,16 @@ rcu_torture_fakewriter(void *arg)
+ 				torture_hrtimeout_jiffies(torture_random(&rand) % 16, &rand);
+ 				cur_ops->cond_sync_exp(gp_snap);
+ 				break;
++			case RTWS_COND_GET_FULL:
++				cur_ops->get_gp_state_full(&gp_snap_full);
++				torture_hrtimeout_jiffies(torture_random(&rand) % 16, &rand);
++				cur_ops->cond_sync_full(&gp_snap_full);
++				break;
++			case RTWS_COND_GET_EXP_FULL:
++				cur_ops->get_gp_state_full(&gp_snap_full);
++				torture_hrtimeout_jiffies(torture_random(&rand) % 16, &rand);
++				cur_ops->cond_sync_exp_full(&gp_snap_full);
++				break;
+ 			case RTWS_POLL_GET:
+ 				gp_snap = cur_ops->start_gp_poll();
+ 				while (!cur_ops->poll_gp_state(gp_snap)) {
+@@ -1445,6 +1622,13 @@ rcu_torture_fakewriter(void *arg)
+ 								  &rand);
+ 				}
+ 				break;
++			case RTWS_POLL_GET_FULL:
++				cur_ops->start_gp_poll_full(&gp_snap_full);
++				while (!cur_ops->poll_gp_state_full(&gp_snap_full)) {
++					torture_hrtimeout_jiffies(torture_random(&rand) % 16,
++								  &rand);
++				}
++				break;
+ 			case RTWS_POLL_GET_EXP:
+ 				gp_snap = cur_ops->start_gp_poll_exp();
+ 				while (!cur_ops->poll_gp_state_exp(gp_snap)) {
+@@ -1452,6 +1636,13 @@ rcu_torture_fakewriter(void *arg)
+ 								  &rand);
+ 				}
+ 				break;
++			case RTWS_POLL_GET_EXP_FULL:
++				cur_ops->start_gp_poll_exp_full(&gp_snap_full);
++				while (!cur_ops->poll_gp_state_full(&gp_snap_full)) {
++					torture_hrtimeout_jiffies(torture_random(&rand) % 16,
++								  &rand);
++				}
++				break;
+ 			case RTWS_SYNC:
+ 				cur_ops->sync();
+ 				break;
+@@ -1715,7 +1906,9 @@ rcutorture_loop_extend(int *readstate, struct torture_random_state *trsp,
+  */
+ static bool rcu_torture_one_read(struct torture_random_state *trsp, long myid)
+ {
++	bool checkpolling = !(torture_random(trsp) & 0xfff);
+ 	unsigned long cookie;
++	struct rcu_gp_oldstate cookie_full;
+ 	int i;
+ 	unsigned long started;
+ 	unsigned long completed;
+@@ -1731,8 +1924,12 @@ static bool rcu_torture_one_read(struct torture_random_state *trsp, long myid)
+ 	WARN_ON_ONCE(!rcu_is_watching());
+ 	newstate = rcutorture_extend_mask(readstate, trsp);
+ 	rcutorture_one_extend(&readstate, newstate, trsp, rtrsp++);
+-	if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-		cookie = cur_ops->get_gp_state();
++	if (checkpolling) {
++		if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
++			cookie = cur_ops->get_gp_state();
++		if (cur_ops->get_gp_state_full && cur_ops->poll_gp_state_full)
++			cur_ops->get_gp_state_full(&cookie_full);
++	}
+ 	started = cur_ops->get_gp_seq();
+ 	ts = rcu_trace_clock_local();
+ 	p = rcu_dereference_check(rcu_torture_current,
+@@ -1766,13 +1963,22 @@ static bool rcu_torture_one_read(struct torture_random_state *trsp, long myid)
+ 	}
+ 	__this_cpu_inc(rcu_torture_batch[completed]);
+ 	preempt_enable();
+-	if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
+-		WARN_ONCE(cur_ops->poll_gp_state(cookie),
+-			  "%s: Cookie check 2 failed %s(%d) %lu->%lu\n",
+-			  __func__,
+-			  rcu_torture_writer_state_getname(),
+-			  rcu_torture_writer_state,
+-			  cookie, cur_ops->get_gp_state());
++	if (checkpolling) {
++		if (cur_ops->get_gp_state && cur_ops->poll_gp_state)
++			WARN_ONCE(cur_ops->poll_gp_state(cookie),
++				  "%s: Cookie check 2 failed %s(%d) %lu->%lu\n",
++				  __func__,
++				  rcu_torture_writer_state_getname(),
++				  rcu_torture_writer_state,
++				  cookie, cur_ops->get_gp_state());
++		if (cur_ops->get_gp_state_full && cur_ops->poll_gp_state_full)
++			WARN_ONCE(cur_ops->poll_gp_state_full(&cookie_full),
++				  "%s: Cookie check 6 failed %s(%d) online %*pbl\n",
++				  __func__,
++				  rcu_torture_writer_state_getname(),
++				  rcu_torture_writer_state,
++				  cpumask_pr_args(cpu_online_mask));
++	}
+ 	rcutorture_one_extend(&readstate, 0, trsp, rtrsp);
+ 	WARN_ON_ONCE(readstate);
+ 	// This next splat is expected behavior if leakpointer, especially
+@@ -2600,12 +2806,12 @@ static int rcutorture_oom_notify(struct notifier_block *self,
+ 	for (i = 0; i < fwd_progress; i++)
+ 		ncbs += rcu_torture_fwd_prog_cbfree(&rfp[i]);
+ 	pr_info("%s: Freed %lu RCU callbacks.\n", __func__, ncbs);
+-	rcu_barrier();
++	cur_ops->cb_barrier();
+ 	ncbs = 0;
+ 	for (i = 0; i < fwd_progress; i++)
+ 		ncbs += rcu_torture_fwd_prog_cbfree(&rfp[i]);
+ 	pr_info("%s: Freed %lu RCU callbacks.\n", __func__, ncbs);
+-	rcu_barrier();
++	cur_ops->cb_barrier();
+ 	ncbs = 0;
+ 	for (i = 0; i < fwd_progress; i++)
+ 		ncbs += rcu_torture_fwd_prog_cbfree(&rfp[i]);
+diff --git a/kernel/rcu/srcutiny.c b/kernel/rcu/srcutiny.c
+index 92c002d65482..33adafdad261 100644
+--- a/kernel/rcu/srcutiny.c
++++ b/kernel/rcu/srcutiny.c
+@@ -117,7 +117,7 @@ void srcu_drive_gp(struct work_struct *wp)
+ 	struct srcu_struct *ssp;
+ 
+ 	ssp = container_of(wp, struct srcu_struct, srcu_work);
+-	if (ssp->srcu_gp_running || USHORT_CMP_GE(ssp->srcu_idx, READ_ONCE(ssp->srcu_idx_max)))
++	if (ssp->srcu_gp_running || ULONG_CMP_GE(ssp->srcu_idx, READ_ONCE(ssp->srcu_idx_max)))
+ 		return; /* Already running or nothing to do. */
+ 
+ 	/* Remove recently arrived callbacks and wait for readers. */
+@@ -150,17 +150,17 @@ void srcu_drive_gp(struct work_struct *wp)
+ 	 * straighten that out.
+ 	 */
+ 	WRITE_ONCE(ssp->srcu_gp_running, false);
+-	if (USHORT_CMP_LT(ssp->srcu_idx, READ_ONCE(ssp->srcu_idx_max)))
++	if (ULONG_CMP_LT(ssp->srcu_idx, READ_ONCE(ssp->srcu_idx_max)))
+ 		schedule_work(&ssp->srcu_work);
+ }
+ EXPORT_SYMBOL_GPL(srcu_drive_gp);
+ 
+ static void srcu_gp_start_if_needed(struct srcu_struct *ssp)
+ {
+-	unsigned short cookie;
++	unsigned long cookie;
+ 
+ 	cookie = get_state_synchronize_srcu(ssp);
+-	if (USHORT_CMP_GE(READ_ONCE(ssp->srcu_idx_max), cookie))
++	if (ULONG_CMP_GE(READ_ONCE(ssp->srcu_idx_max), cookie))
+ 		return;
+ 	WRITE_ONCE(ssp->srcu_idx_max, cookie);
+ 	if (!READ_ONCE(ssp->srcu_gp_running)) {
+@@ -215,7 +215,7 @@ unsigned long get_state_synchronize_srcu(struct srcu_struct *ssp)
+ 	barrier();
+ 	ret = (READ_ONCE(ssp->srcu_idx) + 3) & ~0x1;
+ 	barrier();
+-	return ret & USHRT_MAX;
++	return ret;
+ }
+ EXPORT_SYMBOL_GPL(get_state_synchronize_srcu);
+ 
+@@ -240,10 +240,10 @@ EXPORT_SYMBOL_GPL(start_poll_synchronize_srcu);
+  */
+ bool poll_state_synchronize_srcu(struct srcu_struct *ssp, unsigned long cookie)
+ {
+-	bool ret = USHORT_CMP_GE(READ_ONCE(ssp->srcu_idx), cookie);
++	unsigned long cur_s = READ_ONCE(ssp->srcu_idx);
+ 
+ 	barrier();
+-	return ret;
++	return ULONG_CMP_GE(cur_s, cookie) || ULONG_CMP_LT(cur_s, cookie - 3);
+ }
+ EXPORT_SYMBOL_GPL(poll_state_synchronize_srcu);
+ 
+diff --git a/kernel/rcu/tasks.h b/kernel/rcu/tasks.h
+index 83c7e6620d40..f5bf6fb430da 100644
+--- a/kernel/rcu/tasks.h
++++ b/kernel/rcu/tasks.h
+@@ -560,7 +560,7 @@ static int __noreturn rcu_tasks_kthread(void *arg)
+ static void synchronize_rcu_tasks_generic(struct rcu_tasks *rtp)
+ {
+ 	/* Complain if the scheduler has not started.  */
+-	RCU_LOCKDEP_WARN(rcu_scheduler_active == RCU_SCHEDULER_INACTIVE,
++	WARN_ONCE(rcu_scheduler_active == RCU_SCHEDULER_INACTIVE,
+ 			 "synchronize_rcu_tasks called too soon");
+ 
+ 	// If the grace-period kthread is running, use it.
+@@ -1500,6 +1500,7 @@ static void rcu_tasks_trace_pregp_step(struct list_head *hop)
+ 		if (rcu_tasks_trace_pertask_prep(t, true))
+ 			trc_add_holdout(t, hop);
+ 		rcu_read_unlock();
++		cond_resched_tasks_rcu_qs();
+ 	}
+ 
+ 	// Only after all running tasks have been accounted for is it
+@@ -1520,6 +1521,7 @@ static void rcu_tasks_trace_pregp_step(struct list_head *hop)
+ 			raw_spin_lock_irqsave_rcu_node(rtpcp, flags);
+ 		}
+ 		raw_spin_unlock_irqrestore_rcu_node(rtpcp, flags);
++		cond_resched_tasks_rcu_qs();
+ 	}
+ 
+ 	// Re-enable CPU hotplug now that the holdout list is populated.
+@@ -1619,6 +1621,7 @@ static void check_all_holdout_tasks_trace(struct list_head *hop,
+ 			trc_del_holdout(t);
+ 		else if (needreport)
+ 			show_stalled_task_trace(t, firstreport);
++		cond_resched_tasks_rcu_qs();
+ 	}
+ 
+ 	// Re-enable CPU hotplug now that the holdout list scan has completed.
+diff --git a/kernel/rcu/tiny.c b/kernel/rcu/tiny.c
+index f0561ee16b9c..a33a8d4942c3 100644
+--- a/kernel/rcu/tiny.c
++++ b/kernel/rcu/tiny.c
+@@ -158,6 +158,10 @@ void synchronize_rcu(void)
+ }
+ EXPORT_SYMBOL_GPL(synchronize_rcu);
+ 
++static void tiny_rcu_leak_callback(struct rcu_head *rhp)
++{
++}
++
+ /*
+  * Post an RCU callback to be invoked after the end of an RCU grace
+  * period.  But since we have but one CPU, that would be after any
+@@ -165,9 +169,20 @@ EXPORT_SYMBOL_GPL(synchronize_rcu);
+  */
+ void call_rcu(struct rcu_head *head, rcu_callback_t func)
+ {
++	static atomic_t doublefrees;
+ 	unsigned long flags;
+ 
+-	debug_rcu_head_queue(head);
++	if (debug_rcu_head_queue(head)) {
++		if (atomic_inc_return(&doublefrees) < 4) {
++			pr_err("%s(): Double-freed CB %p->%pS()!!!  ", __func__, head, head->func);
++			mem_dump_obj(head);
++		}
++
++		if (!__is_kvfree_rcu_offset((unsigned long)head->func))
++			WRITE_ONCE(head->func, tiny_rcu_leak_callback);
++		return;
++	}
++
+ 	head->func = func;
+ 	head->next = NULL;
+ 
+@@ -183,6 +198,16 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func)
+ }
+ EXPORT_SYMBOL_GPL(call_rcu);
+ 
++/*
++ * Store a grace-period-counter "cookie".  For more information,
++ * see the Tree RCU header comment.
++ */
++void get_completed_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	rgosp->rgos_norm = RCU_GET_STATE_COMPLETED;
++}
++EXPORT_SYMBOL_GPL(get_completed_synchronize_rcu_full);
++
+ /*
+  * Return a grace-period-counter "cookie".  For more information,
+  * see the Tree RCU header comment.
+diff --git a/kernel/rcu/tree.c b/kernel/rcu/tree.c
+index 79aea7df4345..6bb8e72bc815 100644
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -76,6 +76,7 @@
+ /* Data structures. */
+ 
+ static DEFINE_PER_CPU_SHARED_ALIGNED(struct rcu_data, rcu_data) = {
++	.gpwrap = true,
+ #ifdef CONFIG_RCU_NOCB_CPU
+ 	.cblist.flags = SEGCBLIST_RCU_CORE,
+ #endif
+@@ -1755,6 +1756,8 @@ static noinline void rcu_gp_cleanup(void)
+ 			dump_blkd_tasks(rnp, 10);
+ 		WARN_ON_ONCE(rnp->qsmask);
+ 		WRITE_ONCE(rnp->gp_seq, new_gp_seq);
++		if (!rnp->parent)
++			smp_mb(); // Order against failing poll_state_synchronize_rcu_full().
+ 		rdp = this_cpu_ptr(&rcu_data);
+ 		if (rnp == rdp->mynode)
+ 			needgp = __note_gp_changes(rnp, rdp) || needgp;
+@@ -2341,8 +2344,8 @@ void rcu_sched_clock_irq(int user)
+ 	rcu_flavor_sched_clock_irq(user);
+ 	if (rcu_pending(user))
+ 		invoke_rcu_core();
+-	if (user)
+-		rcu_tasks_classic_qs(current, false);
++	if (user || rcu_is_cpu_rrupt_from_idle())
++		rcu_note_voluntary_context_switch(current);
+ 	lockdep_assert_irqs_disabled();
+ 
+ 	trace_rcu_utilization(TPS("End scheduler-tick"));
+@@ -2832,7 +2835,7 @@ EXPORT_SYMBOL_GPL(call_rcu);
+ 
+ 
+ /* Maximum number of jiffies to wait before draining a batch. */
+-#define KFREE_DRAIN_JIFFIES (HZ / 50)
++#define KFREE_DRAIN_JIFFIES (5 * HZ)
+ #define KFREE_N_BATCHES 2
+ #define FREE_N_CHANNELS 2
+ 
+@@ -3093,6 +3096,21 @@ need_offload_krc(struct kfree_rcu_cpu *krcp)
+ 	return !!krcp->head;
+ }
+ 
++static void
++schedule_delayed_monitor_work(struct kfree_rcu_cpu *krcp)
++{
++	long delay, delay_left;
++
++	delay = READ_ONCE(krcp->count) >= KVFREE_BULK_MAX_ENTR ? 1:KFREE_DRAIN_JIFFIES;
++	if (delayed_work_pending(&krcp->monitor_work)) {
++		delay_left = krcp->monitor_work.timer.expires - jiffies;
++		if (delay < delay_left)
++			mod_delayed_work(system_wq, &krcp->monitor_work, delay);
++		return;
++	}
++	queue_delayed_work(system_wq, &krcp->monitor_work, delay);
++}
++
+ /*
+  * This function is invoked after the KFREE_DRAIN_JIFFIES timeout.
+  */
+@@ -3150,7 +3168,7 @@ static void kfree_rcu_monitor(struct work_struct *work)
+ 	// work to repeat an attempt. Because previous batches are
+ 	// still in progress.
+ 	if (need_offload_krc(krcp))
+-		schedule_delayed_work(&krcp->monitor_work, KFREE_DRAIN_JIFFIES);
++		schedule_delayed_monitor_work(krcp);
+ 
+ 	raw_spin_unlock_irqrestore(&krcp->lock, flags);
+ }
+@@ -3183,15 +3201,16 @@ static void fill_page_cache_func(struct work_struct *work)
+ 		bnode = (struct kvfree_rcu_bulk_data *)
+ 			__get_free_page(GFP_KERNEL | __GFP_NORETRY | __GFP_NOMEMALLOC | __GFP_NOWARN);
+ 
+-		if (bnode) {
+-			raw_spin_lock_irqsave(&krcp->lock, flags);
+-			pushed = put_cached_bnode(krcp, bnode);
+-			raw_spin_unlock_irqrestore(&krcp->lock, flags);
++		if (!bnode)
++			break;
+ 
+-			if (!pushed) {
+-				free_page((unsigned long) bnode);
+-				break;
+-			}
++		raw_spin_lock_irqsave(&krcp->lock, flags);
++		pushed = put_cached_bnode(krcp, bnode);
++		raw_spin_unlock_irqrestore(&krcp->lock, flags);
++
++		if (!pushed) {
++			free_page((unsigned long) bnode);
++			break;
+ 		}
+ 	}
+ 
+@@ -3338,7 +3357,7 @@ void kvfree_call_rcu(struct rcu_head *head, rcu_callback_t func)
+ 
+ 	// Set timer to drain after KFREE_DRAIN_JIFFIES.
+ 	if (rcu_scheduler_active == RCU_SCHEDULER_RUNNING)
+-		schedule_delayed_work(&krcp->monitor_work, KFREE_DRAIN_JIFFIES);
++		schedule_delayed_monitor_work(krcp);
+ 
+ unlock_return:
+ 	krc_this_cpu_unlock(krcp, flags);
+@@ -3371,7 +3390,7 @@ kfree_rcu_shrink_count(struct shrinker *shrink, struct shrink_control *sc)
+ 		atomic_set(&krcp->backoff_page_cache_fill, 1);
+ 	}
+ 
+-	return count;
++	return count == 0 ? SHRINK_EMPTY : count;
+ }
+ 
+ static unsigned long
+@@ -3414,49 +3433,27 @@ void __init kfree_rcu_scheduler_running(void)
+ 
+ 		raw_spin_lock_irqsave(&krcp->lock, flags);
+ 		if (need_offload_krc(krcp))
+-			schedule_delayed_work_on(cpu, &krcp->monitor_work, KFREE_DRAIN_JIFFIES);
++			schedule_delayed_monitor_work(krcp);
+ 		raw_spin_unlock_irqrestore(&krcp->lock, flags);
+ 	}
+ }
+ 
+ /*
+  * During early boot, any blocking grace-period wait automatically
+- * implies a grace period.  Later on, this is never the case for PREEMPTION.
++ * implies a grace period.
+  *
+- * However, because a context switch is a grace period for !PREEMPTION, any
+- * blocking grace-period wait automatically implies a grace period if
+- * there is only one CPU online at any point time during execution of
+- * either synchronize_rcu() or synchronize_rcu_expedited().  It is OK to
+- * occasionally incorrectly indicate that there are multiple CPUs online
+- * when there was in fact only one the whole time, as this just adds some
+- * overhead: RCU still operates correctly.
++ * Later on, this could in theory be the case for kernels built with
++ * CONFIG_SMP=y && CONFIG_PREEMPTION=y running on a single CPU, but this
++ * is not a common case.  Furthermore, this optimization would cause
++ * the rcu_gp_oldstate structure to expand by 50%, so this potential
++ * grace-period optimization is ignored once the scheduler is running.
+  */
+ static int rcu_blocking_is_gp(void)
+ {
+-	int ret;
+-
+-	// Invoking preempt_model_*() too early gets a splat.
+-	if (rcu_scheduler_active == RCU_SCHEDULER_INACTIVE ||
+-	    preempt_model_full() || preempt_model_rt())
+-		return rcu_scheduler_active == RCU_SCHEDULER_INACTIVE;
++	if (rcu_scheduler_active != RCU_SCHEDULER_INACTIVE)
++		return false;
+ 	might_sleep();  /* Check for RCU read-side critical section. */
+-	preempt_disable();
+-	/*
+-	 * If the rcu_state.n_online_cpus counter is equal to one,
+-	 * there is only one CPU, and that CPU sees all prior accesses
+-	 * made by any CPU that was online at the time of its access.
+-	 * Furthermore, if this counter is equal to one, its value cannot
+-	 * change until after the preempt_enable() below.
+-	 *
+-	 * Furthermore, if rcu_state.n_online_cpus is equal to one here,
+-	 * all later CPUs (both this one and any that come online later
+-	 * on) are guaranteed to see all accesses prior to this point
+-	 * in the code, without the need for additional memory barriers.
+-	 * Those memory barriers are provided by CPU-hotplug code.
+-	 */
+-	ret = READ_ONCE(rcu_state.n_online_cpus) <= 1;
+-	preempt_enable();
+-	return ret;
++	return true;
+ }
+ 
+ /**
+@@ -3499,29 +3496,58 @@ static int rcu_blocking_is_gp(void)
+  */
+ void synchronize_rcu(void)
+ {
++	unsigned long flags;
++	struct rcu_node *rnp;
++
+ 	RCU_LOCKDEP_WARN(lock_is_held(&rcu_bh_lock_map) ||
+ 			 lock_is_held(&rcu_lock_map) ||
+ 			 lock_is_held(&rcu_sched_lock_map),
+ 			 "Illegal synchronize_rcu() in RCU read-side critical section");
+-	if (rcu_blocking_is_gp()) {
+-		// Note well that this code runs with !PREEMPT && !SMP.
+-		// In addition, all code that advances grace periods runs at
+-		// process level.  Therefore, this normal GP overlaps with
+-		// other normal GPs only by being fully nested within them,
+-		// which allows reuse of ->gp_seq_polled_snap.
+-		rcu_poll_gp_seq_start_unlocked(&rcu_state.gp_seq_polled_snap);
+-		rcu_poll_gp_seq_end_unlocked(&rcu_state.gp_seq_polled_snap);
+-		if (rcu_init_invoked())
+-			cond_resched_tasks_rcu_qs();
+-		return;  // Context allows vacuous grace periods.
++	if (!rcu_blocking_is_gp()) {
++		if (rcu_gp_is_expedited())
++			synchronize_rcu_expedited();
++		else
++			wait_rcu_gp(call_rcu);
++		return;
+ 	}
+-	if (rcu_gp_is_expedited())
+-		synchronize_rcu_expedited();
+-	else
+-		wait_rcu_gp(call_rcu);
++
++	// Context allows vacuous grace periods.
++	// Note well that this code runs with !PREEMPT && !SMP.
++	// In addition, all code that advances grace periods runs at
++	// process level.  Therefore, this normal GP overlaps with other
++	// normal GPs only by being fully nested within them, which allows
++	// reuse of ->gp_seq_polled_snap.
++	rcu_poll_gp_seq_start_unlocked(&rcu_state.gp_seq_polled_snap);
++	rcu_poll_gp_seq_end_unlocked(&rcu_state.gp_seq_polled_snap);
++
++	// Update the normal grace-period counters to record
++	// this grace period, but only those used by the boot CPU.
++	// The rcu_scheduler_starting() will take care of the rest of
++	// these counters.
++	local_irq_save(flags);
++	WARN_ON_ONCE(num_online_cpus() > 1);
++	rcu_state.gp_seq += (1 << RCU_SEQ_CTR_SHIFT);
++	for (rnp = this_cpu_ptr(&rcu_data)->mynode; rnp; rnp = rnp->parent)
++		rnp->gp_seq_needed = rnp->gp_seq = rcu_state.gp_seq;
++	local_irq_restore(flags);
+ }
+ EXPORT_SYMBOL_GPL(synchronize_rcu);
+ 
++/**
++ * get_completed_synchronize_rcu_full - Return a full pre-completed polled state cookie
++ * @rgosp: Place to put state cookie
++ *
++ * Stores into @rgosp a value that will always be treated by functions
++ * like poll_state_synchronize_rcu_full() as a cookie whose grace period
++ * has already completed.
++ */
++void get_completed_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	rgosp->rgos_norm = RCU_GET_STATE_COMPLETED;
++	rgosp->rgos_exp = RCU_GET_STATE_COMPLETED;
++}
++EXPORT_SYMBOL_GPL(get_completed_synchronize_rcu_full);
++
+ /**
+  * get_state_synchronize_rcu - Snapshot current RCU state
+  *
+@@ -3541,21 +3567,42 @@ unsigned long get_state_synchronize_rcu(void)
+ EXPORT_SYMBOL_GPL(get_state_synchronize_rcu);
+ 
+ /**
+- * start_poll_synchronize_rcu - Snapshot and start RCU grace period
++ * get_state_synchronize_rcu_full - Snapshot RCU state, both normal and expedited
++ * @rgosp: location to place combined normal/expedited grace-period state
+  *
+- * Returns a cookie that is used by a later call to cond_synchronize_rcu()
+- * or poll_state_synchronize_rcu() to determine whether or not a full
+- * grace period has elapsed in the meantime.  If the needed grace period
+- * is not already slated to start, notifies RCU core of the need for that
+- * grace period.
++ * Places the normal and expedited grace-period states in @rgosp.  This
++ * state value can be passed to a later call to cond_synchronize_rcu_full()
++ * or poll_state_synchronize_rcu_full() to determine whether or not a
++ * grace period (whether normal or expedited) has elapsed in the meantime.
++ * The rcu_gp_oldstate structure takes up twice the memory of an unsigned
++ * long, but is guaranteed to see all grace periods.  In contrast, the
++ * combined state occupies less memory, but can sometimes fail to take
++ * grace periods into account.
+  *
+- * Interrupts must be enabled for the case where it is necessary to awaken
+- * the grace-period kthread.
++ * This does not guarantee that the needed grace period will actually
++ * start.
+  */
+-unsigned long start_poll_synchronize_rcu(void)
++void get_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	struct rcu_node *rnp = rcu_get_root();
++
++	/*
++	 * Any prior manipulation of RCU-protected data must happen
++	 * before the loads from ->gp_seq and ->expedited_sequence.
++	 */
++	smp_mb();  /* ^^^ */
++	rgosp->rgos_norm = rcu_seq_snap(&rnp->gp_seq);
++	rgosp->rgos_exp = rcu_seq_snap(&rcu_state.expedited_sequence);
++}
++EXPORT_SYMBOL_GPL(get_state_synchronize_rcu_full);
++
++/*
++ * Helper function for start_poll_synchronize_rcu() and
++ * start_poll_synchronize_rcu_full().
++ */
++static void start_poll_synchronize_rcu_common(void)
+ {
+ 	unsigned long flags;
+-	unsigned long gp_seq = get_state_synchronize_rcu();
+ 	bool needwake;
+ 	struct rcu_data *rdp;
+ 	struct rcu_node *rnp;
+@@ -3575,17 +3622,57 @@ unsigned long start_poll_synchronize_rcu(void)
+ 	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
+ 	if (needwake)
+ 		rcu_gp_kthread_wake();
++}
++
++/**
++ * start_poll_synchronize_rcu - Snapshot and start RCU grace period
++ *
++ * Returns a cookie that is used by a later call to cond_synchronize_rcu()
++ * or poll_state_synchronize_rcu() to determine whether or not a full
++ * grace period has elapsed in the meantime.  If the needed grace period
++ * is not already slated to start, notifies RCU core of the need for that
++ * grace period.
++ *
++ * Interrupts must be enabled for the case where it is necessary to awaken
++ * the grace-period kthread.
++ */
++unsigned long start_poll_synchronize_rcu(void)
++{
++	unsigned long gp_seq = get_state_synchronize_rcu();
++
++	start_poll_synchronize_rcu_common();
+ 	return gp_seq;
+ }
+ EXPORT_SYMBOL_GPL(start_poll_synchronize_rcu);
+ 
+ /**
+- * poll_state_synchronize_rcu - Conditionally wait for an RCU grace period
++ * start_poll_synchronize_rcu_full - Take a full snapshot and start RCU grace period
++ * @rgosp: value from get_state_synchronize_rcu_full() or start_poll_synchronize_rcu_full()
+  *
++ * Places the normal and expedited grace-period states in *@rgos.  This
++ * state value can be passed to a later call to cond_synchronize_rcu_full()
++ * or poll_state_synchronize_rcu_full() to determine whether or not a
++ * grace period (whether normal or expedited) has elapsed in the meantime.
++ * If the needed grace period is not already slated to start, notifies
++ * RCU core of the need for that grace period.
++ *
++ * Interrupts must be enabled for the case where it is necessary to awaken
++ * the grace-period kthread.
++ */
++void start_poll_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	get_state_synchronize_rcu_full(rgosp);
++
++	start_poll_synchronize_rcu_common();
++}
++EXPORT_SYMBOL_GPL(start_poll_synchronize_rcu_full);
++
++/**
++ * poll_state_synchronize_rcu - Has the specified RCU grace period completed?
+  * @oldstate: value from get_state_synchronize_rcu() or start_poll_synchronize_rcu()
+  *
+  * If a full RCU grace period has elapsed since the earlier call from
+- * which oldstate was obtained, return @true, otherwise return @false.
++ * which @oldstate was obtained, return @true, otherwise return @false.
+  * If @false is returned, it is the caller's responsibility to invoke this
+  * function later on until it does return @true.  Alternatively, the caller
+  * can explicitly wait for a grace period, for example, by passing @oldstate
+@@ -3594,10 +3681,11 @@ EXPORT_SYMBOL_GPL(start_poll_synchronize_rcu);
+  * Yes, this function does not take counter wrap into account.
+  * But counter wrap is harmless.  If the counter wraps, we have waited for
+  * more than a billion grace periods (and way more on a 64-bit system!).
+- * Those needing to keep oldstate values for very long time periods
+- * (many hours even on 32-bit systems) should check them occasionally
+- * and either refresh them or set a flag indicating that the grace period
+- * has completed.
++ * Those needing to keep old state values for very long time periods
++ * (many hours even on 32-bit systems) should check them occasionally and
++ * either refresh them or set a flag indicating that the grace period has
++ * completed.  Alternatively, they can use get_completed_synchronize_rcu()
++ * to get a guaranteed-completed grace-period state.
+  *
+  * This function provides the same memory-ordering guarantees that
+  * would be provided by a synchronize_rcu() that was invoked at the call
+@@ -3616,8 +3704,56 @@ bool poll_state_synchronize_rcu(unsigned long oldstate)
+ EXPORT_SYMBOL_GPL(poll_state_synchronize_rcu);
+ 
+ /**
+- * cond_synchronize_rcu - Conditionally wait for an RCU grace period
++ * poll_state_synchronize_rcu_full - Has the specified RCU grace period completed?
++ * @rgosp: value from get_state_synchronize_rcu_full() or start_poll_synchronize_rcu_full()
+  *
++ * If a full RCU grace period has elapsed since the earlier call from
++ * which *rgosp was obtained, return @true, otherwise return @false.
++ * If @false is returned, it is the caller's responsibility to invoke this
++ * function later on until it does return @true.  Alternatively, the caller
++ * can explicitly wait for a grace period, for example, by passing @rgosp
++ * to cond_synchronize_rcu() or by directly invoking synchronize_rcu().
++ *
++ * Yes, this function does not take counter wrap into account.
++ * But counter wrap is harmless.  If the counter wraps, we have waited
++ * for more than a billion grace periods (and way more on a 64-bit
++ * system!).  Those needing to keep rcu_gp_oldstate values for very
++ * long time periods (many hours even on 32-bit systems) should check
++ * them occasionally and either refresh them or set a flag indicating
++ * that the grace period has completed.  Alternatively, they can use
++ * get_completed_synchronize_rcu_full() to get a guaranteed-completed
++ * grace-period state.
++ *
++ * This function provides the same memory-ordering guarantees that would
++ * be provided by a synchronize_rcu() that was invoked at the call to
++ * the function that provided @rgosp, and that returned at the end of this
++ * function.  And this guarantee requires that the root rcu_node structure's
++ * ->gp_seq field be checked instead of that of the rcu_state structure.
++ * The problem is that the just-ending grace-period's callbacks can be
++ * invoked between the time that the root rcu_node structure's ->gp_seq
++ * field is updated and the time that the rcu_state structure's ->gp_seq
++ * field is updated.  Therefore, if a single synchronize_rcu() is to
++ * cause a subsequent poll_state_synchronize_rcu_full() to return @true,
++ * then the root rcu_node structure is the one that needs to be polled.
++ */
++bool poll_state_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	struct rcu_node *rnp = rcu_get_root();
++
++	smp_mb(); // Order against root rcu_node structure grace-period cleanup.
++	if (rgosp->rgos_norm == RCU_GET_STATE_COMPLETED ||
++	    rcu_seq_done_exact(&rnp->gp_seq, rgosp->rgos_norm) ||
++	    rgosp->rgos_exp == RCU_GET_STATE_COMPLETED ||
++	    rcu_seq_done_exact(&rcu_state.expedited_sequence, rgosp->rgos_exp)) {
++		smp_mb(); /* Ensure GP ends before subsequent accesses. */
++		return true;
++	}
++	return false;
++}
++EXPORT_SYMBOL_GPL(poll_state_synchronize_rcu_full);
++
++/**
++ * cond_synchronize_rcu - Conditionally wait for an RCU grace period
+  * @oldstate: value from get_state_synchronize_rcu(), start_poll_synchronize_rcu(), or start_poll_synchronize_rcu_expedited()
+  *
+  * If a full RCU grace period has elapsed since the earlier call to
+@@ -3641,6 +3777,33 @@ void cond_synchronize_rcu(unsigned long oldstate)
+ }
+ EXPORT_SYMBOL_GPL(cond_synchronize_rcu);
+ 
++/**
++ * cond_synchronize_rcu_full - Conditionally wait for an RCU grace period
++ * @rgosp: value from get_state_synchronize_rcu_full(), start_poll_synchronize_rcu_full(), or start_poll_synchronize_rcu_expedited_full()
++ *
++ * If a full RCU grace period has elapsed since the call to
++ * get_state_synchronize_rcu_full(), start_poll_synchronize_rcu_full(),
++ * or start_poll_synchronize_rcu_expedited_full() from which @rgosp was
++ * obtained, just return.  Otherwise, invoke synchronize_rcu() to wait
++ * for a full grace period.
++ *
++ * Yes, this function does not take counter wrap into account.
++ * But counter wrap is harmless.  If the counter wraps, we have waited for
++ * more than 2 billion grace periods (and way more on a 64-bit system!),
++ * so waiting for a couple of additional grace periods should be just fine.
++ *
++ * This function provides the same memory-ordering guarantees that
++ * would be provided by a synchronize_rcu() that was invoked at the call
++ * to the function that provided @rgosp and that returned at the end of
++ * this function.
++ */
++void cond_synchronize_rcu_full(struct rcu_gp_oldstate *rgosp)
++{
++	if (!poll_state_synchronize_rcu_full(rgosp))
++		synchronize_rcu();
++}
++EXPORT_SYMBOL_GPL(cond_synchronize_rcu_full);
++
+ /*
+  * Check to see if there is any immediate RCU-related work to be done by
+  * the current CPU, returning 1 if so and zero otherwise.  The checks are
+@@ -4312,9 +4475,20 @@ early_initcall(rcu_spawn_gp_kthread);
+  */
+ void rcu_scheduler_starting(void)
+ {
++	unsigned long flags;
++	struct rcu_node *rnp;
++
+ 	WARN_ON(num_online_cpus() != 1);
+ 	WARN_ON(nr_context_switches() > 0);
+ 	rcu_test_sync_prims();
++
++	// Fix up the ->gp_seq counters.
++	local_irq_save(flags);
++	rcu_for_each_node_breadth_first(rnp)
++		rnp->gp_seq_needed = rnp->gp_seq = rcu_state.gp_seq;
++	local_irq_restore(flags);
++
++	// Switch out of early boot mode.
+ 	rcu_scheduler_active = RCU_SCHEDULER_INIT;
+ 	rcu_test_sync_prims();
+ }
+diff --git a/kernel/rcu/tree_exp.h b/kernel/rcu/tree_exp.h
+index be667583a554..18e9b4cd78ef 100644
+--- a/kernel/rcu/tree_exp.h
++++ b/kernel/rcu/tree_exp.h
+@@ -828,11 +828,13 @@ static void rcu_exp_handler(void *unused)
+ {
+ 	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
+ 	struct rcu_node *rnp = rdp->mynode;
++	bool preempt_bh_enabled = !(preempt_count() & (PREEMPT_MASK | SOFTIRQ_MASK));
+ 
+ 	if (!(READ_ONCE(rnp->expmask) & rdp->grpmask) ||
+ 	    __this_cpu_read(rcu_data.cpu_no_qs.b.exp))
+ 		return;
+-	if (rcu_is_cpu_rrupt_from_idle()) {
++	if (rcu_is_cpu_rrupt_from_idle() ||
++	    (IS_ENABLED(CONFIG_PREEMPT_COUNT) && preempt_bh_enabled)) {
+ 		rcu_report_exp_rdp(this_cpu_ptr(&rcu_data));
+ 		return;
+ 	}
+@@ -906,6 +908,7 @@ static int rcu_print_task_exp_stall(struct rcu_node *rnp)
+ void synchronize_rcu_expedited(void)
+ {
+ 	bool boottime = (rcu_scheduler_active == RCU_SCHEDULER_INIT);
++	unsigned long flags;
+ 	struct rcu_exp_work rew;
+ 	struct rcu_node *rnp;
+ 	unsigned long s;
+@@ -924,8 +927,11 @@ void synchronize_rcu_expedited(void)
+ 		// them, which allows reuse of ->gp_seq_polled_exp_snap.
+ 		rcu_poll_gp_seq_start_unlocked(&rcu_state.gp_seq_polled_exp_snap);
+ 		rcu_poll_gp_seq_end_unlocked(&rcu_state.gp_seq_polled_exp_snap);
+-		if (rcu_init_invoked())
+-			cond_resched();
++
++		local_irq_save(flags);
++		WARN_ON_ONCE(num_online_cpus() > 1);
++		rcu_state.expedited_sequence += (1 << RCU_SEQ_CTR_SHIFT);
++		local_irq_restore(flags);
+ 		return;  // Context allows vacuous grace periods.
+ 	}
+ 
+@@ -1027,6 +1033,24 @@ unsigned long start_poll_synchronize_rcu_expedited(void)
+ }
+ EXPORT_SYMBOL_GPL(start_poll_synchronize_rcu_expedited);
+ 
++/**
++ * start_poll_synchronize_rcu_expedited_full - Take a full snapshot and start expedited grace period
++ * @rgosp: Place to put snapshot of grace-period state
++ *
++ * Places the normal and expedited grace-period states in rgosp.  This
++ * state value can be passed to a later call to cond_synchronize_rcu_full()
++ * or poll_state_synchronize_rcu_full() to determine whether or not a
++ * grace period (whether normal or expedited) has elapsed in the meantime.
++ * If the needed expedited grace period is not already slated to start,
++ * initiates that grace period.
++ */
++void start_poll_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp)
++{
++	get_state_synchronize_rcu_full(rgosp);
++	(void)start_poll_synchronize_rcu_expedited();
++}
++EXPORT_SYMBOL_GPL(start_poll_synchronize_rcu_expedited_full);
++
+ /**
+  * cond_synchronize_rcu_expedited - Conditionally wait for an expedited RCU grace period
+  *
+@@ -1053,3 +1077,30 @@ void cond_synchronize_rcu_expedited(unsigned long oldstate)
+ 		synchronize_rcu_expedited();
+ }
+ EXPORT_SYMBOL_GPL(cond_synchronize_rcu_expedited);
++
++/**
++ * cond_synchronize_rcu_expedited_full - Conditionally wait for an expedited RCU grace period
++ * @rgosp: value from get_state_synchronize_rcu_full(), start_poll_synchronize_rcu_full(), or start_poll_synchronize_rcu_expedited_full()
++ *
++ * If a full RCU grace period has elapsed since the call to
++ * get_state_synchronize_rcu_full(), start_poll_synchronize_rcu_full(),
++ * or start_poll_synchronize_rcu_expedited_full() from which @rgosp was
++ * obtained, just return.  Otherwise, invoke synchronize_rcu_expedited()
++ * to wait for a full grace period.
++ *
++ * Yes, this function does not take counter wrap into account.
++ * But counter wrap is harmless.  If the counter wraps, we have waited for
++ * more than 2 billion grace periods (and way more on a 64-bit system!),
++ * so waiting for a couple of additional grace periods should be just fine.
++ *
++ * This function provides the same memory-ordering guarantees that
++ * would be provided by a synchronize_rcu() that was invoked at the call
++ * to the function that provided @rgosp and that returned at the end of
++ * this function.
++ */
++void cond_synchronize_rcu_expedited_full(struct rcu_gp_oldstate *rgosp)
++{
++	if (!poll_state_synchronize_rcu_full(rgosp))
++		synchronize_rcu_expedited();
++}
++EXPORT_SYMBOL_GPL(cond_synchronize_rcu_expedited_full);
+diff --git a/kernel/rcu/tree_nocb.h b/kernel/rcu/tree_nocb.h
+index a8f574d8850d..0a5f0ef41484 100644
+--- a/kernel/rcu/tree_nocb.h
++++ b/kernel/rcu/tree_nocb.h
+@@ -1111,7 +1111,7 @@ int rcu_nocb_cpu_deoffload(int cpu)
+ 			if (!ret)
+ 				cpumask_clear_cpu(cpu, rcu_nocb_mask);
+ 		} else {
+-			pr_info("NOCB: Can't CB-deoffload an offline CPU\n");
++			pr_info("NOCB: Cannot CB-deoffload offline CPU %d\n", rdp->cpu);
+ 			ret = -EINVAL;
+ 		}
+ 	}
+@@ -1196,7 +1196,7 @@ int rcu_nocb_cpu_offload(int cpu)
+ 			if (!ret)
+ 				cpumask_set_cpu(cpu, rcu_nocb_mask);
+ 		} else {
+-			pr_info("NOCB: Can't CB-offload an offline CPU\n");
++			pr_info("NOCB: Cannot CB-offload offline CPU %d\n", rdp->cpu);
+ 			ret = -EINVAL;
+ 		}
+ 	}
+@@ -1452,8 +1452,8 @@ static void show_rcu_nocb_gp_state(struct rcu_data *rdp)
+ 		(long)rdp->nocb_gp_seq,
+ 		rnp->grplo, rnp->grphi, READ_ONCE(rdp->nocb_gp_loops),
+ 		rdp->nocb_gp_kthread ? task_state_to_char(rdp->nocb_gp_kthread) : '.',
+-		rdp->nocb_cb_kthread ? (int)task_cpu(rdp->nocb_gp_kthread) : -1,
+-		show_rcu_should_be_on_cpu(rdp->nocb_cb_kthread));
++		rdp->nocb_gp_kthread ? (int)task_cpu(rdp->nocb_gp_kthread) : -1,
++		show_rcu_should_be_on_cpu(rdp->nocb_gp_kthread));
+ }
+ 
+ /* Dump out nocb kthread state for the specified rcu_data structure. */
+@@ -1497,7 +1497,7 @@ static void show_rcu_nocb_state(struct rcu_data *rdp)
+ 		".B"[!!rcu_cblist_n_cbs(&rdp->nocb_bypass)],
+ 		rcu_segcblist_n_cbs(&rdp->cblist),
+ 		rdp->nocb_cb_kthread ? task_state_to_char(rdp->nocb_cb_kthread) : '.',
+-		rdp->nocb_cb_kthread ? (int)task_cpu(rdp->nocb_gp_kthread) : -1,
++		rdp->nocb_cb_kthread ? (int)task_cpu(rdp->nocb_cb_kthread) : -1,
+ 		show_rcu_should_be_on_cpu(rdp->nocb_cb_kthread));
+ 
+ 	/* It is OK for GP kthreads to have GP state. */
+diff --git a/kernel/rcu/tree_plugin.h b/kernel/rcu/tree_plugin.h
+index 438ecae6bd7e..e3142ee35fc6 100644
+--- a/kernel/rcu/tree_plugin.h
++++ b/kernel/rcu/tree_plugin.h
+@@ -641,7 +641,8 @@ static void rcu_read_unlock_special(struct task_struct *t)
+ 
+ 		expboost = (t->rcu_blocked_node && READ_ONCE(t->rcu_blocked_node->exp_tasks)) ||
+ 			   (rdp->grpmask & READ_ONCE(rnp->expmask)) ||
+-			   IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) ||
++			   (IS_ENABLED(CONFIG_RCU_STRICT_GRACE_PERIOD) &&
++			   ((rdp->grpmask & READ_ONCE(rnp->qsmask)) || t->rcu_blocked_node)) ||
+ 			   (IS_ENABLED(CONFIG_RCU_BOOST) && irqs_were_disabled &&
+ 			    t->rcu_blocked_node);
+ 		// Need to defer quiescent state until everything is enabled.
+@@ -718,9 +719,6 @@ static void rcu_flavor_sched_clock_irq(int user)
+ 	struct task_struct *t = current;
+ 
+ 	lockdep_assert_irqs_disabled();
+-	if (user || rcu_is_cpu_rrupt_from_idle()) {
+-		rcu_note_voluntary_context_switch(current);
+-	}
+ 	if (rcu_preempt_depth() > 0 ||
+ 	    (preempt_count() & (PREEMPT_MASK | SOFTIRQ_MASK))) {
+ 		/* No QS, force context switch if deferred. */
+@@ -824,6 +822,7 @@ void rcu_read_unlock_strict(void)
+ 	if (irqs_disabled() || preempt_count() || !rcu_state.gp_kthread)
+ 		return;
+ 	rdp = this_cpu_ptr(&rcu_data);
++	rdp->cpu_no_qs.b.norm = false;
+ 	rcu_report_qs_rdp(rdp);
+ 	udelay(rcu_unlock_delay);
+ }
+@@ -869,7 +868,7 @@ void rcu_all_qs(void)
+ 
+ 	if (!raw_cpu_read(rcu_data.rcu_urgent_qs))
+ 		return;
+-	preempt_disable();
++	preempt_disable();  // For CONFIG_PREEMPT_COUNT=y kernels
+ 	/* Load rcu_urgent_qs before other flags. */
+ 	if (!smp_load_acquire(this_cpu_ptr(&rcu_data.rcu_urgent_qs))) {
+ 		preempt_enable();
+@@ -931,10 +930,13 @@ static notrace bool rcu_preempt_need_deferred_qs(struct task_struct *t)
+ 	return false;
+ }
+ 
+-// Except that we do need to respond to a request by an expedited grace
+-// period for a quiescent state from this CPU.  Note that requests from
+-// tasks are handled when removing the task from the blocked-tasks list
+-// below.
++// Except that we do need to respond to a request by an expedited
++// grace period for a quiescent state from this CPU.  Note that in
++// non-preemptible kernels, there can be no context switches within RCU
++// read-side critical sections, which in turn means that the leaf rcu_node
++// structure's blocked-tasks list is always empty.  is therefore no need to
++// actually check it.  Instead, a quiescent state from this CPU suffices,
++// and this function is only called from such a quiescent state.
+ notrace void rcu_preempt_deferred_qs(struct task_struct *t)
+ {
+ 	struct rcu_data *rdp = this_cpu_ptr(&rcu_data);
+@@ -972,7 +974,6 @@ static void rcu_flavor_sched_clock_irq(int user)
+ 		 * neither access nor modify, at least not while the
+ 		 * corresponding CPU is online.
+ 		 */
+-
+ 		rcu_qs();
+ 	}
+ }
+@@ -1238,8 +1239,11 @@ static void rcu_boost_kthread_setaffinity(struct rcu_node *rnp, int outgoingcpu)
+ 		    cpu != outgoingcpu)
+ 			cpumask_set_cpu(cpu, cm);
+ 	cpumask_and(cm, cm, housekeeping_cpumask(HK_TYPE_RCU));
+-	if (cpumask_empty(cm))
++	if (cpumask_empty(cm)) {
+ 		cpumask_copy(cm, housekeeping_cpumask(HK_TYPE_RCU));
++		if (outgoingcpu >= 0)
++			cpumask_clear_cpu(outgoingcpu, cm);
++	}
+ 	set_cpus_allowed_ptr(t, cm);
+ 	mutex_unlock(&rnp->boost_kthread_mutex);
+ 	free_cpumask_var(cm);
+diff --git a/kernel/rcu/tree_stall.h b/kernel/rcu/tree_stall.h
+index c3fbbcc09327..5653560573e2 100644
+--- a/kernel/rcu/tree_stall.h
++++ b/kernel/rcu/tree_stall.h
+@@ -368,7 +368,7 @@ static void rcu_dump_cpu_stacks(void)
+ 			if (rnp->qsmask & leaf_node_cpu_bit(rnp, cpu)) {
+ 				if (cpu_is_offline(cpu))
+ 					pr_err("Offline CPU %d blocking current GP.\n", cpu);
+-				else if (!trigger_single_cpu_backtrace(cpu))
++				else
+ 					dump_cpu_task(cpu);
+ 			}
+ 		raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
+@@ -511,8 +511,7 @@ static void rcu_check_gp_kthread_starvation(void)
+ 					pr_err("RCU GP kthread last ran on offline CPU %d.\n", cpu);
+ 				} else  {
+ 					pr_err("Stack dump where RCU GP kthread last ran:\n");
+-					if (!trigger_single_cpu_backtrace(cpu))
+-						dump_cpu_task(cpu);
++					dump_cpu_task(cpu);
+ 				}
+ 			}
+ 			wake_up_process(gpk);
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index c808fe78f207..eb804dbfed0d 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -74,6 +74,7 @@
+ 
+ #include <uapi/linux/sched/types.h>
+ 
++#include <asm/irq_regs.h>
+ #include <asm/switch_to.h>
+ #include <asm/tlb.h>
+ 
+@@ -11204,6 +11205,19 @@ struct cgroup_subsys cpu_cgrp_subsys = {
+ 
+ void dump_cpu_task(int cpu)
+ {
++	if (cpu == smp_processor_id() && in_hardirq()) {
++		struct pt_regs *regs;
++
++		regs = get_irq_regs();
++		if (regs) {
++			show_regs(regs);
++			return;
++		}
++	}
++
++	if (trigger_single_cpu_backtrace(cpu))
++		return;
++
+ 	pr_info("Task dump for CPU %d:\n", cpu);
+ 	sched_show_task(cpu_curr(cpu));
+ }
+diff --git a/kernel/smp.c b/kernel/smp.c
+index 661d09ae5d6a..06a413987a14 100644
+--- a/kernel/smp.c
++++ b/kernel/smp.c
+@@ -370,8 +370,7 @@ static bool csd_lock_wait_toolong(struct __call_single_data *csd, u64 ts0, u64 *
+ 	if (cpu >= 0) {
+ 		if (static_branch_unlikely(&csdlock_debug_extended))
+ 			csd_lock_print_extended(csd, cpu);
+-		if (!trigger_single_cpu_backtrace(cpu))
+-			dump_cpu_task(cpu);
++		dump_cpu_task(cpu);
+ 		if (!cpu_cur_csd) {
+ 			pr_alert("csd: Re-sending CSD lock (#%d) IPI from CPU#%02d to CPU#%02d\n", *bug_id, raw_smp_processor_id(), cpu);
+ 			arch_send_call_function_single_ipi(cpu);
+-- 
+2.38.0.rc2
 

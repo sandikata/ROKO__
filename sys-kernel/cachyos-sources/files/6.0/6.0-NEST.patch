@@ -13,19 +13,6 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  kernel/sched/idle.c              |  20 +++
  kernel/sched/sched.h             |  49 +++++
  7 files changed, 457 insertions(+), 15 deletions(-)
-
-diff --git a/arch/x86/kernel/cpu/aperfmperf.c b/arch/x86/kernel/cpu/aperfmperf.c
-index 1f60a2b27936..3c992adbe3cf 100644
---- a/arch/x86/kernel/cpu/aperfmperf.c
-+++ b/arch/x86/kernel/cpu/aperfmperf.c
-@@ -383,6 +383,8 @@ void arch_scale_freq_tick(void)
- 	acnt = aperf - s->aperf;
- 	mcnt = mperf - s->mperf;
- 
-+	trace_printk("freq %lld\n", div64_u64((cpu_khz * acnt), mcnt));
-+
- 	s->aperf = aperf;
- 	s->mperf = mperf;
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
 index 070b15ba2e1e..08edb1420a2b 100644

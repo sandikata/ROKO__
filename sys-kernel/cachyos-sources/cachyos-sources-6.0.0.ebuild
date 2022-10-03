@@ -6,60 +6,53 @@ EXTRAVERSION="-cachyos"
 K_SECURITY_UNSUPPORTED="1"
 ETYPE="sources"
 inherit kernel-2
-#detect_version
-
+detect_version
 
 DESCRIPTION="CachyOS are improved kernels that improve performance and other aspects."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
-SRC_URI="https://git.kernel.org/torvalds/t/linux-6.0-rc7.tar.gz"
+SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL"
-SLOT="testing"
-KEYWORDS=""
-IUSE="bore cacule high-hz +latency +nest prjc tt"
-REQUIRED_USE="bore? ( !cacule !nest !prjc !tt ) cacule? ( !bore !nest !prjc !tt ) nest? ( !bore !cacule latency !prjc !tt ) prjc? ( !bore !cacule latency !nest !tt ) tt? ( !bore !cacule high-hz !nest !prjc )"
+SLOT="6.0-unstable"
+KEYWORDS="~amd64"
+IUSE="bore cacule high-hz +nest +latency prjc tt"
+REQUIRED_USE="bore? ( !cacule latency !nest !prjc !tt ) cacule? ( !bore latency !nest !prjc !tt ) nest? ( !bore !cacule latency !prjc !tt ) prjc? ( !bore !cacule latency !nest !tt ) tt? ( !bore !cacule high-hz latency !nest !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
-S="${WORKDIR}/linux-6.0-rc7"
-
-src_unpack() {
-	unpack linux-${KV_MAJOR}.0${RELEASE}.tar.gz
-}
-
 src_prepare() {
-	eapply "${FILESDIR}/6.0/6.0-cachyos-base-all.patch"
-	eapply "${FILESDIR}/6.0/6.0-amd-idle-fix.patch" # A performance fix for recent large AMD systems that avoids an ancient cpu idle hardware workaround. https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=a1375562c0a87f0fa2eaf3e8ce15824696d4170a
-#	eapply "${FILESDIR}/6.0/6.0-amd-pstate-epp-enhancement.patch"
+#	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-amd-pstate-epp-enhancement.patch"
+
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cachyos-base-all.patch"
 
 	if use high-hz; then
-		eapply "${FILESDIR}/6.0/6.0-high-hz.patch"
-	fi
-
-	if use latency; then
-		eapply "${FILESDIR}/6.0/6.0-latency-fix.patch"
-	fi
-
-	if use nest; then
-		eapply "${FILESDIR}/6.0/6.0-NEST.patch"
-	fi
-
-	if use bore; then
-		eapply "${FILESDIR}/6.0/6.0-bore.patch"
-	fi
-
-	if use tt; then
-		eapply "${FILESDIR}/6.0/6.0-tt.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-high-hz.patch"
 	fi
 
 	if use cacule; then
-		eapply "${FILESDIR}/6.0/6.0-cacULE-cachy.patch"
+	    eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cacULE-cachy.patch"
+	fi
+
+	if use latency; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-latency-fix.patch"
+	fi
+
+	if use nest; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-NEST.patch"
+	fi
+
+	if use bore; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore.patch"
+	fi
+
+	if use tt; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-tt-cachy.patch"
 	fi
 
 	if use prjc; then
-		eapply "${FILESDIR}/6.0/6.0-prjc.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-prjc.patch"
 	fi
 
 	eapply_user
