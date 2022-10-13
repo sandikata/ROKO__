@@ -30,28 +30,20 @@ DEPEND="
 	dev-qt/qtsvg:5
 	dev-qt/qtwidgets:5
 	dev-qt/linguist-tools:5[qml]
-	kde-frameworks/kauth
-	kde-frameworks/karchive
+	sys-auth/polkit
+	dev-libs/quazip
 	dev-libs/botan:2
 "
 RDEPEND="
-	dev-qt/qtcore:5
-	dev-qt/qtcharts:5[qml]
-	dev-qt/qtdbus:5
-	dev-qt/qtnetwork:5
-	dev-qt/qtquickcontrols2:5
-	dev-qt/qtsvg:5
-	dev-qt/qtwidgets:5
-	kde-frameworks/kauth
-	kde-frameworks/karchive
-	dev-libs/botan:2
+	${DEPEND}
 "
 BDEPEND="
+	dev-util/cmake
 	virtual/pkgconfig
 "
-
-S=${WORKDIR}/${PN}-v${PV}
 
 PATCHES=(
 	"${FILESDIR}/${PN}-install.patch"
 )
+
+S=${WORKDIR}/${PN}-v${PV}
