@@ -21,7 +21,7 @@ RDEPEND="
 	media-libs/vulkan-loader[abi_x86_32]
 	virtual/libusb[abi_x86_32]
 	media-libs/openal[abi_x86_32]
-	x11-libs/libva[abi_x86_32]
+	media-libs/libva[abi_x86_32]
 	media-video/ffmpeg
 	media-libs/speex[abi_x86_32]
 	media-libs/libtheora[abi_x86_32]
