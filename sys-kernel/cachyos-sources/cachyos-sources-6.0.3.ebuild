@@ -13,40 +13,46 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL"
-SLOT="5.19-stable"
+SLOT="stable"
 KEYWORDS="amd64"
-IUSE="+bore high-hz +nest +latency prjc tt"
-REQUIRED_USE="bore? ( latency nest !prjc !tt ) nest? ( latency !prjc !tt ) prjc? ( !bore !latency !nest !tt ) tt? ( high-hz !bore !latency !nest !prjc )"
+IUSE="+bore cacule high-hz +nest +latency prjc tt"
+REQUIRED_USE="bore? ( !cacule latency nest !prjc !tt ) cacule? ( !bore !latency !nest !prjc !tt ) nest? ( !cacule latency !prjc !tt ) prjc? ( !bore !cacule !latency !nest !tt ) tt? ( !bore !cacule high-hz !latency !nest !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
 src_prepare() {
-	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.12-cachyos-base-all.patch"
+#	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-amd-pstate-epp-enhancement.patch"
+
+	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cachyos-base-all.patch"
 
 	if use high-hz; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-high-hz.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-high-hz.patch"
+	fi
+
+	if use cacule; then
+	    eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cacULE-cachy.patch"
 	fi
 
 	if use latency; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-Add-latency-nice-prio.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-latency-fix.patch"
 	fi
 
 	if use nest; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19-NEST.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-NEST-global-cachy.patch"
 	fi
 
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore.patch"
 	fi
 
 	if use tt; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-tt-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-tt-cachy.patch"
 	fi
 
 	if use prjc; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/5.19.4-prjc-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-prjc.patch"
 	fi
 
 	eapply_user
@@ -54,6 +60,10 @@ src_prepare() {
 	# prepare default config
 	if use bore; then
 		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
+	fi
+
+	if use cacule; then
+		cp "${FILESDIR}/config-x86_64-cacule" .config && elog "CaCULE config applied" || die
 	fi
 
 	if use nest; then
