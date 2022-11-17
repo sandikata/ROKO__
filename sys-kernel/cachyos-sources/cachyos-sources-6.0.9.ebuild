@@ -44,7 +44,7 @@ src_prepare() {
 	fi
 
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore-cachy.patch"
 	fi
 
 	if use tt; then
