@@ -34,7 +34,6 @@ DEPEND="
 
 PATCHES=(
 	"${FILESDIR}/${P}-system-std-format.patch"
-	"${FILESDIR}/${P}-respect-flags.patch"
 )
 
 src_configure() {
