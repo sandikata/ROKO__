@@ -32,13 +32,10 @@ DEPEND="
 	dev-cpp/std-format
 "
 
-<<<<<<< HEAD
-=======
 PATCHES=(
 	"${FILESDIR}/${P}-system-std-format.patch"
 )
 
->>>>>>> d7e20c551d394eb5de16390a5d10fe888d43a269
 src_configure() {
 	local mycmakeargs=(
 		-DENABLE_SYSTEMD=$(usex systemd)
