@@ -1,0 +1,13 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -133,10 +133,8 @@
+ 
+ # std::format
+ set(STL_FORMAT_USE_EXTERNAL_FMTLIB ON CACHE BOOL "" FORCE)
+-if (NOT TARGET stl_polyfill::format)
+-    add_subdirectory(external/std-format)
+-endif()
+-target_link_libraries(ananicy-cpp PRIVATE stl_polyfill::format)
++find_package(StlPolyfillFormat REQUIRED)
++target_include_directories(ananicy-cpp PRIVATE "/usr/include/polyfills/format")
+ set(CMAKE_MESSAGE_CONTEXT "")
