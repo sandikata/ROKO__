@@ -6,6 +6,7 @@
 		<name>Rosen Aleksandrov</name>
 	</maintainer>
 	<use>
+		<flag name="bcachefs"> The COW filesystem for Linux that won't eat your data </flag>
 		<flag name="bore"> BORE (Burst-Oriented Response Enhancer) CPU Scheduler by firelzrd (BORE) </flag>
 		<flag name="cacule"> Predecessor of Task Type Scheduler </flag>
 		<flag name="high-hz"> CONFIG_HZ=833/1666 patch - EXPERIMENTAL! </flag>
