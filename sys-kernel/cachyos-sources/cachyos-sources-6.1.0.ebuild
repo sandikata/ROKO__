@@ -68,6 +68,12 @@ src_prepare() {
 	fi
 }
 
+src_install() {
+	if use bore; then
+		dobin "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/tunecfs2"
+	fi
+}
+
 pkg_postinst() {
 	elog "Default kernel config depending on selected scheduler has been applied."
 	elog "You have to build kernel manually!"
