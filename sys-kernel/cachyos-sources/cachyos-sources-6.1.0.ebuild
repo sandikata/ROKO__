@@ -18,7 +18,8 @@ KEYWORDS="amd64"
 IUSE="+bore cacule high-hz +latency prjc tt"
 REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
 
-DEPEND="virtual/linux-sources"
+DEPEND="virtual/linux-sources \
+		sys-kernel/cachyos-tunecfs2"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
@@ -68,13 +69,8 @@ src_prepare() {
 	fi
 }
 
-src_install() {
-		dobin "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/tunecfs2"
-}
-
 pkg_postinst() {
 	elog "Default kernel config depending on selected scheduler has been applied."
 	elog "You have to build kernel manually!"
 	elog "Initramfs is required for all default configurations (dracut or genkernel)"
-	elog "To use cachyos tunecfs2 tweak tool run as root (example: `tunecfs2 cachy` which is default, or `tunecfs2` to see available options)"
 }
