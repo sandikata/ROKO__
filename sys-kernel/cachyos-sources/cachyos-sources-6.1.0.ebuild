@@ -13,10 +13,10 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL"
-SLOT="unstable"
+SLOT="mainline"
 KEYWORDS="amd64"
-IUSE="+bore cacule high-hz +nest +latency prjc tt"
-REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) nest? ( !cacule latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
+IUSE="+bore cacule high-hz +latency prjc tt"
+REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -37,6 +37,7 @@ src_prepare() {
 
 	if use bore; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore-cachy.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-bore-tuning-sysctl.patch"
 	fi
 
 	if use tt; then
