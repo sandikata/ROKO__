@@ -69,13 +69,12 @@ src_prepare() {
 }
 
 src_install() {
-	if use bore; then
 		dobin "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/tunecfs2"
-	fi
 }
 
 pkg_postinst() {
 	elog "Default kernel config depending on selected scheduler has been applied."
 	elog "You have to build kernel manually!"
 	elog "Initramfs is required for all default configurations (dracut or genkernel)"
+	elog "To use cachyos tunecfs2 tweak tool run as root (example: `tunecfs2 cachy` which is default, or `tunecfs2` to see available options)"
 }
