@@ -8,7 +8,7 @@ inherit desktop python-any-r1 unpacker xdg-utils
 
 DESCRIPTION="A Community-led Hyper-Hackable Text Editor"
 HOMEPAGE="https://pulsar-edit.dev/"
-SRC_URI="https://web.pulsar-edit.dev/download?os=linux&type=linux_deb -> ${P}.deb"
+SRC_URI="https://github.com/pulsar-edit/pulsar/releases/download/v1.100.0-beta/Linux.pulsar_1.100.0-beta_amd64.deb -> ${P}.deb"
 
 LICENSE="MIT"
 SLOT="0"
