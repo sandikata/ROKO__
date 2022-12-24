@@ -15,7 +15,7 @@ SRC_URI="${KERNEL_URI}"
 LICENSE="GPL"
 SLOT="stable"
 KEYWORDS="amd64"
-IUSE="+bore cacule high-hz +latency prjc tt"
+IUSE="+bore cacule +latency prjc tt"
 REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
 
 DEPEND="virtual/linux-sources \
