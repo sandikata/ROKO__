@@ -11,7 +11,7 @@ LICENSE=""
 SLOT="0"
 KEYWORDS="amd64"
 
-DEPEND="sys-kernel/cachyos-sources:stable"
+DEPEND="sys-kernel/cachyos-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
