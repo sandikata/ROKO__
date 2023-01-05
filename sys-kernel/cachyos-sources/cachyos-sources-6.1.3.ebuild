@@ -13,7 +13,7 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL"
-SLOT="6.1.2"
+SLOT="6.1.3"
 KEYWORDS="amd64"
 IUSE="+bore cacule +latency prjc tt"
 REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
