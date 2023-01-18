@@ -46,7 +46,7 @@ src_prepare() {
 	fi
 
 	if use prjc; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-prjc.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-prjc-cachy.patch"
 	fi
 
 	eapply_user
