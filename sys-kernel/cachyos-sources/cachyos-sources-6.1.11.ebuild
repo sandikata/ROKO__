@@ -18,8 +18,7 @@ KEYWORDS="amd64"
 IUSE="+bore cacule +latency prjc tt"
 REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
 
-DEPEND="virtual/linux-sources \
-		sys-kernel/cachyos-tunecfs2"
+DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
 BDEPEND=""
 
