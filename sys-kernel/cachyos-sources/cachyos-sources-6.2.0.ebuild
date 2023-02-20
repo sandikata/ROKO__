@@ -13,10 +13,10 @@ HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL"
-SLOT="lts"
+SLOT="stable"
 KEYWORDS="amd64"
-IUSE="+bore cacule +latency prjc tt"
-REQUIRED_USE="bore? ( !cacule latency !prjc !tt ) cacule? ( !bore !latency !prjc !tt ) prjc? ( !bore !cacule !latency !tt ) tt? ( !bore !cacule !latency !prjc )"
+IUSE="+bore +latency prjc tt"
+REQUIRED_USE="bore? ( latency !prjc !tt ) prjc? ( !bore !latency !tt ) tt? ( !bore !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -27,9 +27,9 @@ src_prepare() {
 
 	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cachyos-base-all.patch"
 
-	if use cacule; then
-	    eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cacULE-cachy.patch"
-	fi
+#	if use cacule; then
+#	    eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-cacULE-cachy.patch"
+#	fi
 
 	if use latency; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-latency-fix.patch"
@@ -55,9 +55,9 @@ src_prepare() {
 		cp "${FILESDIR}/config-x86_64-bore" .config && elog "BORE config applied" || die
 	fi
 
-	if use cacule; then
-		cp "${FILESDIR}/config-x86_64-cacule" .config && elog "CaCULE config applied" || die
-	fi
+	#if use cacule; then
+	#	cp "${FILESDIR}/config-x86_64-cacule" .config && elog "CaCULE config applied" || die
+	#fi
 
 	if use prjc; then
 		cp "${FILESDIR}/config-x86_64-prjc" .config && elog "PRJC config applied" || die
