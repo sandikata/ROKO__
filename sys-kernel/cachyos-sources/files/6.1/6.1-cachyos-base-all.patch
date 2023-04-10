@@ -1,4 +1,4 @@
-From 258f94840ac42adc6def4190db414735937bb241 Mon Sep 17 00:00:00 2001
+From 2dc555f46d44509aa9ac70dad7cc5c4de6067219 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Sun, 15 Jan 2023 16:50:23 +0100
 Subject: [PATCH 01/17] bbr2
@@ -3281,9 +3281,9 @@ index cb79127f45c3..70e4de876a7f 100644
  	event = icsk->icsk_pending;
  
 -- 
-2.40.0.rc2
+2.40.0
 
-From ba4542e798bfdee4b6b4fe501ee3ce15b67c2513 Mon Sep 17 00:00:00 2001
+From 6475d8e548032ddeea601b7f35e28baa253c3c31 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 9 Feb 2023 11:52:21 +0100
 Subject: [PATCH 02/17] bfq
@@ -5563,9 +5563,9 @@ index 8fc3da4c23bb..7941b6f07391 100644
  	if (bfqq->wr_coeff > 1)
  		bfqd->wr_busy_queues++;
 -- 
-2.40.0.rc2
+2.40.0
 
-From d3aa48f9e6cc957ae984eb220aed8fb654c0ba85 Mon Sep 17 00:00:00 2001
+From d3a08dfc47f09c8d759585ccabed43a94b349937 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Tue, 14 Feb 2023 20:39:48 +0100
 Subject: [PATCH 03/17] bitmap
@@ -6914,9 +6914,9 @@ index efef68c9352a..4e7e7ae9dd11 100644
  #if defined(CONFIG_NUMA) && (MAX_NUMNODES > 1)
  	int w, bit;
 -- 
-2.40.0.rc2
+2.40.0
 
-From ff9040cdba6b954eed0a7a93da28633dbb2e117b Mon Sep 17 00:00:00 2001
+From cca30d98b0c2aa7af0777c4c3a890cde75500520 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Sat, 11 Mar 2023 14:51:48 +0100
 Subject: [PATCH 04/17] cachy
@@ -6924,7 +6924,7 @@ Subject: [PATCH 04/17] cachy
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
 ---
  .gitignore                                    |   1 +
- .../admin-guide/kernel-parameters.txt         |  11 +-
+ .../admin-guide/kernel-parameters.txt         |   2 +-
  Documentation/dontdiff                        |   1 +
  Makefile                                      |   8 +-
  arch/arc/configs/axs101_defconfig             |   1 +
@@ -6953,7 +6953,6 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  drivers/i2c/busses/i2c-nct6775.c              | 647 ++++++++++++++++++
  drivers/i2c/busses/i2c-piix4.c                |   4 +-
  drivers/md/dm-crypt.c                         |   5 +
- drivers/pci/quirks.c                          | 103 ++-
  include/linux/pagemap.h                       |   2 +-
  include/linux/user_namespace.h                |   4 +
  include/net/netns/ipv4.h                      |   1 +
@@ -6984,7 +6983,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  scripts/Makefile.debug                        |   6 +-
  scripts/Makefile.lib                          |  13 +-
  scripts/Makefile.modinst                      |   7 +-
- 61 files changed, 1746 insertions(+), 66 deletions(-)
+ 60 files changed, 1636 insertions(+), 64 deletions(-)
  create mode 100644 arch/x86/Makefile.postlink
  create mode 100644 drivers/i2c/busses/i2c-nct6775.c
 
@@ -7001,26 +7000,10 @@ index 5da004814678..cb59d89372c0 100644
  /vmlinux-gdb.py
  /vmlinuz
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index 6b838869554b..b9c00c38eda1 100644
+index 6b838869554b..0cef8c4c1f28 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
-@@ -4162,6 +4162,15 @@
- 		nomsi		[MSI] If the PCI_MSI kernel config parameter is
- 				enabled, this kernel boot option can be used to
- 				disable the use of MSI interrupts system-wide.
-+		pcie_acs_override =
-+					[PCIE] Override missing PCIe ACS support for:
-+				downstream
-+					All downstream ports - full ACS capabilities
-+				multfunction
-+					All multifunction devices - multifunction ACS subset
-+				id:nnnn:nnnn
-+					Specfic device - full ACS capabilities
-+					Specified as vid:did (vendor/device ID) in hex
- 		noioapicquirk	[APIC] Disable all boot interrupt quirks.
- 				Safety option to keep boot IRQs enabled. This
- 				should never be necessary.
-@@ -4737,7 +4746,7 @@
+@@ -4737,7 +4737,7 @@
  			overwritten.
  
  	rcutree.kthread_prio= 	 [KNL,BOOT]
@@ -7042,7 +7025,7 @@ index 352ff53a2306..7c210744d84c 100644
  vmlinuz
  voffset.h
 diff --git a/Makefile b/Makefile
-index a825361f7162..f975da01312a 100644
+index a842ec6d1932..2bd738a8e481 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -830,6 +830,9 @@ KBUILD_CFLAGS	+= $(call cc-disable-warning, address-of-packed-member)
@@ -8754,127 +8737,6 @@ index 2653516bcdef..973fe8f80051 100644
  	ret = crypt_ctr_cipher(ti, argv[0], argv[1]);
  	if (ret < 0)
  		goto bad;
-diff --git a/drivers/pci/quirks.c b/drivers/pci/quirks.c
-index 494fa46f5767..bcdfc072cbfb 100644
---- a/drivers/pci/quirks.c
-+++ b/drivers/pci/quirks.c
-@@ -3612,6 +3612,106 @@ static void quirk_no_bus_reset(struct pci_dev *dev)
- 	dev->dev_flags |= PCI_DEV_FLAGS_NO_BUS_RESET;
- }
- 
-+static bool acs_on_downstream;
-+static bool acs_on_multifunction;
-+
-+#define NUM_ACS_IDS 16
-+struct acs_on_id {
-+	unsigned short vendor;
-+	unsigned short device;
-+};
-+static struct acs_on_id acs_on_ids[NUM_ACS_IDS];
-+static u8 max_acs_id;
-+
-+static __init int pcie_acs_override_setup(char *p)
-+{
-+	if (!p)
-+		return -EINVAL;
-+
-+	while (*p) {
-+		if (!strncmp(p, "downstream", 10))
-+			acs_on_downstream = true;
-+		if (!strncmp(p, "multifunction", 13))
-+			acs_on_multifunction = true;
-+		if (!strncmp(p, "id:", 3)) {
-+			char opt[5];
-+			int ret;
-+			long val;
-+
-+			if (max_acs_id >= NUM_ACS_IDS - 1) {
-+				pr_warn("Out of PCIe ACS override slots (%d)\n",
-+						NUM_ACS_IDS);
-+				goto next;
-+			}
-+
-+			p += 3;
-+			snprintf(opt, 5, "%s", p);
-+			ret = kstrtol(opt, 16, &val);
-+			if (ret) {
-+				pr_warn("PCIe ACS ID parse error %d\n", ret);
-+				goto next;
-+			}
-+			acs_on_ids[max_acs_id].vendor = val;
-+
-+			p += strcspn(p, ":");
-+			if (*p != ':') {
-+				pr_warn("PCIe ACS invalid ID\n");
-+				goto next;
-+			}
-+
-+			p++;
-+			snprintf(opt, 5, "%s", p);
-+			ret = kstrtol(opt, 16, &val);
-+			if (ret) {
-+				pr_warn("PCIe ACS ID parse error %d\n", ret);
-+				goto next;
-+			}
-+			acs_on_ids[max_acs_id].device = val;
-+			max_acs_id++;
-+		}
-+next:
-+		p += strcspn(p, ",");
-+		if (*p == ',')
-+			p++;
-+	}
-+
-+	if (acs_on_downstream || acs_on_multifunction || max_acs_id)
-+		pr_warn("Warning: PCIe ACS overrides enabled; This may allow non-IOMMU protected peer-to-peer DMA\n");
-+
-+	return 0;
-+}
-+early_param("pcie_acs_override", pcie_acs_override_setup);
-+
-+static int pcie_acs_overrides(struct pci_dev *dev, u16 acs_flags)
-+{
-+	int i;
-+
-+	/* Never override ACS for legacy devices or devices with ACS caps */
-+	if (!pci_is_pcie(dev) ||
-+		pci_find_ext_capability(dev, PCI_EXT_CAP_ID_ACS))
-+			return -ENOTTY;
-+
-+	for (i = 0; i < max_acs_id; i++)
-+		if (acs_on_ids[i].vendor == dev->vendor &&
-+			acs_on_ids[i].device == dev->device)
-+				return 1;
-+
-+	switch (pci_pcie_type(dev)) {
-+	case PCI_EXP_TYPE_DOWNSTREAM:
-+	case PCI_EXP_TYPE_ROOT_PORT:
-+		if (acs_on_downstream)
-+			return 1;
-+		break;
-+	case PCI_EXP_TYPE_ENDPOINT:
-+	case PCI_EXP_TYPE_UPSTREAM:
-+	case PCI_EXP_TYPE_LEG_END:
-+	case PCI_EXP_TYPE_RC_END:
-+		if (acs_on_multifunction && dev->multifunction)
-+			return 1;
-+	}
-+
-+	return -ENOTTY;
-+}
- /*
-  * Some NVIDIA GPU devices do not work with bus reset, SBR needs to be
-  * prevented for those affected devices.
-@@ -5000,8 +5100,7 @@ static const struct pci_dev_acs_enabled {
- 	{ PCI_VENDOR_ID_NXP, 0x8d9b, pci_quirk_nxp_rp_acs },
- 	/* Zhaoxin Root/Downstream Ports */
- 	{ PCI_VENDOR_ID_ZHAOXIN, PCI_ANY_ID, pci_quirk_zhaoxin_pcie_ports_acs },
--	/* Wangxun nics */
--	{ PCI_VENDOR_ID_WANGXUN, PCI_ANY_ID, pci_quirk_wangxun_nic_acs },
-+	{ PCI_ANY_ID, PCI_ANY_ID, pcie_acs_overrides },
- 	{ 0 }
- };
- 
 diff --git a/include/linux/pagemap.h b/include/linux/pagemap.h
 index bbccb4044222..0a11325c35fa 100644
 --- a/include/linux/pagemap.h
@@ -9054,7 +8916,7 @@ index 38ef6d06888e..0f78364efd4f 100644
  
  config SCHED_HRTICK
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 844dfdc8c639..31d41db3f84d 100644
+index a6d243a50be3..b9f15288f64a 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -98,6 +98,10 @@
@@ -9787,9 +9649,9 @@ index 10df89b9ef67..8b00761aed5a 100644
  $(dst)/%.ko.gz: $(dst)/%.ko FORCE
  	$(call cmd,gzip)
 -- 
-2.40.0.rc2
+2.40.0
 
-From a852ada7d0df4d8ae13eb84250af044a99e870d5 Mon Sep 17 00:00:00 2001
+From 3d55bb5dbf5d659d7b7ecea9ab8f0b26478a5272 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 6 Feb 2023 09:54:19 +0100
 Subject: [PATCH 05/17] clr
@@ -10466,11 +10328,11 @@ index 34207ec358d8..4fff39d5e182 100644
  	init_net.ipv4.sysctl_tcp_wmem[0] = PAGE_SIZE;
  	init_net.ipv4.sysctl_tcp_wmem[1] = 16*1024;
 -- 
-2.40.0.rc2
+2.40.0
 
-From a0c81373e58f9751940e1eed5ff81f4d4a2471ac Mon Sep 17 00:00:00 2001
+From 9b63f073cd891284685c103dd795cbe84d6a099f Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
-Date: Wed, 22 Feb 2023 13:50:08 +0100
+Date: Tue, 14 Mar 2023 20:51:15 +0100
 Subject: [PATCH 06/17] fixes
 
 Signed-off-by: Peter Jung <admin@ptr1337.dev>
@@ -10487,8 +10349,6 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  block/blk-wbt.h                               |   17 +-
  block/elevator.c                              |    8 +-
  block/elevator.h                              |    5 +-
- drivers/char/tpm/tpm-chip.c                   |   62 +-
- drivers/char/tpm/tpm.h                        |   73 +
  drivers/leds/trigger/Kconfig                  |    9 +
  drivers/leds/trigger/Makefile                 |    1 +
  drivers/leds/trigger/ledtrig-blkdev.c         | 1220 +++++++++++++++++
@@ -10511,7 +10371,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  sound/pci/hda/cs35l41_hda.c                   |    2 +-
  tools/objtool/elf.c                           |   27 +-
  tools/objtool/include/objtool/elf.h           |    2 +
- 36 files changed, 1846 insertions(+), 117 deletions(-)
+ 34 files changed, 1712 insertions(+), 116 deletions(-)
  create mode 100644 Documentation/ABI/testing/sysfs-class-led-trigger-blkdev
  create mode 100644 Documentation/leds/ledtrig-blkdev.rst
  create mode 100644 drivers/leds/trigger/ledtrig-blkdev.c
@@ -11017,170 +10877,6 @@ index 3f0593b3bf9d..75382471222d 100644
  /*
   * block elevator interface
   */
-diff --git a/drivers/char/tpm/tpm-chip.c b/drivers/char/tpm/tpm-chip.c
-index 783d65fc71f0..3eea649d178b 100644
---- a/drivers/char/tpm/tpm-chip.c
-+++ b/drivers/char/tpm/tpm-chip.c
-@@ -507,6 +507,65 @@ static int tpm_add_legacy_sysfs(struct tpm_chip *chip)
- 	return 0;
- }
- 
-+static bool tpm_is_rng_defective(struct tpm_chip *chip)
-+{
-+	int ret;
-+	u64 version;
-+	u32 val1, val2;
-+
-+	/* No known-broken TPM1 chips. */
-+	if (!(chip->flags & TPM_CHIP_FLAG_TPM2))
-+		return false;
-+
-+	ret = tpm_request_locality(chip);
-+	if (ret)
-+		return false;
-+
-+	/* Some AMD fTPM versions may cause stutter */
-+	ret = tpm2_get_tpm_pt(chip, TPM2_PT_MANUFACTURER, &val1, NULL);
-+	if (ret)
-+		goto release;
-+	if (val1 != 0x414D4400U /* AMD */) {
-+		ret = -ENODEV;
-+		goto release;
-+	}
-+	ret = tpm2_get_tpm_pt(chip, TPM2_PT_FIRMWARE_VERSION_1, &val1, NULL);
-+	if (ret)
-+		goto release;
-+	ret = tpm2_get_tpm_pt(chip, TPM2_PT_FIRMWARE_VERSION_2, &val2, NULL);
-+	if (ret)
-+		goto release;
-+
-+release:
-+	tpm_relinquish_locality(chip);
-+
-+	if (ret)
-+		return false;
-+
-+	version = ((u64)val1 << 32) | val2;
-+	/*
-+	 * Fixes for stutter as described in
-+	 * https://www.amd.com/en/support/kb/faq/pa-410
-+	 * are available in two series of fTPM firmware:
-+	 *   6.x.y.z series: 6.0.18.6 +
-+	 *   3.x.y.z series: 3.57.x.5 +
-+	 */
-+	if ((version >> 48) == 6) {
-+		if (version >= 0x0006000000180006ULL)
-+			return false;
-+	} else if ((version >> 48) == 3) {
-+		if (version >= 0x0003005700000005ULL)
-+			return false;
-+	} else {
-+		return false;
-+	}
-+	dev_warn(&chip->dev,
-+		 "AMD fTPM version 0x%llx causes system stutter; hwrng disabled\n",
-+		 version);
-+
-+	return true;
-+}
-+
- static int tpm_hwrng_read(struct hwrng *rng, void *data, size_t max, bool wait)
- {
- 	struct tpm_chip *chip = container_of(rng, struct tpm_chip, hwrng);
-@@ -516,7 +575,8 @@ static int tpm_hwrng_read(struct hwrng *rng, void *data, size_t max, bool wait)
- 
- static int tpm_add_hwrng(struct tpm_chip *chip)
- {
--	if (!IS_ENABLED(CONFIG_HW_RANDOM_TPM) || tpm_is_firmware_upgrade(chip))
-+	if (!IS_ENABLED(CONFIG_HW_RANDOM_TPM) || tpm_is_firmware_upgrade(chip) ||
-+	    tpm_is_rng_defective(chip))
- 		return 0;
- 
- 	snprintf(chip->hwrng_name, sizeof(chip->hwrng_name),
-diff --git a/drivers/char/tpm/tpm.h b/drivers/char/tpm/tpm.h
-index 24ee4e1cc452..830014a26609 100644
---- a/drivers/char/tpm/tpm.h
-+++ b/drivers/char/tpm/tpm.h
-@@ -150,6 +150,79 @@ enum tpm_sub_capabilities {
- 	TPM_CAP_PROP_TIS_DURATION = 0x120,
- };
- 
-+enum tpm2_pt_props {
-+	TPM2_PT_NONE = 0x00000000,
-+	TPM2_PT_GROUP = 0x00000100,
-+	TPM2_PT_FIXED = TPM2_PT_GROUP * 1,
-+	TPM2_PT_FAMILY_INDICATOR = TPM2_PT_FIXED + 0,
-+	TPM2_PT_LEVEL = TPM2_PT_FIXED + 1,
-+	TPM2_PT_REVISION = TPM2_PT_FIXED + 2,
-+	TPM2_PT_DAY_OF_YEAR = TPM2_PT_FIXED + 3,
-+	TPM2_PT_YEAR = TPM2_PT_FIXED + 4,
-+	TPM2_PT_MANUFACTURER = TPM2_PT_FIXED + 5,
-+	TPM2_PT_VENDOR_STRING_1 = TPM2_PT_FIXED + 6,
-+	TPM2_PT_VENDOR_STRING_2 = TPM2_PT_FIXED + 7,
-+	TPM2_PT_VENDOR_STRING_3 = TPM2_PT_FIXED + 8,
-+	TPM2_PT_VENDOR_STRING_4 = TPM2_PT_FIXED + 9,
-+	TPM2_PT_VENDOR_TPM_TYPE = TPM2_PT_FIXED + 10,
-+	TPM2_PT_FIRMWARE_VERSION_1 = TPM2_PT_FIXED + 11,
-+	TPM2_PT_FIRMWARE_VERSION_2 = TPM2_PT_FIXED + 12,
-+	TPM2_PT_INPUT_BUFFER = TPM2_PT_FIXED + 13,
-+	TPM2_PT_HR_TRANSIENT_MIN = TPM2_PT_FIXED + 14,
-+	TPM2_PT_HR_PERSISTENT_MIN = TPM2_PT_FIXED + 15,
-+	TPM2_PT_HR_LOADED_MIN = TPM2_PT_FIXED + 16,
-+	TPM2_PT_ACTIVE_SESSIONS_MAX = TPM2_PT_FIXED + 17,
-+	TPM2_PT_PCR_COUNT = TPM2_PT_FIXED + 18,
-+	TPM2_PT_PCR_SELECT_MIN = TPM2_PT_FIXED + 19,
-+	TPM2_PT_CONTEXT_GAP_MAX = TPM2_PT_FIXED + 20,
-+	TPM2_PT_NV_COUNTERS_MAX = TPM2_PT_FIXED + 22,
-+	TPM2_PT_NV_INDEX_MAX = TPM2_PT_FIXED + 23,
-+	TPM2_PT_MEMORY = TPM2_PT_FIXED + 24,
-+	TPM2_PT_CLOCK_UPDATE = TPM2_PT_FIXED + 25,
-+	TPM2_PT_CONTEXT_HASH = TPM2_PT_FIXED + 26,
-+	TPM2_PT_CONTEXT_SYM = TPM2_PT_FIXED + 27,
-+	TPM2_PT_CONTEXT_SYM_SIZE = TPM2_PT_FIXED + 28,
-+	TPM2_PT_ORDERLY_COUNT = TPM2_PT_FIXED + 29,
-+	TPM2_PT_MAX_COMMAND_SIZE = TPM2_PT_FIXED + 30,
-+	TPM2_PT_MAX_RESPONSE_SIZE = TPM2_PT_FIXED + 31,
-+	TPM2_PT_MAX_DIGEST = TPM2_PT_FIXED + 32,
-+	TPM2_PT_MAX_OBJECT_CONTEXT = TPM2_PT_FIXED + 33,
-+	TPM2_PT_MAX_SESSION_CONTEXT = TPM2_PT_FIXED + 34,
-+	TPM2_PT_PS_FAMILY_INDICATOR = TPM2_PT_FIXED + 35,
-+	TPM2_PT_PS_LEVEL = TPM2_PT_FIXED + 36,
-+	TPM2_PT_PS_REVISION = TPM2_PT_FIXED + 37,
-+	TPM2_PT_PS_DAY_OF_YEAR = TPM2_PT_FIXED + 38,
-+	TPM2_PT_PS_YEAR = TPM2_PT_FIXED + 39,
-+	TPM2_PT_SPLIT_MAX = TPM2_PT_FIXED + 40,
-+	TPM2_PT_TOTAL_COMMANDS = TPM2_PT_FIXED + 41,
-+	TPM2_PT_LIBRARY_COMMANDS = TPM2_PT_FIXED + 42,
-+	TPM2_PT_VENDOR_COMMANDS = TPM2_PT_FIXED + 43,
-+	TPM2_PT_NV_BUFFER_MAX = TPM2_PT_FIXED + 44,
-+	TPM2_PT_MODES = TPM2_PT_FIXED + 45,
-+	TPM2_PT_MAX_CAP_BUFFER = TPM2_PT_FIXED + 46,
-+	TPM2_PT_VAR = TPM2_PT_GROUP * 2,
-+	TPM2_PT_PERMANENT = TPM2_PT_VAR + 0,
-+	TPM2_PT_STARTUP_CLEAR = TPM2_PT_VAR + 1,
-+	TPM2_PT_HR_NV_INDEX = TPM2_PT_VAR + 2,
-+	TPM2_PT_HR_LOADED = TPM2_PT_VAR + 3,
-+	TPM2_PT_HR_LOADED_AVAIL = TPM2_PT_VAR + 4,
-+	TPM2_PT_HR_ACTIVE = TPM2_PT_VAR + 5,
-+	TPM2_PT_HR_ACTIVE_AVAIL = TPM2_PT_VAR + 6,
-+	TPM2_PT_HR_TRANSIENT_AVAIL = TPM2_PT_VAR + 7,
-+	TPM2_PT_HR_PERSISTENT = TPM2_PT_VAR + 8,
-+	TPM2_PT_HR_PERSISTENT_AVAIL = TPM2_PT_VAR + 9,
-+	TPM2_PT_NV_COUNTERS = TPM2_PT_VAR + 10,
-+	TPM2_PT_NV_COUNTERS_AVAIL = TPM2_PT_VAR + 11,
-+	TPM2_PT_ALGORITHM_SET = TPM2_PT_VAR + 12,
-+	TPM2_PT_LOADED_CURVES = TPM2_PT_VAR + 13,
-+	TPM2_PT_LOCKOUT_COUNTER = TPM2_PT_VAR + 14,
-+	TPM2_PT_MAX_AUTH_FAIL = TPM2_PT_VAR + 15,
-+	TPM2_PT_LOCKOUT_INTERVAL = TPM2_PT_VAR + 16,
-+	TPM2_PT_LOCKOUT_RECOVERY = TPM2_PT_VAR + 17,
-+	TPM2_PT_NV_WRITE_RECOVERY = TPM2_PT_VAR + 18,
-+	TPM2_PT_AUDIT_COUNTER_0 = TPM2_PT_VAR + 19,
-+	TPM2_PT_AUDIT_COUNTER_1 = TPM2_PT_VAR + 20,
-+};
- 
- /* 128 bytes is an arbitrary cap. This could be as large as TPM_BUFSIZE - 18
-  * bytes, but 128 is still a relatively large number of random bytes and
 diff --git a/drivers/leds/trigger/Kconfig b/drivers/leds/trigger/Kconfig
 index dc6816d36d06..bda249068182 100644
 --- a/drivers/leds/trigger/Kconfig
@@ -13238,9 +12934,9 @@ index 16f4067b82ae..2b893f8bc1bc 100644
  	unsigned int type;
  	s64 addend;
 -- 
-2.40.0.rc2
+2.40.0
 
-From 845aaf45f5a2b07b9af94eedfa80ea276ca7359d Mon Sep 17 00:00:00 2001
+From 33b4cea92558c9f43d3b9ebcac92721c79c317b2 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 16 Dec 2022 14:24:11 +0100
 Subject: [PATCH 07/17] fs-patches
@@ -13255,7 +12951,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  fs/btrfs/super.c                    |   2 +
  fs/btrfs/volumes.c                  |   3 +
  fs/btrfs/volumes.h                  |   2 +
- fs/ext4/namei.c                     |  11 +-
+ fs/ext4/namei.c                     |   7 +
  fs/iomap/buffered-io.c              | 254 ++++++++++++++++++-
  fs/iomap/direct-io.c                |   3 +-
  fs/iomap/iter.c                     |  19 +-
@@ -13327,7 +13023,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  fs/xfs/xfs_trans_ail.c              |   4 +-
  fs/xfs/xfs_xattr.c                  |   2 +-
  include/linux/iomap.h               |  47 +++-
- 80 files changed, 2902 insertions(+), 945 deletions(-)
+ 80 files changed, 2899 insertions(+), 944 deletions(-)
 
 diff --git a/Documentation/filesystems/ntfs3.rst b/Documentation/filesystems/ntfs3.rst
 index d67ccd22c63b..5aa102bd72c2 100644
@@ -13367,7 +13063,7 @@ index d67ccd22c63b..5aa102bd72c2 100644
       - Enable support of the TRIM command for improved performance on delete
         operations, which is recommended for use with the solid-state drives
 diff --git a/fs/btrfs/block-group.c b/fs/btrfs/block-group.c
-index deebc8ddbd93..adb8ae1b472e 100644
+index 4b69945755e4..e4221323f344 100644
 --- a/fs/btrfs/block-group.c
 +++ b/fs/btrfs/block-group.c
 @@ -1527,6 +1527,30 @@ static inline bool btrfs_should_reclaim(struct btrfs_fs_info *fs_info)
@@ -13442,7 +13138,7 @@ index deebc8ddbd93..adb8ae1b472e 100644
  		spin_unlock(&bg->lock);
  
  		/* Get out fast, in case we're unmounting the filesystem */
-@@ -2001,6 +2059,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
+@@ -2002,6 +2060,7 @@ static int read_one_block_group(struct btrfs_fs_info *info,
  
  	cache->length = key->offset;
  	cache->used = btrfs_stack_block_group_used(bgi);
@@ -13450,7 +13146,7 @@ index deebc8ddbd93..adb8ae1b472e 100644
  	cache->flags = btrfs_stack_block_group_flags(bgi);
  	cache->global_root_id = btrfs_stack_block_group_chunk_objectid(bgi);
  
-@@ -2692,6 +2751,25 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
+@@ -2693,6 +2752,25 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
  	struct extent_buffer *leaf;
  	struct btrfs_block_group_item bgi;
  	struct btrfs_key key;
@@ -13476,7 +13172,7 @@ index deebc8ddbd93..adb8ae1b472e 100644
  
  	key.objectid = cache->start;
  	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-@@ -2706,7 +2784,7 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
+@@ -2707,7 +2785,7 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
  
  	leaf = path->nodes[0];
  	bi = btrfs_item_ptr_offset(leaf, path->slots[0]);
@@ -13485,7 +13181,7 @@ index deebc8ddbd93..adb8ae1b472e 100644
  	btrfs_set_stack_block_group_chunk_objectid(&bgi,
  						   cache->global_root_id);
  	btrfs_set_stack_block_group_flags(&bgi, cache->flags);
-@@ -2714,6 +2792,12 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
+@@ -2715,6 +2793,12 @@ static int update_block_group_item(struct btrfs_trans_handle *trans,
  	btrfs_mark_buffer_dirty(leaf);
  fail:
  	btrfs_release_path(path);
@@ -13498,7 +13194,7 @@ index deebc8ddbd93..adb8ae1b472e 100644
  	return ret;
  
  }
-@@ -3211,31 +3295,6 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
+@@ -3212,31 +3296,6 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans)
  	return ret;
  }
  
@@ -13604,7 +13300,7 @@ index abfd7c897075..887f36a48330 100644
  		case Opt_space_cache:
  		case Opt_space_cache_version:
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 05f9cbbf6e1e..fe19d71d479e 100644
+index f02b8cbd6ec4..711ed164130e 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
 @@ -642,6 +642,9 @@ static int btrfs_open_one_device(struct btrfs_fs_devices *fs_devices,
@@ -13631,10 +13327,10 @@ index 099def5613b8..a20ee7d57831 100644
  	struct btrfs_fs_info *fs_info;
  	/* sysfs kobjects */
 diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
-index 1c5518a4bdf9..04cbe330c8c1 100644
+index 800d631c920b..34606a08f0d6 100644
 --- a/fs/ext4/namei.c
 +++ b/fs/ext4/namei.c
-@@ -3872,9 +3872,16 @@ static int ext4_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
+@@ -3883,6 +3883,11 @@ static int ext4_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
  			if (new.dir != old.dir && EXT4_DIR_LINK_MAX(new.dir))
  				goto end_rename;
  		}
@@ -13644,15 +13340,9 @@ index 1c5518a4bdf9..04cbe330c8c1 100644
 +		 */
 +		inode_lock_nested(old.inode, I_MUTEX_NONDIR2);
  		retval = ext4_rename_dir_prepare(handle, &old);
--		if (retval)
-+		if (retval) {
-+			inode_unlock(old.inode);
- 			goto end_rename;
-+		}
- 	}
- 	/*
- 	 * If we're renaming a file within an inline_data dir and adding or
-@@ -4006,6 +4013,8 @@ static int ext4_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
+ 		if (retval) {
+ 			inode_unlock(old.inode);
+@@ -4019,6 +4024,8 @@ static int ext4_rename(struct user_namespace *mnt_userns, struct inode *old_dir,
  	} else {
  		ext4_journal_stop(handle);
  	}
@@ -20770,9 +20460,9 @@ index 238a03087e17..0983dfc9a203 100644
  void iomap_readahead(struct readahead_control *, const struct iomap_ops *ops);
  bool iomap_is_partially_uptodate(struct folio *, size_t from, size_t count);
 -- 
-2.40.0.rc2
+2.40.0
 
-From c70b897c2ba7cbae3387466d3bb8b034ef8d85c0 Mon Sep 17 00:00:00 2001
+From 4c93d4c44759855228ea9b96e57a88fe097f6b77 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Fri, 10 Mar 2023 19:32:13 +0100
 Subject: [PATCH 08/17] Implement amd-pstate-epp and amd-pstate-guided
@@ -20794,7 +20484,7 @@ Signed-off-by: Peter Jung <admin@ptr1337.dev>
  12 files changed, 1136 insertions(+), 58 deletions(-)
 
 diff --git a/Documentation/admin-guide/kernel-parameters.txt b/Documentation/admin-guide/kernel-parameters.txt
-index b9c00c38eda1..bd3b41fdf01f 100644
+index 0cef8c4c1f28..f2a13c7e73a1 100644
 --- a/Documentation/admin-guide/kernel-parameters.txt
 +++ b/Documentation/admin-guide/kernel-parameters.txt
 @@ -339,6 +339,29 @@
@@ -20827,7 +20517,7 @@ index b9c00c38eda1..bd3b41fdf01f 100644
  	amijoy.map=	[HW,JOY] Amiga joystick support
  			Map of devices attached to JOY0DAT and JOY1DAT
  			Format: <a>,<b>
-@@ -6986,13 +7009,3 @@
+@@ -6977,13 +7000,3 @@
  				xmon commands.
  			off	xmon is disabled.
  
@@ -22371,9 +22061,9 @@ index d5595d57f4e5..89a6d76ce1cf 100644
  bool cpufreq_driver_test_flags(u16 flags);
  const char *cpufreq_get_current_driver(void);
 -- 
-2.40.0.rc2
+2.40.0
 
-From c71971a5cf6e6e5ad398f9eb4951f309f5038015 Mon Sep 17 00:00:00 2001
+From 5ada46b5f648da47a486a079dacee032e3f83459 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 1 Feb 2023 10:30:17 +0100
 Subject: [PATCH 09/17] kallsyms-modules
@@ -23447,9 +23137,9 @@ index 918470d768e9..32e573943cf0 100755
  	scripts/kallsyms ${kallsymopt} ${1} > ${2}
  }
 -- 
-2.40.0.rc2
+2.40.0
 
-From 5e920f61e1e7b244bb68d41f39a8897e90123dad Mon Sep 17 00:00:00 2001
+From e2e97c4a556e4b49f8a64100720a399c5a51a698 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Mon, 17 Oct 2022 21:09:17 +0200
 Subject: [PATCH 10/17] ksm
@@ -23948,9 +23638,9 @@ index d03e149ffe6e..07da4f464e39 100644
 +subsys_initcall(pmadv_sysfs_init);
 +#endif /* CONFIG_KSM */
 -- 
-2.40.0.rc2
+2.40.0
 
-From dac8c6331796f6f0ffe84120ee0ddf1ba605331b Mon Sep 17 00:00:00 2001
+From 87ea63fb15c03ebc6f28cd5b4d2e02debc9c4c2f Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Tue, 14 Feb 2023 20:41:05 +0100
 Subject: [PATCH 11/17] maple-lru
@@ -27073,9 +26763,9 @@ index 2e91973fbaa6..6cc958ba7480 100644
  	height = mas_mt_height(&mas);
  	MT_BUG_ON(mt, allocated != 0);
 -- 
-2.40.0.rc2
+2.40.0
 
-From 0011f31c59c6721c4b63e9bc25a46fa968fe2b4f Mon Sep 17 00:00:00 2001
+From 69f5c21cf8535018187d8e76ab856a1e839b41b7 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Sat, 7 Jan 2023 11:53:10 +0100
 Subject: [PATCH 12/17] perf
@@ -31766,9 +31456,9 @@ index 3b9e86108f43..8f428ccdf5bf 100644
  }
  
 -- 
-2.40.0.rc2
+2.40.0
 
-From dd5f3a59191a32ebcfff25d3e769a1c108b30ca7 Mon Sep 17 00:00:00 2001
+From 2acf657d1326d96d5b35da166bae86671f5295c6 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 8 Dec 2022 16:23:16 +0100
 Subject: [PATCH 13/17] printk
@@ -34216,9 +33906,9 @@ index 24f37bab8bc1..5b0611c00956 100644
  				spec.field_width = 2 * sizeof(ptr);
  			return error_string(buf, end, "pK-error", spec);
 -- 
-2.40.0.rc2
+2.40.0
 
-From 22b02a04bebafd61f8983d0d99104432b3d192b7 Mon Sep 17 00:00:00 2001
+From 1f53b220779a90163059f9cba92a1462a5ab4499 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 8 Dec 2022 16:22:04 +0100
 Subject: [PATCH 14/17] rcu
@@ -37664,9 +37354,9 @@ index d477618e7261..130d0de4c3bb 100755
  		echo Total duration `get_starttime_duration $starttime`. | tee -a $T/log
  	else
 -- 
-2.40.0.rc2
+2.40.0
 
-From f7eaa1c5936e09d03589f3e86f195a0b2e19485b Mon Sep 17 00:00:00 2001
+From 0f6d4721a928e7a17d047c358837b5953879c4d4 Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Thu, 9 Feb 2023 11:55:14 +0100
 Subject: [PATCH 15/17] sched
@@ -39358,9 +39048,9 @@ index 84a188913cc9..38f3698f5e5b 100644
  	}
  }
 -- 
-2.40.0.rc2
+2.40.0
 
-From f6157bf7dd5142da3641f05701a38243fba558ea Mon Sep 17 00:00:00 2001
+From d37c0648f408f6397f8f41004f33c8439030cb2a Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 18 Jan 2023 13:24:16 +0100
 Subject: [PATCH 16/17] zram
@@ -40948,9 +40638,9 @@ index 56f58a96b129..90394e3f3892 100644
  {
  	return atomic_long_read(&pool->pages_allocated);
 -- 
-2.40.0.rc2
+2.40.0
 
-From 7fa9435665f64d2d35c3756cffa3963e43aa3fa2 Mon Sep 17 00:00:00 2001
+From 5dedef5662406dba0fc92ad059ffaaaaefbbf92c Mon Sep 17 00:00:00 2001
 From: Peter Jung <admin@ptr1337.dev>
 Date: Wed, 18 Jan 2023 13:24:26 +0100
 Subject: [PATCH 17/17] zstd: Update to upstream v1.5.2
@@ -55997,5 +55687,5 @@ index 65548a4bb934..04e1b5c01d9b 100644
  EXPORT_SYMBOL(zstd_reset_cstream);
  
 -- 
-2.40.0.rc2
+2.40.0
 
