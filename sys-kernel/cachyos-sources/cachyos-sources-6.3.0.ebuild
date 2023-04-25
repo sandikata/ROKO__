@@ -15,8 +15,8 @@ SRC_URI="${KERNEL_URI}"
 LICENSE="GPL"
 SLOT="stable"
 KEYWORDS="amd64"
-IUSE="bore +eevdf latency prjc tt"
-REQUIRED_USE="bore? ( !eevdf latency !prjc !tt ) eevdf? ( !bore !latency !prjc !tt )  prjc? ( !bore !eevdf !latency !tt ) tt? ( !bore !eevdf !latency !prjc )"
+IUSE="bore +eevdf high-hz latency prjc tt"
+REQUIRED_USE="bore? ( !eevdf latency !prjc !tt ) eevdf? ( !bore !latency !prjc !tt )  prjc? ( !bore !eevdf !latency !tt ) tt? ( high-hz !bore !eevdf !latency !prjc )"
 
 DEPEND="virtual/linux-sources"
 RDEPEND="${DEPEND}"
@@ -42,6 +42,10 @@ src_prepare() {
 
 	if use eevdf; then
 		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-eevdf.patch"
+	fi
+
+	if use high-hz; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/${KV_MAJOR}.${KV_MINOR}-high-hz.patch"
 	fi
 
 	if use tt; then
