@@ -1,9 +1,10 @@
 # Copyright 2020 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=8
+EAPI=7
 
-PYTHON_COMPAT=( python3_{8..11} )
+PYTHON_COMPAT=( python3_{6..11} )
+MY_PV="0.6.9-1"
 
 inherit meson distutils-r1 multilib-minimal flag-o-matic git-r3
 
@@ -31,7 +32,7 @@ else
     	https://github.com/KhronosGroup/Vulkan-Headers/archive/v1.2.158.tar.gz -> vulkan-headers-1.2.158.tar.gz
     	https://wrapdb.mesonbuild.com/v2/vulkan-headers_1.2.158-2/get_patch -> vulkan-headers-1.2.158-2-wrap.zip
 	"
-	EGIT_COMMIT="v${PV}"
+	EGIT_COMMIT="v${MY_PV}"
 	KEYWORDS="-* ~amd64 ~x86"
 fi
 
@@ -48,8 +49,8 @@ BDEPEND="
 "
 DEPEND="
 	!games-util/mangohud
+	media-libs/glfw
 	dev-util/glslang
-	>=dev-util/vulkan-headers-1.2
 	media-libs/vulkan-loader[${MULTILIB_USEDEP}]
 	video_cards_amdgpu? (
 		x11-libs/libdrm[video_cards_amdgpu]
@@ -75,11 +76,13 @@ src_unpack() {
 	mv imgui-1.81 ${S}/subprojects
 	mv spdlog-1.8.5 ${S}/subprojects
 	mv Vulkan-Headers-1.2.158 ${S}/subprojects
+
+	mkdir ${S}/subprojects/nlohmann_json-3.10.5
+	mv {single_,}include LICENSE.MIT meson.build ${S}/subprojects/nlohmann_json-3.10.5
 }
 multilib_src_configure() {
 	local emesonargs=(
 		-Dappend_libdir_mangohud=false
-		-Duse_system_vulkan=enabled
 		-Dinclude_doc=false
 		$(meson_feature video_cards_nvidia with_nvml)
 		$(meson_feature xnvctrl with_xnvctrl)
