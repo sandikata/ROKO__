@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<use>
+		<flag name="project-c">(EXPERIMENTAL) Apply project-c scheduler patches</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">xanmod/linux</remote-id>
+	</upstream>
+</pkgmetadata>
