@@ -4,5 +4,5 @@
 # Weird behavior with icon view patch for filechooser
 =x11-libs/gtk+-3.24.34-r99
 
->media-libs/amf-headers-1.4.26
->media-video/amdgpu-pro-amf-1.4.26.1462318
+#>media-libs/amf-headers-1.4.26
+#>media-video/amdgpu-pro-amf-1.4.26.1462318
