@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<use>
+		<flag name="amd"> amd_pstate: Add guided autonomous mode support </flag>
+		<flag name="bcachefs"> The COW filesystem for Linux that won't eat your data </flag>
+		<flag name="bore"> BORE (Burst-Oriented Response Enhancer) CPU Scheduler by firelzrd (BORE) </flag>
+		<flag name="cacule"> Predecessor of Task Type Scheduler </flag>
+		<flag name="high-hz"> CONFIG_HZ=833/1666 patch - EXPERIMENTAL! </flag>
+		<flag name="latency"> latency priority for CFS </flag>
+		<flag name="nest"> OS Scheduling with Nest: Keeping Tasks Close Together on Warm Cores </flag>
+		<flag name="prjc"> Project C patch set </flag>
+		<flag name="tt"> Task Type Scheduler by Hamad Marri (TT) </flag>
+	</use>
+</pkgmetadata>
