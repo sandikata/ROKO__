@@ -16,7 +16,7 @@ inherit kernel-2
 detect_version
 detect_arch
 
-DESCRIPTION="Full XanMod sources with cacule option and including the Gentoo patchset "
+DESCRIPTION="Full XanMod sources including the Gentoo patchset "
 HOMEPAGE="https://xanmod.org"
 LICENSE+=" CDDL"
 SRC_URI="
