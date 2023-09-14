@@ -6,7 +6,7 @@ EAPI="8"
 XANMOD_VERSION=1
 
 K_WANT_GENPATCHES="base extras"
-K_GENPATCHES_VER="1"
+K_GENPATCHES_VER="4"
 
 ETYPE="sources"
 K_SECURITY_UNSUPPORTED="1"
@@ -34,8 +34,13 @@ src_unpack() {
 	kernel-2_src_unpack
 }
 
-pkg_postinst() {
+pkg_postinst(){
+	kernel-2_pkg_postinst
 	elog "MICROCODES"
 	elog "Use xanmod-sources with microcodes"
 	elog "Read https://wiki.gentoo.org/wiki/Intel_microcode"
+}
+
+pkg_postrm(){
+	kernel-2_pkg_postrm
 }
