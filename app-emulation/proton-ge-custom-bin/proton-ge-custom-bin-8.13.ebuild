@@ -12,7 +12,7 @@ HOMEPAGE="https://github.com/GloriousEggroll/proton-ge-custom"
 SRC_URI="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${_internal_name}/${_internal_name}.tar.gz -> ${P}.tar.gz"
 LICENSE="BSD LGPL zlib MIT MPL OFL Proton GPL MSPL"
 SLOT="${PV}"
-KEYWORDS=""
+KEYWORDS="~amd64"
 RESTRICT="mirror strip"
 
 RDEPEND="
