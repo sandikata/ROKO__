@@ -6,3 +6,6 @@
 
 #>media-libs/amf-headers-1.4.26
 #>media-video/amdgpu-pro-amf-1.4.26.1462318
+
+# Gnome 45 
+=dev-libs/libei-1.0.901
