@@ -13,8 +13,8 @@ detect_version
 
 DESCRIPTION="CachyOS provides enhanced kernels that offer improved performance and other benefits."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
-#SRC_URI="${KERNEL_URI} ${GENPATCHES_URI}"
-SRC_URI="${KERNEL_URI}"
+SRC_URI="${KERNEL_URI} ${GENPATCHES_URI}"
+#SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL-3"
 KEYWORDS="~amd64"
