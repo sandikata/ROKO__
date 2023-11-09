@@ -6,7 +6,7 @@ ETYPE="sources"
 EXTRAVERSION="-cachyos"
 K_EXP_GENPATCHES_NOUSE="1"
 K_WANT_GENPATCHES="base extras"
-K_GENPATCHES_VER="9"
+K_GENPATCHES_VER="1"
 
 inherit kernel-2 optfeature
 detect_version
@@ -14,32 +14,42 @@ detect_version
 DESCRIPTION="CachyOS provides enhanced kernels that offer improved performance and other benefits."
 HOMEPAGE="https://github.com/CachyOS/linux-cachyos"
 SRC_URI="${KERNEL_URI} ${GENPATCHES_URI}"
+#SRC_URI="${KERNEL_URI}"
 
 LICENSE="GPL-3"
 KEYWORDS="~amd64"
-IUSE="+bore-eevdf bore eevdf pds bmq cfs tt"
-REQUIRED_USE="bore-eevdf? ( !bore !eevdf !pds !bmq !cfs !tt ) bore? ( !pds !bmq !cfs !tt !bore-eevdf !eevdf ) eevdf? ( !bore !pds !bmq !cfs !tt !bore-eevdf ) pds? ( !bore !bmq !cfs !tt !bore-eevdf !eevdf ) tt? ( !bore !pds !bmq !cfs !bore-eevdf !eevdf ) bmq? ( !tt !bore !pds !cfs !bore-eevdf !eevdf )"
+IUSE="bcachefs +bore"
+#REQUIRED_USE="bore-eevdf? ( !bore !eevdf !pds !bmq !cfs !tt ) bore? ( !pds !bmq !cfs !tt !bore-eevdf !eevdf ) eevdf? ( !bore !pds !bmq !cfs !tt !bore-eevdf ) pds? ( !bore !bmq !cfs !tt !bore-eevdf !eevdf ) tt? ( !bore !pds !bmq !cfs !bore-eevdf !eevdf ) bmq? ( !tt !bore !pds !cfs !bore-eevdf !eevdf )"
 
 src_prepare() {
 	eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/all/0001-cachyos-base-all.patch"
 
-	if use bore-eevdf; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF-cachy.patch"
-	#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF.patch"
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore-eevdf.patch"
-		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-bore-eevdf" .config || die
+	if use bcachefs; then
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/misc/0001-bcachefs.patch"
 	fi
 
+#	if use bore-eevdf; then
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF-cachy.patch"
+#	#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF.patch"
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore-eevdf.patch"
+#		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-bore-eevdf" .config || die
+#	fi
+
 	if use bore; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore.patch"
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/misc/0001-bore-tuning-sysctl.patch"
+		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-bore-cachy-ext.patch"
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/misc/0001-bore-tuning-sysctl.patch"
 		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-bore" .config || die
 	fi
 
-	if use eevdf; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF.patch"
-		cp "${FILESDIR}/config-x86_64-eevdf" .config
-	fi
+#	if use eevdf; then
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-EEVDF.patch"
+#		cp "${FILESDIR}/config-x86_64-eevdf" .config
+#	fi
+
+#	if use ext; then
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-sched-ext.patch"
+#		cp "${FILESDIR}/config-x86_64-eevdf" .config
+#	fi
 
 #	if use pds; then
 #		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-prjc-cachy.patch"
@@ -51,14 +61,14 @@ src_prepare() {
 #		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-bmq" .config || die
 #	fi
 
-	if use tt; then
-		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch"
-		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-tt" .config || die
-	fi
+#	if use tt; then
+#		eapply "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/sched/0001-tt-cachy.patch"
+#		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-tt" .config || die
+#	fi
 
-	if use cfs; then
-		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-cfs" .config || die
-	fi
+#	if use cfs; then
+#		cp "${FILESDIR}/${KV_MAJOR}.${KV_MINOR}/config-x86_64-cfs" .config || die
+#	fi
 
 	eapply_user
 
@@ -75,41 +85,41 @@ scripts/config -e CACHY
 scripts/config -d HZ_300
 
 # 500 HZ
-	if use bore-eevdf; then
-		scripts/config -e HZ_500
-		scripts/config --set-val HZ 500
-	fi
+#	if use bore-eevdf; then
+#		scripts/config -e HZ_500
+#		scripts/config --set-val HZ 500
+#	fi
 
-	if use eevdf; then
-                scripts/config -e HZ_500
-                scripts/config --set-val HZ 500
-        fi
-
+#	if use eevdf; then
+#                scripts/config -e HZ_500
+#                scripts/config --set-val HZ 500
+#        fi
+#
 	if use bore; then
                 scripts/config -e HZ_500
                 scripts/config --set-val HZ 500
         fi
 
-	if use cfs; then
-                scripts/config -e HZ_500
-                scripts/config --set-val HZ 500
-        fi
+#	if use cfs; then
+#                scripts/config -e HZ_500
+#                scripts/config --set-val HZ 500
+#        fi
 
 # 1000 HZ
-	if use pds; then
-                scripts/config -e HZ_1000
-                scripts/config --set-val HZ 1000
-        fi
+#	if use pds; then
+#                scripts/config -e HZ_1000
+#                scripts/config --set-val HZ 1000
+#        fi
 
-	if use bmq; then
-                scripts/config -e HZ_1000
-                scripts/config --set-val HZ 1000
-        fi
-
-	if use tt; then
-                scripts/config -e HZ_1000
-                scripts/config --set-val HZ 1000
-        fi
+#	if use bmq; then
+#                scripts/config -e HZ_1000
+#                scripts/config --set-val HZ 1000
+#        fi
+#
+#	if use tt; then
+#                scripts/config -e HZ_1000
+#                scripts/config --set-val HZ 1000
+#        fi
 
 # Enable MGLRU - now it's available by default in config
 #scripts/config -e LRU_GEN
@@ -117,28 +127,28 @@ scripts/config -d HZ_300
 #scripts/config -d LRU_GEN_STATS
 
 # Enable PDS
-	if use pds; then
-		scripts/config -e SCHED_ALT -d SCHED_BMQ -e SCHED_PDS -e PSI_DEFAULT_DISABLED
-	fi
+#	if use pds; then
+#		scripts/config -e SCHED_ALT -d SCHED_BMQ -e SCHED_PDS -e PSI_DEFAULT_DISABLED
+#	fi
 
 # Enable BMQ
-	if use bmq; then
-		scripts/config -e SCHED_ALT -e SCHED_BMQ -d SCHED_PDS -e PSI_DEFAULT_DISABLED
-	fi
+#	if use bmq; then
+#		scripts/config -e SCHED_ALT -e SCHED_BMQ -d SCHED_PDS -e PSI_DEFAULT_DISABLED
+#	fi
 
 # Enable TT
-	if use tt; then
-		scripts/config -e TT_SCHED -e TT_ACCOUNTING_STATS
-	fi
+#	if use tt; then
+#		scripts/config -e TT_SCHED -e TT_ACCOUNTING_STATS
+#	fi
 
 # Enable BORE
 	if use bore; then
 		scripts/config -e SCHED_BORE
 	fi
 
-	if use bore-eevdf; then
-                scripts/config -e SCHED_BORE
-        fi
+#	if use bore-eevdf; then
+#                scripts/config -e SCHED_BORE
+#        fi
 
 # Enable PER_VMA_LOCK - now it's in config
 #scripts/config -e PER_VMA_LOCK
