@@ -116,12 +116,6 @@ SRC_URI="
 	ubuntu?                 ( "${COMMON_URI}/Ubuntu.zip" )
 	ubuntumono?             ( "${COMMON_URI}/UbuntuMono.zip" )
 	victormono?             ( "${COMMON_URI}/VictorMono.zip" )
-	symbols?                ( "${TAG_URI}/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-2048-em%20Nerd%20Font%20Complete.ttf" -> "Symbols-2048-em_Nerd_Font_Complete.ttf"
-							  "${TAG_URI}/10-nerd-font-symbols.conf"
-							)
-	symbolsmono?            ( "${TAG_URI}/patched-fonts/NerdFontsSymbolsOnly/complete/Symbols-1000-em%20Nerd%20Font%20Complete.ttf" -> "Symbols-1000-em_Nerd_Font_Complete.ttf"
-							  "${TAG_URI}/10-nerd-font-symbols.conf"
-							)
 "
 
 LICENSE="MIT
@@ -143,8 +137,8 @@ CHECKREQS_DISK_BUILD="3G"
 CHECKREQS_DISK_USR="4G"
 
 IUSE_FLAGS=(${FONTS[*],,})
-IUSE="${IUSE_FLAGS[*]} symbols symbolsmono"
-REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} ) symbols? ( !symbolsmono )"
+IUSE="${IUSE_FLAGS[*]}"
+REQUIRED_USE="X || ( ${IUSE_FLAGS[*]} )"
 
 S="${WORKDIR}"
 FONT_CONF=(
@@ -157,18 +151,6 @@ pkg_pretend() {
 }
 
 src_prepare() {
-	if use symbols || use symbolsmono ; then
-		install -m644 "${DISTDIR}/10-nerd-font-symbols.conf" "${S}/10-nerd-font-symbols.conf" || die
-	fi
-
-	if use symbols ; then
-		install -m644 "${DISTDIR}/Symbols-2048-em_Nerd_Font_Complete.ttf" "${S}/Symbols-2048-em_Nerd_Font_Complete.ttf" || die
-	fi
-
-	if use symbolsmono ; then
-		install -m644 "${DISTDIR}/Symbols-1000-em_Nerd_Font_Complete.ttf" "${S}/Symbols-1000-em_Nerd_Font_Complete.ttf" || die
-	fi
-
 	default
 }
 
@@ -197,7 +179,4 @@ pkg_postinst() {
 	einfo "in .sh files. You can still get it and use it by git cloning the nerd-font project and"
 	einfo "running it from the cloned directory."
 	einfo "https://github.com/ryanoasis/nerd-fonts"
-
-	elog "You might have to enable 50-user.conf and 10-nerd-font-symbols.conf by using"
-	elog "eselect fontconfig"
 }
