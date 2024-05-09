@@ -39,7 +39,7 @@ RDEPEND="
 	app-emulation/winetricks
 	virtual/wine[abi_x86_32]
 	app-emulation/proton-ge-custom-bin
-	games-util/steam-meta"
+	games-util/steam-launcher"
 
 pkg_pretend() {
 	einfo "The list of dependencies may be not complete, and some of ones listed may be not necessary. Feel free to try it on your favourite games and any issue & pull request is welcome."
