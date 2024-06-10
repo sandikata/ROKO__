@@ -1,0 +1,54 @@
+--- a/src/index.c
++++ b/src/index.c
+@@ -1193,49 +1193,8 @@ static int has_file_name(git_index *index,
+ static int has_dir_name(git_index *index,
+ 		const git_index_entry *entry, int ok_to_replace)
+ {
+-	int stage = GIT_INDEX_ENTRY_STAGE(entry);
+-	const char *name = entry->path;
+-	const char *slash = name + strlen(name);
+-
+-	for (;;) {
+-		size_t len, pos;
+-
+-		for (;;) {
+-			if (*--slash == '/')
+-				break;
+-			if (slash <= entry->path)
+-				return 0;
+-		}
+-		len = slash - name;
+-
+-		if (!index_find(&pos, index, name, len, stage)) {
+-			if (!ok_to_replace)
+-				return -1;
+-
+-			if (index_remove_entry(index, pos) < 0)
+-				break;
+-			continue;
+-		}
+-
+-		/*
+-		 * Trivial optimization: if we find an entry that
+-		 * already matches the sub-directory, then we know
+-		 * we're ok, and we can exit.
+-		 */
+-		for (; pos < index->entries.length; ++pos) {
+-			struct entry_internal *p = index->entries.contents[pos];
+-
+-			if (p->pathlen <= len ||
+-			    p->path[len] != '/' ||
+-			    memcmp(p->path, name, len))
+-				break; /* not our subdirectory */
+-
+-			if (GIT_INDEX_ENTRY_STAGE(&p->entry) == stage)
+-				return 0;
+-		}
+-	}
+-
+-	return 0;
++	assert(0 && "https://github.com/libgit2/libgit2/security/advisories/GHSA-j2v7-4f6v-gpg8");
++	return -1;
+ }
+ 
+ static int check_file_directory_collision(git_index *index,
