@@ -11,4 +11,4 @@
 =dev-libs/libei-1.0.901
 
 # skypeforlinux
-net-im/skypeforlinux::ROKO__
+=net-im/skypeforlinux-8.129.0.202_p365
