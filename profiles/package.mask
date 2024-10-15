@@ -9,3 +9,6 @@
 
 # Gnome 45 
 =dev-libs/libei-1.0.901
+
+# skypeforlinux
+net-im/skypeforlinux::ROKO__
