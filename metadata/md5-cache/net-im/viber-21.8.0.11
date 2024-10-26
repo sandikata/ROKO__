@@ -1,0 +1,16 @@
+DEFINED_PHASES=install postinst postrm preinst prepare unpack
+DESCRIPTION=Free text and calls
+EAPI=8
+HOMEPAGE=https://www.viber.com/en/
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=desktop pax-utils unpacker xdg
+IUSE=apulse +pulseaudio
+KEYWORDS=-* ~amd64
+LICENSE=viber
+RDEPEND=app-arch/brotli:0 app-arch/snappy:0 app-arch/zstd:0 app-crypt/libb2 app-crypt/mit-krb5 dev-libs/double-conversion dev-libs/expat dev-libs/glib:2 dev-libs/libevent:0 dev-libs/libpcre2:0 dev-libs/libxml2:2 dev-libs/libxslt:0 dev-libs/nspr dev-libs/nss dev-libs/openssl:0 dev-libs/wayland media-libs/alsa-lib media-libs/fontconfig:1.0 media-libs/freetype:2 media-libs/gst-plugins-bad:1.0 media-libs/gst-plugins-base:1.0 media-libs/gstreamer:1.0 media-libs/harfbuzz:0 media-libs/lcms:2 media-libs/libglvnd media-libs/libmng:0 media-libs/libpng:0 media-libs/libwebp:0 media-libs/opus media-libs/tiff-compat:4 net-print/cups sys-apps/dbus sys-libs/mtdev sys-libs/zlib:0 x11-libs/gdk-pixbuf:2 x11-libs/gtk+:3 x11-libs/libdrm x11-libs/libICE x11-libs/libSM x11-libs/libX11 x11-libs/libxcb:0 x11-libs/libXcomposite x11-libs/libXdamage x11-libs/libXext x11-libs/libXfixes x11-libs/libxkbcommon x11-libs/libxkbfile x11-libs/libXrandr x11-libs/libXScrnSaver x11-libs/libxshmfence x11-libs/libXtst x11-libs/pango x11-libs/tslib x11-libs/xcb-util-cursor x11-libs/xcb-util-image x11-libs/xcb-util-keysyms x11-libs/xcb-util-renderutil x11-libs/xcb-util-wm apulse? ( media-sound/apulse ) pulseaudio? ( media-plugins/gst-plugins-pulse || ( media-sound/pulseaudio-daemon media-video/pipewire[sound-server] ) ) || ( sys-apps/systemd sys-apps/systemd-utils )
+REQUIRED_USE=^^ ( apulse pulseaudio )
+RESTRICT=bindist mirror
+SLOT=0
+SRC_URI=https://download.cdn.viber.com/cdn/desktop/Linux/viber.deb -> viber-21.8.0.11.deb
+_eclasses_=desktop	3a72ffe0d8e1dd73af3a1c8c15a59fed	pax-utils	5555f2e75744739fe100ee62c22d28fe	unpacker	79f7c61dc45eb850319a8c576ebc7b8d	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
+_md5_=d01e231abd0ad8e824d4f95b95fa38e0

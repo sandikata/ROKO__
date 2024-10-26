@@ -1,7 +1,8 @@
+BDEPEND=>=dev-build/meson-1.2.3 app-alternatives/ninja dev-build/meson-format-array >=dev-vcs/git-1.8.2.1[curl]
 DEFINED_PHASES=compile configure install postinst pretend test unpack
-DEPEND=systemd? ( >=sys-apps/systemd-236[abi_x86_32(-)?,abi_x86_64(-)?] ) elogind? ( sys-auth/elogind ) sys-auth/polkit acct-group/gamemode dev-libs/inih[abi_x86_32(-)?,abi_x86_64(-)?] >=dev-util/meson-0.59.4 >=dev-util/ninja-1.8.2 dev-util/meson-format-array >=dev-vcs/git-1.8.2.1[curl]
+DEPEND=systemd? ( >=sys-apps/systemd-236[abi_x86_32(-)?,abi_x86_64(-)?] ) elogind? ( sys-auth/elogind ) sys-auth/polkit acct-group/gamemode dev-libs/inih[abi_x86_32(-)?,abi_x86_64(-)?]
 DESCRIPTION=Optimise Linux system performance on demand
-EAPI=6
+EAPI=7
 HOMEPAGE=https://github.com/FeralInteractive/gamemode
 INHERIT=meson multilib-minimal ninja-utils git-r3
 IUSE=systemd elogind abi_x86_32 abi_x86_64
@@ -10,5 +11,5 @@ PROPERTIES=live
 RDEPEND=systemd? ( >=sys-apps/systemd-236[abi_x86_32(-)?,abi_x86_64(-)?] ) elogind? ( sys-auth/elogind ) sys-auth/polkit acct-group/gamemode dev-libs/inih[abi_x86_32(-)?,abi_x86_64(-)?]
 REQUIRED_USE=?? ( elogind systemd ) || ( abi_x86_32 abi_x86_64 )
 SLOT=0
-_eclasses_=eapi7-ver	1a0a60ad07c8b32d2faba2d085dc0f24	multiprocessing	b4e253ab22cef7b1085e9b67c7a3b730	ninja-utils	58ec4e54962bf45d065fb95030701514	eapi8-dosym	cd7d420bb5be5ee079f27239ce76b8f5	toolchain-funcs	fd9cde67030b26e479eeadaced488253	multilib	4fbbbc98f236f1b43acd99476bc3cd85	python-utils-r1	5dc84801daa87406aafaf535cb947a64	meson	8f48ffde53174aba67239f0da61ac9d3	multibuild	d26d81f242cb193d899a72bca423d0bd	multilib-build	05f207909a804c9174bc39a00547d598	multilib-minimal	4b0f1857965db8869a729948d5277e0b	git-r3	b9ac6f96d2a88edb5b351df634dc5e53
-_md5_=1c2a98798296241ef3027c13fdec7fac
+_eclasses_=toolchain-funcs	d3d42b22a610ce81c267b644bcec9b87	multilib	b2a329026f2e404e9e371097dda47f96	flag-o-matic	f14aba975c94ccaa9f357a27e3b17ffe	multiprocessing	1e32df7deee68372153dca65f4a7c21f	ninja-utils	2df4e452cea39a9ec8fb543ce059f8d6	eapi8-dosym	5ac4857ad078256d939c44f7c64197a9	python-utils-r1	2fee95c11e5f883024588d4837db6802	meson	99466844dd8d4fcfb07578a76f5a9922	out-of-source-utils	dbf9e34ee8964084651e25907fa8f52c	multibuild	4650a65187015567b4e041bb9bfdb364	multilib-build	9ac26ea006828266d235e2f0135429b5	multilib-minimal	e9f54d75b074edc47d36994bbc1e2123	git-r3	875eb471682d3e1f18da124be97dcc81
+_md5_=d65e92104cb03411e846cd4b7ed0026a

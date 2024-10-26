@@ -11,5 +11,5 @@ PROPERTIES=live
 RDEPEND=pipewire? ( >=media-video/pipewire-0.3 ) !pipewire? ( pulseaudio? ( media-sound/pulseaudio media-libs/gstreamer media-libs/gst-plugins-base ) ) app-arch/libarchive >=dev-cpp/glibmm-2.4:2 >=dev-libs/glib-2.0 dev-qt/qtcore:5 dev-qt/qtdbus:5 dev-qt/qtgui:5 dev-qt/qtnetwork:5 dev-qt/qtsvg:5 dev-qt/qtxml:5 !pipewire? ( pulseaudio? ( media-libs/gst-plugins-good ) )
 REQUIRED_USE=|| ( pipewire pulseaudio )
 SLOT=0
-_eclasses_=desktop	c0d27bf73aa08ca05b663dbd31fbef28	git-r3	b9ac6f96d2a88edb5b351df634dc5e53	toolchain-funcs	fd9cde67030b26e479eeadaced488253	multilib	4fbbbc98f236f1b43acd99476bc3cd85	qmake-utils	59420c906278d16deaaa629f9d115707
-_md5_=4d1798038c2fca473dcd41c221ecbb79
+_eclasses_=desktop	3a72ffe0d8e1dd73af3a1c8c15a59fed	git-r3	875eb471682d3e1f18da124be97dcc81	toolchain-funcs	d3d42b22a610ce81c267b644bcec9b87	multilib	b2a329026f2e404e9e371097dda47f96	qmake-utils	a8dd17b1d94586164f5e3fc12b1c6b81
+_md5_=abf0f81f8b39bf183c58069332403a90

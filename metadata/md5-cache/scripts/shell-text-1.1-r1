@@ -1,0 +1,10 @@
+BDEPEND=app-arch/unzip
+DEFINED_PHASES=install
+DESCRIPTION=Formatting text in echo commands
+EAPI=7
+HOMEPAGE=https://github.com/Anard/HelpSh/
+KEYWORDS=amd64
+LICENSE=GPL-3
+SLOT=0
+SRC_URI=https://github.com/Anard/HelpSh/archive/refs/heads/master.zip -> shell-text-1.1-r1.zip
+_md5_=f1086d767346bc1674f17c9cd6a97068
