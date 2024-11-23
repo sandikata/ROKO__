@@ -9,7 +9,8 @@ DESCRIPTION="Linux kernel driver for reading sensors of AMD Zen family CPUs"
 HOMEPAGE="https://git.exozy.me/a/zenpower3"
 
 inherit git-r3
-EGIT_REPO_URI="https://git.exozy.me/a/zenpower3.git"
+#EGIT_REPO_URI="https://git.exozy.me/a/zenpower3.git"
+EGIT_REPO_URI="https://github.com/PutinVladimir/zenpower3.git"
 EGIT_BRANCH="master"
 
 LICENSE="GPL-2"
