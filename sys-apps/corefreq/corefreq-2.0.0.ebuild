@@ -27,15 +27,9 @@ RDEPEND="sys-libs/glibc"
 
 CONFIG_CHECK="SMP X86_MSR ~HOTPLUG_CPU ~CPU_IDLE ~CPU_FREQ ~PM_SLEEP ~DMI ~XEN ~AMD_NB ~HAVE_PERF_EVENTS"
 
-#BUILD_TARGETS="clean all"
-
-#MODULE_NAMES="corefreqk(misc:${S})"
-#MODULESD_COREFREQK_ENABLED="yes"
-
 pkg_setup() {
 	get_version
 	require_configured_kernel
-#	BUILD_PARAMS="KERNELDIR=/lib/modules/${KV_FULL}/build"
 	linux-mod-r1_pkg_setup
 }
 
