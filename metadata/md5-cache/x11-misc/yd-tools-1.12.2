@@ -1,0 +1,14 @@
+DEFINED_PHASES=install postinst postrm prepare
+DEPEND=python_targets_python3_10? ( dev-lang/python:3.10 ) python_targets_python3_11? ( dev-lang/python:3.11 ) python_targets_python3_12? ( dev-lang/python:3.12 ) >=dev-python/pyinotify-0.9.6[python_targets_python3_10(-)?,python_targets_python3_11(-)?,python_targets_python3_12(-)?] dev-python/pygobject:3[python_targets_python3_10(-)?,python_targets_python3_11(-)?,python_targets_python3_12(-)?] gnome-extra/zenity net-misc/yandex-disk x11-misc/xclip x11-libs/gtk+:3[introspection] x11-libs/gdk-pixbuf:2[introspection] nls? ( sys-devel/gettext )
+DESCRIPTION=A panel indicator (GUI) for YandexDisk CLI client
+EAPI=7
+HOMEPAGE=https://github.com/slytomcat/yandex-disk-indicator
+INHERIT=desktop plocale python-r1 xdg-utils
+IUSE=nls python_targets_python3_10 python_targets_python3_11 python_targets_python3_12
+KEYWORDS=amd64 x86
+LICENSE=GPL-3
+RDEPEND=python_targets_python3_10? ( dev-lang/python:3.10 ) python_targets_python3_11? ( dev-lang/python:3.11 ) python_targets_python3_12? ( dev-lang/python:3.12 ) >=dev-python/pyinotify-0.9.6[python_targets_python3_10(-)?,python_targets_python3_11(-)?,python_targets_python3_12(-)?] dev-python/pygobject:3[python_targets_python3_10(-)?,python_targets_python3_11(-)?,python_targets_python3_12(-)?] gnome-extra/zenity net-misc/yandex-disk x11-misc/xclip x11-libs/gtk+:3[introspection] x11-libs/gdk-pixbuf:2[introspection]
+SLOT=0
+SRC_URI=https://github.com/slytomcat/yandex-disk-indicator/archive/1.12.2.tar.gz -> yandex-disk-indicator-1.12.2.tar.gz
+_eclasses_=desktop	3a72ffe0d8e1dd73af3a1c8c15a59fed	plocale	950fbaec7deeba41b5bcc0572cca99b9	out-of-source-utils	dbf9e34ee8964084651e25907fa8f52c	multibuild	4650a65187015567b4e041bb9bfdb364	eapi8-dosym	5ac4857ad078256d939c44f7c64197a9	multiprocessing	1e32df7deee68372153dca65f4a7c21f	toolchain-funcs	14648d8795f7779e11e1bc7cf08b7536	multilib	b2a329026f2e404e9e371097dda47f96	python-utils-r1	42c5abe4a656a4993a06a4fc61dbdd12	python-r1	2def7a4ce233dfa344f613025c619a23	xdg-utils	42869b3c8d86a70ef3cf75165a395e09
+_md5_=b22bfbf5cfc20a53f1da7d742b787b5c
