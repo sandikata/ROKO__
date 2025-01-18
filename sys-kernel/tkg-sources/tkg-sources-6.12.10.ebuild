@@ -26,14 +26,19 @@ SRC_URI="
 	${KERNEL_URI} ${GENPATCHES_URI} ${ARCH_URI} ${TKG_URI}
 	graysky? ( https://raw.githubusercontent.com/graysky2/kernel_compiler_patch/${GIT_COMMIT_GRAYSKY}/more-ISA-levels-and-uarches-for-kernel-6.1.79%2B.patch
 		-> ${P}-more-ISA-levels-and-uarches-for-kernel-6.1.79+.patch )
+	amd-pstate? ( ${CACHYOS_URI}/0002-amd-pstate.patch -> ${P}-0002-amd-pstate.patch )
+	amd-tlb-brd? ( ${CACHYOS_URI}/0003-amd-tlb-broadcast.patch -> ${P}-0003-amd-tlb-broadcast.patch )
+	autofdo? ( ${CACHYOS_URI}/0004-autofdo.patch -> ${P}-0004-autofdo.patch )
 	bore? ( ${CACHYOS_URI}/sched/0001-bore.patch -> ${P}-0001-bore.patch )
 	rt? ( ${CACHYOS_URI}/misc/0001-rt.patch -> ${P}-0001-rt.patch )
 	bbr3? ( ${CACHYOS_URI}/0005-bbr3.patch -> ${P}-0005-bbr3.patch )
 	crypto? ( ${CACHYOS_URI}/0007-crypto.patch -> ${P}-0007-crypto.patch )
+	perf-per-core? ( ${CACHYOS_URI}/0010-perf-per-core.patch -> ${P}-0010-perf-per-core.patch )
+	pksm? ( ${CACHYOS_URI}/0011-pksm.patch -> ${P}-0011-pksm.patch )
 	zstd? ( ${CACHYOS_URI}/0013-zstd.patch -> ${P}-0013-zstd.patch )
 "
 KEYWORDS="~amd64"
-IUSE="+eevdf bore pds bmq +aggressive-ondemand sched-yield-type-0 +sched-yield-type-1 sched-yield-type-2 +Arch +misc-adds acs-override ntsync +glitched-base O3 +graysky +clear openrgb rt bbr3 crypto zstd"
+IUSE="+amd-pstate amd-tlb-brd autofdo +perf-per-core pksm eevdf +bore pds bmq aggressive-ondemand sched-yield-type-0 +sched-yield-type-1 sched-yield-type-2 +Arch +misc-adds acs-override ntsync +glitched-base O3 +graysky +clear openrgb rt bbr3 crypto zstd"
 REQUIRED_USE="
 	^^ ( eevdf bore pds bmq )
 	pds? ( ^^ ( sched-yield-type-0 sched-yield-type-1 sched-yield-type-2 ) )
@@ -96,8 +101,13 @@ src_prepare() {
 	use clear && eapply "${PATCHESDIR}/0002-clear-patches.patch"
 	use openrgb && eapply "${PATCHESDIR}/0014-OpenRGB.patch"
 	use rt && eapply "${DISTDIR}/${P}-0001-rt.patch"
+	use amd-pstate && eapply "${DISTDIR}/${P}-0002-amd-pstate.patch"
+	use amd-tlb-brd && eapply "${DISTDIR}/${P}-0003-amd-tlb-broadcast.patch"
+	use autofdo && eapply "${DISTDIR}/${P}-0004-autofdo.patch"
 	use bbr3 && eapply "${DISTDIR}/${P}-0005-bbr3.patch"
 	use crypto && eapply "${DISTDIR}/${P}-0007-crypto.patch"
+	use perf-per-core && eapply "${DISTDIR}/${P}-0010-perf-per-core.patch"
+	use pksm && eapply "${DISTDIR}/${P}-0011-pksm.patch"
 	use zstd && eapply "${DISTDIR}/${P}-0013-zstd.patch"
 
 	kernel-2_src_prepare
