@@ -1,0 +1,11 @@
+To prevent wall messages from messing up all of your open terminals:
+
+sudo systemctl stop systemd-ask-password-wall.service
+sudo systemctl stop systemd-ask-password-wall.path
+
+To make this change persistent over boot:
+
+sudo systemctl mask systemd-ask-password-wall.service
+sudo systemctl mask systemd-ask-password-wall.path
+
+Ref: https://unix.stackexchange.com/questions/382272/systemd-ask-password-only-prompt-on-current-console
