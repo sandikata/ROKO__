@@ -1,0 +1,15 @@
+BDEPEND=app-arch/rpm2targz virtual/pkgconfig
+DEFINED_PHASES=install unpack
+DEPEND=media-gfx/sane-backends net-dns/avahi[dbus]
+DESCRIPTION=SANE driver for Brother DS-series scanners (brscan5)
+EAPI=8
+HOMEPAGE=http://welcome.solutions.brother.com/bsc/public_s/id/linux/en/index.html
+INHERIT=rpm udev
+KEYWORDS=~amd64
+LICENSE=Brother-EULA
+RDEPEND=media-gfx/sane-backends net-dns/avahi[dbus]
+RESTRICT=strip mirror
+SLOT=0
+SRC_URI=https://download.brother.com/welcome/dlf104036/brscan5-1.3.10-5.x86_64.rpm
+_eclasses_=estack	c61c368a76fdf3a82fdf8dbaebea3804	rpm	7828cd38ff559545ca52f92064d0f8f4	toolchain-funcs	6afdb6107430c1832ca7e16aacbf8fa1	multilib	b2a329026f2e404e9e371097dda47f96	udev	f3d9a4376ebd22131726a68e1a0a058f
+_md5_=7a199b1005c926a5041e04ca61ffb01f

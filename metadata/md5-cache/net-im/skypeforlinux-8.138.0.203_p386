@@ -1,0 +1,17 @@
+BDEPEND=sys-fs/squashfs-tools[lzo]
+DEFINED_PHASES=install postinst postrm preinst prepare pretend setup unpack
+DESCRIPTION=Instant messaging client, with support for audio and video
+EAPI=8
+HOMEPAGE=https://www.skype.com/en
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=chromium-2 desktop multilib-build optfeature pax-utils xdg
+IUSE=+abi_x86_64 +appindicator +seccomp selinux suid +l10n_af +l10n_am +l10n_ar +l10n_bg +l10n_bn +l10n_ca +l10n_cs +l10n_da +l10n_de +l10n_el +l10n_en-GB +l10n_en-US +l10n_es-419 +l10n_es +l10n_et +l10n_fa +l10n_fil +l10n_fi +l10n_fr +l10n_gu +l10n_he +l10n_hi +l10n_hr +l10n_hu +l10n_id +l10n_it +l10n_ja +l10n_kn +l10n_ko +l10n_lt +l10n_lv +l10n_ml +l10n_mr +l10n_ms +l10n_nb +l10n_nl +l10n_pl +l10n_pt-BR +l10n_pt-PT +l10n_ro +l10n_ru +l10n_sk +l10n_sl +l10n_sr +l10n_sv +l10n_sw +l10n_ta +l10n_te +l10n_th +l10n_tr +l10n_uk +l10n_ur +l10n_vi +l10n_zh-CN +l10n_zh-TW abi_x86_64
+KEYWORDS=-* ~amd64
+LICENSE=Skype-TOS MIT MIT-with-advertising BSD-1 BSD-2 BSD Apache-2.0 Boost-1.0 ISC CC-BY-SA-3.0 CC0-1.0 openssl ZLIB APSL-2 icu Artistic-2 LGPL-2.1
+RDEPEND=app-accessibility/at-spi2-core:2[abi_x86_64(-)?] app-arch/bzip2:0[abi_x86_64(-)?] dev-libs/expat:0[abi_x86_64(-)?] dev-libs/glib:2[abi_x86_64(-)?] dev-libs/libffi:0[abi_x86_64(-)?] dev-libs/libpcre2:0[abi_x86_64(-)?] dev-libs/nspr:0[abi_x86_64(-)?] dev-libs/nss:0[abi_x86_64(-)?] media-libs/alsa-lib:0[abi_x86_64(-)?] media-libs/mesa:0[vulkan,abi_x86_64(-)?] sys-apps/dbus:0[abi_x86_64(-)?] sys-apps/util-linux[abi_x86_64(-)?] sys-libs/zlib:0[abi_x86_64(-)?] x11-libs/cairo:0[abi_x86_64(-)?] x11-libs/gtk+:3[abi_x86_64(-)?] x11-libs/libdrm:0[abi_x86_64(-)?] x11-libs/libX11:0[abi_x86_64(-)?] x11-libs/libXau[abi_x86_64(-)?] x11-libs/libXdmcp[abi_x86_64(-)?] x11-libs/libxcb:0/1.12[abi_x86_64(-)?] x11-libs/libXcomposite:0[abi_x86_64(-)?] x11-libs/libXdamage:0[abi_x86_64(-)?] x11-libs/libXext:0[abi_x86_64(-)?] x11-libs/libXfixes:0[abi_x86_64(-)?] x11-libs/libxkbcommon:0[abi_x86_64(-)?] x11-libs/libXrandr:0[abi_x86_64(-)?] x11-libs/pango:0[abi_x86_64(-)?] appindicator? ( dev-libs/libayatana-appindicator ) selinux? ( sec-policy/selinux-skype )
+REQUIRED_USE=|| ( abi_x86_64 )
+RESTRICT=bindist mirror splitdebug
+SLOT=0
+SRC_URI=https://api.snapcraft.io/api/v1/snaps/download/QRDEfjn4WJYnm0FzDKwqqRZZI77awQEV_386.snap -> skypeforlinux-8.138.0.203_p386.snap
+_eclasses_=toolchain-funcs	6afdb6107430c1832ca7e16aacbf8fa1	multilib	b2a329026f2e404e9e371097dda47f96	linux-info	ea4122ba1d8791a12b78e53f9510a2e3	chromium-2	93690d770dc2e27deaa89794e2f9fe3f	desktop	3a72ffe0d8e1dd73af3a1c8c15a59fed	out-of-source-utils	dbf9e34ee8964084651e25907fa8f52c	multibuild	4650a65187015567b4e041bb9bfdb364	multilib-build	9ac26ea006828266d235e2f0135429b5	optfeature	538bce96e5589935b57e178e8635f301	pax-utils	5555f2e75744739fe100ee62c22d28fe	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
+_md5_=5e4f1c91a18c1eb18733a14f2ca35bda
