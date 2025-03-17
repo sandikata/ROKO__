@@ -37,11 +37,11 @@ QA_PRESTRIPPED="*"
 
 src_unpack(){
 	default
-	xz -d "freeoffice2018.tar.lzma" || die
+	xz -d "freeoffice2024.tar.lzma" || die
 	mkdir -p "${WORKDIR}/${P}"
-	tar x -f "freeoffice2018.tar" \
+	tar x -f "freeoffice2024.tar" \
 		-C "${WORKDIR}/${P}" \
-		&& rm "freeoffice2018.tar" || die
+		&& rm "freeoffice2024.tar" || die
 	rm "installfreeoffice"
 }
 
