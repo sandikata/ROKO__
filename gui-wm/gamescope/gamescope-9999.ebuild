@@ -1,57 +1,45 @@
-# Copyright 1999-2024 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit fcaps meson
 
-RESHADE_COMMIT="9fdbea6892f9959fdc18095d035976c574b268b7"
-WLROOTS_COMMIT="a5c9826e6d7d8b504b07d1c02425e6f62b020791"
 MY_PV=$(ver_rs 3 -)
 MY_PV="${MY_PV//_/-}"
 
-DESCRIPTION="Efficient micro-compositor for running games (ChimeraOS)"
+DESCRIPTION="Efficient micro-compositor for running games"
 HOMEPAGE="https://github.com/ValveSoftware/gamescope"
+EGIT_SUBMODULES=( src/reshade subprojects/{libliftoff,vkroots,wlroots} )
+
 if [[ ${PV} == "9999" ]]; then
-	#EGIT_REPO_URI="https://github.com/ValveSoftware/${PN}.git"
-	EGIT_REPO_URI="https://github.com/ChimeraOS/${PN}.git"
-	# Prevent wlroots and other submodule from being pull
-	# Not messing with system packages
-	EGIT_SUBMODULES=( src/reshade )
+	EGIT_REPO_URI="https://github.com/ValveSoftware/${PN}.git"
 	inherit git-r3
 else
-	COMMIT="bc4fa1097c1e6dad8efdf2cc3fc0e0da14c388c4"
-	#SRC_URI="
-	#	https://github.com/ChimeraOS/${PN}/archive/refs/tags/${MY_PV}.tar.gz -> ${P}.tar.gz
-	#	https://github.com/Joshua-Ashton/reshade/archive/${RESHADE_COMMIT}.tar.gz -> reshade-${RESHADE_COMMIT}.tar.gz
-	#"
+	RESHADE_COMMIT="696b14cd6006ae9ca174e6164450619ace043283"
+	LIBLIFTOFF_COMMIT="0.5.0" # Upstream points at this release.
+	VKROOTS_COMMIT="5106d8a0df95de66cc58dc1ea37e69c99afc9540"
+	WLROOTS_COMMIT="4bc5333a2cbba0b0b88559f281dbde04b849e6ef"
 	SRC_URI="
-		https://github.com/ChimeraOS/${PN}/archive/${COMMIT}.tar.gz -> ${PN}-${COMMIT}.tar.gz
+		https://github.com/ValveSoftware/${PN}/archive/refs/tags/${MY_PV}.tar.gz -> ${P}.tar.gz
+		https://gitlab.freedesktop.org/emersion/libliftoff/-/releases/v${LIBLIFTOFF_COMMIT}/downloads/libliftoff-${LIBLIFTOFF_COMMIT}.tar.gz
 		https://github.com/Joshua-Ashton/reshade/archive/${RESHADE_COMMIT}.tar.gz -> reshade-${RESHADE_COMMIT}.tar.gz
+		https://github.com/Joshua-Ashton/vkroots/archive/${VKROOTS_COMMIT}.tar.gz -> vkroots-${VKROOTS_COMMIT}.tar.gz
+		https://github.com/Joshua-Ashton/wlroots/archive/${WLROOTS_COMMIT}.tar.gz -> wlroots-${WLROOTS_COMMIT}.tar.gz
 	"
 	KEYWORDS="~amd64"
-	S="${WORKDIR}/${PN}-${COMMIT}"
 fi
 
-# Until wlroots 0.18 is released.
-SRC_URI+="
-		https://github.com/Joshua-Ashton/wlroots/archive/${WLROOTS_COMMIT}.tar.gz -> wlroots-${WLROOTS_COMMIT}.tar.gz
-"
-
+S="${WORKDIR}/${PN}-${MY_PV}"
 LICENSE="BSD-2"
 SLOT="0"
-IUSE="pipewire +wsi-layer"
-
-# For when wlroots 0.18 is released.
-# =gui-libs/wlroots-0.18*[X,libinput(+)]
+IUSE="avif libei pipewire +sdl systemd +wsi-layer"
 
 RDEPEND="
-	=dev-libs/libliftoff-0.5*
-	>=dev-libs/wayland-1.21
+	dev-lang/luajit:2=
+	>=dev-libs/wayland-1.23
 	gui-libs/libdecor
-	>=media-libs/libavif-1.0.0:=
-	>=media-libs/libdisplay-info-0.1.1
-	media-libs/libsdl2[video,vulkan]
+	>=media-libs/libdisplay-info-0.3
 	media-libs/vulkan-loader
 	sys-apps/hwdata
 	sys-libs/libcap
@@ -69,9 +57,15 @@ RDEPEND="
 	x11-libs/libXres
 	x11-libs/libXtst
 	x11-libs/libXxf86vm
+	avif? ( >=media-libs/libavif-1.0.0:= )
+	libei? ( dev-libs/libei )
 	pipewire? ( >=media-video/pipewire-0.3:= )
+	sdl? ( media-libs/libsdl2[video,vulkan] )
+	systemd? ( sys-apps/systemd:= )
 	wsi-layer? ( x11-libs/libxcb )
-
+"
+# For bundled wlroots.
+RDEPEND+="
 	>=dev-libs/libinput-1.14.0:=
 	media-libs/libglvnd
 	media-libs/mesa[egl(+),gles2(+)]
@@ -99,6 +93,7 @@ BDEPEND="
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-deprecated-stb.patch
+	"${FILESDIR}"/${PN}-system-stb-glm.patch
 )
 
 FILECAPS=(
@@ -109,11 +104,17 @@ src_prepare() {
 	default
 
 	# ReShade is bundled as a git submodule, but it references an unofficial
-	# fork, so we cannot unbundle it. Symlink to its extracted sources.
-	# For 9999, use the bundled submodule.
+	# fork, so we cannot unbundle it. Upstream have requested that we do not
+	# unbundle libliftoff, vkroots, or wlroots. Symlink to the extracted sources
+	# when not using the git submodules in 9999.
 	if [[ ${PV} != "9999" ]]; then
-		rmdir src/reshade || die
-		ln -snfT ../../reshade-${RESHADE_COMMIT} src/reshade || die
+		local dir name commit
+		for dir in "${EGIT_SUBMODULES[@]}"; do
+			rmdir "${dir}" || die
+			name=${dir##*/}
+			commit=${name^^}_COMMIT
+			ln -snfT "../../${name}-${!commit}" "${dir}" || die
+		done
 	fi
 
 	# SPIRV-Headers is required by ReShade. It is bundled as a git submodule but
@@ -121,19 +122,20 @@ src_prepare() {
 	# For 9999, this submodule is not included.
 	mkdir -p thirdparty/SPIRV-Headers/include || die
 	ln -snf "${ESYSROOT}"/usr/include/spirv thirdparty/SPIRV-Headers/include/ || die
-
-	# Until wlroots 0.18 is released.
-	rmdir subprojects/wlroots || die
-	ln -snfT ../../wlroots-${WLROOTS_COMMIT} subprojects/wlroots || die
 }
 
 src_configure() {
+	# Disabling DRM backend is currently broken.
+	# https://github.com/ValveSoftware/gamescope/issues/1347
 	local emesonargs=(
-		--force-fallback-for=
-		-Dbenchmark=disabled
-		-Denable_openvr_support=false
 		$(meson_feature pipewire)
+		-Ddrm_backend=enabled
+		$(meson_feature sdl sdl2_backend)
+		$(meson_feature avif avif_screenshots)
+		$(meson_feature libei input_emulation)
 		$(meson_use wsi-layer enable_gamescope_wsi_layer)
+		-Denable_openvr_support=false
+		-Dbenchmark=disabled
 
 		-Dwlroots:xcb-errors=disabled
 		-Dwlroots:examples=false
