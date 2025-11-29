@@ -1,0 +1,148 @@
+--- ../tests/upstream_service.t	2025-11-01 01:34:07.312499306 +0200
++++ ../tests/upstream_service.t	2025-11-01 01:34:41.961798601 +0200
+@@ -27,14 +27,6 @@
+ 
+ my $t = Test::Nginx->new()->has(qw/http proxy upstream_zone/);
+ 
+-$t->skip_errors_check('crit',
+-	qr/connect\(\) to \[fe80::1\]:\d{4,} failed/,
+-	qr/connect\(\) to \[fe80::2\]:\d{4,} failed/
+-);
+-
+-$t->skip_errors_check('crit', "Can't assign requested address")
+-	if $^O eq 'freebsd';
+-
+ $t->write_file_expand('nginx.conf', <<'EOF');
+ 
+ %%TEST_GLOBALS%%
+@@ -103,7 +95,7 @@
+ 	->waitforfile($t->testdir . '/' . port(8982));
+ port(8982, socket => 1)->close();
+ 
+-$t->try_run('no service in upstream server')->plan(38);
++$t->try_run('no service in upstream server')->plan(34);
+ 
+ ###############################################################################
+ 
+@@ -136,16 +128,6 @@
+ like($r, qr/127.0.0.201:$p0/, 'A A 1');
+ like($r, qr/127.0.0.202:$p0/, 'A A 2');
+ 
+-# 1 A removed, 2 AAAA added
+-
+-update_name({A => '127.0.0.201', AAAA => 'fe80::1 fe80::2',
+-	SRV => "1 5 $p0 example.net"});
+-$r = http_get('/');
+-is(@n = $r =~ /:$p0/g, 3, 'A AAAA AAAA responses');
+-like($r, qr/127.0.0.201:$p0/, 'A AAAA AAAA 1');
+-like($r, qr/\[fe80::1\]:$p0/, 'A AAAA AAAA 2');
+-like($r, qr/\[fe80::1\]:$p0/, 'A AAAA AAAA 3');
+-
+ # all records removed
+ 
+ update_name({SRV => "1 5 $p0 example.net"});
+--- ../tests/stream_upstream_resolve.t	2025-11-01 01:36:52.249641498 +0200
++++ ../tests/stream_upstream_resolve.t	2025-11-01 01:39:56.676004478 +0200
+@@ -29,14 +29,6 @@
+ 
+ my $t = Test::Nginx->new()->has(qw/stream stream_upstream_zone/);
+ 
+-$t->skip_errors_check('crit',
+-	qr/connect\(\) to \[fe80::1\]:\d{4,} failed/,
+-	qr/connect\(\) to \[fe80::2\]:\d{4,} failed/
+-);
+-
+-$t->skip_errors_check('crit', "Can't assign requested address")
+-	if $^O eq 'freebsd';
+-
+ $t->write_file_expand('nginx.conf', <<'EOF');
+ 
+ %%TEST_GLOBALS%%
+@@ -76,7 +68,7 @@
+ 
+ $t->run_daemon(\&dns_daemon, port(8983), $t)
+ 	->waitforfile($t->testdir . '/' . port(8983));
+-$t->try_run('no resolve in upstream server')->plan(11);
++$t->try_run('no resolve in upstream server')->plan(8);
+ 
+ ###############################################################################
+ 
+@@ -95,11 +87,6 @@
+ update_name({A => '127.0.0.201 127.0.0.202'});
+ stream('127.0.0.1:' . port(8082))->read();
+ 
+-# 1 A removed, 2 AAAA added
+-
+-update_name({A => '127.0.0.201', AAAA => 'fe80::1 fe80::2'});
+-stream('127.0.0.1:' . port(8082))->read();
+-
+ # all records removed
+ 
+ update_name();
+@@ -139,13 +126,6 @@
+ like($line, qr/127.0.0.201:$p0/, 'log - A A 1');
+ like($line, qr/127.0.0.202:$p0/, 'log - A A 2');
+ 
+-# 1 A removed, 2 AAAA added
+-
+-$line = $f->getline();
+-like($line, qr/127.0.0.201:$p0/, 'log - A AAAA AAAA 1');
+-like($line, qr/\[fe80::1\]:$p0/, 'log - A AAAA AAAA 2');
+-like($line, qr/\[fe80::2\]:$p0/, 'log - A AAAA AAAA 3');
+-
+ # all records removed
+ 
+ like($f->getline(), qr/^u$/, 'log - empty response');
+--- ../tests/stream_upstream_service.t	2025-11-01 01:41:24.344475871 +0200
++++ ../tests/stream_upstream_service.t	2025-11-01 01:43:11.169187315 +0200
+@@ -28,14 +28,6 @@
+ 
+ my $t = Test::Nginx->new()->has(qw/stream stream_upstream_zone/);
+ 
+-$t->skip_errors_check('crit',
+-	qr/connect\(\) to \[fe80::1\]:\d{4,} failed/,
+-	qr/connect\(\) to \[fe80::2\]:\d{4,} failed/
+-);
+-
+-$t->skip_errors_check('crit', "Can't assign requested address")
+-	if $^O eq 'freebsd';
+-
+ $t->write_file_expand('nginx.conf', <<'EOF');
+ 
+ %%TEST_GLOBALS%%
+@@ -109,7 +101,7 @@
+ 	->waitforfile($t->testdir . '/' . port(8982));
+ port(8982, socket => 1)->close();
+ 
+-$t->try_run('no resolve in upstream server')->plan(21);
++$t->try_run('no resolve in upstream server')->plan(18);
+ 
+ ###############################################################################
+ 
+@@ -132,12 +124,6 @@
+ update_name({A => '127.0.0.201 127.0.0.202', SRV => "1 5 $p0 example.net"});
+ stream('127.0.0.1:' . port(8081))->read();
+ 
+-# 1 A removed, 2 AAAA added
+-
+-update_name({A => '127.0.0.201', AAAA => 'fe80::1 fe80::2',
+-	SRV => "1 5 $p0 example.net"});
+-stream('127.0.0.1:' . port(8081))->read();
+-
+ # all records removed
+ 
+ update_name({SRV => "1 5 $p0 example.net"});
+@@ -228,13 +214,6 @@
+ like($line, qr/127.0.0.201:$p0/, 'log - A A 1');
+ like($line, qr/127.0.0.202:$p0/, 'log - A A 2');
+ 
+-# 1 A removed, 2 AAAA added
+-
+-$line = $f->getline();
+-like($line, qr/127.0.0.201:$p0/, 'log - A AAAA AAAA 1');
+-like($line, qr/\[fe80::1\]:$p0/, 'log - A AAAA AAAA 2');
+-like($line, qr/\[fe80::2\]:$p0/, 'log - A AAAA AAAA 3');
+-
+ # all records removed
+ 
+ like($f->getline(), qr/^u$/, 'log - empty response');

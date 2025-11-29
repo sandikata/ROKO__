@@ -1,0 +1,16 @@
+[Unit]
+Description=The angie HTTP and reverse proxy server
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/run/angie/angie.pid
+RuntimeDirectory=angie
+ExecStartPre=/usr/sbin/angie -t
+ExecStart=/usr/sbin/angie
+ExecStartPost=/bin/sleep 0.1
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -QUIT $MAINPID
+
+[Install]
+WantedBy=multi-user.target

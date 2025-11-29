@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<longdescription lang="en">
+	This package provides /etc/mime.types in general and additionally has suppport
+	for modern web servers. Forked from nest-overlay
+	</longdescription>
+	<use>
+		<flag name="angie">Enable mime-types support for <pkg>www-servers/angie</pkg></flag>
+		<flag name="nginx">Enable mime-types support for <pkg>www-servers/nginx</pkg></flag>
+	</use>
+</pkgmetadata>

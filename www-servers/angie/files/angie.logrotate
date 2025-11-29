@@ -1,0 +1,8 @@
+/var/log/angie/*_log {
+	missingok
+	delaycompress
+	sharedscripts
+	postrotate
+		test -r /run/angie/angie.pid && kill -USR1 `cat /run/angie/angie.pid`
+	endscript
+}

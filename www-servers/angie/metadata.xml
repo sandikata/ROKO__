@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<longdescription lang="en">
+	Angie is an efficient, powerful, and scalable web server that was forked
+	from <pkg>www-servers/nginx</pkg> to act as a drop-in replacement. Forked from nest-overlay
+	</longdescription>
+	<use>
+		<flag name="aio">Enable asynchronous I/O support</flag>
+		<flag name="debug">Enable support for debugging log</flag>
+		<flag name="http">Enable core HTTP support</flag>
+		<flag name="libatomic">Use <pkg>dev-libs/libatomic_ops</pkg> instead of builtin atomic operations</flag>
+		<flag name="http2">Enable HTTP2 module support</flag>
+		<flag name="http3">Enable HTTP3 module support</flag>
+		<flag name="http-cache">Enable HTTP cache support</flag>
+		<flag name="pcre-jit">Enable JIT for pcre</flag>
+		<flag name="pcre2">Enable support for pcre2</flag>
+		<flag name="ssl">Enable HTTPS module for http and mail</flag>
+		<flag name="rtmp">NGINX-based Media Streaming Server</flag>
+		<flag name="angie_modules_http_access">Add support for a simple host-based access control</flag>
+		<flag name="angie_modules_http_acme">Add support for automatic certificate acquisition though the use of ACME protocol</flag>
+		<flag name="angie_modules_http_addition">Add support for adding contents of other locations before and after the current location's content</flag>
+		<flag name="angie_modules_http_api">Add support for HTTP RESTful interface</flag>
+		<flag name="angie_modules_http_auth_basic">Add support for limiting access to a location by validating the username and password using the HTTP Basic Authentication</flag>
+		<flag name="angie_modules_http_auth_request">Add support for client authorization based on the result of a subrequest</flag>
+		<flag name="angie_modules_http_autoindex">Add support for processing requests ending with the slash character ('/') and produciing a directory listing</flag>
+		<flag name="angie_modules_http_browser">Add support for creating variables whose values depend on the value of the "User-Agent" request header field</flag>
+		<flag name="angie_modules_http_charset">Add support for adding the specified charset to the "Content-Type" response header field and reencoding singe-byte charsets</flag>
+		<flag name="angie_modules_http_dav">Add support for the WebDAV functionality and methods: PUT, DELETE, MKCOL, COPY and MOVE</flag>
+		<flag name="angie_modules_http_degradation">Add support for returning 204 or 444 code for some locations on low memory condition (reliable on FreeBSD only)</flag>
+		<flag name="angie_modules_http_docker">Add support for dynamic updating of proxied server groups based on Docker (or Podman) container labels</flag>
+		<flag name="angie_modules_http_empty_gif">Add support for emiting a single-pixel transparent GIF</flag>
+		<flag name="angie_modules_http_fastcgi">Add support for passing requests to a FastCGI server</flag>
+		<flag name="angie_modules_http_flv">Add support for the server-side pseudo-streaming of Flash Video (FLV) files</flag>
+		<flag name="angie_modules_http_geo">Add support for creating variables whose values depend on the client IP-address</flag>
+		<flag name="angie_modules_http_geoip">Add support for creating variables whose values depend on the client IP-address, using the precompiled MaxMind databases</flag>
+		<flag name="angie_modules_http_grpc">Add support for passing requests to a gRPC server</flag>
+		<flag name="angie_modules_http_gunzip">Add support for decompressing responses with "Content-Encoding: gzip" for clients that do not support "gzip" encoding method</flag>
+		<flag name="angie_modules_http_gzip">Add support for compressing responses using the "gzip" method</flag>
+		<flag name="angie_modules_http_gzip_static">Add support for sending precompressed files with the ".gz" filename extension instead of regular files</flag>
+		<flag name="angie_modules_http_image_filter">Add support for transforming images in JPEG, GIF, PNG, and WebP formats</flag>
+		<flag name="angie_modules_http_limit_conn">Add support for limiting the number of connections per a defined key, e.g. the number of connections from a single IP address</flag>
+		<flag name="angie_modules_http_limit_req">Add support for limiting the request processing rate per a defined key, e.g. the processing rate of requests coming from a single IP address</flag>
+		<flag name="angie_modules_http_map">Add support for creating variables whose values depend on values of other variables</flag>
+		<flag name="angie_modules_http_memcached">Add support for obtaining responses from a memcached server</flag>
+		<flag name="angie_modules_http_mirror">Add support for mirroring of the original request by creating background mirror subrequests</flag>
+		<flag name="angie_modules_http_mp4">Add support for server-side pseudo-streaming for MP4 files</flag>
+		<flag name="angie_modules_http_perl">Add support for implementing location and variable handlers in Perl and inserting Perl calls into SSI</flag>
+		<flag name="angie_modules_http_prometheus">Add support for export of varied statistics metrics in Prometheus format</flag>
+		<flag name="angie_modules_http_proxy">Add support for passing subrequests to another server</flag>
+		<flag name="angie_modules_http_random_index">Add support for processing requests ending with the slash character ('/') by picking a random file in a directory to serve as an index file</flag>
+		<flag name="angie_modules_http_realip">Add support for setting the client address and optional port to those sent in the specified header field (e.g. "X-Real-IP" or "X-Forwarded-For")</flag>
+		<flag name="angie_modules_http_referer">Add support for blocking access to a site for requests with invalid values in the "Referer" header field</flag>
+		<flag name="angie_modules_http_rewrite">Add support for changing the request URI using PCRE regular expressions, returning redirects, and conditionally selecting configurations</flag>
+		<flag name="angie_modules_http_scgi">Add support for passing requests to an SCGI server</flag>
+		<flag name="angie_modules_http_secure_link">Add support for checking authenticity of requested links, protecting resources from unauthorized access, and limiting link lifetime</flag>
+		<flag name="angie_modules_http_slice">Add support for spliting a request into subrequests, each returning a certain range of response</flag>
+		<flag name="angie_modules_http_split_clients">Add support for creating variables suitable for A/B testing, also known as split testing</flag>
+		<flag name="angie_modules_http_ssi">Add support for processing SSI (Server Side Includes) commands in responses passing through NGINX</flag>
+		<flag name="angie_modules_http_stub_status">Add support for providing access to basic status information</flag>
+		<flag name="angie_modules_http_sub">Add support for modifying a response by replacing one specified string by another</flag>
+		<flag name="angie_modules_http_upstream_hash">Add support for distributing upstream requests based on hashed key value</flag>
+		<flag name="angie_modules_http_upstream_ip_hash">Add support for distributing upstream requests based on the IP-address of the client</flag>
+		<flag name="angie_modules_http_upstream_keepalive">Add support for caching connections to upstream servers</flag>
+		<flag name="angie_modules_http_upstream_least_conn">Add support for passing upstream requests to the server with the least number of active connections</flag>
+		<flag name="angie_modules_http_upstream_random">Add support for passing upstream requests to a randomly selected server</flag>
+		<flag name="angie_modules_http_upstream_sticky">Add support for sticky sessions mode where all connections in the session are routed to the same server</flag>
+		<flag name="angie_modules_http_upstream_zone">Add support for defining a shared memory zone that keeps the group's configuration and run-time state that are shared between worker processes</flag>
+		<flag name="angie_modules_http_userid">Add support for setting cookies suitable for client identification</flag>
+		<flag name="angie_modules_http_uwsgi">Add support for passing requests to a uwsgi server</flag>
+		<flag name="angie_modules_http_xslt">Add support for transforming XML responses using one or more XSLT stylesheets</flag>
+		<flag name="angie_modules_mail_imap">Add support for proxying IMAP messages</flag>
+		<flag name="angie_modules_mail_pop3">Add support for proxying POP3 messages</flag>
+		<flag name="angie_modules_mail_smtp">Add support for proxying SMTP messages</flag>
+		<flag name="angie_modules_stream_access">Add support for a simple host-based access control</flag>
+		<flag name="angie_modules_stream_acme">Add support for automatic certificate acquisition though the use of ACME protocol</flag>
+		<flag name="angie_modules_stream_geo">Add support for creating variables whose values depend on the client IP-address</flag>
+		<flag name="angie_modules_stream_geoip">Add support for creating variables whose values depend on the client IP-address, using the precompiled MaxMind databases</flag>
+		<flag name="angie_modules_stream_limit_conn">Add support for limiting the number of connections per a defined key, e.g. the number of connections from a single IP address</flag>
+		<flag name="angie_modules_stream_map">Add support for creating variables whose values depend on the values of other variables</flag>
+		<flag name="angie_modules_stream_mqtt_preread">Add support for extracting the username and client ID from the CONNECT packet of the MQTT protocol</flag>
+		<flag name="angie_modules_stream_pass">Add support for passing the accepted connection directly to any configured listening socket in "http", "stream", "mail", and other similar modules</flag>
+		<flag name="angie_modules_stream_rdp_preread">Add support for extraction of Cookie values from RDP connections</flag>
+		<flag name="angie_modules_stream_realip">Add support for setting the client address and optional port to those sent in the specified header field (e.g. "X-Real-IP" or "X-Forwarded-For")</flag>
+		<flag name="angie_modules_stream_return">Add support for sending a specified value to the client and then closing the connection</flag>
+		<flag name="angie_modules_stream_set">Add support for setting a value for a variable</flag>
+		<flag name="angie_modules_stream_split_clients">Add support for creating variables suitable for A/B testing, also known as split testing</flag>
+		<flag name="angie_modules_stream_ssl_preread">Add SSL/TLS protocol support to a stream proxy server</flag>
+		<flag name="angie_modules_stream_upstream_hash">Add support for distributing upstream requests based on hashed key value</flag>
+		<flag name="angie_modules_stream_upstream_least_conn">Add support for passing upstream requests to the server with the least number of active connections</flag>
+		<flag name="angie_modules_stream_upstream_random">Add support for passing upstream requests to a randomly selected server</flag>
+		<flag name="angie_modules_stream_upstream_sticky">Add support for sticky sessions mode where all connections in the session are routed to the same server</flag>
+		<flag name="angie_modules_stream_upstream_zone">Add support for defining a shared memory zone that keeps the group's configuration and run-time state that are shared between worker processes</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">webserver-llc/angie</remote-id>
+	</upstream>
+</pkgmetadata>
