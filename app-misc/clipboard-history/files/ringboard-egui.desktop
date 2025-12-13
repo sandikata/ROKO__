@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Terminal=false
+Type=Application
+Name=Ringboard
+GenericName=Clipboard Manager
+Comment=A fast, efficient, and composable clipboard manager for Linux.
+Exec=ringboard-egui
+Icon=/usr/share/pixmaps/ringboard.jpeg
+StartupWMClass=ringboard-egui

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM 'https://www.gentoo.org/dtd/metadata.dtd'>
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+	</maintainer>
+   <!-- Add USE flag descriptions if needed -->
+    <use>
+        <flag name="egui">Enables the GUI client</flag>
+        <flag name="ratatui">Enables the TUI client</flag>
+        <flag name="cli">Enables the CLI client</flag>
+    </use>
+</pkgmetadata>

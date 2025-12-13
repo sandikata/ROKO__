@@ -1,0 +1,11 @@
+[Unit]
+Description=Ringboard server
+Documentation=https://github.com/SUPERCILEX/clipboard-history
+After=multi-user.target
+
+[Service]
+Type=notify
+Environment=RUST_LOG=trace
+ExecStart=ringboard-server
+Restart=on-failure
+Slice=ringboard.slice
