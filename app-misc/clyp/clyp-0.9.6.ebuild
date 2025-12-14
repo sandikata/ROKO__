@@ -11,7 +11,7 @@ SRC_URI="https://github.com/murat-cileli/${PN}/archive/refs/tags/${PV}.tar.gz ->
 
 LICENSE="MIT"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="amd64"
 
 RDEPEND="
 	>=gui-libs/gtk-4.18
