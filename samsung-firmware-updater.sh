@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: Rosen Aleksandrov, rosen@aleksandrov.tech and Google Search.
+# License: GPL-3.0
 
 # --- Check for root privileges ---
 # The script requires root access to use 'mount' and create directories in /mnt/ and /tmp/.
