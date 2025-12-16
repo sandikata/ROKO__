@@ -1,0 +1,16 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/dimtpap/egui-snarl.git?rev=0d51e7a24e1849114c8806dc6351cebc58dbabcc"]
+git = "https://github.com/dimtpap/egui-snarl.git"
+rev = "0d51e7a24e1849114c8806dc6351cebc58dbabcc"
+replace-with = "vendored-sources"
+
+[source."git+https://gitlab.freedesktop.org/dimtpap/pipewire-rs.git?rev=605d15996f3258b3e1cc34e445dfbdf16a366c7e"]
+git = "https://gitlab.freedesktop.org/dimtpap/pipewire-rs.git"
+rev = "605d15996f3258b3e1cc34e445dfbdf16a366c7e"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "../cargo_home/gentoo"
+
