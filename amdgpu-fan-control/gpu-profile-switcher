@@ -1,0 +1,122 @@
+#!/bin/bash
+# RX 6750 XT auto fan controller (Gentoo / amdgpu)
+# Junction temperature + 3 fan tiers + logging
+
+GPU_CARD="card0"
+INTERVAL=5
+LOG_FILE="/var/log/gpu-fan-switcher.log"
+
+# Temperature thresholds (junction)
+T_QUIET=65
+T_BALANCED=75
+HYSTERESIS=3
+
+# ---- root check ----
+if [[ $EUID -ne 0 ]]; then
+    echo "Run as root: sudo $0"
+    exit 1
+fi
+
+HWMON_BASE="/sys/class/drm/$GPU_CARD/device/hwmon"
+
+# ---- find junction temperature ----
+TEMP_FILE=""
+for h in "$HWMON_BASE"/hwmon*; do
+    for t in "$h"/temp*_label; do
+        [[ -f "$t" ]] || continue
+        if grep -qi "junction\|hotspot" "$t"; then
+            TEMP_FILE="${t%_label}_input"
+            break 2
+        fi
+    done
+done
+
+# fallback to any temp if junction label not found
+if [[ -z "$TEMP_FILE" ]]; then
+    TEMP_FILE=$(find "$HWMON_BASE" -name "temp*_input" | head -n1)
+fi
+
+[[ -z "$TEMP_FILE" ]] && { echo "No temperature sensor found"; exit 1; }
+
+# ---- find fan control ----
+PWM_FILE=""
+PWM_ENABLE=""
+PWM_MAX=255
+
+for h in "$HWMON_BASE"/hwmon*; do
+    if [[ -f "$h/pwm1" ]]; then
+        PWM_FILE="$h/pwm1"
+        [[ -f "$h/pwm1_enable" ]] && PWM_ENABLE="$h/pwm1_enable"
+        [[ -f "$h/pwm1_max" ]] && PWM_MAX=$(cat "$h/pwm1_max")
+        break
+    fi
+done
+
+[[ -z "$PWM_FILE" ]] && { echo "Fan control not available"; exit 1; }
+
+# ---- fan tiers ----
+FAN_QUIET=$((PWM_MAX * 25 / 100))
+FAN_BALANCED=$((PWM_MAX * 45 / 100))
+FAN_PERF=$((PWM_MAX * 70 / 100))
+
+# ---- enable manual fan control ----
+[[ -n "$PWM_ENABLE" ]] && echo 1 > "$PWM_ENABLE"
+
+# ---- helpers ----
+get_temp() {
+    echo $(( $(cat "$TEMP_FILE") / 1000 ))
+}
+
+set_fan() {
+    echo "$1" > "$PWM_FILE"
+}
+
+log() {
+    echo "$(date '+%F %T') | $1" | tee -a "$LOG_FILE"
+}
+
+# ---- init ----
+PROFILE="quiet"
+set_fan "$FAN_QUIET"
+
+log "Started GPU fan controller"
+log "Temp source: $TEMP_FILE"
+log "Fan control: $PWM_FILE"
+log "PWM max: $PWM_MAX"
+log "Quiet=$FAN_QUIET Balanced=$FAN_BALANCED Perf=$FAN_PERF"
+
+# ---- main loop ----
+while true; do
+    TEMP=$(get_temp)
+
+    case "$PROFILE" in
+        quiet)
+            if (( TEMP >= T_QUIET + HYSTERESIS )); then
+                set_fan "$FAN_BALANCED"
+                PROFILE="balanced"
+                log "→ BALANCED (${TEMP}°C)"
+            fi
+            ;;
+        balanced)
+            if (( TEMP >= T_BALANCED + HYSTERESIS )); then
+                set_fan "$FAN_PERF"
+                PROFILE="perf"
+                log "→ PERFORMANCE (${TEMP}°C)"
+            elif (( TEMP <= T_QUIET - HYSTERESIS )); then
+                set_fan "$FAN_QUIET"
+                PROFILE="quiet"
+                log "→ QUIET (${TEMP}°C)"
+            fi
+            ;;
+        perf)
+            if (( TEMP <= T_BALANCED - HYSTERESIS )); then
+                set_fan "$FAN_BALANCED"
+                PROFILE="balanced"
+                log "→ BALANCED (${TEMP}°C)"
+            fi
+            ;;
+    esac
+
+    sleep "$INTERVAL"
+done
+

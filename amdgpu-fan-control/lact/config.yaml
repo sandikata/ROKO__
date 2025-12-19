@@ -1,0 +1,84 @@
+version: 5
+daemon:
+  log_level: info
+  admin_group: wheel
+  disable_clocks_cleanup: false
+apply_settings_timer: 5
+gpus:
+  1002:73DF-1462:3990-0000:30:00.0:
+    fan_control_enabled: false
+profiles:
+  RX 6750 XT Gaming X Trio - Quiet:
+    gpus:
+      1002:73DF-1462:3990-0000:30:00.0:
+        fan_control_enabled: true
+        fan_control_settings:
+          mode: curve
+          static_speed: 0.5
+          temperature_key: edge
+          interval_ms: 5000
+          curve:
+            20: 0.0
+            35: 0.15
+            50: 0.25
+            60: 0.35
+            68: 0.5
+            75: 0.6
+            82: 0.75
+            90: 1.0
+          spindown_delay_ms: 5000
+          change_threshold: 2
+        power_cap: 240.0
+        performance_level: manual
+        voltage_offset: -75
+        power_profile_mode_index: 1
+  RX 6750 XT Gaming X Trio - Junction:
+    gpus:
+      1002:73DF-1462:3990-0000:30:00.0:
+        fan_control_enabled: true
+        fan_control_settings:
+          mode: static
+          static_speed: 0.35
+          temperature_key: junction
+          interval_ms: 5000
+          curve:
+            30: 0.1
+            45: 0.25
+            55: 0.35
+            65: 0.45
+            75: 0.6
+            85: 0.8
+            92: 0.95
+            100: 1.0
+          spindown_delay_ms: 5000
+          change_threshold: 2
+        power_cap: 240.0
+        performance_level: manual
+        voltage_offset: -75
+        power_profile_mode_index: 1
+  RX 6750 XT Gaming X Trio - Performance:
+    gpus:
+      1002:73DF-1462:3990-0000:30:00.0:
+        fan_control_enabled: true
+        fan_control_settings:
+          mode: static
+          static_speed: 0.65
+          temperature_key: junction
+          interval_ms: 5000
+          curve:
+            30: 0.15
+            45: 0.3
+            55: 0.4
+            65: 0.5
+            75: 0.65
+            85: 0.85
+            92: 0.98
+            100: 1.0
+          spindown_delay_ms: 5000
+          change_threshold: 2
+        power_cap: 240.0
+        performance_level: manual
+        voltage_offset: -50
+        power_profile_mode_index: 1
+current_profile: RX 6750 XT Gaming X Trio - Quiet
+auto_switch_profiles: false

@@ -1,0 +1,13 @@
+[Unit]
+Description=Automatic GPU Profile Switcher (Gaming / Desktop)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/lact_auto_game_switch_new.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,19 @@
+[Unit]
+Description=RX 6750 XT Auto Fan Profile Switcher
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/gpu-profile-switcher
+Restart=always
+RestartSec=2
+
+# Hardening (safe)
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=0
+
+[Install]
+WantedBy=multi-user.target
+
