@@ -22,73 +22,73 @@ IUSE="+abi_x86_64 apulse +pulseaudio"
 REQUIRED_USE="^^ ( apulse pulseaudio )"
 RESTRICT="bindist mirror splitdebug"
 
-RDEPEND="app-arch/brotli:=[${MULTILIB_USEDEP}]
-	app-arch/snappy:=[${MULTILIB_USEDEP}]
-	app-arch/zstd:=[${MULTILIB_USEDEP}]
-	app-crypt/libb2[${MULTILIB_USEDEP}]
-	app-crypt/mit-krb5[${MULTILIB_USEDEP}]
+RDEPEND="app-arch/brotli
+	app-arch/snappy
+	app-arch/zstd
+	app-crypt/libb2
+	app-crypt/mit-krb5
 	dev-libs/double-conversion
-	dev-libs/expat[${MULTILIB_USEDEP}]
-	dev-libs/glib:2[${MULTILIB_USEDEP}]
-	dev-libs/libevent:=[${MULTILIB_USEDEP}]
-	dev-libs/libpcre2:=[${MULTILIB_USEDEP}]
-	dev-libs/libxml2-compat[${MULTILIB_USEDEP}]
-	dev-libs/libxslt[${MULTILIB_USEDEP}]
-	dev-libs/nspr[${MULTILIB_USEDEP}]
-	dev-libs/nss[${MULTILIB_USEDEP}]
-	dev-libs/wayland[${MULTILIB_USEDEP}]
-	media-libs/alsa-lib[${MULTILIB_USEDEP}]
-	media-libs/fontconfig:1.0[${MULTILIB_USEDEP}]
-	media-libs/freetype:2[${MULTILIB_USEDEP}]
-	media-libs/gst-plugins-bad:1.0[${MULTILIB_USEDEP}]
-	media-libs/gst-plugins-base:1.0[${MULTILIB_USEDEP}]
-	media-libs/gstreamer:1.0[${MULTILIB_USEDEP}]
-	media-libs/harfbuzz:=[${MULTILIB_USEDEP}]
-	media-libs/lcms:2[${MULTILIB_USEDEP}]
-	media-libs/libglvnd[${MULTILIB_USEDEP}]
-	media-libs/libmng:=[${MULTILIB_USEDEP}]
-	media-libs/libopenmpt[${MULTILIB_USEDEP}]
-	media-libs/libpng:=[${MULTILIB_USEDEP}]
-	media-libs/libtheora-compat:=[${MULTILIB_USEDEP}]
-	media-libs/libwebp:=[${MULTILIB_USEDEP}]
-	media-libs/opus[${MULTILIB_USEDEP}]
-	media-libs/tiff-compat:4[${MULTILIB_USEDEP}]
-	media-sound/wavpack[${MULTILIB_USEDEP}]
-	net-print/cups[${MULTILIB_USEDEP}]
-	sys-apps/dbus[${MULTILIB_USEDEP}]
+	dev-libs/expat
+	dev-libs/glib:2
+	dev-libs/libevent
+	dev-libs/libpcre2
+	dev-libs/libxml2-compat
+	dev-libs/libxslt
+	dev-libs/nspr
+	dev-libs/nss
+	dev-libs/wayland
+	media-libs/alsa-lib
+	media-libs/fontconfig:1.0
+	media-libs/freetype:2
+	media-libs/gst-plugins-bad:1.0
+	media-libs/gst-plugins-base:1.0
+	media-libs/gstreamer:1.0
+	media-libs/harfbuzz
+	media-libs/lcms:2
+	media-libs/libglvnd
+	media-libs/libmng
+	media-libs/libopenmpt
+	media-libs/libpng
+	media-libs/libtheora-compat
+	media-libs/libwebp
+	media-libs/opus
+	media-libs/tiff-compat:4
+	media-sound/wavpack
+	net-print/cups
+	sys-apps/dbus
 	sys-libs/mtdev
-	sys-process/numactl[${MULTILIB_USEDEP}]
-	x11-libs/gdk-pixbuf:2[${MULTILIB_USEDEP}]
-	x11-libs/gtk+:3[${MULTILIB_USEDEP}]
-	x11-libs/libdrm[${MULTILIB_USEDEP}]
-	x11-libs/libICE[${MULTILIB_USEDEP}]
-	x11-libs/libSM[${MULTILIB_USEDEP}]
-	x11-libs/libX11[${MULTILIB_USEDEP}]
-	x11-libs/libxcb:=[${MULTILIB_USEDEP}]
-	x11-libs/libXcomposite[${MULTILIB_USEDEP}]
-	x11-libs/libXdamage[${MULTILIB_USEDEP}]
-	x11-libs/libXext[${MULTILIB_USEDEP}]
-	x11-libs/libXfixes[${MULTILIB_USEDEP}]
-	x11-libs/libxkbcommon[${MULTILIB_USEDEP}]
-	x11-libs/libxkbfile[${MULTILIB_USEDEP}]
-	x11-libs/libXrandr[${MULTILIB_USEDEP}]
-	x11-libs/libXScrnSaver[${MULTILIB_USEDEP}]
-	x11-libs/libxshmfence[${MULTILIB_USEDEP}]
-	x11-libs/libXtst[${MULTILIB_USEDEP}]
-	x11-libs/pango[${MULTILIB_USEDEP}]
-	x11-libs/tslib[${MULTILIB_USEDEP}]
-	x11-libs/xcb-util-cursor[${MULTILIB_USEDEP}]
-	x11-libs/xcb-util-image[${MULTILIB_USEDEP}]
-	x11-libs/xcb-util-keysyms[${MULTILIB_USEDEP}]
-	x11-libs/xcb-util-renderutil[${MULTILIB_USEDEP}]
-	x11-libs/xcb-util-wm[${MULTILIB_USEDEP}]
-	virtual/zlib:=[${MULTILIB_USEDEP}]
-	apulse? ( media-sound/apulse[${MULTILIB_USEDEP}] )
+	sys-process/numactl
+	x11-libs/gdk-pixbuf:2
+	x11-libs/gtk+:3
+	x11-libs/libdrm
+	x11-libs/libICE
+	x11-libs/libSM
+	x11-libs/libX11
+	x11-libs/libxcb
+	x11-libs/libXcomposite
+	x11-libs/libXdamage
+	x11-libs/libXext
+	x11-libs/libXfixes
+	x11-libs/libxkbcommon
+	x11-libs/libxkbfile
+	x11-libs/libXrandr
+	x11-libs/libXScrnSaver
+	x11-libs/libxshmfence
+	x11-libs/libXtst
+	x11-libs/pango
+	x11-libs/tslib
+	x11-libs/xcb-util-cursor
+	x11-libs/xcb-util-image
+	x11-libs/xcb-util-keysyms
+	x11-libs/xcb-util-renderutil
+	x11-libs/xcb-util-wm
+	virtual/zlib
+	apulse? ( media-sound/apulse )
 	pulseaudio? (
-		media-libs/libpulse[${MULTILIB_USEDEP}]
-		media-plugins/gst-plugins-pulse[${MULTILIB_USEDEP}] )
+		media-libs/libpulse
+		media-plugins/gst-plugins-pulse )
 	|| ( media-video/ffmpeg-compat:4[bluray,gsm,libsoxr,opencl,theora,twolame,vdpau,zvbi,${MULTILIB_USEDEP}] )
-	|| ( sys-apps/systemd[${MULTILIB_USEDEP}] sys-apps/systemd-utils[udev,${MULTILIB_USEDEP}] )"
+	|| ( sys-apps/systemd sys-apps/systemd-utils[udev,${MULTILIB_USEDEP}] )"
 
 QA_PREBUILT="opt/viber/Viber
 	opt/viber/lib/libpcre2-16.so.0
