@@ -87,8 +87,7 @@ RDEPEND="app-arch/brotli:=[${MULTILIB_USEDEP}]
 	pulseaudio? (
 		media-libs/libpulse[${MULTILIB_USEDEP}]
 		media-plugins/gst-plugins-pulse[${MULTILIB_USEDEP}] )
-	|| ( media-video/ffmpeg-compat:4[bluray,gsm,libsoxr,opencl,theora,twolame,vdpau,zvbi,${MULTILIB_USEDEP}]
-		media-video/ffmpeg:0/56.58.58[bluray,gsm,libsoxr,opencl,theora,twolame,vdpau,zvbi,${MULTILIB_USEDEP}] )
+	|| ( media-video/ffmpeg-compat:4[bluray,gsm,libsoxr,opencl,theora,twolame,vdpau,zvbi,${MULTILIB_USEDEP}] )
 	|| ( sys-apps/systemd[${MULTILIB_USEDEP}] sys-apps/systemd-utils[udev,${MULTILIB_USEDEP}] )"
 
 QA_PREBUILT="opt/viber/Viber
