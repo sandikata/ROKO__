@@ -32,7 +32,7 @@ RDEPEND="app-arch/brotli
 	dev-libs/glib:2
 	dev-libs/libevent
 	dev-libs/libpcre2
-	dev-libs/libxml2-compat
+	dev-libs/libxml2
 	dev-libs/libxslt
 	dev-libs/nspr
 	dev-libs/nss
