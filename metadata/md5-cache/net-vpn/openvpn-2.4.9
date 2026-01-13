@@ -1,4 +1,4 @@
-BDEPEND=sys-devel/gnuconfig >=app-portage/elt-patches-20250306 || ( >=dev-build/automake-1.17-r1:1.17 >=dev-build/automake-1.16.5:1.16 ) || ( >=dev-build/autoconf-2.72-r1:2.72 ) >=dev-build/libtool-2.4.7-r3 virtual/pkgconfig
+BDEPEND=sys-devel/gnuconfig >=app-portage/elt-patches-20250306 || ( >=dev-build/automake-1.18:1.18 >=dev-build/automake-1.17-r1:1.17 ) || ( >=dev-build/autoconf-2.72-r1:2.72 ) >=dev-build/libtool-2.4.7-r3 virtual/pkgconfig
 DEFINED_PHASES=configure install postinst prepare setup test
 DEPEND=kernel_linux? ( iproute2? ( sys-apps/iproute2[-minimal] ) !iproute2? ( >=sys-apps/net-tools-1.60_p20160215155418 ) ) pam? ( sys-libs/pam ) ssl? ( !mbedtls? ( !libressl? ( >=dev-libs/openssl-0.9.8:0= ) libressl? ( dev-libs/libressl:0= ) ) mbedtls? ( net-libs/mbedtls:= ) ) lz4? ( app-arch/lz4 ) lzo? ( >=dev-libs/lzo-1.07 ) pkcs11? ( >=dev-libs/pkcs11-helper-1.11 ) systemd? ( sys-apps/systemd ) test? ( dev-util/cmocka )
 DESCRIPTION=Robust and highly flexible tunneling application compatible with many OSes
@@ -13,5 +13,5 @@ REQUIRED_USE=pkcs11? ( ssl ) !plugins? ( !pam !down-root ) inotify? ( plugins )
 RESTRICT=!test? ( test )
 SLOT=0
 SRC_URI=https://github.com/OpenVPN/openvpn/archive/v2.4.9.tar.gz -> openvpn-2.4.9.tar.gz
-_eclasses_=gnuconfig	ddeb9f8caff1b5f71a09c75b7534df79	toolchain-funcs	6afdb6107430c1832ca7e16aacbf8fa1	multilib	b2a329026f2e404e9e371097dda47f96	libtool	c81bd096be5f4c82f4e8f156ef112402	autotools	f20ecf7ab0a7c34e83238b3ed4aaf6d6	flag-o-matic	357f1a896fbedcd06e5ce55419c49eb9	systemd	54bd206bb5c4efac6ae28b6b006713b0	linux-info	ea4122ba1d8791a12b78e53f9510a2e3
+_eclasses_=gnuconfig	ddeb9f8caff1b5f71a09c75b7534df79	toolchain-funcs	30214924c0c3b92ec7dbf24fc70d60d3	libtool	c81bd096be5f4c82f4e8f156ef112402	autotools	955b29ccd82c1df4755e5f37748d2fa6	flag-o-matic	a7afe42e95fb46ce9691605acfb24672	systemd	a964c0cbe818b5729da1dbfcee5be861	linux-info	efd923656513c879204fec6638eadee5
 _md5_=3a81ee308487cc9de5d9322e202f455a
