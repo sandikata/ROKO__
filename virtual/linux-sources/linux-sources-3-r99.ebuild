@@ -13,6 +13,7 @@ RDEPEND="
 	|| (
 		sys-kernel/cachyos-sources
 		sys-kernel/debian-sources
+		sys-kernel/xanmod-kernel
 		sys-kernel/xanmod-sources
 		sys-kernel/gentoo-sources
 		sys-kernel/vanilla-sources
