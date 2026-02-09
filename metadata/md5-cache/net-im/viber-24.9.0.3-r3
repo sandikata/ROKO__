@@ -1,0 +1,16 @@
+DEFINED_PHASES=install postinst postrm preinst prepare setup unpack
+DESCRIPTION=Free text and calls
+EAPI=8
+HOMEPAGE=https://www.viber.com/en/
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=chromium-2 desktop multilib-build pax-utils unpacker xdg
+IUSE=+abi_x86_64 apulse +pulseaudio +l10n_am +l10n_ar +l10n_bg +l10n_bn +l10n_ca +l10n_cs +l10n_da +l10n_de +l10n_el +l10n_en-GB +l10n_en-US +l10n_es-419 +l10n_es +l10n_et +l10n_fa +l10n_fil +l10n_fi +l10n_fr +l10n_gu +l10n_he +l10n_hi +l10n_hr +l10n_hu +l10n_id +l10n_it +l10n_ja +l10n_kn +l10n_ko +l10n_lt +l10n_lv +l10n_ml +l10n_mr +l10n_ms +l10n_nb +l10n_nl +l10n_pl +l10n_pt-BR +l10n_pt-PT +l10n_ro +l10n_ru +l10n_sk +l10n_sl +l10n_sr +l10n_sv +l10n_sw +l10n_ta +l10n_te +l10n_th +l10n_tr +l10n_uk +l10n_vi +l10n_zh-CN +l10n_zh-TW abi_x86_64
+KEYWORDS=-* ~amd64
+LICENSE=viber
+RDEPEND=app-arch/brotli app-arch/snappy app-arch/zstd app-crypt/libb2 app-crypt/mit-krb5 dev-libs/double-conversion dev-libs/expat dev-libs/glib:2 dev-libs/libevent dev-libs/libpcre2 dev-libs/libxml2 dev-libs/libxslt dev-libs/nspr dev-libs/nss dev-libs/wayland media-libs/alsa-lib media-libs/fontconfig:1.0 media-libs/freetype:2 media-libs/gst-plugins-bad:1.0 media-libs/gst-plugins-base:1.0 media-libs/gstreamer:1.0 media-libs/harfbuzz media-libs/lcms:2 media-libs/libglvnd media-libs/libmng media-libs/libopenmpt media-libs/libpng media-libs/libtheora-compat media-libs/libwebp media-libs/opus media-libs/tiff-compat:4 media-sound/wavpack net-print/cups sys-apps/dbus sys-libs/mtdev sys-process/numactl x11-libs/gdk-pixbuf:2 x11-libs/gtk+:3 x11-libs/libdrm x11-libs/libICE x11-libs/libSM x11-libs/libX11 x11-libs/libxcb x11-libs/libXcomposite x11-libs/libXdamage x11-libs/libXext x11-libs/libXfixes x11-libs/libxkbcommon x11-libs/libxkbfile x11-libs/libXrandr x11-libs/libXScrnSaver x11-libs/libxshmfence x11-libs/libXtst x11-libs/pango x11-libs/tslib x11-libs/xcb-util-cursor x11-libs/xcb-util-image x11-libs/xcb-util-keysyms x11-libs/xcb-util-renderutil x11-libs/xcb-util-wm virtual/zlib apulse? ( media-sound/apulse ) pulseaudio? ( media-libs/libpulse media-plugins/gst-plugins-pulse ) || ( media-video/ffmpeg-compat:4[bluray,gsm,libsoxr,opencl,theora,twolame,vdpau,zvbi,abi_x86_64(-)?] ) || ( sys-apps/systemd sys-apps/systemd-utils[udev,abi_x86_64(-)?] )
+REQUIRED_USE=^^ ( apulse pulseaudio ) || ( abi_x86_64 )
+RESTRICT=bindist mirror splitdebug
+SLOT=0
+SRC_URI=https://download.cdn.viber.com/cdn/desktop/Linux/viber.deb -> viber-24.9.0.3.deb
+_eclasses_=toolchain-funcs	7e440a20ac11dece04e3334622e6e5da	linux-info	efd923656513c879204fec6638eadee5	chromium-2	6be3cf193def84c82ddae5c1f21ddbe5	desktop	26d57169ca094c04be416993844ec8bc	out-of-source-utils	8e5093bd27b7f541a1913271f25d633a	multibuild	83db098a835f71feb71761f72a694aa2	multilib	404b65bd5212cff83b3935c685419d08	multilib-build	d7802b3638ffc661375c0021cdd19efd	pax-utils	5555f2e75744739fe100ee62c22d28fe	unpacker	79f7c61dc45eb850319a8c576ebc7b8d	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
+_md5_=d35cdf47e737d97db6f526c32b4e922f
