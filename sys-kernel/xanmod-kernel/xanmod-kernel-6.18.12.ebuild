@@ -50,11 +50,11 @@ src_prepare() {
 	local patch
 	eapply "${WORKDIR}"/patch-${PATCH_PV}-xanmod${XANMOD_VERSION}
 	eapply "${WORKDIR}/${PATCHSET}"
-	eapply "${FILESDIR}/0001-bore.patch"
-	eapply "${FILESDIR}/0002-glitched-cfs.patch"
-	eapply "${FILESDIR}/0002-sched-ext-coexistence-fix.patch"
-	eapply "${FILESDIR}/0003-glitched-eevdf-additions.patch"
-	eapply "${FILESDIR}/1000-prefer-prevcpu-for-wakeup-v7.patch"
+	eapply "${FILESDIR}/${PV}/0001-bore.patch"
+	eapply "${FILESDIR}/${PV}/0002-glitched-cfs.patch"
+	eapply "${FILESDIR}/${PV}/0002-sched-ext-coexistence-fix.patch"
+	eapply "${FILESDIR}/${PV}/0003-glitched-eevdf-additions.patch"
+	eapply "${FILESDIR}/${PV}/1000-prefer-prevcpu-for-wakeup-v7.patch"
 
 	default
 

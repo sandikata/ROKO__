@@ -1,0 +1,33 @@
+From dc5dbeb04e2305f24e0149cb376294adb222f4f4 Mon Sep 17 00:00:00 2001
+From: Masahito S <firelzrd@gmail.com>
+Date: Mon, 15 Jul 2024 19:58:21 +0900
+Subject: [PATCH] sched-ext-coexistence-fix
+
+---
+ kernel/sched/fair.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
+index ab17954001..c5a5c48483 100644
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -13283,3 +13283,16 @@ __init void init_sched_fair_class(void)
+ #endif /* SMP */
+ 
+ }
++
++#ifdef CONFIG_SCHED_BORE
++void reweight_task(struct task_struct *p, int prio)
++{
++	struct sched_entity *se = &p->se;
++	struct cfs_rq *cfs_rq = cfs_rq_of(se);
++	struct load_weight *load = &se->load;
++	unsigned long weight = scale_load(sched_prio_to_weight[prio]);
++
++	reweight_entity(cfs_rq, se, weight);
++	load->inv_weight = sched_prio_to_wmult[prio];
++}
++#endif // CONFIG_SCHED_BORE
+-- 
+2.34.1
+
