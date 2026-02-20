@@ -5,6 +5,9 @@
     <email>rosen@aleksandrov.tech</email>
     <name>Rosen Aleksandrov</name>
   </maintainer>
+  <use>
+	<flag name="rocm">Enable AMD RSMI (gfx1030) device discovery</flag>  
+	</use>
   <upstream>
     <remote-id type="homepage">https://lmstudio.ai</remote-id>
   </upstream>

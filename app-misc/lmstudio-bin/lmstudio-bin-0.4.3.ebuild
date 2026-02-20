@@ -1,5 +1,7 @@
 EAPI=8
 
+inherit desktop xdg
+
 DESCRIPTION="LM Studio – Local LLM desktop app (binary .deb repack)"
 HOMEPAGE="https://lmstudio.ai/"
 SRC_URI="https://installers.lmstudio.ai/linux/x64/${PV}-2/LM-Studio-${PV}-2-x64.deb"

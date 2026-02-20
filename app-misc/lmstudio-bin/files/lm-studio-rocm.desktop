@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=LM Studio ROCM
+Exec=env HSA_OVERRIDE_GFX_VERSION=10.3.0 "/opt/LM Studio/lm-studio" %U
+Terminal=false
+Type=Application
+Icon=/usr/share/icons/hicolor/0x0/apps/lm-studio.png
+StartupWMClass=LM Studio
+Comment="LM Studio with ROCm Support"
+Keywords=llm,roc,gpu,developer
+Categories=Development;Utility;Application;
+MimeType=x-scheme-handler/lmstudio;
+
