@@ -10,7 +10,7 @@ inherit kernel-build
 
 BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
-PATCHSET=linux-gentoo-patches-6.18.4
+PATCHSET=linux-gentoo-patches-6.19.6
 GENTOO_CONFIG_VER=g18
 
 XANMOD_VERSION="1"
