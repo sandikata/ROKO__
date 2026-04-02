@@ -1,0 +1,5 @@
+--- a/src/libvalent/Valent-1.gir
++++ b/src/libvalent/Valent-1.gir
+@@
+-<include name="tracker-sparql-3.0"/>
++<include name="tinysparql-3.0"/>

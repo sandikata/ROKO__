@@ -1,0 +1,1177 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: gpkg 1.3.5\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-23 00:00+0000\n"
+"PO-Revision-Date: 2026-02-23 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Bulgarian\n"
+"Language: bg\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "14 days"
+msgstr "14 дни"
+
+msgid "3 days"
+msgstr "3 дни"
+
+msgid "30 days"
+msgstr "30 дни"
+
+msgid "7 days"
+msgstr "7 дни"
+
+msgid "@preserved-rebuild started"
+msgstr "@preserved-rebuild стартирано"
+
+msgid "About gpkg"
+msgstr "Относно gpkg"
+
+msgid "Accept keyword ~amd64 for this package"
+msgstr "Приеми keyword ~amd64 за този пакет"
+
+msgid "Accept new"
+msgstr "Приеми ново"
+
+msgid "Accept ~kw"
+msgstr "Приеми ~kw"
+
+msgid "Actions"
+msgstr "Действия"
+
+msgid "Activating..."
+msgstr "Активиране..."
+
+msgid "Activation error"
+msgstr "Грешка при активиране"
+
+msgid "Active repositories in /etc/portage/repos.conf/"
+msgstr "Активни хранилища в /etc/portage/repos.conf/"
+
+msgid "Add"
+msgstr "Добави"
+
+msgid "Add a repository"
+msgstr "Добави хранилище"
+
+msgid "All"
+msgstr "Всички"
+
+msgid "All (INFO, LOG, WARN, ERROR, QA)"
+msgstr "Всички (INFO, LOG, WARN, ERROR, QA)"
+
+msgid "All categories"
+msgstr "Всички категории"
+
+msgid "All countries"
+msgstr "Всички държави"
+
+msgid "All messages marked as read"
+msgstr "Всички съобщения са маркирани като прочетени"
+
+msgid "All read"
+msgstr "Всички прочетени"
+
+msgid "Already active"
+msgstr "Вече активен"
+
+msgid "Already read"
+msgstr "Вече прочетено"
+
+msgid "Application"
+msgstr "Приложение"
+
+msgid "Apply"
+msgstr "Приложи"
+
+msgid "Apply to make.conf"
+msgstr "Приложи към make.conf"
+
+msgid "Authorization denied (polkit). Run as administrator"
+msgstr "Отказан достъп (polkit). Стартирайте като администратор"
+
+msgid "Auto-compile kernels"
+msgstr "Автокомпилация на ядра"
+
+msgid "Auto-sync at startup"
+msgstr "Автосинхронизация при стартиране"
+
+msgid "Auto-sync: disabled"
+msgstr "Автосинхронизация: изключена"
+
+msgid "Automatic cleanup"
+msgstr "Автоматично почистване"
+
+msgid "Automatic startup"
+msgstr "Автоматично стартиране"
+
+msgid "Automation"
+msgstr "Автоматизация"
+
+msgid "Automation settings saved"
+msgstr "Настройките за автоматизация са запазени"
+
+msgid "Autostart"
+msgstr "Автозапуск"
+
+msgid "Backup created"
+msgstr "Резервното копие е създадено"
+
+msgid "Backup deleted"
+msgstr "Резервното копие е изтрито"
+
+msgid "Backup error"
+msgstr "Грешка при резервното копие"
+
+msgid "Backup label"
+msgstr "Етикет на резервното копие"
+
+msgid "Beta bootloader warning"
+msgstr "Предупреждение за бета зареждач"
+
+msgid "Binary"
+msgstr "Бинарен"
+
+msgid "Bootloader"
+msgstr "Зареждач"
+
+msgid "Bootloader config error"
+msgstr "Грешка в конфигурацията на зареждача"
+
+msgid "Bootloader config saved"
+msgstr "Конфигурацията на зареждача е запазена"
+
+msgid "Bootloader error"
+msgstr "Грешка на зареждача"
+
+msgid "Bootloader regenerated"
+msgstr "Зареждачът е регенериран"
+
+msgid "Browse"
+msgstr "Преглед"
+
+msgid "Browse official eselect repos or enter manually."
+msgstr "Изберете официални eselect хранилища или въведете ръчно."
+
+msgid "Browse official eselect repositories"
+msgstr "Преглед на официални eselect хранилища"
+
+msgid "Btrfs Snapshots"
+msgstr "Btrfs снимки"
+
+msgid "Build from source (emerge)"
+msgstr "Сглоби от изходен код (emerge)"
+
+msgid "Build parallelism"
+msgstr "Паралелизъм на сборка"
+
+msgid "Build time"
+msgstr "Време за сборка"
+
+msgid "By file"
+msgstr "По файл"
+
+msgid "By package"
+msgstr "По пакет"
+
+msgid "CONFIG UPDATES"
+msgstr "ОБНОВЯВАНИЯ НА КОНФИГУРАЦИЯТА"
+
+msgid "Cancel"
+msgstr "Отмени"
+
+msgid "Cancel error"
+msgstr "Грешка при отмяна"
+
+msgid "Cannot connect to gpkg-daemon.\\nCheck that the service is running: systemctl start gpkg-daemon"
+msgstr "Не може да се свърже с gpkg-daemon.\\nПроверете дали услугата работи: systemctl start gpkg-daemon"
+
+msgid "Cannot load diff"
+msgstr "Не може да се зареди diff"
+
+msgid "Category error"
+msgstr "Грешка в категорията"
+
+msgid "Check and rebuild broken libraries"
+msgstr "Проверете и пресглобете повредени библиотеки"
+
+msgid "Check your internet connection."
+msgstr "Проверете интернет връзката си."
+
+msgid "Checking for updates..."
+msgstr "Проверка за обновления..."
+
+msgid "Clean"
+msgstr "Изчисти"
+
+msgid "Clean /var/tmp/portage (failed builds)"
+msgstr "Изчисти /var/tmp/portage (неуспешни сборки)"
+
+msgid "Clean failed builds"
+msgstr "Изчисти неуспешните сборки"
+
+msgid "Cleanup"
+msgstr "Почистване"
+
+msgid "Cleanup error"
+msgstr "Грешка при почистване"
+
+msgid "Cleanup frequency"
+msgstr "Честота на почистване"
+
+msgid "Cleanup started"
+msgstr "Почистването започна"
+
+msgid "Clear"
+msgstr "Изчисти"
+
+msgid "Clear output"
+msgstr "Изчисти изхода"
+
+msgid "Click a flag to enable/disable"
+msgstr "Кликнете върху флага за включване/изключване"
+
+msgid "Close"
+msgstr "Затвори"
+
+msgid "Cmdline"
+msgstr "Команден ред"
+
+msgid "Cmdline error"
+msgstr "Грешка в командния ред"
+
+msgid "Compilation failed"
+msgstr "Компилацията неуспешна"
+
+msgid "Compilation in progress"
+msgstr "Компилация в процес"
+
+msgid "Compile"
+msgstr "Компилирай"
+
+msgid "Compile error"
+msgstr "Грешка при компилация"
+
+msgid "Compile log error"
+msgstr "Грешка в журнала на компилацията"
+
+msgid "Compiled"
+msgstr "Компилирано"
+
+msgid "Compiling..."
+msgstr "Компилиране..."
+
+msgid "Completed"
+msgstr "Завършено"
+
+msgid "Config error"
+msgstr "Грешка в конфигурацията"
+
+msgid "Config file updated"
+msgstr "Конфигурационният файл е обновен"
+
+msgid "Configuration restored"
+msgstr "Конфигурацията е възстановена"
+
+msgid "Configuration source"
+msgstr "Източник на конфигурация"
+
+msgid "Configured repositories"
+msgstr "Настроени хранилища"
+
+msgid "Confirm"
+msgstr "Потвърди"
+
+msgid "Connected to gpkg daemon"
+msgstr "Свързан с gpkg daemon"
+
+msgid "Connection to daemon lost"
+msgstr "Връзката с daemon е загубена"
+
+msgid "Copy selection"
+msgstr "Копирай избраното"
+
+msgid "Create Backup"
+msgstr "Създай резервно копие"
+
+msgid "Create a file"
+msgstr "Създай файл"
+
+msgid "Cross-repo search"
+msgstr "Търсене в всички хранилища"
+
+msgid "Custom .config"
+msgstr "Потребителски .config"
+
+msgid "Daemon not available"
+msgstr "Daemon недостъпен"
+
+msgid "Daily"
+msgstr "Дневно"
+
+msgid "Dark"
+msgstr "Тъмен"
+
+msgid "Days to keep read elog messages"
+msgstr "Дни за съхраняване на прочетените elog съобщения"
+
+msgid "Default"
+msgstr "По подразбиране"
+
+msgid "Default kernel"
+msgstr "Ядро по подразбиране"
+
+msgid "Default kernel error"
+msgstr "Грешка на ядрото по подразбиране"
+
+msgid "Delete"
+msgstr "Изтрий"
+
+msgid "Delete all contents of /var/tmp/portage?"
+msgstr "Изтриване на цялото съдържание на /var/tmp/portage?"
+
+msgid "Delete error"
+msgstr "Грешка при изтриване"
+
+msgid "Delete failed"
+msgstr "Изтриването неуспешно"
+
+msgid "Delete snapshot"
+msgstr "Изтрий снимка"
+
+msgid "Delete snapshot error"
+msgstr "Грешка при изтриване на снимката"
+
+msgid "Delete this backup"
+msgstr "Изтрий това резервно копие"
+
+msgid "DepClean pretend started"
+msgstr "DepClean pretend стартирано"
+
+msgid "DepClean started"
+msgstr "DepClean стартирано"
+
+msgid "Depclean error"
+msgstr "Грешка DepClean"
+
+msgid "Desktop notifications"
+msgstr "Известия на десктопа"
+
+msgid "Detecting..."
+msgstr "Откриване..."
+
+msgid "Disk Usage"
+msgstr "Използване на диск"
+
+msgid "Disk error"
+msgstr "Грешка на диск"
+
+msgid "Dismiss"
+msgstr "Игнорирай"
+
+msgid "Don't show again"
+msgstr "Не показвай отново"
+
+msgid "Dracut config generated from genkernel — review before saving"
+msgstr "Конфигурацията на dracut е генерирана от genkernel — прегледайте преди запазване"
+
+msgid "Dracut config saved"
+msgstr "Конфигурацията на dracut е запазена"
+
+msgid "ERROR only"
+msgstr "Само ERROR"
+
+msgid "ETA unknown"
+msgstr "ETA неизвестно"
+
+msgid "Edit"
+msgstr "Редактирай"
+
+msgid "Edit new"
+msgstr "Редактирай ново"
+
+msgid "Edit the sync type and URI."
+msgstr "Редактирай типа синхронизация и URI."
+
+msgid "Edit this repository"
+msgstr "Редактирай това хранилище"
+
+msgid "Editing new config file"
+msgstr "Редактиране на нов конфигурационен файл"
+
+msgid "Elog configuration updated in make.conf"
+msgstr "Конфигурацията на Elog е обновена в make.conf"
+
+msgid "Elog display level"
+msgstr "Ниво на показване на Elog"
+
+msgid "Elog error"
+msgstr "Грешка на Elog"
+
+msgid "Elog retention"
+msgstr "Съхранение на Elog"
+
+msgid "Enable elog"
+msgstr "Включи Elog"
+
+msgid "Enable repo"
+msgstr "Включи хранилище"
+
+msgid "Enter a package name to search"
+msgstr "Въведете име на пакет за търсене"
+
+msgid "Equery error"
+msgstr "Грешка Equery"
+
+msgid "Equery information"
+msgstr "Информация Equery"
+
+msgid "Error"
+msgstr "Грешка"
+
+msgid "Error loading repos"
+msgstr "Грешка при зареждане на хранилища"
+
+msgid "Errors"
+msgstr "Грешки"
+
+msgid "Eselect repositories"
+msgstr "Eselect хранилища"
+
+msgid "Estimate based on qlop"
+msgstr "Оценка базирана на qlop"
+
+msgid "Estimating..."
+msgstr "Оценяване..."
+
+msgid "Excluded types"
+msgstr "Изключени типове"
+
+msgid "Execute"
+msgstr "Изпълни"
+
+msgid "Failed"
+msgstr "Неуспешно"
+
+msgid "Failed to update make.conf"
+msgstr "Неуспя да се обнови make.conf"
+
+msgid "Fetch"
+msgstr "Изтегли"
+
+msgid "File deleted"
+msgstr "Файлът е изтрит"
+
+msgid "File path"
+msgstr "Път до файла"
+
+msgid "File saved"
+msgstr "Файлът е запазен"
+
+msgid "Filter packages..."
+msgstr "Филтър за пакети..."
+
+msgid "Filter..."
+msgstr "Филтър..."
+
+msgid "Full content with comments. Changes are saved as-is."
+msgstr "Пълно съдържание с коментари. Промените се запазват както са."
+
+msgid "GENTOO_MIRRORS error"
+msgstr "Грешка GENTOO_MIRRORS"
+
+msgid "Generate dracut.conf from genkernel.conf"
+msgstr "Генерирай dracut.conf от genkernel.conf"
+
+msgid "Genkernel config saved"
+msgstr "Конфигурацията на genkernel е запазена"
+
+msgid "Gentoo mirror selector"
+msgstr "Селектор на Gentoo огледала"
+
+msgid "Hidden (no elog)"
+msgstr "Скрито (без Elog)"
+
+msgid "Information"
+msgstr "Информация"
+
+msgid "Initramfs"
+msgstr "Initramfs"
+
+msgid "Initramfs backend"
+msgstr "Backend на initramfs"
+
+msgid "Initramfs config error"
+msgstr "Грешка в конфигурацията на initramfs"
+
+msgid "Install"
+msgstr "Инсталирай"
+
+msgid "Install date"
+msgstr "Дата на инсталиране"
+
+msgid "Install error"
+msgstr "Грешка при инсталация"
+
+msgid "Install package (emerge)"
+msgstr "Инсталирай пакет (emerge)"
+
+msgid "Install started"
+msgstr "Инсталацията започна"
+
+msgid "Installed"
+msgstr "Инсталирани"
+
+msgid "Installed Kernels"
+msgstr "Инсталирани ядра"
+
+msgid "Keep forever"
+msgstr "Съхранявай завинаги"
+
+msgid "Keep old"
+msgstr "Остави старото"
+
+msgid "Kernel Conf"
+msgstr "Конфигурация на ядро"
+
+msgid "Kernel cmdline saved"
+msgstr "Командният ред на ядрото е запазен"
+
+msgid "Kernel config error"
+msgstr "Грешка в конфигурацията на ядрото"
+
+msgid "Kernel list error"
+msgstr "Грешка в списъка с ядра"
+
+msgid "Kernels to keep per type"
+msgstr "Ядра за съхранение по тип"
+
+msgid "Keyword change failed"
+msgstr "Неуспешна промяна на ключова дума"
+
+msgid "Keyword error"
+msgstr "Грешка в ключова дума"
+
+msgid "Keyword ~amd64 accepted"
+msgstr "Ключова дума ~amd64 приета"
+
+msgid "LICENSE error"
+msgstr "Грешка LICENSE"
+
+msgid "Last sync: never"
+msgstr "Последна синхронизация: никога"
+
+msgid "Last sync: unknown"
+msgstr "Последна синхронизация: неизвестна"
+
+msgid "License"
+msgstr "Лиценз"
+
+msgid "Light"
+msgstr "Светъл"
+
+msgid "Limit load (-l)"
+msgstr "Ограничение на натоварване (-l)"
+
+msgid "Line"
+msgstr "Ред"
+
+msgid "Load error"
+msgstr "Грешка при зареждане"
+
+msgid "Loading failed"
+msgstr "Неуспешно зареждане"
+
+msgid "Loading..."
+msgstr "Зареждане..."
+
+msgid "MAKEOPTS error"
+msgstr "Грешка MAKEOPTS"
+
+msgid "Mark all read"
+msgstr "Маркирай всички като прочетени"
+
+msgid "Mark as read"
+msgstr "Маркирай като прочетено"
+
+msgid "Mask"
+msgstr "Маскирай"
+
+msgid "Mask error"
+msgstr "Грешка при маскиране"
+
+msgid "Mask failed"
+msgstr "Маскирането неуспешно"
+
+msgid "Mask this package"
+msgstr "Маскирай този пакет"
+
+msgid "Max system load for parallel emerge"
+msgstr "Макс. натоварване на системата за паралелен emerge"
+
+msgid "Maximum load (-l)"
+msgstr "Максимално натоварване (-l)"
+
+msgid "Migrate to Dracut"
+msgstr "Мигрирай към Dracut"
+
+msgid "Migration error"
+msgstr "Грешка при миграция"
+
+msgid "Minimum severity shown in News tab"
+msgstr "Минимална сериозност показана във вкладка „Новини“"
+
+msgid "Mirror selector"
+msgstr "Селектор на огледала"
+
+msgid "Monthly"
+msgstr "Месечно"
+
+msgid "NEWS (GLEP 42)"
+msgstr "НОВИНИ (GLEP 42)"
+
+msgid "News error"
+msgstr "Грешка при новини"
+
+msgid "No configuration"
+msgstr "Няма конфигурация"
+
+msgid "No initramfs backend detected"
+msgstr "Не е открит backend на initramfs"
+
+msgid "No messages"
+msgstr "Няма съобщения"
+
+msgid "No news, elog messages, or config updates"
+msgstr "Няма новини, Elog съобщения или обновления на конфигурацията"
+
+msgid "No repository configured"
+msgstr "Не е настроено хранилище"
+
+msgid "No repository selected"
+msgstr "Не е избрано хранилище"
+
+msgid "No results"
+msgstr "Няма резултати"
+
+msgid "No snapshots available"
+msgstr "Няма налични снимки"
+
+msgid "No updates available"
+msgstr "Няма налични обновления"
+
+msgid "Number of packages to build simultaneously"
+msgstr "Брой пакети за едновременно компилиране"
+
+msgid "Number of parallel jobs"
+msgstr "Брой паралелни задачи"
+
+msgid "Old config kept"
+msgstr "Стара конфигурация запазена"
+
+msgid "Open"
+msgstr "Отвори"
+
+msgid "Operation completed"
+msgstr "Операцията е завършена"
+
+msgid "Operation failed"
+msgstr "Операцията не успя"
+
+msgid "PORTAGE MESSAGES"
+msgstr "СЪОБЩЕНИЯ PORTAGE"
+
+msgid "Package"
+msgstr "Пакет"
+
+msgid "Package error"
+msgstr "Грешка в пакета"
+
+msgid "Package masked"
+msgstr "Пакетът е маскиран"
+
+msgid "Package unmasked"
+msgstr "Пакетът е размаскиран"
+
+msgid "Packages"
+msgstr "Пакети"
+
+msgid "Parallel compilation threads per package"
+msgstr "Паралелни потоци компилация на пакет"
+
+msgid "Pending"
+msgstr "В очакване"
+
+msgid "Pending config update"
+msgstr "Очакващо обновление на конфигурацията"
+
+msgid "Per-package configurations will appear here"
+msgstr "Конфигурациите за отделни пакети ще се показват тук"
+
+msgid "Performance"
+msgstr "Производителност"
+
+msgid "Please enter a backup label"
+msgstr "Моля, въведете етикет за резервната копия"
+
+msgid "Please enter a repository name"
+msgstr "Моля, въведете име на хранилище"
+
+msgid "Portage Messages"
+msgstr "Съобщения Portage"
+
+msgid "Portage Output"
+msgstr "Изход Portage"
+
+msgid "Portage output terminal ready."
+msgstr "Терминалът за изход на Portage е готов."
+
+msgid "Portage: critical message"
+msgstr "Portage: критично съобщение"
+
+msgid "Portage: warning"
+msgstr "Portage: предупреждение"
+
+msgid "Preserved-rebuild error"
+msgstr "Грешка при Preserved-rebuild"
+
+msgid "Pretend @world started"
+msgstr "Pretend @world стартиран"
+
+msgid "Pretend error"
+msgstr "Грешка при Pretend"
+
+msgid "Prevent launching new jobs if load exceeds limit"
+msgstr "Предотвратяване стартирането на нови задачи ако натоварването надвиши лимита"
+
+msgid "Previous config (olddefconfig)"
+msgstr "Предишна конфигурация (olddefconfig)"
+
+msgid "Quick settings"
+msgstr "Бързи настройки"
+
+msgid "Rebuild"
+msgstr "Пресграждане"
+
+msgid "Rebuild broken dependencies"
+msgstr "Пресграждане на счупени зависимости"
+
+msgid "Rebuild error"
+msgstr "Грешка при пресграждане"
+
+msgid "Rebuild package"
+msgstr "Пресгради пакет"
+
+msgid "Rebuild packages with preserved libraries"
+msgstr "Пресграждане на пакети със запазени библиотеки"
+
+msgid "Rebuild started"
+msgstr "Пресграждането започна"
+
+msgid "Recalculating available updates..."
+msgstr "Пресмятане на налични обновления..."
+
+msgid "Recompile"
+msgstr "Прекомпилирай"
+
+msgid "Reconnection failed"
+msgstr "Неуспешно преподключване"
+
+msgid "Refresh"
+msgstr "Обнови"
+
+msgid "Refresh all messages"
+msgstr "Обнови всички съобщения"
+
+msgid "Refresh update list"
+msgstr "Обнови списъка с обновления"
+
+msgid "Refreshing..."
+msgstr "Обновяване..."
+
+msgid "Regenerate"
+msgstr "Прегенерирай"
+
+msgid "Regenerate bootloader configuration"
+msgstr "Прегенерирай конфигурацията на зареждача"
+
+msgid "Remove obsolete binary packages"
+msgstr "Премахни остарели бинарни пакети"
+
+msgid "Remove obsolete binary packages?"
+msgstr "Да се премахнат остарелите бинарни пакети?"
+
+msgid "Remove obsolete distfiles"
+msgstr "Премахни остарели distfiles"
+
+msgid "Remove obsolete source files"
+msgstr "Премахни остарели изходни файлове"
+
+msgid "Remove orphan packages"
+msgstr "Премахни сираци пакети"
+
+msgid "Remove source files that no longer match any installed ebuild?"
+msgstr "Премахни изходни файлове, които вече не съвпадат с нито един инсталиран ebuild?"
+
+msgid "Remove this repository"
+msgstr "Премахни това хранилище"
+
+msgid "Repository"
+msgstr "Хранилище"
+
+msgid "Repository added"
+msgstr "Хранилището е добавено"
+
+msgid "Repository added manually"
+msgstr "Хранилището е добавено ръчно"
+
+msgid "Repository enabled! Run a sync."
+msgstr "Хранилището е включено! Стартирайте синхронизация."
+
+msgid "Repository modified"
+msgstr "Хранилището е променено"
+
+msgid "Repository name"
+msgstr "Име на хранилище"
+
+msgid "Repository removed"
+msgstr "Хранилището е премахнато"
+
+msgid "Request timed out. The daemon is not responding"
+msgstr "Времето за отговор изтече. Daemon не отговаря"
+
+msgid "Restore"
+msgstr "Възстанови"
+
+msgid "Restore error"
+msgstr "Грешка при възстановяване"
+
+msgid "Restore failed"
+msgstr "Възстановяването не успя"
+
+msgid "Retry"
+msgstr "Опитай отново"
+
+msgid "RevDep-Rebuild error"
+msgstr "Грешка при RevDep-Rebuild"
+
+msgid "RevDep-Rebuild started"
+msgstr "RevDep-Rebuild стартиран"
+
+msgid "Run equery command for this package"
+msgstr "Стартирай команда equery за този пакет"
+
+msgid "Run in background at startup"
+msgstr "Стартирай на заден план при стартиране"
+
+msgid "Save"
+msgstr "Запази"
+
+msgid "Save & Apply"
+msgstr "Запази и приложи"
+
+msgid "Save USE"
+msgstr "Запази USE"
+
+msgid "Save USE flags to /etc/portage/package.use"
+msgstr "Запази USE флагове в /etc/portage/package.use"
+
+msgid "Save error"
+msgstr "Грешка при запазване"
+
+msgid "Search"
+msgstr "Търсене"
+
+msgid "Search error"
+msgstr "Грешка при търсене"
+
+msgid "Search for a package in all repos (active and inactive) via eix."
+msgstr "Търсене на пакет във всички хранилища (активни и неактивни) чрез eix."
+
+msgid "Search for a package in all repos..."
+msgstr "Търсене на пакет във всички хранилища..."
+
+msgid "Search news & messages..."
+msgstr "Търсене на новини и съобщения..."
+
+msgid "Search packages by name or description"
+msgstr "Търсене на пакети по име или описание"
+
+msgid "Search packages..."
+msgstr "Търсене на пакети..."
+
+msgid "Select"
+msgstr "Избери"
+
+msgid "Select a directory"
+msgstr "Избери директория"
+
+msgid "Select a file"
+msgstr "Избери файл"
+
+msgid "Select a module above to display details."
+msgstr "Избери модул по-горе за показване на детайли."
+
+msgid "Select a package first"
+msgstr "Първо избери пакет"
+
+msgid "Select all"
+msgstr "Избери всички"
+
+msgid "Select an official repository."
+msgstr "Избери официално хранилище."
+
+msgid "Select kernel config"
+msgstr "Избери конфигурация на ядрото"
+
+msgid "Select target version"
+msgstr "Избери целева версия"
+
+msgid "Selective update started"
+msgstr "Избрано обновление стартирано"
+
+msgid "Shortcuts for common variables. Press Enter to apply."
+msgstr "Бързи клавиши за често използвани променливи. Натисни Enter за прилагане."
+
+msgid "Simulate orphan package cleanup"
+msgstr "Симулирай почистване на пакети-сироти"
+
+msgid "Simulate update (emerge -pvuDN @world)"
+msgstr "Симулирай обновление (emerge -pvuDN @world)"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "Snapshot deleted"
+msgstr "Снимката е изтрита"
+
+msgid "Snapshots error"
+msgstr "Грешка при снимките"
+
+msgid "Source"
+msgstr "Източник"
+
+msgid "Start @world update"
+msgstr "Стартирай обновление @world"
+
+msgid "Stop spawning jobs when load exceeds this"
+msgstr "Спри стартирането на задачи, когато натоварването надвиши това"
+
+msgid "Sync"
+msgstr "Синхронизирай"
+
+msgid "Sync URI"
+msgstr "URI за синхронизация"
+
+msgid "Sync error"
+msgstr "Грешка при синхронизация"
+
+msgid "Sync frequency"
+msgstr "Честота на синхронизация"
+
+msgid "Sync started"
+msgstr "Синхронизацията започна"
+
+msgid "Sync type"
+msgstr "Тип на синхронизация"
+
+msgid "Sync, Pretend and Update command output will appear here."
+msgstr "Изходът от командите Sync, Pretend и Update ще се показва тук."
+
+msgid "Synchronize repositories (eix-sync)"
+msgstr "Синхронизирай хранилищата (eix-sync)"
+
+msgid "System"
+msgstr "Система"
+
+msgid "System is up to date"
+msgstr "Системата е актуална"
+
+msgid "Systray icon"
+msgstr "Икона в системния трей"
+
+msgid "Terminal not available (compile with --features vte)"
+msgstr "Терминалът не е наличен (компилирай с --features vte)"
+
+msgid "Test speed"
+msgstr "Провери скоростта"
+
+msgid "Testing..."
+msgstr "Тестване..."
+
+msgid "The gpkg daemon is not running"
+msgstr "Daemon gpkg не работи"
+
+msgid "Theme"
+msgstr "Тема"
+
+msgid "This package is masked"
+msgstr "Този пакет е маскиран"
+
+msgid "This package is unmasked"
+msgstr "Този пакет е размаскиран"
+
+msgid "USE flags"
+msgstr "USE флагове"
+
+msgid "USE flags error"
+msgstr "Грешка при USE флагове"
+
+msgid "USE flags save failed"
+msgstr "Неуспешно запазване на USE флагове"
+
+msgid "USE flags saved"
+msgstr "USE флагове запазени"
+
+msgid "Uninstall"
+msgstr "Деинсталирай"
+
+msgid "Uninstall error"
+msgstr "Грешка при деинсталиране"
+
+msgid "Uninstall package (emerge --unmerge)"
+msgstr "Деинсталирай пакет (emerge --unmerge)"
+
+msgid "Uninstall started"
+msgstr "Деинсталирането започна"
+
+msgid "Unmask"
+msgstr "Размаскирай"
+
+msgid "Unmask error"
+msgstr "Грешка при размаскиране"
+
+msgid "Unmask failed"
+msgstr "Размаскирането не успя"
+
+msgid "Unmask this package"
+msgstr "Размаскирай този пакет"
+
+msgid "Unread only"
+msgstr "Само непрочетени"
+
+msgid "Update @world started"
+msgstr "Update @world стартирано"
+
+msgid "Update error"
+msgstr "Грешка при обновление"
+
+msgid "Update list refreshed"
+msgstr "Списъкът с обновления е обновен"
+
+msgid "Updates"
+msgstr "Обновления"
+
+msgid "Updates available"
+msgstr "Достъпни обновления"
+
+msgid "Use binary package (getbinpkg)"
+msgstr "Използвай бинарен пакет (getbinpkg)"
+
+msgid "Use binary packages when available (--getbinpkg)"
+msgstr "Използвай бинарни пакети, когато са налични (--getbinpkg)"
+
+msgid "VIDEO_CARDS error"
+msgstr "Грешка VIDEO_CARDS"
+
+msgid "Valid syntax"
+msgstr "Валидна синтаксис"
+
+msgid "Validate"
+msgstr "Провери"
+
+msgid "Values applied — save make.conf to persist"
+msgstr "Стойностите са приложени — запази make.conf за да се запазят"
+
+msgid "Version to install"
+msgstr "Версия за инсталиране"
+
+msgid "View compile log"
+msgstr "Преглед на журнал на компилация"
+
+msgid "View package details via equery"
+msgstr "Преглед на детайли за пакета чрез equery"
+
+msgid "WARN and above"
+msgstr "WARN и по-високи"
+
+msgid "Website"
+msgstr "Уебсайт"
+
+msgid "Weekly"
+msgstr "Седмично"
+
+msgid "Working"
+msgstr "Работи"
+
+msgid "active"
+msgstr "активен"
+
+msgid "check — Verification"
+msgstr "check — Проверка"
+
+msgid "completed"
+msgstr "завършено"
+
+msgid "completed successfully"
+msgstr "завършено успешно"
+
+msgid "depends — Dependencies"
+msgstr "depends — Зависимости"
+
+msgid "depgraph — Dependency tree"
+msgstr "depgraph — Дърво на зависимости"
+
+msgid "empty key"
+msgstr "празен ключ"
+
+msgid "error"
+msgstr "грешка"
+
+msgid "failed"
+msgstr "неуспешно"
+
+msgid "files — Installed files"
+msgstr "files — Инсталирани файлове"
+
+msgid "keywords — Keywords"
+msgstr "keywords — Ключови думи"
+
+msgid "make.conf error"
+msgstr "Грешка make.conf"
+
+msgid "make.conf not loaded yet"
+msgstr "make.conf все още не е зареден"
+
+msgid "make.conf saved"
+msgstr "make.conf запазен"
+
+msgid "meta — Metadata"
+msgstr "meta — Метаданни"
+
+msgid "mirror(s) available"
+msgstr "зеркала налични"
+
+msgid "no '=' found"
+msgstr "символ '=' не е намерен"
+
+msgid "packages estimated"
+msgstr "пакети (оценка)"
+
+msgid "selected"
+msgstr "избрано"
+
+msgid "size — Size"
+msgstr "size — Размер"
+
+msgid "space in key"
+msgstr "интервал в ключа"
+
+msgid "uses — USE flags"
+msgstr "uses — USE флагове"
+
+msgid "which — Ebuild path"
+msgstr "which — Път към ebuild"
