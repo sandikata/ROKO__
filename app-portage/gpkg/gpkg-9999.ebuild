@@ -195,7 +195,7 @@ pkg_postinst() {
 		cat <<-EOF > "${gpkg_conf}"
 # Recommended defaults for gpkg.
 # WARNING: If you use a binhost, consider setting --with-bdeps=n and --complete-graph=n
-EMERGE_DEFAULT_OPTS="\${EMERGE_DEFAULT_OPTS} --backtrack=50 --binpkg-respect-use=y --ask=n --verbose --with-bdeps=y --complete-graph=y"
+EMERGE_DEFAULT_OPTS="\$EMERGE_DEFAULT_OPTS --backtrack=50 --binpkg-respect-use=y --ask=n --verbose --with-bdeps=y --complete-graph=y"
 EOF
 	fi
 
