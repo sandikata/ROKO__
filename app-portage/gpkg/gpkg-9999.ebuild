@@ -184,51 +184,44 @@ done
 	dodoc README.md
 }
 
-pkg_preinst() {
-	local conf_path="${EROOT}/etc/portage/make.conf"
-
-	# Convert make.conf from a file to a directory if it's not already one
-	if [[ -f "${conf_path}" && ! -L "${conf_path}" ]]; then
-		einfo "Migrating ${conf_path} to directory structure..."
-		mkdir -p "${T}/portage_migrate" || die
-		cp "${conf_path}" "${T}/portage_migrate/00-system.conf" || die
-		rm "${conf_path}" || die
-		mkdir -p "${conf_path}" || die
-		mv "${T}/portage_migrate/00-system.conf" "${conf_path}/" || die
-	fi
-}
-
 pkg_postinst() {
-	# 1. Handle Portage configuration snippet
-	local conf_dir="${EROOT}/etc/portage/make.conf"
-	local gui_conf="${conf_dir}/01-gpkg-default-opts.conf"
+	# 1. Configuration Setup
+	local make_conf="${EROOT}/etc/portage/make.conf"
+	local gpkg_conf="${EROOT}/etc/portage/gpkg-defaults.conf"
 
-	# 2. Create the configuration snippet ONLY if it doesn't exist
-	if [[ -d "${conf_dir}" && ! -f "${gui_conf}" ]]; then
-		einfo "Creating ${gui_conf} with recommended defaults..."
-		cat <<-EOF > "${gui_conf}"
-# Options for Portage commands (Recommended for gpkg)
+	# Create the helper config if it doesn't exist
+	if [[ ! -f "${gpkg_conf}" ]]; then
+		einfo "Creating ${gpkg_conf} with recommended defaults..."
+		cat <<-EOF > "${gpkg_conf}"
+# Recommended defaults for gpkg.
 # WARNING: If you use a binhost, consider setting --with-bdeps=n and --complete-graph=n
 EMERGE_DEFAULT_OPTS="\${EMERGE_DEFAULT_OPTS} --backtrack=50 --binpkg-respect-use=y --ask=n --verbose --with-bdeps=y --complete-graph=y"
 EOF
 	fi
 
-	# 3. ALWAYS show the performance warning if the directory exists
-	if [[ -d "${conf_dir}" ]]; then
-		echo
-		ewarn "!!! PERFORMANCE NOTICE !!!"
-		ewarn "gpkg uses aggressive solver flags in: ${gui_conf}"
-		ewarn "If you experience slow dependency calculations (15+ min) while using"
-		ewarn "a BINARY HOST, please edit this file and set:"
-		ewarn "  --with-bdeps=n"
-		ewarn "  --complete-graph=n"
-		echo
+	# Source the gpkg config in the main make.conf if not already present
+	if [[ -f "${make_conf}" ]]; then
+		if ! grep -q "source ${gpkg_conf}" "${make_conf}"; then
+			einfo "Adding source line to ${make_conf}"
+			echo -e "\n# Added by gpkg\nsource ${gpkg_conf}" >> "${make_conf}"
+		fi
 	fi
-	# 4. Standard XDG updates
+
+	# 2. Performance Warning (Always show)
+	echo
+	ewarn "!!! PERFORMANCE NOTICE !!!"
+	ewarn "gpkg settings are sourced in: ${make_conf}"
+	ewarn "If you experience slow dependency calculations (15+ min) while using"
+	ewarn "a BINARY HOST, please edit ${gpkg_conf} and set:"
+	ewarn "  --with-bdeps=n"
+	ewarn "  --complete-graph=n"
+	echo
+
+	# 3. Standard XDG updates
 	xdg_icon_cache_update
 	xdg_desktop_database_update
 
-	# 5. Daemon and usage instructions
+	# 4. Daemon and usage instructions
 	elog ""
 	elog "To start the gpkg daemon:"
 	elog ""
@@ -245,7 +238,7 @@ EOF
 	elog "All other tabs require a running gpkg-daemon."
 	elog ""
 
-	# 6. Kernel tools integration
+	# 5. Kernel tools integration
 	if use kerneltools; then
 		elog "Kernel tools installed:"
 		elog "  - Automatic kernel compilation hooks"
