@@ -1,4 +1,4 @@
-# Copyright 2022-2025 Gentoo Authors
+# Copyright 2022-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
@@ -10,17 +10,17 @@ inherit kernel-build
 
 BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
-PATCHSET=linux-gentoo-patches-6.19.6
+PATCHSET=linux-gentoo-patches-7.0.1
 GENTOO_CONFIG_VER=g18
 
 XANMOD_VERSION="1"
 
-DESCRIPTION="Linux kernel built with XanMod and Gentoo patches + BORE"
+DESCRIPTION="Linux kernel built with XanMod and Gentoo patches"
 HOMEPAGE="https://www.kernel.org/ https://xanmod.org/"
 SRC_URI="
 	https://cdn.kernel.org/pub/linux/kernel/v$(ver_cut 1).x/${BASE_P}.tar.xz
 	https://downloads.sourceforge.net/xanmod/patch-${PATCH_PV}-xanmod${XANMOD_VERSION}.xz
-	https://dev.gentoo.org/~mgorny/dist/linux/${PATCHSET}.tar.xz
+	https://distfiles.gentoo.org/pub/proj/dist-kernel/patchsets/$(ver_cut 1-2)/${PATCHSET}.tar.xz
 	https://github.com/mgorny/gentoo-kernel-config/archive/${GENTOO_CONFIG_VER}.tar.gz
 		-> gentoo-kernel-config-${GENTOO_CONFIG_VER}.tar.gz
 "
@@ -50,11 +50,6 @@ src_prepare() {
 	local patch
 	eapply "${WORKDIR}"/patch-${PATCH_PV}-xanmod${XANMOD_VERSION}
 	eapply "${WORKDIR}/${PATCHSET}"
-#	eapply "${FILESDIR}/${PV}/0001-bore.patch"
-	eapply "${FILESDIR}/${PV}/0002-glitched-cfs.patch"
-#	eapply "${FILESDIR}/${PV}/0002-sched-ext-coexistence-fix.patch"
-#	eapply "${FILESDIR}/${PV}/0003-glitched-eevdf-additions.patch"
-	eapply "${FILESDIR}/${PV}/1000-prefer-prevcpu-for-wakeup-v7.patch"
 
 	default
 
