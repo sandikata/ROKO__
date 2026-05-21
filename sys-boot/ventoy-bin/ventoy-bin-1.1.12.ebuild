@@ -1,40 +1,36 @@
-# Copyright 2024-2025 Gentoo Authors
+# Copyright 2025-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit desktop xdg
 
-DESCRIPTION="Creator of bootable USBs, with ability to copy ISOs, persistence storage"
-HOMEPAGE="https://www.ventoy.net"
+DESCRIPTION="A new multiboot USB solution"
+HOMEPAGE="https://www.ventoy.net/"
 SRC_URI="https://github.com/ventoy/Ventoy/releases/download/v${PV}/ventoy-${PV}-linux.tar.gz"
 
-S="${WORKDIR}"/ventoy-${PV}
-
+S=${WORKDIR}/ventoy-${PV}
 LICENSE="GPL-3"
 SLOT="0"
 KEYWORDS="~amd64"
 
+IUSE="+gtk"
+
 RESTRICT="strip mirror"
 
-RDEPEND="
-	app-accessibility/at-spi2-core:2
-	dev-libs/glib:2
+DEPEND="
 	sys-fs/dosfstools
-	|| ( sys-fs/exfatprogs sys-fs/exfat-utils )
-	sys-fs/fuse-exfat
+	sys-fs/exfat-utils
 	sys-block/parted
-	x11-libs/cairo
-	x11-libs/gdk-pixbuf:2
-	x11-libs/gtk+:3
-	x11-libs/pango
 "
-# sys-fs/fuse-exfat is needed for mount, without it:
-# mount: /mnt: unknown filesystem type 'exfat'
-
-QA_PREBUILT="*" # Against "does not respect LDFLAGS"
+RDEPEND="
+	${DEPEND}
+	gtk? ( x11-libs/gtk+:3 )
+"
 
 CARCH="x86_64"
+
+QA_PREBUILT="*"
 
 src_prepare() {
 	# Decompress tools
@@ -49,7 +45,7 @@ src_prepare() {
 	popd || die
 
 	# Apply sanitize patch
-	eapply -p0 "${FILESDIR}/sanitize.patch"
+	eapply -p1 "${FILESDIR}/sanitize-1.1.12.patch"
 
 	# Log location
 	sed -i 's|log\.txt|/var/log/ventoy.log|g' WebUI/static/js/languages.js tool/languages.json || die
@@ -62,6 +58,12 @@ src_prepare() {
 	for binary in xzcat hexdump; do
 		rm -fv tool/$CARCH/$binary || die
 	done
+
+	# Exclude optional GUI binaries
+	if  use gtk; then
+		rm -fv tool/$CARCH/Ventoy2Disk.qt5 || die
+	fi
+
 	default
 }
 
