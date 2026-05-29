@@ -440,7 +440,7 @@ CRATES="
 	zvariant_utils@3.3.0
 "
 
-RUST_MIN_VER="1.75.0"
+RUST_MIN_VER="1.88.0"
 
 inherit cargo desktop systemd xdg-utils
 
@@ -533,9 +533,12 @@ src_test() {
 src_install() {
 	# Install binaries from workspace build (cargo_src_compile already built
 	# everything with correct per-crate feature resolution; cargo install
-	# would fail because gpkg-daemon doesn't define the GUI features)
-	dobin target/release/gpkg-daemon
-	dobin target/release/gpkg
+	# would fail because gpkg-daemon doesn't define the GUI features).
+	# cargo.eclass honors USE=debug: target/debug/ when debug is set,
+	# target/release/ otherwise — see bug 975866.
+	local target_dir="target/$(usex debug debug release)"
+	dobin "${target_dir}/gpkg-daemon"
+	dobin "${target_dir}/gpkg"
 
 	# D-Bus system bus configuration
 	insinto /etc/dbus-1/system.d
@@ -564,16 +567,16 @@ src_install() {
 	insinto /usr/share/gpkg
 	doins data/style/style.css
 
-#	# Locale
-#	insinto /usr/share/locale/fr/LC_MESSAGES
-#	newins po/fr.mo gpkg.mo
+	# Locale
+	# insinto /usr/share/locale/fr/LC_MESSAGES
+	#newins po/fr.mo gpkg.mo
 
-# Locale: install all compiled .mo files
-for mo in target/release/build/gpkg-gui-*/out/*.mo; do
-    lang=$(basename "$mo" .mo)
-    insinto /usr/share/locale/${lang}/LC_MESSAGES
-    newins "$mo" gpkg.mo
-done
+	# Locale: install all compiled .mo files
+	for mo in target/release/build/gpkg-gui-*/out/*.mo; do
+    	lang=$(basename "$mo" .mo)
+    	insinto /usr/share/locale/${lang}/LC_MESSAGES
+    	newins "$mo" gpkg.mo
+	done
 
 	# Kernel tools (USE=kerneltools)
 	if use kerneltools; then
