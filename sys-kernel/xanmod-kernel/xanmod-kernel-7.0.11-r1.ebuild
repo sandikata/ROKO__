@@ -6,12 +6,13 @@ EAPI=8
 KERNEL_IUSE_GENERIC_UKI=1
 KERNEL_IUSE_MODULES_SIGN=1
 
-inherit kernel-build
+inherit kernel-build verify-sig
 
 BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
-PATCHSET=linux-gentoo-patches-7.0.6
-GENTOO_CONFIG_VER=g18
+PATCHSET=linux-gentoo-patches-${PV}
+GENTOO_CONFIG_P=gentoo-kernel-config-g19
+SHA256SUM_DATE=20260601
 
 XANMOD_VERSION="1"
 
@@ -21,8 +22,11 @@ SRC_URI="
 	https://cdn.kernel.org/pub/linux/kernel/v$(ver_cut 1).x/${BASE_P}.tar.xz
 	https://downloads.sourceforge.net/xanmod/patch-${PATCH_PV}-xanmod${XANMOD_VERSION}.xz
 	https://distfiles.gentoo.org/pub/proj/dist-kernel/patchsets/$(ver_cut 1-2)/${PATCHSET}.tar.xz
-	https://github.com/mgorny/gentoo-kernel-config/archive/${GENTOO_CONFIG_VER}.tar.gz
-		-> gentoo-kernel-config-${GENTOO_CONFIG_VER}.tar.gz
+	https://gitweb.gentoo.org/proj/dist-kernel/gentoo-kernel-config.git/snapshot/${GENTOO_CONFIG_P}.tar.bz2
+	verify-sig? (
+		https://cdn.kernel.org/pub/linux/kernel/v$(ver_cut 1).x/sha256sums.asc
+			-> linux-$(ver_cut 1).x-sha256sums-${SHA256SUM_DATE}.asc
+	)
 "
 S=${WORKDIR}/${BASE_P}
 
@@ -36,6 +40,7 @@ RDEPEND="
 "
 BDEPEND="
 	debug? ( dev-util/pahole )
+	verify-sig? ( >=sec-keys/openpgp-keys-kernel-20250702 )
 "
 PDEPEND="
 	>=virtual/dist-kernel-${PV}
@@ -45,6 +50,20 @@ QA_FLAGS_IGNORED="
 	usr/src/linux-.*/scripts/gcc-plugins/.*.so
 	usr/src/linux-.*/vmlinux
 "
+
+VERIFY_SIG_OPENPGP_KEY_PATH=/usr/share/openpgp-keys/kernel.org.asc
+
+src_unpack() {
+	if use verify-sig; then
+		cd "${DISTDIR}" || die
+		verify-sig_verify_signed_checksums \
+			"linux-$(ver_cut 1).x-sha256sums-${SHA256SUM_DATE}.asc" \
+			sha256 "${BASE_P}.tar.xz"
+		cd "${WORKDIR}" || die
+	fi
+
+	default
+}
 
 src_prepare() {
 	local patch
@@ -70,13 +89,13 @@ src_prepare() {
 	rm "${S}/localversion" || die
 	local myversion="-xanmod${XANMOD_VERSION}-dist"
 	echo "CONFIG_LOCALVERSION=\"${myversion}\"" > "${T}"/version.config || die
-	local dist_conf_path="${WORKDIR}/gentoo-kernel-config-${GENTOO_CONFIG_VER}"
+	local dist_conf_path="${WORKDIR}/${GENTOO_CONFIG_P}"
 
 	local merge_configs=(
 		"${T}"/version.config
 		"${dist_conf_path}"/base.config
 		"${dist_conf_path}"/6.12+.config
-		"${FILESDIR}"/x86-64-v1.config-r1 # keep v1 for simplicity, distribution kernels support user modification.
+		"${FILESDIR}"/x86-64-native.config
 	)
 	use debug || merge_configs+=(
 		"${dist_conf_path}"/no-debug.config
