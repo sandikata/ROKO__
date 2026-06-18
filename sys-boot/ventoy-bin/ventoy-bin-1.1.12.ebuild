@@ -20,7 +20,7 @@ RESTRICT="strip mirror"
 
 DEPEND="
 	sys-fs/dosfstools
-	sys-fs/exfat-utils
+	sys-fs/exfatprogs
 	sys-block/parted
 "
 RDEPEND="
