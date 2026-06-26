@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<longdescription>
+		Gradia is a native GTK4/libadwaita application that makes your
+		screenshots ready for sharing. Drop in an image and get back a
+		polished result: gradient, solid, or image backgrounds; padding,
+		corner rounding, shadow, and aspect-ratio presets; annotation
+		tools (arrows, shapes, text, highlighter, censor, and numbered
+		steps); crop mode; optional OCR text recognition; and direct
+		upload to configurable providers.
+	</longdescription>
+	<use>
+		<flag name="ocr">Enable optical character recognition via
+			<pkg>app-text/tesseract</pkg> and
+			<pkg>dev-python/pytesseract</pkg>.</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">AlexanderVanhee/Gradia</remote-id>
+	</upstream>
+</pkgmetadata>
