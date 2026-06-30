@@ -1,0 +1,22 @@
+From 4206a8b44f42c44b4f61e22bf2a776000e7770cf Mon Sep 17 00:00:00 2001
+From: Sultaniiazov David <x1z53@alt-gnome.ru>
+Date: Sun, 29 Mar 2026 15:22:51 +0300
+Subject: [PATCH] fix(image_stack): action target type (#334)
+
+---
+ data/ui/image_stack.blp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/data/ui/image_stack.blp b/data/ui/image_stack.blp
+index 478bc8c..021388b 100644
+--- a/data/ui/image_stack.blp
++++ b/data/ui/image_stack.blp
+@@ -94,7 +94,7 @@ template $GradiaImageStack: Adw.Bin {
+                       icon-name: "sidebar-show-symbolic";
+                       tooltip-text: _("Open Sidebar");
+                       action-name: "win.sidebar-shown";
+-                      action-target: true;
++                      action-target: "true";
+                       visible: false;
+ 
+                       styles [

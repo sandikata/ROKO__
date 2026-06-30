@@ -95,7 +95,7 @@ src_prepare() {
 		"${T}"/version.config
 		"${dist_conf_path}"/base.config
 		"${dist_conf_path}"/6.12+.config
-		"${FILESDIR}"/x86-64-native.config
+#		"${FILESDIR}"/x86-64-native.config
 	)
 	use debug || merge_configs+=(
 		"${dist_conf_path}"/no-debug.config
