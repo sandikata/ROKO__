@@ -4,15 +4,14 @@
 EAPI=8
 
 KERNEL_IUSE_GENERIC_UKI=1
-KERNEL_IUSE_MODULES_SIGN=1
 
 inherit kernel-build verify-sig
 
 BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
-PATCHSET=linux-gentoo-patches-${PV}
+PATCHSET=linux-gentoo-patches-7.1.2
 GENTOO_CONFIG_P=gentoo-kernel-config-g19
-SHA256SUM_DATE=20260601
+SHA256SUM_DATE=20260627
 
 XANMOD_VERSION="1"
 
@@ -35,9 +34,6 @@ KEYWORDS="-* ~amd64"
 
 IUSE="debug"
 
-RDEPEND="
-	!sys-kernel/xanmod-kernel-bin:${SLOT}
-"
 BDEPEND="
 	debug? ( dev-util/pahole )
 	verify-sig? ( >=sec-keys/openpgp-keys-kernel-20250702 )
@@ -95,7 +91,7 @@ src_prepare() {
 		"${T}"/version.config
 		"${dist_conf_path}"/base.config
 		"${dist_conf_path}"/6.12+.config
-#		"${FILESDIR}"/x86-64-native.config
+		"${FILESDIR}"/x86-64-v1.config-r1 # keep v1 for simplicity, distribution kernels support user modification.
 	)
 	use debug || merge_configs+=(
 		"${dist_conf_path}"/no-debug.config
