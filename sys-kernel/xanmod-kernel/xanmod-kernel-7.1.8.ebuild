@@ -9,9 +9,9 @@ inherit kernel-build verify-sig
 
 BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
-PATCHSET=linux-gentoo-patches-${PV}
+PATCHSET=linux-gentoo-patches-7.1.6
 GENTOO_CONFIG_P=gentoo-kernel-config-g19
-SHA256SUM_DATE=20260704
+SHA256SUM_DATE=20260803
 
 XANMOD_VERSION="1"
 
