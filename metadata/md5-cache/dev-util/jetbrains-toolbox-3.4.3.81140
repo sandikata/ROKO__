@@ -8,6 +8,6 @@ KEYWORDS=~amd64
 LICENSE=JetBrainsToolbox
 RESTRICT=strip mirror
 SLOT=0
-SRC_URI=https://download.jetbrains.com/toolbox/jetbrains-toolbox-3.1.0.62320.tar.gz
+SRC_URI=https://download.jetbrains.com/toolbox/jetbrains-toolbox-3.4.3.81140.tar.gz
 _eclasses_=desktop	e447b5f77146d69797e9f03ff177f3f1	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
 _md5_=1b16d4091a7bf8cf12964d4e5995fe1f

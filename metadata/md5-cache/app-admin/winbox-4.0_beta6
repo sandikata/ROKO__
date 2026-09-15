@@ -9,5 +9,5 @@ LICENSE=EULA
 RDEPEND=media-libs/fontconfig media-libs/freetype media-libs/libglvnd sys-libs/zlib x11-libs/libxcb x11-libs/libxkbcommon x11-libs/xcb-util-image x11-libs/xcb-util-keysyms x11-libs/xcb-util-renderutil x11-libs/xcb-util-wm
 SLOT=0
 SRC_URI=https://download.mikrotik.com/routeros/winbox/4.0beta6/WinBox_Linux.zip
-_eclasses_=desktop	26d57169ca094c04be416993844ec8bc	wrapper	ebaa3beeb43f7e533872b6c37168c7ad
+_eclasses_=desktop	e447b5f77146d69797e9f03ff177f3f1	wrapper	ebaa3beeb43f7e533872b6c37168c7ad
 _md5_=a2f0ecf086f7ccd28f7ee245e72413a1

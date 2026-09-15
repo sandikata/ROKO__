@@ -1,0 +1,16 @@
+DEFINED_PHASES=install postinst postrm preinst prepare
+DEPEND=sys-fs/dosfstools sys-fs/exfatprogs sys-block/parted
+DESCRIPTION=A new multiboot USB solution
+EAPI=8
+HOMEPAGE=https://www.ventoy.net/
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=desktop xdg
+IUSE=+gtk
+KEYWORDS=~amd64
+LICENSE=GPL-3
+RDEPEND=sys-fs/dosfstools sys-fs/exfatprogs sys-block/parted gtk? ( x11-libs/gtk+:3 )
+RESTRICT=strip mirror
+SLOT=0
+SRC_URI=https://github.com/ventoy/Ventoy/releases/download/v1.1.12/ventoy-1.1.12-linux.tar.gz
+_eclasses_=desktop	e447b5f77146d69797e9f03ff177f3f1	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
+_md5_=ee98147847c56b918786bfd352e616a2
