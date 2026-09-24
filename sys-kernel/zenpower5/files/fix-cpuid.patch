@@ -1,0 +1,4 @@
+--- a/zenpower_core.c
++++ b/zenpower_core.c
+@@ -41,0 +42 @@
++#include <asm/cpuid/api.h>
