@@ -1,0 +1,15 @@
+BDEPEND=dev-util/pahole sys-apps/kmod[tools] modules-sign? ( dev-libs/openssl virtual/pkgconfig ) >=dev-vcs/git-1.8.2.1[curl]
+DEFINED_PHASES=compile install postinst prepare setup unpack
+DEPEND=!!sys-kernel/zenpower3 virtual/linux-sources
+DESCRIPTION=Linux kernel driver AMD Zen CPU monitoring (Zen 1-5)
+EAPI=8
+HOMEPAGE=https://github.com/mattkeenan/zenpower5
+IDEPEND=sys-apps/kmod[tools]
+INHERIT=linux-mod-r1 git-r3
+IUSE=dist-kernel modules-compress modules-sign +strip
+LICENSE=GPL-2
+PROPERTIES=live
+RDEPEND=sys-apps/kmod[tools] dist-kernel? ( virtual/dist-kernel:= )
+SLOT=0
+_eclasses_=mount-boot-utils	2551bac1a772f4b6beacb494a750ae92	toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	dist-kernel-utils	8df0d36d9be6b29df11da25bfa7a9e60	edob	357e125b8c5cad0deccb625e537ea831	edo	e472083829a6e7ff43a197cf536728a2	linux-info	efd923656513c879204fec6638eadee5	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	linux-mod-r1	c07d9d48506ae94ea189c64f2f78a94a	git-r3	e6c2f983e006e805160436c75a0c1562
+_md5_=e7891aa1f5d1d63c7287ed1063c4f39e

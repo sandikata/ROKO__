@@ -1,0 +1,38 @@
+diff --git a/kernel/Kconfig.hz b/kernel/Kconfig.hz
+--- a/kernel/Kconfig.hz
++++ b/kernel/Kconfig.hz
+@@ -25,1 +25,6 @@
+ 		  too many timer interrupts are occurring.
++	config HZ_125
++		bool "125 HZ"
++		help
++		  125 Hz provides an 8ms timer interval.
++
+@@ -41,1 +41,11 @@
+ 		  NTSC frame rates for video and multimedia work.
++	config HZ_500
++		bool "500 HZ"
++		help
++		  500 Hz provides a 2ms timer interval.
++
++	config HZ_750
++		bool "750 HZ"
++		help
++		  750 Hz provides a 1.33ms timer interval.
++
+@@ -47,1 +47,6 @@
+ 		  systems requiring fast interactive responses to events.
++	config HZ_2000
++		bool "2000 HZ"
++		help
++		  2000 Hz provides an ultra-low 0.5ms timer interval.
++
+@@ -53,4 +53,8 @@
+ 	default 100 if HZ_100
++	default 125 if HZ_125
+ 	default 250 if HZ_250
+ 	default 300 if HZ_300
++	default 500 if HZ_500
++	default 750 if HZ_750
+ 	default 1000 if HZ_1000
++	default 2000 if HZ_2000

@@ -1,0 +1,82 @@
+From: Rik van Riel <riel@surriel.com>
+To: linux-kernel@vger.kernel.org
+Cc: kernel-team@meta.com, Rik van Riel <riel@surriel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	David Hildenbrand <david@kernel.org>,
+	Jason Gunthorpe <jgg@ziepe.ca>,
+	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>,
+	linux-mm@kvack.org
+Subject: [RFC PATCH v3 1/8] mm/gup: break out gup_fill_pages() helper
+Date: Mon, 10 Aug 2026 22:51:50 -0400	[thread overview]
+Message-ID: <20260811025157.1632867-2-riel@surriel.com> (raw)
+In-Reply-To: <20260811025157.1632867-1-riel@surriel.com>
+
+__get_user_pages() fills pages[] and flushes each page's caches in an
+open-coded loop.
+
+Move it into a gup_fill_pages() helper, which the follow_page_mask()
+call chain can then use to fill its own pages[] slots.
+
+No functional changes intended.
+
+Suggested-by: David Hildenbrand <david@kernel.org>
+Assisted-by: Claude:claude-opus-4-8
+Signed-off-by: Rik van Riel <riel@surriel.com>
+---
+ mm/gup.c | 27 ++++++++++++++++++---------
+ 1 file changed, 18 insertions(+), 9 deletions(-)
+
+diff --git a/mm/gup.c b/mm/gup.c
+index 0692119b7904..7bb40be89529 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -633,6 +633,23 @@ static struct page *no_page_table(struct vm_area_struct *vma,
+ 	return NULL;
+ }
+ 
++static void gup_fill_pages(struct vm_area_struct *vma, unsigned long address,
++		struct page *page, unsigned long nr, struct page **pages)
++{
++	unsigned long i;
++
++	if (!pages)
++		return;
++
++	for (i = 0; i < nr; i++) {
++		struct page *subpage = page + i;
++
++		pages[i] = subpage;
++		flush_anon_page(vma, subpage, address + i * PAGE_SIZE);
++		flush_dcache_page(subpage);
++	}
++}
++
+ #ifdef CONFIG_PGTABLE_HAS_HUGE_LEAVES
+ /* FOLL_FORCE can write to even unwritable PUDs in COW mappings. */
+ static inline bool can_follow_write_pud(pud_t pud, struct page *page,
+@@ -1461,9 +1478,6 @@ static long __get_user_pages(struct mm_struct *mm,
+ 			page_increm = nr_pages;
+ 
+ 		if (pages) {
+-			struct page *subpage;
+-			unsigned int j;
+-
+ 			/*
+ 			 * This must be a large folio (and doesn't need to
+ 			 * be the whole folio; it can be part of it), do
+@@ -1493,12 +1507,7 @@ static long __get_user_pages(struct mm_struct *mm,
+ 				}
+ 			}
+ 
+-			for (j = 0; j < page_increm; j++) {
+-				subpage = page + j;
+-				pages[i + j] = subpage;
+-				flush_anon_page(vma, subpage, start + j * PAGE_SIZE);
+-				flush_dcache_page(subpage);
+-			}
++			gup_fill_pages(vma, start, page, page_increm, pages + i);
+ 		}
+ 
+ 		i += page_increm;
+-- 
+2.55.0

@@ -1,0 +1,159 @@
+From: Rik van Riel <riel@surriel.com>
+To: linux-kernel@vger.kernel.org
+Cc: kernel-team@meta.com, Rik van Riel <riel@surriel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	David Hildenbrand <david@kernel.org>,
+	Jason Gunthorpe <jgg@ziepe.ca>,
+	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>,
+	linux-mm@kvack.org
+Subject: [RFC PATCH v3 7/8] mm/gup: walk multiple PTEs per follow_page_pte() call
+Date: Mon, 10 Aug 2026 22:51:56 -0400	[thread overview]
+Message-ID: <20260811025157.1632867-8-riel@surriel.com> (raw)
+In-Reply-To: <20260811025157.1632867-1-riel@surriel.com>
+
+follow_page_pte() looks at one PTE per call, so __get_user_pages() calls
+it once per page, restarting the pgd/p4d/pud/pmd descent and retaking the
+PTE lock each time.
+
+Walk every PTE from @address to the page-table/VMA/@end boundary in one
+call instead. Adjacent pages from different folios, or plain base pages
+with no folio relationship at all, are covered by the same call under one
+lock.
+
+A failure on the first PTE is returned as before. A failure after that
+ends the walk, and __get_user_pages() retrying the read gets the error.
+
+Measured with mm/gup_test.c, median get time over 16 iterations on a
+256 MB MADV_HUGEPAGE region in a 4 CPU VM. Folio size was confirmed
+through the per-size anon_fault_alloc counters, 4100 folios for 64 kB
+and 128 for 2 MB:
+
+  gup_test -L -m 256 -n 65536 -r 16 -t
+                        before      after
+  4 kB base pages      2753 us     1178 us   (2.3x)
+  64 kB mTHP           2946 us     1361 us   (2.2x)
+  2 MB THP (control)     72 us       70 us
+
+Base pages and mTHP gain about the same amount, because what is saved is
+the page-table descent that no longer restarts per page, not anything
+folio-specific. 2 MB THP does not reach follow_page_pte(), so it stays
+flat.
+
+Suggested-by: David Hildenbrand <david@kernel.org>
+Assisted-by: Claude:claude-opus-4-8
+Signed-off-by: Rik van Riel <riel@surriel.com>
+---
+ mm/gup.c | 62 ++++++++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 42 insertions(+), 20 deletions(-)
+
+diff --git a/mm/gup.c b/mm/gup.c
+index ea2bb379183e..c4233a7b8a48 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -916,38 +916,60 @@ static long follow_one_pte(struct vm_area_struct *vma, unsigned long address,
+ 	return 0;
+ }
+ 
++/*
++ * Walk the PTEs from the start address to the end of this page table or VMA,
++ * whichever comes first, and commit every page found.
++ *
++ * A failure on the first PTE is returned to the caller. A failure after that
++ * is a short read; __get_user_pages() retrying the read will get the error.
++ */
+ static long follow_page_pte(struct vm_area_struct *vma,
+-		unsigned long address, pmd_t *pmd, unsigned int flags,
+-		struct page **pages)
++		unsigned long address, unsigned long end, pmd_t *pmd,
++		unsigned int flags, struct page **pages)
+ {
+ 	struct mm_struct *mm = vma->vm_mm;
+ 	bool need_no_page_table = false;
+-	struct page *page;
++	pte_t *ptep, *orig_ptep;
++	unsigned long walk_end;
++	unsigned long nr = 0;
+ 	spinlock_t *ptl;
+-	pte_t *ptep, pte;
+-	long ret;
++	long ret = 0;
+ 
+-	ptep = pte_offset_map_lock(mm, pmd, address, &ptl);
++	orig_ptep = ptep = pte_offset_map_lock(mm, pmd, address, &ptl);
+ 	if (!ptep)
+ 		return no_page_table(vma, flags, address);
+-	pte = ptep_get(ptep);
+-
+-	ret = follow_one_pte(vma, address, ptep, pte, flags, &page);
+-	if (!ret && page) {
+-		ret = follow_page_pte_commit(vma, address, page_folio(page),
+-					     page, pte, flags, pages);
+-		if (!ret)
+-			ret = 1;
+-	} else if (!ret && pte_none(pte)) {
++
++	walk_end = min(pmd_addr_end(address, end), vma->vm_end);
++
++	for (; address < walk_end; address += PAGE_SIZE, ptep++) {
++		pte_t pte = ptep_get(ptep);
++		struct page *page;
++
++		ret = follow_one_pte(vma, address, ptep, pte, flags, &page);
++		if (!ret && page) {
++			ret = follow_page_pte_commit(vma, address,
++						     page_folio(page), page,
++						     pte, flags,
++						     pages ? pages + nr : NULL);
++			if (!ret) {
++				nr++;
++				continue;
++			}
++		}
++
+ 		/*
+ 		 * no_page_table() may look up the page cache, so it cannot run
+ 		 * under the PTE lock.
+ 		 */
+-		need_no_page_table = true;
++		if (!ret && pte_none(pte))
++			need_no_page_table = true;
++		break;
+ 	}
+ 
+-	pte_unmap_unlock(ptep, ptl);
++	pte_unmap_unlock(orig_ptep, ptl);
+ 
++	if (nr)
++		return nr;
+ 	if (need_no_page_table)
+ 		return no_page_table(vma, flags, address);
+ 	return ret;
+@@ -969,7 +991,7 @@ static long follow_pmd_mask(struct vm_area_struct *vma,
+ 	if (!pmd_present(pmdval))
+ 		return no_page_table(vma, flags, address);
+ 	if (likely(!pmd_leaf(pmdval)))
+-		return follow_page_pte(vma, address, pmd, flags, pages);
++		return follow_page_pte(vma, address, end, pmd, flags, pages);
+ 
+ 	if (pmd_protnone(pmdval) && !gup_can_follow_protnone(vma, flags))
+ 		return no_page_table(vma, flags, address);
+@@ -982,14 +1004,14 @@ static long follow_pmd_mask(struct vm_area_struct *vma,
+ 	}
+ 	if (unlikely(!pmd_leaf(pmdval))) {
+ 		spin_unlock(ptl);
+-		return follow_page_pte(vma, address, pmd, flags, pages);
++		return follow_page_pte(vma, address, end, pmd, flags, pages);
+ 	}
+ 	if (pmd_trans_huge(pmdval) && (flags & FOLL_SPLIT_PMD)) {
+ 		spin_unlock(ptl);
+ 		split_huge_pmd(vma, pmd, address);
+ 		/* If pmd was left empty, stuff a page table in there quickly */
+ 		return pte_alloc(mm, pmd) ? -ENOMEM :
+-			follow_page_pte(vma, address, pmd, flags, pages);
++			follow_page_pte(vma, address, end, pmd, flags, pages);
+ 	}
+ 	ret = follow_huge_pmd(vma, address, end, pmd, flags, pages);
+ 	spin_unlock(ptl);
+-- 
+2.55.0
+

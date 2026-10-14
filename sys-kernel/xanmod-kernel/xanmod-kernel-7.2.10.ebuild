@@ -38,9 +38,9 @@ BDEPEND="
 	debug? ( dev-util/pahole )
 	verify-sig? ( >=sec-keys/openpgp-keys-kernel-20250702 )
 "
-PDEPEND="
-	>=virtual/dist-kernel-${PV}
-"
+#PDEPEND="
+#	>=virtual/dist-kernel-${PV}
+#"
 
 QA_FLAGS_IGNORED="
 	usr/src/linux-.*/scripts/gcc-plugins/.*.so
