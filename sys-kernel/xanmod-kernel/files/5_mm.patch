@@ -1,0 +1,91 @@
+From: Rik van Riel <riel@surriel.com>
+To: linux-kernel@vger.kernel.org
+Cc: kernel-team@meta.com, Rik van Riel <riel@surriel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	David Hildenbrand <david@kernel.org>,
+	Jason Gunthorpe <jgg@ziepe.ca>,
+	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>,
+	linux-mm@kvack.org
+Subject: [RFC PATCH v3 5/8] mm/gup: fill the pages array outside the pud/pmd lock
+Date: Mon, 10 Aug 2026 22:51:54 -0400	[thread overview]
+Message-ID: <20260811025157.1632867-6-riel@surriel.com> (raw)
+In-Reply-To: <20260811025157.1632867-1-riel@surriel.com>
+
+follow_huge_pud() and follow_huge_pmd() fill pages[] and flush the page's
+caches while still holding the pud or pmd lock. Neither flush_anon_page()
+nor flush_dcache_page() needs that lock.
+
+Have the huge paths store the page and let follow_pud_mask() and
+follow_pmd_mask() do the fill after they unlock, so the flushes happen
+outside the critical section.
+
+This should be safe because try_grab_folio() has already taken a folio
+reference before the unlock, so nothing can free the page while the fill
+runs, and the fill itself touches neither the page tables nor the pud or
+pmd entry it was reached through.
+
+No functional changes intended.
+
+Suggested-by: David Hildenbrand <david@kernel.org>
+Assisted-by: Claude:claude-opus-4-8
+Signed-off-by: Rik van Riel <riel@surriel.com>
+---
+ mm/gup.c | 20 ++++++++++++++++++--
+ 1 file changed, 18 insertions(+), 2 deletions(-)
+
+diff --git a/mm/gup.c b/mm/gup.c
+index 5af6a23285de..4036d3dc27df 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -695,7 +695,8 @@ static long follow_huge_pud(struct vm_area_struct *vma,
+ 
+ 	*page_mask = HPAGE_PUD_NR - 1;
+ 
+-	gup_fill_pages(vma, addr, page, 1, pages);
++	if (pages)
++		pages[0] = page;
+ 
+ 	return 1;
+ }
+@@ -760,7 +761,8 @@ static long follow_huge_pmd(struct vm_area_struct *vma,
+ 	page += (addr & ~HPAGE_PMD_MASK) >> PAGE_SHIFT;
+ 	*page_mask = HPAGE_PMD_NR - 1;
+ 
+-	gup_fill_pages(vma, addr, page, 1, pages);
++	if (pages)
++		pages[0] = page;
+ 
+ 	return 1;
+ }
+@@ -991,6 +993,14 @@ static long follow_pmd_mask(struct vm_area_struct *vma,
+ 	}
+ 	ret = follow_huge_pmd(vma, address, pmd, flags, page_mask, pages);
+ 	spin_unlock(ptl);
++
++	/*
++	 * The ref is already held, so the page cannot go away: fill the
++	 * array and flush caches without the pmd lock.
++	 */
++	if (ret > 0 && pages)
++		gup_fill_pages(vma, address, pages[0], ret, pages);
++
+ 	return ret;
+ }
+ 
+@@ -1012,6 +1022,12 @@ static long follow_pud_mask(struct vm_area_struct *vma,
+ 		ptl = pud_lock(mm, pudp);
+ 		ret = follow_huge_pud(vma, address, pudp, flags, page_mask, pages);
+ 		spin_unlock(ptl);
++		/*
++		 * The ref is already held, so the page cannot go away: fill
++		 * the array and flush caches without the lock.
++		 */
++		if (ret > 0 && pages)
++			gup_fill_pages(vma, address, pages[0], ret, pages);
+ 		if (ret)
+ 			return ret;
+ 		return no_page_table(vma, flags, address);
+-- 
+2.55.0
+
+

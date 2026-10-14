@@ -1,0 +1,80 @@
+From: David Vernet <void@manifault.com>
+To: "Rafael J. Wysocki" <rafael@kernel.org>
+Cc: "Mario Limonciello" <mario.limonciello@amd.com>,
+	"Gautham R. Shenoy" <gautham.shenoy@amd.com>,
+	linux-pm@vger.kernel.org, linux-kernel@vger.kernel.org,
+	"André Almeida" <andrealmeid@igalia.com>,
+	"Changwoo Min" <changwoo@igalia.com>
+Subject: [RFC PATCH 2/4] cpufreq/amd-pstate: Update cppc_req_cached before writing the MSR
+Date: Tue, 28 Jul 2026 02:31:48 -0500	[thread overview]
+Message-ID: <20260728073150.54964-3-void@manifault.com> (raw)
+In-Reply-To: <20260728073150.54964-1-void@manifault.com>
+
+msr_update_perf() and msr_set_epp() currently write MSR_AMD_CPPC_REQ
+first and update cppc_req_cached only after the write succeeds. This
+leaves a window in which the MSR holds the new request while the cache
+holds the previous one. That's fine right now, but a subsequent patch
+will add a per-core EPP boost that runs from scheduling context and
+mutates that MSR from the contents of the cached value. If we update the
+cache after writing the MSR, the sched callback could run between the
+wrmsrq and the cache being updated, and accidentally overwrite the
+intended value of the MSR by issuing a wrmsrq on the stale cached value.
+
+To avoid this, let's update the cache prior to the MSR write, as is done
+in intel_pstate_set_epp(). This should be a functional no-op.
+
+Signed-off-by: David Vernet <void@manifault.com>
+---
+ drivers/cpufreq/amd-pstate.c | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/cpufreq/amd-pstate.c b/drivers/cpufreq/amd-pstate.c
+index 6e255a22a0b8..5d7debb5a35c 100644
+--- a/drivers/cpufreq/amd-pstate.c
++++ b/drivers/cpufreq/amd-pstate.c
+@@ -262,17 +262,19 @@ static int msr_update_perf(struct cpufreq_policy *policy, u8 min_perf,
+ 	if (value == prev)
+ 		return 0;
+ 
++	WRITE_ONCE(cpudata->cppc_req_cached, value);
++
+ 	if (fast_switch) {
+ 		wrmsrq(MSR_AMD_CPPC_REQ, value);
+ 	} else {
+ 		int ret = wrmsrq_on_cpu(cpudata->cpu, MSR_AMD_CPPC_REQ, value);
+ 
+-		if (ret)
++		if (ret) {
++			WRITE_ONCE(cpudata->cppc_req_cached, prev);
+ 			return ret;
++		}
+ 	}
+ 
+-	WRITE_ONCE(cpudata->cppc_req_cached, value);
+-
+ 	return 0;
+ }
+ 
+@@ -312,16 +314,16 @@ static int msr_set_epp(struct cpufreq_policy *policy, u8 epp)
+ 	if (value == prev)
+ 		return 0;
+ 
++	WRITE_ONCE(cpudata->cppc_req_cached, value);
++
+ 	ret = wrmsrq_on_cpu(cpudata->cpu, MSR_AMD_CPPC_REQ, value);
+ 	if (ret) {
++		WRITE_ONCE(cpudata->cppc_req_cached, prev);
+ 		pr_err("failed to set energy perf value (%d)\n", ret);
+ 		return ret;
+ 	}
+ 
+-	/* update both so that msr_update_perf() can effectively check */
+-	WRITE_ONCE(cpudata->cppc_req_cached, value);
+-
+-	return ret;
++	return 0;
+ }
+ 
+ DEFINE_STATIC_CALL(amd_pstate_set_epp, msr_set_epp);
+-- 
+2.53.0

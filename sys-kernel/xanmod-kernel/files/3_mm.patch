@@ -1,0 +1,130 @@
+From: Rik van Riel <riel@surriel.com>
+To: linux-kernel@vger.kernel.org
+Cc: kernel-team@meta.com, Rik van Riel <riel@surriel.com>,
+	Andrew Morton <akpm@linux-foundation.org>,
+	David Hildenbrand <david@kernel.org>,
+	Jason Gunthorpe <jgg@ziepe.ca>,
+	John Hubbard <jhubbard@nvidia.com>, Peter Xu <peterx@redhat.com>,
+	linux-mm@kvack.org
+Subject: [RFC PATCH v3 3/8] mm/gup: split follow_page_pte_commit() out of follow_page_pte()
+Date: Mon, 10 Aug 2026 22:51:52 -0400	[thread overview]
+Message-ID: <20260811025157.1632867-4-riel@surriel.com> (raw)
+In-Reply-To: <20260811025157.1632867-1-riel@surriel.com>
+
+follow_page_pte() does two things once it has resolved a present PTE
+to a page: run the per-PTE safety checks (write-fault, unshare), then
+commit to that page: grab a ref, fault it in if pinning, mark it
+dirty/accessed, and hand it back to the caller.
+
+Split the second part into its own follow_page_pte_commit(), unchanged
+except for taking its inputs as parameters instead of local variables,
+so the checks and the commit can be applied at different granularities.
+
+No functional changes intended.
+
+Suggested-by: David Hildenbrand <david@kernel.org>
+Assisted-by: Claude:claude-opus-4-8
+Signed-off-by: Rik van Riel <riel@surriel.com>
+---
+ mm/gup.c | 78 +++++++++++++++++++++++++++++++++++---------------------
+ 1 file changed, 49 insertions(+), 29 deletions(-)
+
+diff --git a/mm/gup.c b/mm/gup.c
+index e4e6d0993424..b755ceaac0f5 100644
+--- a/mm/gup.c
++++ b/mm/gup.c
+@@ -822,6 +822,52 @@ static inline bool can_follow_write_pte(pte_t pte, struct page *page,
+ 	return !userfaultfd_pte_wp(vma, pte);
+ }
+ 
++/*
++ * The caller has already run every per-PTE safety check (present,
++ * write-fault, gup_must_unshare()) on the PTE, so this only does the
++ * per-folio work: the refcount grab, the FOLL_PIN accessibility fault-in,
++ * dirty/accessed marking, and the array fill with the cache flush.
++ */
++static long follow_page_pte_commit(struct vm_area_struct *vma,
++		unsigned long address, struct folio *folio, struct page *page,
++		pte_t pte, unsigned int flags, struct page **pages)
++{
++	long ret;
++
++	/* try_grab_folio() does nothing unless FOLL_GET or FOLL_PIN is set. */
++	ret = try_grab_folio(folio, 1, flags);
++	if (unlikely(ret))
++		return ret;
++
++	/*
++	 * We need to make the page accessible if and only if we are going
++	 * to access its content (the FOLL_PIN case).  Please see
++	 * Documentation/core-api/pin_user_pages.rst for details.
++	 */
++	if (flags & FOLL_PIN) {
++		ret = arch_make_folio_accessible(folio);
++		if (ret) {
++			gup_put_folio(folio, 1, flags);
++			return ret;
++		}
++	}
++	if (flags & FOLL_TOUCH) {
++		if ((flags & FOLL_WRITE) &&
++		    !pte_dirty(pte) && !folio_test_dirty(folio))
++			folio_mark_dirty(folio);
++		/*
++		 * pte_mkyoung() would be more correct here, but atomic care
++		 * is needed to avoid losing the dirty bit: it is easier to use
++		 * folio_mark_accessed().
++		 */
++		folio_mark_accessed(folio);
++	}
++
++	gup_fill_pages(vma, address, page, 1, pages);
++
++	return 0;
++}
++
+ static long follow_page_pte(struct vm_area_struct *vma,
+ 		unsigned long address, pmd_t *pmd, unsigned int flags,
+ 		struct page **pages)
+@@ -877,36 +923,10 @@ static long follow_page_pte(struct vm_area_struct *vma,
+ 	VM_WARN_ON_ONCE_PAGE((flags & FOLL_PIN) && PageAnon(page) &&
+ 			     !PageAnonExclusive(page), page);
+ 
+-	/* try_grab_folio() does nothing unless FOLL_GET or FOLL_PIN is set. */
+-	ret = try_grab_folio(folio, 1, flags);
+-	if (unlikely(ret))
++	ret = follow_page_pte_commit(vma, address, folio, page, pte, flags,
++				     pages);
++	if (ret)
+ 		goto out;
+-
+-	/*
+-	 * We need to make the page accessible if and only if we are going
+-	 * to access its content (the FOLL_PIN case).  Please see
+-	 * Documentation/core-api/pin_user_pages.rst for details.
+-	 */
+-	if (flags & FOLL_PIN) {
+-		ret = arch_make_folio_accessible(folio);
+-		if (ret) {
+-			gup_put_folio(folio, 1, flags);
+-			goto out;
+-		}
+-	}
+-	if (flags & FOLL_TOUCH) {
+-		if ((flags & FOLL_WRITE) &&
+-		    !pte_dirty(pte) && !folio_test_dirty(folio))
+-			folio_mark_dirty(folio);
+-		/*
+-		 * pte_mkyoung() would be more correct here, but atomic care
+-		 * is needed to avoid losing the dirty bit: it is easier to use
+-		 * folio_mark_accessed().
+-		 */
+-		folio_mark_accessed(folio);
+-	}
+-
+-	gup_fill_pages(vma, address, page, 1, pages);
+ 	ret = 1;
+ out:
+ 	pte_unmap_unlock(ptep, ptl);
+-- 
+2.55.0
