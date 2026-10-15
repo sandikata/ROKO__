@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>me@r0bert.dev</email>
+		<name>Robert Greener</name>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">githubnext/monaspace</remote-id>
+	</upstream>
+	<use>
+		<flag name="frozen">Whether to install fonts with ligatures and texture healing turned on by default</flag>
+		<flag name="variable">Whether to install the variable weight fonts</flag>
+	</use>
+</pkgmetadata>
