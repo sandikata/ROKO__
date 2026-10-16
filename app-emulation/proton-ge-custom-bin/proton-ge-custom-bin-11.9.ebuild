@@ -1,0 +1,33 @@
+# Copyright 2024 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+EAPI=8
+MULTILIB_COMPAT=(abi_x86_{32,64})
+inherit multilib-minimal
+
+_internal_name=GE-Proton${PV/./-}
+_internal_name2=${_internal_name}-x86_64
+DESCRIPTION="A fancy custom distribution of Valves Proton with various patches"
+HOMEPAGE="https://github.com/GloriousEggroll/proton-ge-custom"
+SRC_URI="https://github.com/GloriousEggroll/proton-ge-custom/releases/download/${_internal_name}/${_internal_name2}.tar.gz -> ${P}.tar.gz"
+LICENSE="BSD LGPL zlib MIT MPL OFL Proton GPL MSPL"
+SLOT="${PV}"
+KEYWORDS="~amd64"
+RESTRICT="mirror strip"
+
+RDEPEND="
+	media-libs/mesa[vulkan,${MULTILIB_USEDEP}]
+	media-libs/vulkan-loader[${MULTILIB_USEDEP}]"
+
+QA_PREBUILT={*}
+S="${WORKDIR}"
+
+src_install() {
+	dodir "/usr/share/steam/compatibilitytools.d/${_internal_name}"
+
+	mv "${S}/${_internal_name2}/compatibilitytool.vdf" "${D}/usr/share/steam/compatibilitytools.d/${_internal_name}" || die
+	sed -i "s%\"install_path\" \".\"%\"install_path\" \"/opt/proton-ge-custom/${_internal_name2}\"%" "${D}/usr/share/steam/compatibilitytools.d/${_internal_name}/compatibilitytool.vdf" || die
+
+	dodir "/opt/proton-ge-custom"
+	mv "${S}/${_internal_name2}" "${D}/opt/proton-ge-custom" || die
+}
