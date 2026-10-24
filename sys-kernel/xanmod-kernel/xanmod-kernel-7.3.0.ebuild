@@ -11,7 +11,7 @@ BASE_P=linux-${PV%.*}
 PATCH_PV=${PV%_p*}
 PATCHSET=linux-gentoo-patches-7.1.9
 GENTOO_CONFIG_P=gentoo-kernel-config-g19
-SHA256SUM_DATE=20260911
+SHA256SUM_DATE=20261024
 
 XANMOD_VERSION="1"
 
