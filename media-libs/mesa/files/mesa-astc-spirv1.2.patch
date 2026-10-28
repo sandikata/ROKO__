@@ -1,0 +1,39 @@
+From: Lucas C.S. <lucascs@protonmail.com>
+Subject: vulkan/runtime: compile the ASTC decoder against SPIR-V 1.2
+
+astc_decoder.glsl declares its workgroup size with specialization
+constants (local_size_x_id / local_size_y_id), which vk_texcompress_astc.c
+fills in at pipeline creation time.  That layout qualifier maps to the
+LocalSizeId execution mode, added in SPIR-V 1.2, but the custom_target
+invokes glslang with a bare '-V', i.e. --target-env vulkan1.0, which
+targets SPIR-V 1.0.
+
+glslang used to accept this silently and emit a workgroup size of 1x1x1
+instead.  Since KhronosGroup/glslang commit eaff806e ("`local_size_*_id`
+and SPIR-V 1.2", 2026-08-24) the mismatch is a hard error, so the build
+fails at src/vulkan/runtime/astc_spv.h:
+
+  ERROR: astc_decoder.glsl:41: 'local_size_x_id' : requires SPIR-V 1.2
+
+Ask for SPIR-V 1.2 explicitly, which is the lowest version that has the
+execution mode.  Every other shader in the tree that needs a post-1.0
+feature already passes --target-env this way (see the bvh, gamma and
+intel meson.build files, all on spirv1.5).  Mesa's own consumer handles
+the result: spirv_to_nir.c translates SpvExecutionModeLocalSizeId, and
+the module is fed straight to the driver compiler rather than through
+Vulkan validation.
+
+Not yet submitted upstream.
+
+--- a/src/vulkan/runtime/meson.build
++++ b/src/vulkan/runtime/meson.build
+@@ -288,7 +288,8 @@
+     input : astc_decoder_glsl_file,
+     output : 'astc_spv.h',
+     command : [
+-      prog_glslang, '-V', '-S', 'comp', '-x', '-o', '@OUTPUT@', '@INPUT@',
++      prog_glslang, '-V', '--target-env', 'spirv1.2',
++      '-S', 'comp', '-x', '-o', '@OUTPUT@', '@INPUT@',
+       glslang_quiet, glslang_depfile,
+     ],
+     depfile : 'astc_spv.h.d',
