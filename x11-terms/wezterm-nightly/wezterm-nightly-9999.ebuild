@@ -66,6 +66,7 @@ src_unpack() {
 	git-r3_src_unpack
 	# resolves Cargo.lock and fetches the crates (needs network access,
 	# i.e. FEATURES="-network-sandbox" or a per-package package.env)
+	cd "${S}" || die
 	cargo_live_src_unpack
 }
 
