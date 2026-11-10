@@ -1,0 +1,51 @@
+#!/sbin/openrc-run
+# Copyright 1999-2026 Gentoo Authors
+# Distributed under the terms of the GNU General Public License v2
+
+# OpenRC translation of net-misc/rustdesk/files/rustdesk.service.
+#
+# THIS FILE EXISTS TWICE, BYTE-IDENTICAL, at
+# net-misc/rustdesk/files/rustdesk.initd and
+# net-misc/rustdesk-bin/files/rustdesk.initd.  FILESDIR is per-package in
+# Gentoo, so one copy cannot serve both packages -- they install the same
+# daemon at the same path.  Edit both or neither; `cmp` between them is an
+# assertion in the coverage harness, so a one-sided edit is caught.
+#
+# WHY supervise-daemon AND NOT command_background + pidfile.  The unit declares
+# Type=simple together with PIDFile=/run/rustdesk.pid, which is contradictory
+# and reads like a self-daemonising process.  It is not.  Measured on the 1.4.9
+# payload: `rustdesk --service` stays in the foreground, spawns its own
+# --server and --tray children, and never writes /run/rustdesk.pid.  systemd
+# ignores PIDFile= under Type=simple, so the line is inert there too, and a
+# pidfile-based OpenRC service would wait for a file that never appears.
+#
+# The daemon runs as root, exactly as the unit's User=root specifies.  Giving
+# it a dedicated service account is a security change with a migration cost,
+# and is deliberately not made here.
+#
+# WHAT THIS TRANSLATION LOSES.  KillMode=mixed signals the main process and
+# then SIGKILLs whatever is left of its cgroup.  OpenRC has no cgroup-wide
+# kill: `retry` below signals the supervised process only, so a wedged
+# --server or --tray child can outlive a stop.  Check with `pgrep -f rustdesk`
+# if a restart misbehaves.
+
+description="RustDesk remote desktop service"
+
+command="/usr/bin/rustdesk"
+command_args="--service"
+supervisor="supervise-daemon"
+
+# TimeoutStopSec=30
+retry="TERM/30/KILL/5"
+
+# LimitNOFILE=100000
+rc_ulimit="-n 100000"
+
+depend() {
+	# Requires=network.target
+	need net
+	# After=systemd-user-sessions.service has no OpenRC counterpart: there is
+	# no service that means "user logins are now possible". The daemon copes
+	# with starting before a session exists -- it polls for one.
+	use dbus logger
+}
