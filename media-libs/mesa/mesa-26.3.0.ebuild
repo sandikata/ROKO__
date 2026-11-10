@@ -3,16 +3,13 @@
 
 EAPI=8
 
-LLVM_COMPAT=( {18..23} )
+LLVM_COMPAT=( {18..22} )
 LLVM_OPTIONAL=1
 CARGO_OPTIONAL=1
-PYTHON_COMPAT=( python3_{12..14} )
+PYTHON_COMPAT=( python3_{12..15} )
 
-inherit flag-o-matic llvm-r2 meson-multilib python-any-r1 linux-info
+inherit flag-o-matic linux-info llvm-r2 meson-multilib python-any-r1 toolchain-funcs
 
-# Note: ${P}, not ${PF} -- this names the distfile, which does not change
-# across revisions.  With ${PF} the first revbump would look for
-# mesa-26.3.0-pre20260825-r1.tar.gz and miss the Manifest entry.
 MY_P="${P/_/-}"
 
 CRATES="
@@ -37,8 +34,9 @@ if [[ ${PV} == 9999 ]]; then
 	EGIT_REPO_URI="https://gitlab.freedesktop.org/mesa/mesa.git"
 	inherit git-r3
 else
-	GIT_COMMIT="c2d85dae149800530ada5bd8adedeea1cc08eb2d"
-	SRC_URI="https://gitlab.freedesktop.org/${PN}/${PN}/-/archive/${GIT_COMMIT}/mesa-${GIT_COMMIT}.tar.gz -> ${MY_P}.tar.gz"
+	SRC_URI="
+		https://archive.mesa3d.org/${MY_P}.tar.xz
+	"
 	KEYWORDS="~alpha ~amd64 ~arm ~arm64 ~hppa ~loong ~mips ~ppc ~ppc64 ~riscv ~s390 ~sparc ~x86 ~x64-solaris"
 fi
 
@@ -46,35 +44,11 @@ fi
 # but there are "stale" distfiles on the mirrors with the wrong names.
 # export MESON_PACKAGE_CACHE_DIR="${DISTDIR}"
 SRC_URI+="
-	${CARGO_CRATE_URIS}
+	opencl? ( ${CARGO_CRATE_URIS} )
+	!opencl? ( video_cards_nvk? ( ${CARGO_CRATE_URIS} ) )
 "
 
-# Since 26.3 the Venus protocol headers live out of tree and are pulled in as a
-# [wrap-git] meson subproject (subprojects/venus-protocol.wrap), which the
-# sandbox cannot clone (--wrap-mode nodownload).  It cannot become a system
-# dependency either: upstream installs nothing and ships no pkg-config file,
-# it only *generates* headers at build time, so the subproject fallback is the
-# only consumable form.  Keep VENUS_PROTOCOL_REV in sync with the "revision"
-# field of that wrap file on every bump; src_unpack hard-fails when it drifts,
-# because meson only checks the *declared* version of whatever is on disk
-# (== 1.1.3 here) and a stale pin silently builds against wrong headers.
-#
-# The wrap pins by tag since 26.3.0_pre20260901 (it used to name a bare sha),
-# so the two are separate variables: REV is whatever the wrap literally says
-# and is what the drift check compares against, COMMIT is the sha that tag
-# resolved to.  SRC_URI must fetch the sha -- a tag can be moved upstream, and
-# a moved tag would change the distfile under a Manifest that still verifies.
-VENUS_PROTOCOL_REV="v1.1.3"
-VENUS_PROTOCOL_COMMIT="ca19b6358d7cc491bc3e4de76f04c6700876a8fa"
-VENUS_PROTOCOL_P="venus-protocol-${VENUS_PROTOCOL_COMMIT}"
-# Only the virtio Vulkan driver needs it (with_virtio_vk in meson.build).
-SRC_URI+="
-	vulkan? ( video_cards_virgl? (
-		https://gitlab.freedesktop.org/virgl/venus-protocol/-/archive/${VENUS_PROTOCOL_COMMIT}/${VENUS_PROTOCOL_P}.tar.gz
-	) )
-"
-
-S="${WORKDIR}/${PN}-${GIT_COMMIT}"
+S="${WORKDIR}/${MY_P}"
 EGIT_CHECKOUT_DIR=${S}
 
 LICENSE="MIT SGI-B-2.0"
@@ -139,6 +113,9 @@ RDEPEND="
 	video_cards_i915? (
 		${LIBDRM_DEPSTRING}[video_cards_intel]
 	)
+	video_cards_nvk? (
+		virtual/libelf:0=[${MULTILIB_USEDEP}]
+	)
 	video_cards_radeonsi? (
 		${LIBDRM_DEPSTRING}[video_cards_amdgpu]
 		virtual/libelf:0=[${MULTILIB_USEDEP}]
@@ -184,7 +161,7 @@ BDEPEND="
 	)
 	>=dev-build/meson-1.7.0
 	app-alternatives/yacc
-	app-alternatives/lex
+	sys-devel/flex
 	virtual/pkgconfig
 	$(python_gen_any_dep "
 		>=dev-python/mako-0.8.0[\${PYTHON_USEDEP}]
@@ -196,6 +173,7 @@ BDEPEND="
 	video_cards_panfrost? ( ${CLC_DEPSTRING} )
 	vulkan? (
 		dev-util/glslang
+		video_cards_imagination? ( ${CLC_DEPSTRING} )
 		video_cards_nvk? (
 			>=dev-util/bindgen-0.71.1
 			>=dev-util/cbindgen-0.26.0
@@ -216,85 +194,26 @@ src_unpack() {
 	if [[ ${PV} == 9999 ]]; then
 		git-r3_src_unpack
 	else
-		unpack ${MY_P}.tar.gz
+		unpack ${MY_P}.tar.xz
 	fi
 
-	if use vulkan && use video_cards_virgl; then
-		unpack "${VENUS_PROTOCOL_P}.tar.gz"
-		# meson resolves the wrap from disk instead of cloning only when the
-		# tree sits at the exact "directory" field, so read it from the wrap
-		# rather than hardcoding it: upstream renamed it venus-protocol-1.0 ->
-		# -1.1 mid-series and a hardcoded path fails as a generic "Subproject
-		# is buildable: NO".  "revision" is checked for the same reason.
-		local vn_wrap="${S}/subprojects/venus-protocol.wrap"
-		local vn_dir vn_rev
-		vn_dir=$(sed -n 's/^[[:space:]]*directory[[:space:]]*=[[:space:]]*//p' \
-			"${vn_wrap}") || die
-		vn_rev=$(sed -n 's/^[[:space:]]*revision[[:space:]]*=[[:space:]]*//p' \
-			"${vn_wrap}") || die
-		[[ -n ${vn_dir} ]] || die "no 'directory' field in ${vn_wrap}"
-		[[ ${vn_rev} == "${VENUS_PROTOCOL_REV}" ]] ||
-			die "VENUS_PROTOCOL_REV is stale: the wrap wants ${vn_rev}"
-
-		# Agreeing with "revision" is not proof the pinned sha carries the
-		# right headers now that the wrap names a tag: a tag can be moved, and
-		# VENUS_PROTOCOL_COMMIT is resolved by hand at bump time.  Compare what
-		# the subproject declares against what mesa demands, which is the check
-		# that actually matters.  meson would catch it too, but only as the
-		# generic "Subproject venus-protocol is buildable: NO".
-		local vn_want vn_have
-		vn_want=$(sed -n "/dependency('venus-protocol'/,/^[[:space:]]*)/{
-			s/^[[:space:]]*version[[:space:]]*:[[:space:]]*'==[[:space:]]*\([0-9.]\+\)'.*/\1/p
-		}" "${S}/meson.build") || die
-		vn_have=$(sed -n "/^project(/,/^)/{
-			s/^[[:space:]]*version:[[:space:]]*'\([0-9.]\+\)'.*/\1/p
-		}" "${WORKDIR}/${VENUS_PROTOCOL_P}/meson.build") || die
-		[[ -n ${vn_want} ]] || die "no venus-protocol version constraint in ${S}/meson.build"
-		[[ -n ${vn_have} ]] || die "no project() version in the venus-protocol tarball"
-		[[ ${vn_want} == "${vn_have}" ]] ||
-			die "VENUS_PROTOCOL_COMMIT declares ${vn_have}, mesa requires ${vn_want}"
-
-		mv "${WORKDIR}/${VENUS_PROTOCOL_P}" "${S}/subprojects/${vn_dir}" || die
-
-		# venus-protocol used to install a venus-protocol.pc advertising headers
-		# it never installed: pkg.generate() ran unconditionally, while the
-		# custom_targets that generate those headers carry "install: not_subproj".
-		# Merged, that .pc poisoned the NEXT mesa build -- dependency() found it
-		# by name, skipped the fallback, and handed the compiler
-		# -I/usr/include/venus-protocol, a directory nobody created, so the build
-		# died far from the cause on a missing vn_protocol_driver_*.h.  It only
-		# bit when the leftover .pc matched the "== <ver>" mesa asks for, which
-		# made it look intermittent: measured 2026-09-06, 26.3.0_pre20260905
-		# installed a 1.1.2 .pc and 26.3.0_pre20260906, which also wants
-		# == 1.1.2, failed to compile.
-		#
-		# v1.1.3 moved pkg.generate() inside "if not_subproj", so a subproject
-		# build now installs nothing and the sed that used to strip the call is
-		# gone.  What replaces it is an assertion, not blind trust: a regression
-		# would leave no trace in THIS build and would only surface one snapshot
-		# later, as that same missing-header compile error.  Counting is what
-		# makes it hold -- a second, ungated call added next to the gated one
-		# would still satisfy a plain "is it inside the block" test.
-		local vn_meson="${S}/subprojects/${vn_dir}/meson.build"
-		local vn_pkg_all vn_pkg_gated
-		vn_pkg_all=$(grep -cF "pkg.generate(" "${vn_meson}")
-		vn_pkg_gated=$(sed -n '/^if not_subproj$/,/^endif$/p' "${vn_meson}" |
-			grep -cF "pkg.generate(")
-		[[ ${vn_pkg_all} == "${vn_pkg_gated}" ]] ||
-			die "venus-protocol calls pkg.generate() outside 'if not_subproj'"
+	if use opencl || use video_cards_nvk; then
+		# We need this because we cannot tell meson to use DISTDIR yet
+		mkdir -p "${S}"/subprojects/packagecache || die
+		local i
+		for i in ${CRATES}; do
+			i=${i/@/-}
+			ln -s "${DISTDIR}/${i}.crate" \
+				"${S}/subprojects/packagecache/${i}.tar.gz" || die
+		done
 	fi
-
-	# We need this because we cannot tell meson to use DISTDIR yet
-	pushd "${DISTDIR}" >/dev/null || die
-	mkdir -p "${S}"/subprojects/packagecache || die
-	local i
-	for i in *.crate; do
-		ln -s "${PWD}/${i}" "${S}/subprojects/packagecache/${i/.crate/}.tar.gz" || die
-	done
-	popd >/dev/null || die
 }
 
 pkg_pretend() {
+	if [[ ${MERGE_TYPE} != binary ]] && use test; then
+		tc-check-openmp
+	fi
+
 	if use vulkan; then
 		if ! use video_cards_asahi &&
 		   ! use video_cards_d3d12 &&
@@ -335,6 +254,10 @@ python_check_deps() {
 }
 
 pkg_setup() {
+	if [[ ${MERGE_TYPE} != binary ]] && use test; then
+		tc-check-openmp
+	fi
+
 	# warning message for bug 459306
 	if use llvm && has_version llvm-core/llvm[!debug=]; then
 		ewarn "Mismatch between debug USE flags in media-libs/mesa and llvm-core/llvm"
@@ -363,12 +286,6 @@ pkg_setup() {
 	fi
 }
 
-PATCHES=(
-	# Build fix: the ASTC decoder shader needs SPIR-V 1.2, which glslang
-	# started enforcing in 2026-08.  Drop when upstream carries it.
-	"${FILESDIR}"/${PN}-astc-spirv1.2.patch
-)
-
 src_prepare() {
 	default
 	sed -i -e "/^PLATFORM_SYMBOLS/a '__gentoo_check_ldflags__'," \
@@ -392,7 +309,6 @@ multilib_src_configure() {
 	   use video_cards_radeonsi ||
 	   use video_cards_virgl; then
 		emesonargs+=($(meson_feature vaapi gallium-va))
-		use vaapi && emesonargs+=( -Dva-libs-path="${EPREFIX}"/usr/$(get_libdir)/va/drivers )
 	else
 		emesonargs+=(-Dgallium-va=disabled)
 	fi
@@ -471,7 +387,8 @@ multilib_src_configure() {
 	if use video_cards_asahi ||
 	   use video_cards_intel ||
 	   use video_cards_nvk ||
-	   use video_cards_panfrost; then
+	   use video_cards_panfrost ||
+	   { use vulkan && use video_cards_imagination; }; then
 	   emesonargs+=(-Dmesa-clc=system)
 	fi
 
@@ -479,18 +396,6 @@ multilib_src_configure() {
 	   use video_cards_panfrost; then
 	    emesonargs+=(-Dprecomp-compiler=system)
 	fi
-
-	# Never resolve venus-protocol from the system.  Nothing packages it --
-	# upstream only generates headers at build time -- so any .pc on the host
-	# is the stray one an older mesa left behind (see src_unpack), and it
-	# would win over the subproject purely by being found first.
-	if use vulkan && use video_cards_virgl; then
-		emesonargs+=(--force-fallback-for=venus-protocol)
-	fi
-
-	# amd-use-llvm (boolean) was replaced by amd-options, an array option
-	# with the choices "use-llvm" and "virtio".
-	use llvm && emesonargs+=(-Damd-options=use-llvm)
 
 	use debug && EMESON_BUILDTYPE=debug
 
@@ -508,6 +413,7 @@ multilib_src_configure() {
 		$(meson_feature unwind libunwind)
 		$(meson_feature vulkan display-info)
 		$(meson_feature zstd)
+		$(meson_use llvm amd-use-llvm)
 		$(meson_use sysprof)
 		$(meson_use cpu_flags_x86_sse2 sse2)
 		-Dvalgrind=$(usex valgrind auto disabled)
