@@ -79,12 +79,27 @@ src_prepare() {
 	local myversion="-dist"
 	use hardened && myversion+="-hardened"
 	echo "CONFIG_LOCALVERSION=\"${myversion}\"" > "${T}"/version.config || die
+
+	# базови MuQSS настройки; /etc/kernel/config.d/*.config се прилага
+	# след тях и може да ги презапише
+	cat > "${T}"/muqss.config <<-EOF || die
+		CONFIG_SCHED_MUQSS=y
+		CONFIG_SMT_NICE=y
+		CONFIG_MUQSS_IOTIME=y
+		CONFIG_RQ_MC_LLC=y
+		CONFIG_HZ_100=y
+		# CONFIG_HZ_250 is not set
+		# CONFIG_HZ_300 is not set
+		# CONFIG_HZ_1000 is not set
+	EOF
+
 	local dist_conf_path="${WORKDIR}/${GENTOO_CONFIG_P}"
 
 	local merge_configs=(
 		"${T}"/version.config
 		"${dist_conf_path}"/base.config
 		"${dist_conf_path}"/6.12+.config
+		"${T}"/muqss.config
 	)
 	use debug || merge_configs+=(
 		"${dist_conf_path}"/no-debug.config
