@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<maintainer type="person">
+		<email>dlan@gentoo.org</email>
+		<name>Yixun Lan</name>
+	</maintainer>
+	<use>
+		<flag name="system-sqlite">Use the system-wide <pkg>dev-db/sqlite</pkg> instead of the bundled one</flag>
+		<flag name="terminal">Enable the built-in terminal (<c>zellij terminal</c>), which opens a session without a separate terminal emulator</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">zellij-org/zellij</remote-id>
+	</upstream>
+</pkgmetadata>
