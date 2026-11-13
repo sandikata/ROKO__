@@ -82,26 +82,12 @@ src_prepare() {
 	use hardened && myversion+="-hardened"
 	echo "CONFIG_LOCALVERSION=\"${myversion}\"" > "${T}"/version.config || die
 
-	# базови MuQSS настройки; /etc/kernel/config.d/*.config се прилага
-	# след тях и може да ги презапише
-	cat > "${T}"/muqss.config <<-EOF || die
-		CONFIG_SCHED_MUQSS=y
-		CONFIG_SMT_NICE=y
-		CONFIG_MUQSS_IOTIME=y
-		CONFIG_RQ_MC_LLC=y
-		CONFIG_HZ_100=y
-		# CONFIG_HZ_250 is not set
-		# CONFIG_HZ_300 is not set
-		# CONFIG_HZ_1000 is not set
-	EOF
-
 	local dist_conf_path="${WORKDIR}/${GENTOO_CONFIG_P}"
 
 	local merge_configs=(
 		"${T}"/version.config
 		"${dist_conf_path}"/base.config
 		"${dist_conf_path}"/6.12+.config
-		"${T}"/muqss.config
 	)
 	use debug || merge_configs+=(
 		"${dist_conf_path}"/no-debug.config
@@ -126,4 +112,29 @@ src_prepare() {
 	cp "${WORKDIR}/fedora-kernel-config-${CONFIG_VER}/kernel-x86_64-fedora.config" .config || die
 
 	kernel-build_merge_configs "${merge_configs[@]}"
+
+	        ./scripts/config \
+                -e SCHED_MUQSS \
+                -e SMT_NICE \
+                -e MUQSS_IOTIME \
+                -e RQ_MC_LLC \
+                -d RQ_NONE \
+                -d RQ_SMT \
+                -d RQ_MC \
+                -d RQ_SMP \
+                -d RQ_ALL \
+                -e HZ_100 \
+                -d HZ_250 \
+                -d HZ_300 \
+                -d HZ_1000 \
+                -e HIGH_RES_TIMERS \
+                -d RCU_NOCB_CPU \
+                -d VIRT_CPU_ACCOUNTING_GEN \
+                -e VIRT_CPU_ACCOUNTING_NATIVE \
+                -d NO_HZ_FULL \
+                -e NO_HZ_IDLE \
+                -d CPU_FREQ_DEFAULT_GOV_SCHEDUTIL \
+                -e CPU_FREQ_DEFAULT_GOV_PERFORMANCE \
+                -d CPU_IDLE \
+                -e X86_NATIVE_CPU || die
 }
