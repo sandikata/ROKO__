@@ -1,0 +1,9 @@
+--- a/src/autotune.cpp
++++ b/src/autotune.cpp
+@@ -39,1 +39,5 @@
+-  lv2_wrapper->connect_atom_port(atom_port_index, &atom_buffer); lv2_wrapper->connect_data_ports(mono_buffer, right_in, left_out, right_out); lv2_wrapper->run(); std::copy(left_out.begin(), left_out.end(), right_out.begin());
++  std::span<float> mono_span{mono_buffer};
++  lv2_wrapper->connect_atom_port(atom_port_index, &atom_buffer);
++  lv2_wrapper->connect_data_ports(mono_span, right_in, left_out, right_out);
++  lv2_wrapper->run();
++  std::copy(left_out.begin(), left_out.end(), right_out.begin());

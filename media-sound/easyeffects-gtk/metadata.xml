@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>rosen@aleksandrov.tech</email>
+		<name>Rosen Aleksandrov</name>
+	</maintainer>
+	<longdescription lang="en">
+		Easy Effects GTK is a community fork of Easy Effects preserving
+		the GTK4 and libadwaita user interface. It provides advanced
+		audio processing for PipeWire applications, including equalization,
+		compression, limiting, convolution and noise reduction, without
+		requiring Qt or KDE Frameworks.
+	</longdescription>
+	<use>
+		<flag name="calf">
+			Enable additional audio effects provided by
+			<pkg>media-plugins/calf</pkg>
+		</flag>
+		<flag name="libportal">
+			Enable XDG Desktop Portal integration using
+			<pkg>dev-libs/libportal</pkg> for autostart management
+		</flag>
+		<flag name="mda-lv2">
+			Enable additional audio effects provided by
+			<pkg>media-plugins/mda-lv2</pkg>
+		</flag>
+		<flag name="rnnoise">
+			Enable neural network-based noise reduction using
+			<pkg>media-libs/rnnoise</pkg>
+		</flag>
+		<flag name="zamaudio">
+			Enable additional audio effects provided by
+			<pkg>media-plugins/zam-plugins</pkg>
+		</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">Mlocik97/easyeffects-gtk</remote-id>
+		<bugs-to>https://github.com/Mlocik97/easyeffects-gtk/issues</bugs-to>
+	</upstream>
+</pkgmetadata>

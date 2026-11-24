@@ -1,0 +1,38 @@
+diff --git a/src/midside_equalizer.cpp b/src/midside_equalizer.cpp
+index 6a3acdd28..df85167e5 100644
+--- a/src/midside_equalizer.cpp
++++ b/src/midside_equalizer.cpp
+@@ -11,7 +11,7 @@
+ #include "util.hpp"
+ 
+ namespace {
+-std::string port(const std::string& prefix, const uint index) {
++std::string make_port_name(const std::string& prefix, const uint index) {
+   return prefix + "_" + util::to_string(index);
+ }
+ }
+@@ -56,15 +56,15 @@ MidSideEqualizer::~MidSideEqualizer() {
+ void MidSideEqualizer::bind_channel(GSettings* channel_settings, const std::string& prefix) {
+   using namespace tags::equalizer;
+   for (uint index = 0U; index < max_bands; index++) {
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_type[index].data(), port("ft" + prefix, index), 1);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_mode[index].data(), port("fm" + prefix, index), 1);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_slope[index].data(), port("s" + prefix, index), 1);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_solo[index].data(), port("xs" + prefix, index), 0);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_mute[index].data(), port("xm" + prefix, index), 0);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_frequency[index].data(), port("f" + prefix, index), 3);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_q[index].data(), port("q" + prefix, index), 3);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_width[index].data(), port("w" + prefix, index), 3);
+-    lv2_wrapper->bind_key_dynamic(channel_settings, band_gain[index].data(), port("g" + prefix, index), 4);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_type[index].data(), make_port_name("ft" + prefix, index), 1);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_mode[index].data(), make_port_name("fm" + prefix, index), 1);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_slope[index].data(), make_port_name("s" + prefix, index), 1);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_solo[index].data(), make_port_name("xs" + prefix, index), 0);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_mute[index].data(), make_port_name("xm" + prefix, index), 0);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_frequency[index].data(), make_port_name("f" + prefix, index), 3);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_q[index].data(), make_port_name("q" + prefix, index), 3);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_width[index].data(), make_port_name("w" + prefix, index), 3);
++    lv2_wrapper->bind_key_dynamic(channel_settings, band_gain[index].data(), make_port_name("g" + prefix, index), 4);
+   }
+ }
+ 

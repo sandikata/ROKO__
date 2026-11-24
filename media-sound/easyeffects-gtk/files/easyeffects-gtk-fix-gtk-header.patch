@@ -1,0 +1,540 @@
+diff --git a/include/app_info.hpp b/include/app_info.hpp
+index 0f481bd83..1aaea4764 100644
+--- a/include/app_info.hpp
++++ b/include/app_info.hpp
+@@ -25,7 +25,7 @@
+ #include <gio/gio.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkicontheme.h>
+ #include <unordered_map>
+ #include "application.hpp"
+diff --git a/include/apps_box.hpp b/include/apps_box.hpp
+index 5126648d3..023363785 100644
+--- a/include/apps_box.hpp
++++ b/include/apps_box.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkicontheme.h>
+ #include "application.hpp"
+ #include "pipeline_type.hpp"
+diff --git a/include/autogain_ui.hpp b/include/autogain_ui.hpp
+index a9be9d513..38a7e7b70 100644
+--- a/include/autogain_ui.hpp
++++ b/include/autogain_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "autogain.hpp"
+diff --git a/include/autotune_ui.hpp b/include/autotune_ui.hpp
+index 00fe004c5..309be3a8f 100644
+--- a/include/autotune_ui.hpp
++++ b/include/autotune_ui.hpp
+@@ -1,5 +1,5 @@
+ #pragma once
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "autotune.hpp"
+diff --git a/include/bass_enhancer_ui.hpp b/include/bass_enhancer_ui.hpp
+index b9cab129a..eba9bdece 100644
+--- a/include/bass_enhancer_ui.hpp
++++ b/include/bass_enhancer_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "bass_enhancer.hpp"
+diff --git a/include/bass_loudness_ui.hpp b/include/bass_loudness_ui.hpp
+index 965089ed2..11bff8055 100644
+--- a/include/bass_loudness_ui.hpp
++++ b/include/bass_loudness_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "bass_loudness.hpp"
+diff --git a/include/compressor_ui.hpp b/include/compressor_ui.hpp
+index 0ee707f5d..867e999a0 100644
+--- a/include/compressor_ui.hpp
++++ b/include/compressor_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "compressor.hpp"
+diff --git a/include/convolver_ui.hpp b/include/convolver_ui.hpp
+index 686d996a2..8e2ad83c8 100644
+--- a/include/convolver_ui.hpp
++++ b/include/convolver_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "application.hpp"
+diff --git a/include/crossfeed_ui.hpp b/include/crossfeed_ui.hpp
+index 8cc91c7c3..5a6be5e6b 100644
+--- a/include/crossfeed_ui.hpp
++++ b/include/crossfeed_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "crossfeed.hpp"
+diff --git a/include/crosstalk_canceller_ui.hpp b/include/crosstalk_canceller_ui.hpp
+index d695882c0..efba15406 100644
+--- a/include/crosstalk_canceller_ui.hpp
++++ b/include/crosstalk_canceller_ui.hpp
+@@ -1,6 +1,6 @@
+ #pragma once
+ 
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "crosstalk_canceller.hpp"
+diff --git a/include/crusher_ui.hpp b/include/crusher_ui.hpp
+index 3a7089d49..8445c0a15 100644
+--- a/include/crusher_ui.hpp
++++ b/include/crusher_ui.hpp
+@@ -1,6 +1,6 @@
+ #pragma once
+ 
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "crusher.hpp"
+diff --git a/include/crystalizer_ui.hpp b/include/crystalizer_ui.hpp
+index bec5f949d..80b0bd65e 100644
+--- a/include/crystalizer_ui.hpp
++++ b/include/crystalizer_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "crystalizer.hpp"
+diff --git a/include/deepfilternet_ui.hpp b/include/deepfilternet_ui.hpp
+index 88b2589e4..eaba7890f 100644
+--- a/include/deepfilternet_ui.hpp
++++ b/include/deepfilternet_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "deepfilternet.hpp"
+diff --git a/include/deesser_ui.hpp b/include/deesser_ui.hpp
+index 96112ba9f..a221e2e60 100644
+--- a/include/deesser_ui.hpp
++++ b/include/deesser_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "deesser.hpp"
+diff --git a/include/delay_ui.hpp b/include/delay_ui.hpp
+index 564e3a03d..c836a11ed 100644
+--- a/include/delay_ui.hpp
++++ b/include/delay_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "delay.hpp"
+diff --git a/include/echo_canceller_ui.hpp b/include/echo_canceller_ui.hpp
+index 976e705de..fa0245510 100644
+--- a/include/echo_canceller_ui.hpp
++++ b/include/echo_canceller_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "echo_canceller.hpp"
+diff --git a/include/effects_box.hpp b/include/effects_box.hpp
+index 28be791d8..cd9b9a9bf 100644
+--- a/include/effects_box.hpp
++++ b/include/effects_box.hpp
+@@ -23,7 +23,7 @@
+ #include <glib-object.h>
+ #include <glibconfig.h>
+ #include <gsl/gsl_spline.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkicontheme.h>
+ #include "application.hpp"
+ #include "pipeline_type.hpp"
+diff --git a/include/equalizer_band_box.hpp b/include/equalizer_band_box.hpp
+index 020d4ff9f..906d94616 100644
+--- a/include/equalizer_band_box.hpp
++++ b/include/equalizer_band_box.hpp
+@@ -23,7 +23,7 @@
+ #include <gio/gio.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ 
+ namespace ui::equalizer_band_box {
+ 
+diff --git a/include/equalizer_ui.hpp b/include/equalizer_ui.hpp
+index 6da50b7f6..4cfa6dbf6 100644
+--- a/include/equalizer_ui.hpp
++++ b/include/equalizer_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "application.hpp"
+diff --git a/include/exciter_ui.hpp b/include/exciter_ui.hpp
+index 20b664a97..b6ef63156 100644
+--- a/include/exciter_ui.hpp
++++ b/include/exciter_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "exciter.hpp"
+diff --git a/include/expander_ui.hpp b/include/expander_ui.hpp
+index 46c8f3280..6da4c3856 100644
+--- a/include/expander_ui.hpp
++++ b/include/expander_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "expander.hpp"
+diff --git a/include/filter_ui.hpp b/include/filter_ui.hpp
+index 15dd2c1f0..a565228cc 100644
+--- a/include/filter_ui.hpp
++++ b/include/filter_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "filter.hpp"
+diff --git a/include/gate_ui.hpp b/include/gate_ui.hpp
+index a4d2aa447..ab39c4473 100644
+--- a/include/gate_ui.hpp
++++ b/include/gate_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "gate.hpp"
+diff --git a/include/level_meter_ui.hpp b/include/level_meter_ui.hpp
+index 6501dc1a5..f50553f9c 100644
+--- a/include/level_meter_ui.hpp
++++ b/include/level_meter_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "level_meter.hpp"
+diff --git a/include/limiter_ui.hpp b/include/limiter_ui.hpp
+index 623f6bbaa..81a0d482c 100644
+--- a/include/limiter_ui.hpp
++++ b/include/limiter_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "limiter.hpp"
+diff --git a/include/loudness_ui.hpp b/include/loudness_ui.hpp
+index fd9d28f7d..97f9b2256 100644
+--- a/include/loudness_ui.hpp
++++ b/include/loudness_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "loudness.hpp"
+diff --git a/include/maximizer_ui.hpp b/include/maximizer_ui.hpp
+index 3c11ef2c4..8bfeaddaf 100644
+--- a/include/maximizer_ui.hpp
++++ b/include/maximizer_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "maximizer.hpp"
+diff --git a/include/midside_equalizer_ui.hpp b/include/midside_equalizer_ui.hpp
+index 40a7d07ff..b95b4c942 100644
+--- a/include/midside_equalizer_ui.hpp
++++ b/include/midside_equalizer_ui.hpp
+@@ -1,6 +1,6 @@
+ #pragma once
+ 
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "midside_equalizer.hpp"
+diff --git a/include/multiband_compressor_band_box.hpp b/include/multiband_compressor_band_box.hpp
+index bccfcb1ab..7a4e7c949 100644
+--- a/include/multiband_compressor_band_box.hpp
++++ b/include/multiband_compressor_band_box.hpp
+@@ -23,7 +23,7 @@
+ #include <gio/gio.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ 
+ namespace ui::multiband_compressor_band_box {
+ 
+diff --git a/include/multiband_compressor_ui.hpp b/include/multiband_compressor_ui.hpp
+index a1b5b738b..96841c9e0 100644
+--- a/include/multiband_compressor_ui.hpp
++++ b/include/multiband_compressor_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "multiband_compressor.hpp"
+diff --git a/include/multiband_gate_band_box.hpp b/include/multiband_gate_band_box.hpp
+index 38bab0f09..a9d2da086 100644
+--- a/include/multiband_gate_band_box.hpp
++++ b/include/multiband_gate_band_box.hpp
+@@ -23,7 +23,7 @@
+ #include <gio/gio.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ 
+ namespace ui::multiband_gate_band_box {
+ 
+diff --git a/include/multiband_gate_ui.hpp b/include/multiband_gate_ui.hpp
+index 708f773af..7bd3781ea 100644
+--- a/include/multiband_gate_ui.hpp
++++ b/include/multiband_gate_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "multiband_gate.hpp"
+diff --git a/include/pipe_manager_box.hpp b/include/pipe_manager_box.hpp
+index 79ad6c218..e0167216f 100644
+--- a/include/pipe_manager_box.hpp
++++ b/include/pipe_manager_box.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include "application.hpp"
+ 
+ namespace ui::pipe_manager_box {
+diff --git a/include/pitch_ui.hpp b/include/pitch_ui.hpp
+index 4b97c5067..798ee10dd 100644
+--- a/include/pitch_ui.hpp
++++ b/include/pitch_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "pitch.hpp"
+diff --git a/include/reverb_ui.hpp b/include/reverb_ui.hpp
+index 2ab505f77..8b4128e00 100644
+--- a/include/reverb_ui.hpp
++++ b/include/reverb_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "reverb.hpp"
+diff --git a/include/rnnoise_ui.hpp b/include/rnnoise_ui.hpp
+index 5d77de617..caf20e2e9 100644
+--- a/include/rnnoise_ui.hpp
++++ b/include/rnnoise_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "application.hpp"
+diff --git a/include/speex_ui.hpp b/include/speex_ui.hpp
+index 18221769f..1bf7f46fe 100644
+--- a/include/speex_ui.hpp
++++ b/include/speex_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "application.hpp"
+diff --git a/include/stereo_tools_ui.hpp b/include/stereo_tools_ui.hpp
+index ba5e72312..a82f2f8c4 100644
+--- a/include/stereo_tools_ui.hpp
++++ b/include/stereo_tools_ui.hpp
+@@ -22,7 +22,7 @@
+ #include <adwaita.h>
+ #include <glib-object.h>
+ #include <glibconfig.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "stereo_tools.hpp"
+diff --git a/include/voice_suppressor_ui.hpp b/include/voice_suppressor_ui.hpp
+index f6645c439..42f62c1ef 100644
+--- a/include/voice_suppressor_ui.hpp
++++ b/include/voice_suppressor_ui.hpp
+@@ -1,6 +1,6 @@
+ #pragma once
+ 
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <memory>
+ #include <string>
+ #include "voice_suppressor.hpp"
+diff --git a/src/app_info.cpp b/src/app_info.cpp
+index 4bea5dd97..71f5bfbf8 100644
+--- a/src/app_info.cpp
++++ b/src/app_info.cpp
+@@ -28,7 +28,7 @@
+ #include <glib/gi18n.h>
+ #include <gobject/gobject.h>
+ #include <gtk/gtk.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkcheckbutton.h>
+ #include <gtk/gtkicontheme.h>
+ #include <gtk/gtkimage.h>
+diff --git a/src/bass_enhancer_ui.cpp b/src/bass_enhancer_ui.cpp
+index c25daf3d2..07b262ebc 100644
+--- a/src/bass_enhancer_ui.cpp
++++ b/src/bass_enhancer_ui.cpp
+@@ -26,7 +26,7 @@
+ #include <glibconfig.h>
+ #include <gobject/gobject.h>
+ #include <gtk/gtk.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkbutton.h>
+ #include <gtk/gtklabel.h>
+ #include <gtk/gtklevelbar.h>
+diff --git a/src/crystalizer_ui.cpp b/src/crystalizer_ui.cpp
+index 9d051c1f8..2039053d2 100644
+--- a/src/crystalizer_ui.cpp
++++ b/src/crystalizer_ui.cpp
+@@ -25,7 +25,7 @@
+ #include <glibconfig.h>
+ #include <gobject/gobject.h>
+ #include <gtk/gtk.h>
+-#include <gtk/gtkbox.h>
++#include <gtk/gtk.h>
+ #include <gtk/gtkbutton.h>
+ #include <gtk/gtklabel.h>
+ #include <gtk/gtklevelbar.h>

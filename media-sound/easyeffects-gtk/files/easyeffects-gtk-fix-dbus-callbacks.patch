@@ -1,0 +1,10 @@
+--- a/src/tray_icon.cpp
++++ b/src/tray_icon.cpp
+@@ -36,2 +36,2 @@
+-void method_call(GDBusConnection*, const gchar*, const gchar*, const gchar* method,
++void method_call(GDBusConnection*, const gchar*, const gchar*, const gchar*, const gchar* method,
+                  GVariant*, GDBusMethodInvocation* invocation, gpointer user_data) {
+@@ -47,2 +47,2 @@
+-GVariant* get_property(GDBusConnection*, const gchar*, const gchar*, const gchar* property,
++GVariant* get_property(GDBusConnection*, const gchar*, const gchar*, const gchar*, const gchar* property,
+                        GError** error, gpointer user_data) {

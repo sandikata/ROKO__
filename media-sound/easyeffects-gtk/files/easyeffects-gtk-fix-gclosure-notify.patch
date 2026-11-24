@@ -1,0 +1,5 @@
+--- a/include/lv2_wrapper.hpp
++++ b/include/lv2_wrapper.hpp
+@@ -205,1 +205,1 @@
+-                          +[](gpointer user_data) { delete static_cast<DynamicBinding*>(user_data); },
++                          +[](gpointer user_data, GClosure*) { delete static_cast<DynamicBinding*>(user_data); },
