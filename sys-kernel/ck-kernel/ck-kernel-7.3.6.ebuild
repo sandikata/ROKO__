@@ -62,12 +62,18 @@ QA_FLAGS_IGNORED="
 
 src_prepare() {
 	local patch
-	# ред както в gentoo-kernel: първо stable patch, после Gentoo patchset
+
 	if [[ -f ${WORKDIR}/patch-${PATCH_PV} ]]; then
+		# Restore upstream SWIM timeout calls to avoid conflicts
+		# with the Linux 7.3.6 stable patch.
+		sed -i \
+			-e 's/schedule_min_hrtimeout();/schedule_timeout(1);/g' \
+			drivers/block/swim.c || die
+
 		eapply "${WORKDIR}/patch-${PATCH_PV}"
 	fi
-	eapply "${WORKDIR}/${PATCHSET}"
 
+	eapply "${WORKDIR}/${PATCHSET}"
 	default
 
 	# добавя _pN суфикса (ако има) след "-ck1" от Makefile-а;
