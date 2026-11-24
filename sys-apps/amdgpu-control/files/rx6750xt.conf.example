@@ -1,0 +1,29 @@
+[device]
+pci = 0000:30:00.0
+[performance]
+enabled = true
+gpu_min_clock = 2684
+gpu_max_clock = 2684
+gpu_states = 1 2
+vram_states = 3
+power_profile = 1
+power_cap = 230
+voltage_offset = 0
+disable_gfxoff = true
+[fan]
+enabled = true
+temperature_sensor = junction
+interval = 5
+change_threshold = 2
+spindown_delay = 5
+[fan_curve]
+30 = 15
+45 = 30
+55 = 40
+65 = 50
+75 = 65
+85 = 85
+92 = 98
+100 = 100
+[logging]
+level = INFO

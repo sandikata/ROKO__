@@ -1,0 +1,6 @@
+#!/sbin/openrc-run
+command=/usr/bin/amdgpu-control
+command_args="--config ${config_file:-/etc/amdgpu-control.conf}"
+command_background=true
+pidfile=/run/${RC_SVCNAME}.pid
+depend() { need localmount; after modules; }

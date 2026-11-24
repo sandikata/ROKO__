@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+import argparse, configparser, logging, math, signal, time, re
+from pathlib import Path
+from amdgpu_common import select
+
+def read(p): return p.read_text().strip()
+def write(p,v): p.write_text(str(v)+'\n')
+def main():
+    ap=argparse.ArgumentParser(); ap.add_argument('--config',default='/etc/amdgpu-control.conf'); a=ap.parse_args()
+    c=configparser.ConfigParser(); c.read_file(open(a.config)); p=c['performance']; f=c['fan']; gpu=select(c['device'].get('pci','auto'))
+    logging.basicConfig(level=c['logging'].get('level','INFO'),format='%(asctime)s %(levelname)s %(message)s')
+    h=next((x for x in (gpu/'hwmon').glob('hwmon*') if read(x/'name')=='amdgpu'), None)
+    interval=f.getfloat('interval',5); delay=f.getfloat('spindown_delay',5); threshold=f.getfloat('change_threshold',2)
+    if not all(math.isfinite(x) for x in (interval,delay,threshold)) or interval<1 or delay<0 or threshold<0: raise ValueError('Invalid fan timing')
+    fan=f.getboolean('enabled'); perf=p.getboolean('enabled'); curve=[]; sensor=None; changed=False
+    if fan:
+        if h is None: raise ValueError('No AMDGPU hwmon')
+        curve=sorted((float(k),float(v)) for k,v in c['fan_curve'].items())
+        if len(curve)<2 or any(not math.isfinite(t) or not 0<=v<=100 for t,v in curve) or any(b[1]<a[1] for a,b in zip(curve,curve[1:])) or curve[-1][0]>100 or curve[-1][1]!=100: raise ValueError('Invalid fan curve')
+        sensor=next(x.with_name(x.name.replace('_label','_input')) for x in h.glob('temp*_label') if read(x).lower()==f.get('temperature_sensor','junction').lower())
+        if not (h/'pwm1').exists() or not (h/'pwm1_enable').exists(): raise ValueError('No PWM control')
+    stop=False
+    def halt(*_):
+        nonlocal stop
+        stop=True
+    signal.signal(signal.SIGTERM,halt); signal.signal(signal.SIGINT,halt)
+    try:
+        if perf:
+            od=gpu/'pp_od_clk_voltage'; mode=gpu/'power_dpm_force_performance_level'
+            lo=p.get('gpu_min_clock','').strip(); hi=p.get('gpu_max_clock','').strip()
+            if bool(lo)!=bool(hi): raise ValueError('Set both SCLK bounds or neither')
+            if lo:
+                lo,hi=int(lo),int(hi); raw=read(od); m=re.search(r'^SCLK:\s*(\d+)\s*Mhz\s+(\d+)\s*Mhz',raw,re.M|re.I)
+                if not m or not int(m[1])<=lo<=hi<=int(m[2]): raise ValueError('SCLK outside advertised range')
+            cap=p.get('power_cap','').strip()
+            if cap:
+                if h is None: raise ValueError('No AMDGPU hwmon')
+                cap=int(float(cap)*1e6)
+                if not int(read(h/'power1_cap_min'))<=cap<=int(read(h/'power1_cap_max')): raise ValueError('Power cap outside range')
+            write(mode,'manual')
+            if cap: write(h/'power1_cap',cap)
+            if lo:
+                current=re.search(r'OD_SCLK:\s*0:\s*(\d+)',read(od));
+                if not current: raise ValueError('Unknown OD_SCLK format')
+                commands=[f's 1 {hi}',f's 0 {lo}'] if hi>=int(current[1]) else [f's 0 {lo}',f's 1 {hi}']
+                for cmd in commands: write(od,cmd)
+            offset=p.get('voltage_offset','').strip()
+            if offset: write(od,f'vo {int(offset)}')
+            if lo or offset: write(od,'c')
+            for key,node in [('power_profile','pp_power_profile_mode'),('gpu_states','pp_dpm_sclk'),('vram_states','pp_dpm_mclk')]:
+                value=p.get(key,'').strip()
+                if value:
+                    if not re.fullmatch(r'\d+(?:\s+\d+)*',value): raise ValueError(key)
+                    write(gpu/node,value)
+            if p.getboolean('disable_gfxoff',False):
+                card=next(x for x in (gpu/'drm').glob('card*') if re.fullmatch(r'card\d+',x.name)); (Path('/sys/kernel/debug/dri')/card.name[4:]/'amdgpu_gfxoff').write_bytes(bytes(4))
+        logging.info('Device %s; performance=%s fan=%s',gpu.name,perf,fan)
+        last=None; lower_since=None
+        while not stop:
+            if fan:
+                t=int(read(sensor))/1000
+                if not 0<=t<=150: raise ValueError('Invalid temperature')
+                target=curve[-1][1]
+                if t<=curve[0][0]: target=curve[0][1]
+                else:
+                    for (x,y),(xx,yy) in zip(curve,curve[1:]):
+                        if x<=t<=xx: target=y+(yy-y)*(t-x)/(xx-x); break
+                now=time.monotonic()
+                if last is not None and target<last-threshold:
+                    if lower_since is None: lower_since=now
+                else: lower_since=None
+                if last is None or target>last or (lower_since is not None and now-lower_since>=delay) or read(h/'pwm1_enable') != '1':
+                    if not changed or read(h/'pwm1_enable') != '1': changed=True; write(h/'pwm1_enable',1)
+                    maximum=int(read(h/'pwm1_max')) if (h/'pwm1_max').exists() else 255
+                    write(h/'pwm1',round(target*maximum/100)); last=target; lower_since=None
+                    logging.info('Junction %.1f C | Fan %.1f%%',t,target)
+            deadline=time.monotonic()+interval
+            while not stop and time.monotonic()<deadline:
+                time.sleep(min(0.2,max(0,deadline-time.monotonic())))
+    finally:
+        if changed:
+            try: write(h/'pwm1_enable',2)
+            except OSError: logging.exception('Could not restore automatic fan control')
+if __name__=='__main__': main()

@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+import curses
+import time
+import re
+import subprocess
+from pathlib import Path
+from collections import deque
+import argparse
+import configparser
+from amdgpu_common import discover, select
+
+parser = argparse.ArgumentParser(description='Read-only AMDGPU terminal monitor')
+parser.add_argument('--device', default=None)
+parser.add_argument('--interval', type=float, default=1.0)
+parser.add_argument('--list-devices', action='store_true')
+parser.add_argument('--config', default='/etc/amdgpu-control.conf')
+args = parser.parse_args()
+if args.list_devices:
+    for device in discover(): print(device.name)
+    raise SystemExit(0)
+config = configparser.ConfigParser()
+config.read(args.config)
+try:
+    GPU = select(args.device or config.get('device', 'pci', fallback='auto'))
+except ValueError as exc:
+    parser.error(str(exc))
+args.device = GPU.name
+if args.interval < .2: parser.error('interval must be >= 0.2 seconds')
+
+
+def read(p):
+    try: return p.read_text().strip()
+    except OSError: return ''
+
+def num(p, scale=1):
+    try: return float(read(p))/scale
+    except ValueError: return None
+
+def hwmon():
+    return next((p for p in GPU.glob('hwmon/hwmon*') if read(p/'name')=='amdgpu'), None)
+
+def active(p):
+    return next((s.strip().replace('*','').strip() for s in read(p).splitlines() if '*' in s), 'N/A')
+
+def fmt(v, unit='', digits=0):
+    return 'N/A' if v is None else f'{v:.{digits}f}{unit}'
+
+def service():
+    try:
+        if not Path('/run/systemd/system').exists():
+            p=subprocess.run(['rc-service','amdgpu-control','status'],capture_output=True,text=True,timeout=1)
+            return 'active' if p.returncode == 0 else 'inactive'
+        p=subprocess.run(['systemctl','is-active','amdgpu-control.service'],capture_output=True,text=True,timeout=1)
+        return p.stdout.strip() or 'unknown'
+    except (OSError, subprocess.TimeoutExpired): return 'unknown'
+
+def gfxoff():
+    for card in (GPU/'drm').glob('card[0-9]*'):
+        if not re.fullmatch(r'card\d+',card.name): continue
+        try:
+            with (Path('/sys/kernel/debug/dri')/card.name[4:]/'amdgpu_gfxoff').open('rb') as f: b=f.read(4)
+            if len(b)==4: return 'Enabled' if int.from_bytes(b,'little') else 'Disabled'
+        except OSError: pass
+    return 'N/A (permissions or unsupported)'
+
+def main(stdscr):
+    try: curses.curs_set(0)
+    except curses.error: pass
+    stdscr.keypad(True)
+    curses.start_color()
+    try: curses.use_default_colors(); bg=-1
+    except curses.error: bg=curses.COLOR_BLACK
+    for i,c in enumerate([curses.COLOR_CYAN,curses.COLOR_GREEN,curses.COLOR_YELLOW,curses.COLOR_MAGENTA,curses.COLOR_RED,curses.COLOR_WHITE],1):
+        curses.init_pair(i,c,bg)
+    histories={k:deque(maxlen=90) for k in ('load','temp','power','vram')}
+    state='unknown'; last_service=-100; paused=False; sample={}; next_sample=0
+    def put(y,x,s,c=0,bold=False):
+        h,w=stdscr.getmaxyx()
+        if 0<=y<h and 0<=x<w-1:
+            try: stdscr.addnstr(y,x,str(s),w-x-1,curses.color_pair(c)|(curses.A_BOLD if bold else 0))
+            except curses.error: pass
+    def section(y,label):
+        put(y,2,label,1,True)
+    def bar(y,label,v,maximum,unit='',digits=0,color=2):
+        h,w=stdscr.getmaxyx(); width=max(5,min(36,w-39)); n=0 if v is None or not maximum else round(width*max(0,min(1,v/maximum)))
+        put(y,2,f'{label:<16}',6); put(y,19,'█'*n+'░'*(width-n),color); put(y,21+width,fmt(v,unit,digits),color,True)
+    def spark(y,label,values,maximum,color):
+        h,w=stdscr.getmaxyx(); chars='▁▂▃▄▅▆▇█'; width=max(1,w-24)
+        s=''.join(' ' if v is None else chars[min(7,max(0,int(v/maximum*8)))] for v in list(values)[-width:])
+        put(y,2,f'{label:<16}',6); put(y,19,s,color)
+    while True:
+        now=time.monotonic()
+        if not paused and now>=next_sample:
+            hwm=hwmon(); hread=lambda name,scale=1: num(hwm/name,scale) if hwm else None
+            temps={}
+            if hwm:
+                for p in hwm.glob('temp*_input'):
+                    label=read(p.with_name(p.name.replace('_input','_label'))).lower(); temps[label or p.stem]=num(p,1000)
+            pwm=hread('pwm1'); pmax=hread('pwm1_max'); fan=100*pwm/pmax if pwm is not None and pmax else None
+            used=num(GPU/'mem_info_vram_used',2**30); total=num(GPU/'mem_info_vram_total',2**30)
+            sample=dict(load=num(GPU/'gpu_busy_percent'),temp=temps.get('junction'),edge=temps.get('edge'),memtemp=temps.get('mem'),power=hread('power1_average',1e6),cap=hread('power1_cap',1e6),fan=fan,rpm=hread('fan1_input'),sclk=hread('freq1_input',1e6),mclk=hread('freq2_input',1e6),used=used,total=total,mode=read(GPU/'power_dpm_force_performance_level'),profile=active(GPU/'pp_power_profile_mode'),sstate=active(GPU/'pp_dpm_sclk'),mstate=active(GPU/'pp_dpm_mclk'),gfx=gfxoff(),od=read(GPU/'pp_od_clk_voltage'),pwm_mode=hread('pwm1_enable'))
+            for k in ('load','temp','power'): histories[k].append(sample[k])
+            histories['vram'].append(100*used/total if used is not None and total else None)
+            if now-last_service>=5: state=service(); last_service=now
+            next_sample=now+args.interval
+        stdscr.erase(); h,w=stdscr.getmaxyx(); s=sample
+        put(0,2,'◆ AMDGPU MONITOR',1,True); put(0,max(22,w-23),time.strftime('%H:%M:%S')+'  '+('PAUSED' if paused else 'LIVE'),3 if paused else 2,True)
+        put(1,2,f'PCI {args.device}  |  Read-only telemetry',6)
+        if h<28 or w<60:
+            put(3,2,'Resize terminal to at least 60 × 28.',3)
+        else:
+            section(3,'01  CLOCKS & UTILIZATION')
+            put(4,2,'GPU reported  '+fmt(s.get('sclk'),' MHz')+'    VRAM  '+fmt(s.get('mclk'),' MHz'),2,True)
+            bar(5,'GPU load',s.get('load'),100,' %')
+            bar(6,'VRAM used',s.get('used'),s.get('total'),' GiB',2,1)
+            put(7,2,'VRAM total: '+fmt(s.get('total'),' GiB',2),6)
+            section(9,'02  THERMALS & POWER')
+            t=s.get('temp'); bar(10,'Junction',t,110,' °C',1,5 if t is not None and t>=100 else 3 if t is not None and t>=85 else 2)
+            put(11,2,'Edge: '+fmt(s.get('edge'),' °C',1)+'   Memory: '+fmt(s.get('memtemp'),' °C',1),6)
+            bar(12,'Board power',s.get('power'),s.get('cap'),' W',1,3)
+            bar(13,'Fan PWM',s.get('fan'),100,' %',1,4)
+            put(14,2,'Fan: '+fmt(s.get('rpm'),' RPM')+'   Power cap: '+fmt(s.get('cap'),' W'),6)
+            section(16,'03  DRIVER & CONTROLLER')
+            put(17,2,'Mode: '+(s.get('mode') or 'N/A')+'   Service: '+state,2 if state=='active' else 3)
+            put(18,2,'SCLK active: '+s.get('sstate','N/A')+'   MCLK active: '+s.get('mstate','N/A'),6)
+            put(19,2,'Profile: '+s.get('profile','N/A'),6)
+            put(20,2,'GFXOFF: '+s.get('gfx','N/A')+'   PWM mode: '+fmt(s.get('pwm_mode')),6)
+            od=re.search(r'OD_SCLK:\s*0:\s*(\d+)\w*\s*1:\s*(\d+)',s.get('od',''))
+            put(21,2,'OD SCLK: '+(' – '.join(od.groups())+' MHz' if od else 'N/A'),6)
+            section(23,'04  RECENT HISTORY')
+            spark(24,'GPU load',histories['load'],100,2)
+            spark(25,'Junction',histories['temp'],110,3)
+            if h>=30: spark(26,'Power',histories['power'],s.get('cap') or 250,4); spark(27,'VRAM',histories['vram'],100,1)
+        put(h-1,2,' Q Quit   SPACE Pause   R Refresh ',1,True)
+        stdscr.refresh(); stdscr.timeout(150); key=stdscr.getch()
+        if key in (ord('q'),ord('Q'),27): break
+        if key==ord(' '): paused=not paused; next_sample=0
+        if key in (ord('r'),ord('R')): paused=False; next_sample=0; last_service=-100
+
+if __name__=='__main__':
+    try: curses.wrapper(main)
+    except KeyboardInterrupt: pass

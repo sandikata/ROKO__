@@ -1,0 +1,11 @@
+[Unit]
+Description=AMDGPU control
+After=systemd-modules-load.service sys-kernel-debug.mount
+Wants=sys-kernel-debug.mount
+Conflicts=lactd.service
+[Service]
+Type=simple
+ExecStart=/usr/bin/amdgpu-control
+Restart=no
+[Install]
+WantedBy=multi-user.target
