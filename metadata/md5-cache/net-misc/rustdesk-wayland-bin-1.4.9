@@ -1,0 +1,15 @@
+BDEPEND=virtual/pkgconfig
+DEFINED_PHASES=install postinst postrm preinst unpack
+DESCRIPTION=An open-source remote desktop, alternative to TeamViewer (prebuilt unattended Wayland build)
+EAPI=8
+HOMEPAGE=https://rustdesk.com/
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=unpacker systemd xdg
+KEYWORDS=-* ~amd64
+LICENSE=AGPL-3
+RDEPEND=dev-libs/glib:2 dev-libs/libayatana-appindicator media-libs/alsa-lib media-libs/gst-plugins-base:1.0 media-libs/gstreamer:1.0 media-libs/libpulse media-libs/libva[X] media-video/pipewire[gstreamer] sys-apps/dbus virtual/zlib:= x11-libs/cairo x11-libs/gdk-pixbuf:2 x11-libs/gtk+:3 x11-libs/libdrm x11-libs/libX11 x11-libs/libXfixes x11-libs/libxcb:= x11-libs/libxkbcommon x11-libs/libXtst x11-libs/libvdpau x11-libs/pango x11-misc/xdotool
+RESTRICT=bindist mirror strip
+SLOT=0
+SRC_URI=https://github.com/rustdesk/rustdesk/releases/download/nightly/rustdesk-unattended-wayland-1.4.9-x86_64.deb -> rustdesk-wayland-bin-1.4.9.deb
+_eclasses_=eapi9-pipestatus	d2c134036ac31c3085aebc9147f572bd	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	unpacker	4332a3f8fa974013f54f3bf39bab0de4	systemd	a964c0cbe818b5729da1dbfcee5be861	xdg-utils	42869b3c8d86a70ef3cf75165a395e09	xdg	3ef49a87c52c8b77c476351195dfe575
+_md5_=ece2c3a3f56d6aee1c0ffa0cb001450a

@@ -1,4 +1,4 @@
-BDEPEND=>=dev-build/meson-1.2.3 app-alternatives/ninja dev-build/meson-format-array
+BDEPEND=>=dev-build/meson-1.2.3 app-alternatives/ninja
 DEFINED_PHASES=compile configure install test
 DEPEND=dev-libs/libyaml:= dev-python/jinja dev-python/ply dev-python/pyyaml || ( net-libs/gnutls dev-libs/openssl ) debug? ( dev-libs/elfutils:= ) gstreamer? ( media-libs/gstreamer:= ) libevent? ( dev-libs/libevent:= drm? ( x11-libs/libdrm:= ) jpeg? ( media-libs/libjpeg-turbo:= ) sdl? ( media-libs/libsdl2:= ) ) qt5? ( dev-qt/qtcore:5 dev-qt/qtgui:5 dev-qt/qtwidgets:5 ) tiff? ( media-libs/tiff:= ) trace? ( dev-util/lttng-ust:= ) udev? ( virtual/libudev:= ) unwind? ( sys-libs/libunwind:= )
 DESCRIPTION=A complex camera support library for Linux, Android, and ChromeOS
@@ -12,5 +12,5 @@ RDEPEND=dev-libs/libyaml:= dev-python/jinja dev-python/ply dev-python/pyyaml || 
 REQUIRED_USE=qt5? ( tiff )
 SLOT=0
 SRC_URI=https://github.com/kbingham/libcamera/archive/refs/tags/v0.2.0.tar.gz -> libcamera-0.2.0.tar.gz
-_eclasses_=toolchain-funcs	6afdb6107430c1832ca7e16aacbf8fa1	multilib	b2a329026f2e404e9e371097dda47f96	flag-o-matic	357f1a896fbedcd06e5ce55419c49eb9	multiprocessing	1e32df7deee68372153dca65f4a7c21f	ninja-utils	2df4e452cea39a9ec8fb543ce059f8d6	python-utils-r1	b7726144f5af59e186d66746d0f513e5	meson	99466844dd8d4fcfb07578a76f5a9922
+_eclasses_=toolchain-funcs	58a918e3a42d0156f010dcfd43725be5	flag-o-matic	fd3558f73f6503093adee69adf41020d	multiprocessing	45d0620f25c2f063ad6276ecd9ed9399	ninja-utils	d063ea1900a793f93eb095010d6d9156	eapi9-pipestatus	d2c134036ac31c3085aebc9147f572bd	python-utils-r1	025367880f07ae6444e6035a49db0dab	sysroot	4c36abaf94ebd3ab32f8abea9a444121	rust-toolchain	76468983281b0a7fc167ca224f84ecfd	meson	8f31ee3f713c71ef36964e0c381dc3c8
 _md5_=23d5a35c1190d532c0aea613142178f0

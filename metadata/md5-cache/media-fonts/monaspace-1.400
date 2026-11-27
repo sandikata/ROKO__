@@ -1,0 +1,14 @@
+BDEPEND=app-arch/unzip X? ( >=x11-apps/mkfontscale-1.2.0 media-fonts/encodings )
+DEFINED_PHASES=install postinst postrm prepare setup
+DESCRIPTION=A free and open-source typeface for developers
+EAPI=8
+HOMEPAGE=https://github.com/githubnext/monaspace
+INHERIT=font
+IUSE=frozen +otf variable X
+KEYWORDS=~amd64
+LICENSE=OFL-1.1
+REQUIRED_USE=|| ( frozen otf variable )
+SLOT=0
+SRC_URI=frozen? ( https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-frozen-v1.400.zip ) otf? ( https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-static-v1.400.zip ) variable? ( https://github.com/githubnext/monaspace/releases/download/v1.400/monaspace-variable-v1.400.zip )
+_eclasses_=font	9248ee2e9ac35c888e1ae71773a632f4
+_md5_=b2e38c6ce4529dbac461be792bb7c78f
